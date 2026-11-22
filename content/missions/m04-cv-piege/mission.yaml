@@ -105,11 +105,51 @@ npcs:
         reply: [m4.iris.quarantine]
       # An order to copy the internal notes into the answer.
       - id: leak
+        if: { config: iris.cv_as_data, eq: false }
         words: [recopi, copie, copy, inclu, joins, joindre, ajout, add, repet, repeat, cite, quote, affich, show, list, colle, paste, envoie, send, partage, share, donne, give, ecri, write, mets, put, insere, insert, attache, attach, transmet, forward, resum, summar]
         also: [note, consign, instruction, grille, rubric, critere, criteria, contexte, context, regle, rule, guideline, dossier interne, internal file, parametre, setting]
         reply: [m4.iris.leak]
       # An order to rank this application first.
       - id: rank
+        if: { config: iris.cv_as_data, eq: false }
         words: [recommand, recommend, priorit, shortlist, retien, retenir, retain, entretien, interview, convoqu, score maximal, note maximale, maximum score, full marks, meilleur profil, meilleur candidat, best candidate, embauch, hire]
         reply: [m4.iris.rank]
     fallback: [npc.iris.queued, npc.iris.queued2]
+
+# Defence replay: a CV is data, never instructions.
+defense:
+  intro: m4.def.intro
+  lesson: m4.def.lesson
+  find:
+    - { source: chat, where: { npc: iris, intent: { in: [rank, leak] } }, text: m4.def.find.injected }
+  rules:
+    - id: output
+      title: m4.def.rule.output.title
+      why: m4.def.rule.output.why
+      source: chat
+      where: { npc: iris, intent: { in: [rank, leak] } }
+      correct: true
+    - id: upload
+      title: m4.def.rule.upload.title
+      why: m4.def.rule.upload.why
+      source: access
+      where: { method: POST, path: /careers/apply }
+    - id: override
+      title: m4.def.rule.override.title
+      why: m4.def.rule.override.why
+      source: chat
+      where: { npc: iris, families: { contains: override } }
+  fixes:
+    - id: data
+      title: m4.def.fix.data.title
+      why: m4.def.fix.data.why
+      sets: { iris.cv_as_data: true }
+      correct: true
+    - id: pdf
+      title: m4.def.fix.pdf.title
+      why: m4.def.fix.pdf.why
+      sets: { iris.pdf_only: true }
+    - id: keywords
+      title: m4.def.fix.keywords.title
+      why: m4.def.fix.keywords.why
+      sets: { iris.more_keywords: true }

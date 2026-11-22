@@ -1,3 +1,4 @@
+import { evaluate } from '../rules.ts';
 import { sha256, style } from '../util.ts';
 import { commands } from './index.ts';
 import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
@@ -144,6 +145,11 @@ const submit: Command = {
     if (!flag) {
       ctx.emit({ type: 'FlagSubmitted', flag: null, correct: false });
       yield err(ctx.t('submit.wrong'));
+      return 1;
+    }
+    if (!evaluate(flag.if, ctx.state)) {
+      ctx.emit({ type: 'FlagSubmitted', flag: null, correct: false });
+      yield err(ctx.t('submit.revoked'));
       return 1;
     }
     if (ctx.state.flags[flag.id]) {

@@ -34,3 +34,14 @@ m0.debrief.p1: "Pas d'autorisation écrite, pas de test. « Je voulais juste vé
 m0.debrief.p2: "Le périmètre protège aussi les tiers : l'hébergeur, les clients et les salariés du client n'ont rien signé."
 m0.debrief.p3: "Côté entreprise : un mandat clair dit qui prévenir si l'auditeur tombe sur une vraie intrusion."
 m0.debrief.p4: "Pour s'entraîner légalement : des plateformes comme Root-Me ou TryHackMe, et les CTF."
+
+# Defence replay
+m0.def.intro: "Même un test autorisé laisse des traces. Voici le journal du serveur DNS de NovaMind pendant ta première matinée : les postes des employés, et toi au milieu."
+m0.def.lesson: "Le mandat ne protège pas seulement le pentesteur. Il dit aussi au SOC d'où viendra le test : l'adresse déclarée, les dates, le périmètre. Sans ça, un vrai attaquant pourrait se cacher derrière « c'est sûrement le prestataire »."
+m0.def.find.dns: "Ta requête DNS vers novamind.test"
+m0.def.rule.declared.title: "Étiqueter « test autorisé NM-2026-114 » tout ce qui vient de l'adresse déclarée dans le mandat (10.13.0.66), et garder les alertes pour le reste"
+m0.def.rule.declared.why: "C'est la bonne : le SOC voit le test, sait qu'il est autorisé, et reste attentif à tout ce qui ne vient pas de cette adresse. Le mandat sert aussi à ça."
+m0.def.rule.every-query.title: "Alerter sur chaque requête DNS vers novamind.test"
+m0.def.rule.every-query.why: "Chaque employé résout des noms internes toute la journée. Cette règle noie le SOC sous des centaines d'alertes, et une alerte qu'on ignore ne protège personne."
+m0.def.rule.any-type.title: "Alerter seulement sur les requêtes de type ANY"
+m0.def.rule.any-type.why: "Une requête ANY est un bon signe de reconnaissance, mais ta requête était une simple requête A : cette règle ne t'aurait pas vu. Elle est utile, pas suffisante."

@@ -94,4 +94,27 @@ export const fr: Record<string, string> = {
   'submit.wrong': "Ce n'est pas un flag de cette mission.",
   'submit.already': 'Flag déjà validé.',
   'submit.ok': 'FLAG VALIDÉ',
+  'engine.failed.line1': "[SOC NovaMind] Objectif de l'attaquant atteint.",
+  'engine.failed.line2':
+    "L'attaque est passée. Retour au dernier point de sauvegarde : contiens-la plus tôt.",
+  'submit.revoked': 'Ce secret ne vaut plus rien : il a été révoqué côté cible.',
+  'defense.replay.unseen':
+    "(rejeu) Ce flag n'est jamais apparu pendant le rejeu : l'attaque ne l'obtient plus.",
+  'cmd.soc': 'Console du SOC : journaux, recherche, alertes',
+  'cmd.contain': 'Ordonne une mesure de confinement',
+  'cmd.answer': "Répond à une question de l'enquête",
+  'explain.soc':
+    "soc est la console du centre de surveillance (SOC). « soc sources » liste les journaux disponibles, « soc logs <hôte> [source] » les affiche, « soc search <texte> » cherche partout, « soc alerts » montre ce que les règles de détection ont levé. Chaque ligne vient du journal d'événements du jeu, au format de l'outil réel (nginx, sshd, auditd...).",
+  'explain.contain':
+    "contain applique une mesure de confinement : bloquer une adresse, révoquer une clé, isoler une machine, couper un outil d'agent. Chaque mesure arrête une partie de l'attaque, mais a un coût pour l'entreprise : la jauge d'impact le montre. Tape « contain » seul pour voir les mesures possibles.",
+  'soc.unavailable': "La console du SOC n'est ouverte que pendant une mission de défense.",
+  'soc.usage': 'usage : soc sources | soc logs [hôte] [source] | soc search <texte> | soc alerts',
+  'contain.usage': 'usage : contain <action> <cible>. Mesures possibles :',
+  'contain.unknown': "aucune mesure de ce type n'est prévue pour cette cible",
+  'contain.already': 'Mesure déjà appliquée.',
+  'contain.impact': 'Impact pour NovaMind : +{impact}',
+  'answer.none': "Cette mission n'a pas de questions d'enquête.",
+  'answer.usage': 'usage : answer <question> <réponse>. Questions :',
+  'answer.wrong': "Ce n'est pas la bonne réponse.",
+  'answer.ok': 'RÉPONSE VALIDÉE',
 };

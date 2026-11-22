@@ -3,7 +3,7 @@ import type { GameEvent } from './events.ts';
 import type { GameState } from './state.ts';
 import { globMatch } from './vfs.ts';
 
-function matches(matcher: Matcher, actual: unknown): boolean {
+export function matches(matcher: Matcher, actual: unknown): boolean {
   const value = Array.isArray(actual) ? actual.join(' ') : actual;
   if (typeof matcher !== 'object') return value === matcher;
   if ('glob' in matcher) return typeof value === 'string' && globMatch(matcher.glob, value);
@@ -36,5 +36,6 @@ export function evaluate(cond: Condition | undefined, state: GameState): boolean
     return (gte === undefined || state.noise >= gte) && (lt === undefined || state.noise < lt);
   }
   if ('var' in cond) return state.vars[cond.var] === cond.eq;
+  if ('config' in cond) return (state.config ?? {})[cond.config] === cond.eq;
   return false;
 }

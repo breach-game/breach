@@ -64,8 +64,29 @@ export interface GameState {
   checkpoint: { name: string; seq: number } | null;
   missionStartSeq: number;
   missionDone: boolean;
-  completed: Record<string, { score: number }>;
+  completed: Record<string, { score: number; defense?: number }>;
+  /** Settings of the target (world, then mission, then fixes and containments). */
+  config: Record<string, Scalar>;
+  /** Progress of the defence replay of the current mission. */
+  defense: DefenseState | null;
+  /** Defence missions: the scripted attacker. */
+  adversary: { next: number; actions: number; stopped: boolean; blockedAt: string | null };
+  /** Business impact of the containments ordered, out of 100. */
+  impact: number;
+  contained: Record<string, true>;
+  answers: Record<string, true>;
   history: string[];
+}
+
+export interface DefenseState {
+  found: boolean;
+  wrongMarks: number;
+  findTries: number;
+  rule: string | null;
+  ruleTries: number;
+  fix: string | null;
+  fixTries: number;
+  done: boolean;
 }
 
 /** Noise points lost per minute of game time. */

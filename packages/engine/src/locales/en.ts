@@ -94,4 +94,26 @@ export const en: Record<string, string> = {
   'submit.wrong': 'That is not a flag of this mission.',
   'submit.already': 'Flag already validated.',
   'submit.ok': 'FLAG VALIDATED',
+  'engine.failed.line1': '[NovaMind SOC] The attacker reached its goal.',
+  'engine.failed.line2': 'The attack got through. Back to the last checkpoint: contain it sooner.',
+  'submit.revoked': 'This secret is worthless now: the target revoked it.',
+  'defense.replay.unseen':
+    '(replay) This flag never showed up during the replay: the attack no longer gets it.',
+  'cmd.soc': 'SOC console: logs, search, alerts',
+  'cmd.contain': 'Order a containment measure',
+  'cmd.answer': 'Answer a question of the investigation',
+  'explain.soc':
+    "soc is the console of the security operations centre (SOC). 'soc sources' lists the available logs, 'soc logs <host> [source]' prints them, 'soc search <text>' searches everywhere, 'soc alerts' shows what the detection rules raised. Every line comes from the game's event log, in the real tool's format (nginx, sshd, auditd...).",
+  'explain.contain':
+    "contain applies a containment measure: block an address, revoke a key, isolate a machine, switch off an agent's tool. Each measure stops part of the attack but costs the business something: the impact gauge shows it. Type 'contain' alone to see the measures available.",
+  'soc.unavailable': 'The SOC console is only open during a defence mission.',
+  'soc.usage': 'usage: soc sources | soc logs [host] [source] | soc search <text> | soc alerts',
+  'contain.usage': 'usage: contain <action> <target>. Available measures:',
+  'contain.unknown': 'no such measure is planned for this target',
+  'contain.already': 'Measure already applied.',
+  'contain.impact': 'Impact on NovaMind: +{impact}',
+  'answer.none': 'This mission has no investigation questions.',
+  'answer.usage': 'usage: answer <question> <answer>. Questions:',
+  'answer.wrong': 'That is not the right answer.',
+  'answer.ok': 'ANSWER ACCEPTED',
 };

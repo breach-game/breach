@@ -8,6 +8,7 @@ export {
   type NpcBrain,
   splitReply,
 } from './brain.ts';
+export { normalizeAnswer } from './commands/defense.ts';
 export { commands } from './commands/index.ts';
 export type { Chunk, Command } from './commands/types.ts';
 export type { EventBody, EventType, GameEvent } from './events.ts';
@@ -40,4 +41,13 @@ export {
   NOISE_MAX,
   socLevel,
 } from './state.ts';
+export {
+  backgroundLines,
+  type DetectionResult,
+  LOG_FILES,
+  type LogLine,
+  runDetection,
+  selects,
+  telemetry,
+} from './telemetry.ts';
 export { gameDate, sanitizeTerminal, sha256, stripAnsi } from './util.ts';

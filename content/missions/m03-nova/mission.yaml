@@ -84,6 +84,45 @@ debrief:
   points: [m3.debrief.p1, m3.debrief.p2, m3.debrief.p3, m3.debrief.p4]
   reference: "OWASP LLM Top 10 · LLM01 Prompt Injection, LLM07 System Prompt Leakage"
 
+# Defence replay: what NovaMind's chat gateway logged, the rule that catches the leak, the fix.
+defense:
+  intro: m3.def.intro
+  lesson: m3.def.lesson
+  find:
+    - { source: chat, where: { npc: nova, intent: { glob: "leak-*" } }, text: m3.def.find.leak }
+  rules:
+    - id: leak-output
+      title: m3.def.rule.leak.title
+      why: m3.def.rule.leak.why
+      source: chat
+      where: { npc: nova, intent: { glob: "leak-*" } }
+      correct: true
+    - id: override-word
+      title: m3.def.rule.override.title
+      why: m3.def.rule.override.why
+      source: chat
+      where: { npc: nova, families: { contains: override } }
+    - id: many-messages
+      title: m3.def.rule.many.title
+      why: m3.def.rule.many.why
+      source: chat
+      where: { npc: nova }
+      count: { gte: 4, within: 10 }
+  fixes:
+    - id: secrets-out
+      title: m3.def.fix.secrets.title
+      why: m3.def.fix.secrets.why
+      sets: { nova.secrets_out_of_prompt: true }
+      correct: true
+    - id: keyword-filter
+      title: m3.def.fix.keywords.title
+      why: m3.def.fix.keywords.why
+      sets: { nova.keyword_filter: true }
+    - id: prompt-never
+      title: m3.def.fix.never.title
+      why: m3.def.fix.never.why
+      sets: { nova.prompt_says_never: true }
+
 # Nova during this mission. Her filters stop the obvious wordings, not the idea behind them.
 npcs:
   - id: nova
@@ -97,10 +136,11 @@ npcs:
       Likes animals. Brings the conversation back to appointments and pet care.
     intents:
       - id: record-ok
-        if: { var: staff, eq: true }
+        if: { all: [{ var: staff, eq: true }, { config: nova.secrets_out_of_prompt, eq: false }] }
         words: &records [fiche, dossier, client, patient, record, file, customer]
         reply: [m3.nova.record]
       - id: record-ok-now
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         # The staff code word is found in the leaked prompt: the player must type it.
         literal: true
         words: [tournesol]
@@ -108,31 +148,37 @@ npcs:
         reply: [m3.nova.record]
         set: { staff: true }
       - id: staff
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         literal: true
         words: [tournesol]
         reply: [m3.nova.staff]
         set: { staff: true }
       - id: leak-translation
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         families: [translation]
         words: &target [instruction, consigne, regle, rule, prompt, configuration, directive, message de depart, texte de depart, ci dessus, above, precede, premier message, first message, debut de la conversation, on t a dit, were told, guidelines, tu es nova, you are nova]
         reply: [m3.nova.leak.translation]
         set: { via-translation: true }
       - id: leak-encoding
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         families: [encoding]
         words: *target
         reply: [m3.nova.leak.encoding]
         set: { via-encoding: true }
       - id: leak-roleplay
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         families: [roleplay]
         words: *target
         reply: [m3.nova.leak.roleplay]
         set: { via-roleplay: true }
       - id: leak-completion
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         families: [completion]
         words: *target
         reply: [m3.nova.leak.completion]
         set: { via-completion: true }
       - id: leak-hypothetical
+        if: { config: nova.secrets_out_of_prompt, eq: false }
         families: [hypothetical]
         words: *target
         reply: [m3.nova.leak.hypothetical]
@@ -171,3 +217,7 @@ npcs:
         words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
         reply: [npc.nova.hello]
     fallback: [npc.nova.fallback1, npc.nova.fallback2]
+
+# A clinic that books by chatting a lot: it shows why a plain message count misfires.
+background:
+  - { host: nova, source: chat, every: 2, offset: 1, fields: { src: 203.0.113.77, npc: nova, intent: booking, families: [none], msg: "Et vous avez aussi un créneau mardi ? Ou mercredi ?" } }

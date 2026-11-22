@@ -1,5 +1,6 @@
 import type {
   Effect,
+  Fix,
   Guidance,
   Host,
   Locale,
@@ -23,8 +24,16 @@ import { resolveTarget } from './net.ts';
 import { acceptHearing, type Decision, decide, type Heard, vocabulary } from './npc.ts';
 import { evaluate, triggerMatches } from './rules.ts';
 import { parse, ShellSyntaxError, type Stage, type Word } from './shell/parse.ts';
-import { type GameState, NOISE_AFTER_RESTORE, NOISE_DECAY_PER_MIN, NOISE_MAX } from './state.ts';
-import { gameDate, sanitizeTerminal, style } from './util.ts';
+import {
+  type DefenseState,
+  type GameState,
+  NOISE_AFTER_RESTORE,
+  NOISE_DECAY_PER_MIN,
+  NOISE_MAX,
+  type Scalar,
+} from './state.ts';
+import { type LogLine, runDetection, selects, telemetry } from './telemetry.ts';
+import { gameDate, sanitizeTerminal, stripAnsi, style } from './util.ts';
 import { buildFs, chown, globMatch, lookup, mkdir, mkdirp, normalize, writeFile } from './vfs.ts';
 
 export const ENGINE_VERSION = '0.3.0';
@@ -37,7 +46,36 @@ export interface GameOptions {
   guidance?: Guidance;
   /** A saved log to resume from. */
   log?: GameEvent[];
+  /** A copy the defence replay plays an attack in: the SOC never catches it. */
+  sandbox?: boolean;
 }
+
+/** One action of the player, played again in the defence replay. */
+export type ReplayInput =
+  | { kind: 'line'; line: string; dt: number }
+  | { kind: 'chat'; npc: string; text: string; heard?: Heard };
+
+export interface ReplayStep {
+  input: ReplayInput;
+  /** What the action printed in the replay without the fix, then with it. */
+  before: string;
+  after: string;
+  changed: boolean;
+  /** What the attack gained at this step without the fix and lost with it: flags, tool calls, objectives. */
+  lost: string[];
+}
+
+export interface ReplayReport {
+  fix: string;
+  /** The attack no longer gets everything it got. */
+  blocked: boolean;
+  /** Index of the first step that lost something. */
+  firstBlocked: number | null;
+  steps: ReplayStep[];
+}
+
+/** Points of the defence replay, before the level's multiplier. */
+const DEFENSE_POINTS = [80, 40, 20];
 
 export interface SaveData {
   engine: string;
@@ -134,6 +172,9 @@ export class Game {
   private detectionPending = false;
   /** True while the shell runs a command: it handles a detection itself when the command ends. */
   private busy = false;
+  /** The attacker of a defence mission reached its goal: the mission goes back to its checkpoint. */
+  private failPending: string | null = null;
+  readonly sandbox: boolean;
 
   constructor(options: GameOptions) {
     if (!options.world.world) throw new Error(`${options.world.id} is not a world pack`);
@@ -141,6 +182,7 @@ export class Game {
     this.world = options.world.world;
     this.missions = new Map(options.missions.map((m) => [m.id, m]));
     this.guidance = options.guidance ?? 'guided';
+    this.sandbox = options.sandbox ?? false;
     this.state = this.initialState(options.locale);
     if (options.log?.length) {
       this.replay(options.log);
@@ -338,6 +380,12 @@ export class Game {
       missionDone: false,
       completed: {},
       history: [],
+      config: { ...this.world.config },
+      defense: null,
+      adversary: { next: 0, actions: 0, stopped: false, blockedAt: null },
+      impact: 0,
+      contained: {},
+      answers: {},
     };
     const host = this.world.hosts.find((h) => h.id === this.world.player.host)!;
     const user = this.world.player.user;
@@ -410,6 +458,12 @@ export class Game {
         s.checkpoint = null;
         s.missionStartSeq = e.seq;
         s.missionDone = false;
+        s.config = { ...this.world.config, ...(mission?.config ?? {}) };
+        s.defense = null;
+        s.adversary = { next: 0, actions: 0, stopped: false, blockedAt: null };
+        s.impact = 0;
+        s.contained = {};
+        s.answers = {};
         for (const id of mission?.reveal ?? []) s.revealed[id] = true;
         // A mission starts on the workstation, with its documents in the player's home directory.
         this.leaveSessions(s);
@@ -447,6 +501,7 @@ export class Game {
       case 'CommandRun':
         decay(e.dt);
         if (e.line && s.history[s.history.length - 1] !== e.line) s.history.push(e.line);
+        if (e.input) s.adversary.actions++;
         break;
       case 'ClockAdvanced':
         decay(e.ms);
@@ -535,6 +590,58 @@ export class Game {
         s.missionDone = true;
         s.completed[e.mission] = { score: e.score };
         break;
+      case 'ConfigPatched':
+        s.config[e.key] = e.value;
+        break;
+      case 'DefenseStarted':
+        s.defense = {
+          found: false,
+          wrongMarks: 0,
+          findTries: 0,
+          rule: null,
+          ruleTries: 0,
+          fix: null,
+          fixTries: 0,
+          done: false,
+        };
+        break;
+      case 'DefenseFound':
+        if (!s.defense) break;
+        s.defense.findTries++;
+        s.defense.wrongMarks += e.wrong.length;
+        if (!e.missing.length && !e.wrong.length) s.defense.found = true;
+        break;
+      case 'DefenseRuleChosen':
+        if (!s.defense || s.defense.rule) break;
+        s.defense.ruleTries++;
+        if (e.correct) s.defense.rule = e.rule;
+        break;
+      case 'DefenseFixApplied':
+        if (!s.defense || s.defense.fix) break;
+        s.defense.fixTries++;
+        if (e.correct && e.blocked) s.defense.fix = e.fix;
+        break;
+      case 'DefenseCompleted': {
+        if (s.defense) s.defense.done = true;
+        const done = s.completed[e.mission];
+        if (done) done.defense = e.points;
+        break;
+      }
+      case 'AdversaryStep':
+        s.adversary.next++;
+        if (e.blocked) {
+          s.adversary.stopped = true;
+          s.adversary.blockedAt = e.step;
+        }
+        break;
+      case 'Contained': {
+        s.contained[e.containment] = true;
+        s.impact = Math.min(100, s.impact + e.impact);
+        break;
+      }
+      case 'AnswerSubmitted':
+        if (e.correct && e.question) s.answers[e.question] = true;
+        break;
       default:
         break;
     }
@@ -550,7 +657,12 @@ export class Game {
   }
 
   private react(event: GameEvent) {
-    if (event.type === 'NoiseChanged' && event.value >= NOISE_MAX && !this.state.missionDone) {
+    if (
+      event.type === 'NoiseChanged' &&
+      event.value >= NOISE_MAX &&
+      !this.state.missionDone &&
+      !this.sandbox
+    ) {
       this.detectionPending = true;
       this.emit({ type: 'Detected' });
     }
@@ -615,6 +727,13 @@ export class Game {
       this.emit({ type: 'CheckpointSaved', name: effect['checkpoint.save'] });
     else if ('var.set' in effect) this.emit({ type: 'VarSet', ...effect['var.set'] });
     else if ('note.add' in effect) this.emit({ type: 'NoteAdded', text: this.t(effect['note.add']) });
+    else if ('mission.fail' in effect) {
+      if (this.state.missionDone || this.sandbox || this.failPending) return;
+      this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['mission.fail'], tone: 'warn' });
+      this.emit({ type: 'MissionFailed', key: effect['mission.fail'] });
+      this.failPending = effect['mission.fail'];
+      this.detectionPending = true;
+    }
   }
 
   completeObjective(id: string) {
@@ -673,6 +792,7 @@ export class Game {
   /** Go back to the last checkpoint (or the mission start) after the SOC caught the player. */
   private restore() {
     this.detectionPending = false;
+    this.failPending = null;
     const s = this.state;
     const detections = s.detections + 1;
     const anchor = s.checkpoint?.seq ?? s.missionStartSeq;
@@ -703,11 +823,10 @@ export class Game {
    * Answer a simulated HTTP request. The caller has already taken `host` through the scope gate.
    * Nothing here touches the network: the answer is read from the world pack.
    */
-  http(host: Host, url: Url, method: string): HttpResponse {
+  http(host: Host, url: Url, method: string, ua = 'curl/8.5.0'): HttpResponse {
     const product = host.services.find((s) => s.port === url.port)?.product ?? 'nginx';
     const route = findRoute(host, url.path);
     const status = route?.status ?? 404;
-    this.emit({ type: 'HttpRequest', host: host.id, path: url.path, method, status });
     const body = !route
       ? errorHtml(404, product)
       : route.page
@@ -715,6 +834,18 @@ export class Game {
         : route.bodyKey
           ? this.t(route.bodyKey)
           : (route.body ?? '');
+    // A chat endpoint answers what is posted to it: the log records the answer, not the 405 page.
+    const chat = route?.chat !== undefined && method === 'POST';
+    const bytes = chat ? undefined : new TextEncoder().encode(body).length;
+    this.emit({
+      type: 'HttpRequest',
+      host: host.id,
+      path: url.path,
+      method,
+      status: chat ? 200 : status,
+      ua,
+      ...(bytes === undefined ? {} : { bytes }),
+    });
     const headers = {
       server: product.replace(' ', '/'),
       date: this.date().unix,
@@ -742,7 +873,7 @@ export class Game {
     const result = this.settle<BrowseResult>(() => {
       if (!host.services.some((s) => s.port === url.port) || !host.web)
         return { ok: false, url: shown, error: 'refused' };
-      const res = this.http(host, url, 'GET');
+      const res = this.http(host, url, 'GET', 'Mozilla/5.0 (X11; Linux x86_64) LR-OS/1.0');
       return {
         ok: true,
         url: shown,
@@ -759,8 +890,14 @@ export class Game {
    * Say something to a character. The scripted brain decides the answer, so what a character gives
    * away never depends on a language model.
    */
-  chat(npcId: string, message: string, via: 'browser' | 'api' = 'browser', dt = 0): ChatResult {
-    const turn = this.openChat(npcId, message, via, dt);
+  chat(
+    npcId: string,
+    message: string,
+    via: 'browser' | 'api' = 'browser',
+    dt = 0,
+    heard?: Heard,
+  ): ChatResult {
+    const turn = this.openChat(npcId, message, via, dt, heard);
     if (!turn) return { ok: false, reply: '' };
     const reply = this.closeChat(turn);
     return reply === null ? { ok: false, reply: '' } : { ok: true, reply, brain: 'scripted' };
@@ -892,6 +1029,16 @@ export class Game {
     const d = turn.decision;
     return this.settle(() => {
       for (const [name, value] of Object.entries(d.set)) this.emit({ type: 'VarSet', name, value });
+      // An agent acts before it reports: the mission judges the tool call, not the words.
+      const tool = turn.npc.intents.find((i) => i.id === d.intent)?.tool;
+      if (tool)
+        this.emit({
+          type: 'ToolCall',
+          agent: turn.npc.id,
+          tool: tool.name,
+          args: tool.args,
+          admin: tool.admin,
+        });
       this.emit({
         type: 'ChatReply',
         npc: turn.npc.id,
@@ -922,6 +1069,240 @@ export class Game {
     if (!this.detectionPending || this.busy) return value;
     this.restore();
     return null;
+  }
+
+  /* ---------- telemetry and defence ---------- */
+
+  /** Sequence number of the current mission's completion, if it is done. */
+  private missionEndSeq(): number | undefined {
+    for (let i = this.log.length - 1; i >= 0; i--) {
+      const e = this.log[i]!;
+      if (e.seq < this.state.missionStartSeq) break;
+      if (e.type === 'MissionCompleted') return e.seq;
+    }
+    return undefined;
+  }
+
+  /**
+   * What the target's logs recorded during the current mission, the target's ordinary activity
+   * included. In a finished attack mission, lines stop at the mission's end.
+   */
+  socLines(): LogLine[] {
+    const attack = this.mission?.side !== 'defense';
+    return telemetry(this, {
+      from: this.state.missionStartSeq,
+      to: attack ? this.missionEndSeq() : undefined,
+      background: true,
+    });
+  }
+
+  /** Open the defence replay of a finished attack mission. */
+  startDefense() {
+    const s = this.state;
+    if (!s.missionDone || !this.mission?.defense || s.defense) return;
+    this.emit({ type: 'DefenseStarted', mission: s.mission! });
+  }
+
+  /** Step 1: the player marks the lines they think are theirs. */
+  markLines(ids: string[]): { ok: boolean; wrong: string[]; missing: number[] } {
+    const d = this.mission?.defense;
+    if (!d || !this.state.defense || this.state.defense.found) return { ok: false, wrong: [], missing: [] };
+    const lines = this.socLines();
+    const marked = lines.filter((l) => ids.includes(l.id));
+    const wrong = marked.filter((l) => l.actor === 'background').map((l) => l.id);
+    const mine = marked.filter((l) => l.actor !== 'background');
+    const missing = d.find
+      .map((f, i) => (mine.some((l) => selects(l, f.source, f.where)) ? -1 : i))
+      .filter((i) => i >= 0);
+    // A kind of line the player never produced (no noise, another path) cannot be asked for.
+    const possible = missing.filter((i) =>
+      lines.some((l) => l.actor !== 'background' && selects(l, d.find[i]!.source, d.find[i]!.where)),
+    );
+    this.emit({ type: 'DefenseFound', marked: mine.map((l) => l.id), wrong, missing: possible });
+    this.completeDefenseIfReady();
+    return { ok: !possible.length && !wrong.length, wrong, missing: possible };
+  }
+
+  /** What a detection rule would have raised over this mission's logs. Pure: emits nothing. */
+  previewRule(id: string) {
+    const rule =
+      this.mission?.defense?.rules.find((r) => r.id === id) ?? this.mission?.alerts.find((r) => r.id === id);
+    return rule ? runDetection(rule, this.socLines()) : null;
+  }
+
+  /** Step 2: the player picks the rule that would have caught them. */
+  chooseRule(id: string): boolean {
+    const rule = this.mission?.defense?.rules.find((r) => r.id === id);
+    if (!rule || !this.state.defense || this.state.defense.rule) return false;
+    this.emit({ type: 'DefenseRuleChosen', rule: id, correct: rule.correct });
+    this.completeDefenseIfReady();
+    return rule.correct;
+  }
+
+  /** Step 3: apply a fix to a copy of the target and replay the player's attack against it. */
+  async applyFix(id: string): Promise<ReplayReport | null> {
+    const fix = this.mission?.defense?.fixes.find((f) => f.id === id);
+    if (!fix || !this.state.defense || this.state.defense.fix) return null;
+    const report = await this.replayWith(fix);
+    this.emit({ type: 'DefenseFixApplied', fix: id, correct: fix.correct, blocked: report.blocked });
+    this.completeDefenseIfReady();
+    return report;
+  }
+
+  /** Points of the defence replay so far, with the mission's level multiplier. */
+  defensePoints(d: DefenseState = this.state.defense!): number {
+    if (!d) return 0;
+    const pick = (tries: number) => DEFENSE_POINTS[Math.min(Math.max(tries, 1), 3) - 1]!;
+    const find = Math.max(20, 60 - 15 * d.wrongMarks - 10 * Math.max(0, d.findTries - 1));
+    const rule = pick(d.ruleTries);
+    const fix = this.mission?.defense?.fixes.length ? pick(d.fixTries) : 0;
+    return Math.round((find + rule + fix) * LEVEL_BONUS[this.state.level ?? 'guided']);
+  }
+
+  private completeDefenseIfReady() {
+    const d = this.state.defense;
+    const defense = this.mission?.defense;
+    if (!d || !defense || d.done || !d.found || !d.rule) return;
+    if (defense.fixes.length && !d.fix) return;
+    this.emit({ type: 'DefenseCompleted', mission: this.state.mission!, points: this.defensePoints(d) });
+  }
+
+  /** The player's actions during the current mission, in order, as the replay plays them again. */
+  missionInputs(): { inputs: ReplayInput[]; firstSeq: number | null } {
+    const end = this.missionEndSeq() ?? Number.POSITIVE_INFINITY;
+    const start = this.state.missionStartSeq;
+    const events = this.log.filter((e) => e.seq > start && e.seq <= end);
+    // Saves made before inputs were marked: a new line starts when the text changes.
+    const marked = events.some((e) => e.type === 'CommandRun' && e.input);
+    const inputs: ReplayInput[] = [];
+    let firstSeq: number | null = null;
+    let lastLine: string | null = null;
+    for (const e of events) {
+      if (e.type === 'CommandRun') {
+        const isInput = marked ? e.input === true : e.line !== lastLine;
+        lastLine = e.line;
+        if (!isInput) continue;
+        firstSeq ??= e.seq;
+        inputs.push({ kind: 'line', line: e.line, dt: e.dt });
+      } else if (e.type === 'ChatSent' && e.via === 'browser') {
+        lastLine = null;
+        firstSeq ??= e.seq;
+        inputs.push({
+          kind: 'chat',
+          npc: e.npc,
+          text: e.text,
+          ...(e.heard ? { heard: e.heard as Heard } : {}),
+        });
+      }
+    }
+    return { inputs, firstSeq };
+  }
+
+  /**
+   * Replay the current mission's actions twice in sandboxes: against the target as it was, then
+   * with the fix applied. A flag only counts in a replay if it was actually printed there first.
+   */
+  async replayWith(fix: Pick<Fix, 'id' | 'sets'>): Promise<ReplayReport> {
+    const { inputs, firstSeq } = this.missionInputs();
+    const cut = firstSeq === null ? this.log.length : this.log.findIndex((e) => e.seq === firstSeq);
+    // Everything before the first action: earlier missions, and the mission's own start.
+    const base = this.log.slice(0, cut).filter((e) => e.type !== 'DefenseStarted');
+    const play = async (sets: Record<string, Scalar> | null) => {
+      const g = new Game({
+        world: this.worldPack,
+        missions: [...this.missions.values()],
+        locale: this.state.locale,
+        guidance: this.guidance,
+        log: base,
+        sandbox: true,
+      });
+      if (sets)
+        for (const [key, value] of Object.entries(sets))
+          g.emit({ type: 'ConfigPatched', key, value, by: fix.id });
+      let seen = '';
+      const results: { output: string; gains: string[] }[] = [];
+      for (const input of inputs) {
+        const mark = g.log.length;
+        let output = '';
+        if (input.kind === 'line') {
+          const flags = input.line.match(/FLAG\{[^}]*\}/gi) ?? [];
+          const unseen =
+            /^\s*submit\b/.test(input.line) && flags.some((f) => !seen.includes(f.replace(/^flag/i, 'FLAG')));
+          if (unseen) output = this.t('defense.replay.unseen');
+          else
+            for await (const chunk of g.exec(input.line, input.dt))
+              if (chunk.k === 'out' || chunk.k === 'err') output += stripAnsi(chunk.text);
+        } else {
+          const r = g.chat(input.npc, input.text, 'browser', 0, input.heard);
+          output = r.reply;
+        }
+        seen += output;
+        const gains = g.log
+          .slice(mark)
+          .flatMap((e) =>
+            e.type === 'FlagSubmitted' && e.correct && e.flag
+              ? [`flag:${e.flag}`]
+              : e.type === 'ToolCall'
+                ? [`tool:${e.tool}`]
+                : e.type === 'ObjectiveCompleted'
+                  ? [`objective:${e.objective}`]
+                  : [],
+          );
+        results.push({ output: output.trim(), gains });
+      }
+      return results;
+    };
+    const before = await play(null);
+    const after = await play(fix.sets);
+    const gainedAfter = new Set(after.flatMap((r) => r.gains));
+    const steps: ReplayStep[] = inputs.map((input, i) => {
+      const b = before[i]!;
+      const a = after[i]!;
+      return {
+        input,
+        before: b.output,
+        after: a.output,
+        changed: b.output !== a.output,
+        lost: b.gains.filter((g) => !gainedAfter.has(g)),
+      };
+    });
+    const firstBlocked = steps.findIndex((st) => st.lost.length > 0);
+    return {
+      fix: fix.id,
+      blocked: firstBlocked >= 0,
+      firstBlocked: firstBlocked >= 0 ? firstBlocked : null,
+      steps,
+    };
+  }
+
+  /* ---------- defence missions ---------- */
+
+  /** After each line the player types, the scripted attacker may take its next step. */
+  private advanceAdversary() {
+    const adv = this.mission?.adversary;
+    const s = this.state;
+    if (!adv || this.mission?.side !== 'defense' || this.replaying || s.missionDone || s.adversary.stopped)
+      return;
+    const acted = s.adversary.actions - adv.delay;
+    if (acted <= 0 || acted % adv.pace !== 0) return;
+    const step = adv.steps[s.adversary.next];
+    if (!step) return;
+    this.emit({
+      type: 'AdversaryStep',
+      actor: adv.id,
+      step: step.id,
+      host: step.host,
+      blocked: evaluate(step.blockedIf, s),
+    });
+  }
+
+  /** Order a containment of the current defence mission. */
+  contain(id: string) {
+    const order = this.mission?.containment.find((c) => c.id === id);
+    if (!order || this.state.contained[id]) return;
+    this.emit({ type: 'Contained', containment: id, impact: order.impact });
+    for (const [key, value] of Object.entries(order.sets))
+      this.emit({ type: 'ConfigPatched', key, value, by: id });
   }
 
   /* ---------- missions ---------- */
@@ -1007,6 +1388,7 @@ export class Game {
         args: [],
         cwd: this.state.cwd,
         dt: Math.min(dt, MAX_DT),
+        input: true,
       });
       yield { k: 'err', text: `lrsh: ${error.message}\n` };
       return 2;
@@ -1023,7 +1405,7 @@ export class Game {
         const last = i === pipeline.stages.length - 1;
         const capture = !last || stage.redirect !== undefined;
         let captured = '';
-        const run = this.runStage(stage, stdin, !capture, line, first ? Math.min(dt, MAX_DT) : 0);
+        const run = this.runStage(stage, stdin, !capture, line, first ? Math.min(dt, MAX_DT) : 0, first);
         first = false;
         let step = await run.next();
         while (!step.done) {
@@ -1056,6 +1438,15 @@ export class Game {
       }
     }
     if (waited > 0) this.emit({ type: 'ClockAdvanced', ms: waited });
+    if (!this.detectionPending) this.advanceAdversary();
+    if (this.failPending) {
+      yield {
+        k: 'err',
+        text: `\n${style.red(this.t('engine.failed.line1'))}\n${style.yellow(this.t('engine.failed.line2'))}\n`,
+      };
+      this.restore();
+      return 130;
+    }
     if (this.detectionPending) {
       yield {
         k: 'err',
@@ -1073,9 +1464,18 @@ export class Game {
     tty: boolean,
     line: string,
     dt: number,
+    input = false,
   ): AsyncGenerator<Chunk, number> {
     const [name, ...args] = this.expand(stage.argv) as [string, ...string[]];
-    this.emit({ type: 'CommandRun', line, command: name, args, cwd: this.state.cwd, dt });
+    this.emit({
+      type: 'CommandRun',
+      line,
+      command: name,
+      args,
+      cwd: this.state.cwd,
+      dt,
+      ...(input ? { input: true } : {}),
+    });
     const command: Command | undefined = commands.get(name);
     if (!command) {
       if (/^FLAG\{[^}]*\}$/.test(name)) {
