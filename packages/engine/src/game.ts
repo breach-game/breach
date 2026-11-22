@@ -48,7 +48,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.4.0';
+export const ENGINE_VERSION = '0.5.0';
 
 export interface GameOptions {
   world: Pack;
@@ -785,8 +785,13 @@ export class Game {
     const results = checks.map((c) => ({ id: c.id, text: this.t(c.text), ok: this.holds(c.if) }));
     if (!checks.length) return results;
     // Objectives first, so that a rule reacting to `Verified` sees what this run settled.
-    for (const c of checks)
-      if (c.objective && results.find((r) => r.id === c.id)?.ok) this.completeObjective(c.objective);
+    // An objective is done when all its checks pass, and so do the checks that name no objective:
+    // those guard the whole repair (the file must still do its job).
+    const ok = (c: (typeof checks)[number]) => !!results.find((r) => r.id === c.id)?.ok;
+    const guards = checks.filter((c) => !c.objective).every(ok);
+    for (const objective of new Set(checks.flatMap((c) => (c.objective ? [c.objective] : []))))
+      if (guards && checks.filter((c) => c.objective === objective).every(ok))
+        this.completeObjective(objective);
     this.emit({
       type: 'Verified',
       passed: results.filter((r) => r.ok).map((r) => r.id),

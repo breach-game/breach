@@ -75,6 +75,11 @@ const fr = {
   'community.source':
     "Liste téléchargée depuis {host} à l'ouverture de cet écran. Le jeu vérifie sa signature et l'empreinte de chaque mission.",
   'community.level': 'Choisis ton niveau pour « {title} »',
+  'series.count': 'série de {n} missions',
+  'series.start': 'Commencer la série',
+  'series.continue': 'Continuer la série',
+  'series.again': 'Rejouer la série',
+  'series.restart': 'Recommencer au début',
   on: 'activés',
   off: 'réduits',
   'boot.disk': 'Montage du disque chiffré',
@@ -167,6 +172,10 @@ const fr = {
   'debrief.tally.objectives': 'Objectifs',
   'debrief.tally.level': 'Niveau {level} ×{factor}',
   'debrief.end.total': 'Score de la campagne',
+  'debrief.series.title': 'Série terminée',
+  'debrief.series.body':
+    "Tu as joué la série jusqu'au bout. Elle ne compte pas dans le score de la campagne. Retourne à l'écran titre pour en choisir une autre.",
+  'debrief.series.total': 'Score de la série',
   'debrief.community.title': 'Mission de la communauté terminée',
   'debrief.community.body':
     "Elle ne compte pas dans le score de la campagne. Retourne à l'écran titre pour en choisir une autre ou reprendre l'enquête sur NovaMind.",
@@ -313,6 +322,7 @@ const fr = {
   'defense.replay.passes': "L'attaque passe toujours.",
   'debrief.close': 'Rester sur le bureau',
   'debrief.reference': 'Référence',
+  'debrief.sources': 'Sources (à ouvrir toi-même, le jeu ne suit aucun lien) :',
   'card.mission': 'MISSION',
   'card.training': 'ENTRAÎNEMENT',
 };
@@ -391,6 +401,11 @@ const en: typeof fr = {
   'community.source':
     'List downloaded from {host} when this screen opened. The game checks its signature and the checksum of every mission.',
   'community.level': 'Choose your level for “{title}”',
+  'series.count': 'series of {n} missions',
+  'series.start': 'Start the series',
+  'series.continue': 'Continue the series',
+  'series.again': 'Play the series again',
+  'series.restart': 'Restart from the beginning',
   on: 'on',
   off: 'reduced',
   'boot.disk': 'Mounting encrypted disk',
@@ -483,6 +498,10 @@ const en: typeof fr = {
   'debrief.tally.objectives': 'Objectives',
   'debrief.tally.level': '{level} level ×{factor}',
   'debrief.end.total': 'Campaign score',
+  'debrief.series.title': 'Series complete',
+  'debrief.series.body':
+    'You played the series to the end. It does not count towards the campaign score. Go back to the title screen to pick another one.',
+  'debrief.series.total': 'Series score',
   'debrief.community.title': 'Community mission complete',
   'debrief.community.body':
     'It does not count towards the campaign score. Go back to the title screen to pick another one, or to resume the NovaMind investigation.',
@@ -628,6 +647,7 @@ const en: typeof fr = {
   'defense.replay.passes': 'The attack still works.',
   'debrief.close': 'Stay on the desktop',
   'debrief.reference': 'Reference',
+  'debrief.sources': 'Sources (open them yourself, the game follows no link):',
   'card.mission': 'MISSION',
   'card.training': 'TRAINING',
 };

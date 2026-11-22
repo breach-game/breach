@@ -222,15 +222,16 @@ export async function loadCommunityCatalog(): Promise<Catalog> {
 }
 
 /**
- * Load one community mission and the world it is played in. The world is an official pack (from the
- * game's own catalogue, pinned) or a community pack from the same signed catalogue.
+ * Load one community mission, or every mission of a community series, and the world they are played
+ * in. The world is an official pack (from the game's own catalogue, pinned) or a community pack from
+ * the same signed catalogue.
  */
 export async function loadCommunityMission(
   entry: CatalogEntry,
   community: Catalog,
   onProgress?: (p: PackProgress) => void,
 ): Promise<Campaign> {
-  if (entry.kind !== 'mission' || !community.packs.includes(entry))
+  if (entry.kind === 'world' || !community.packs.includes(entry))
     throw new Error(`${entry.id}: not a mission of the community catalogue`);
   const worldId = entry.requires[0] ?? '';
   let world: Pack;
@@ -245,8 +246,22 @@ export async function loadCommunityMission(
     if (!worldEntry) throw new Error(`${entry.id}: its world ${worldId} is not in the catalogue`);
     world = await loadPack(worldEntry, onProgress, 'community');
   }
-  const mission = await loadPack(entry, onProgress, 'community');
-  if (!mission.mission || mission.requires[0] !== world.id)
-    throw new Error(`${entry.id}: the mission does not match its world`);
-  return { catalog: community, world, missions: [mission] };
+  const entries = entry.kind === 'series' ? seriesMissions(entry, community) : [entry];
+  if (!entries.length) throw new Error(`${entry.id}: the series has no mission in the catalogue`);
+  const missions: Pack[] = [];
+  for (const e of entries) {
+    const mission = await loadPack(e, onProgress, 'community');
+    if (!mission.mission || mission.requires[0] !== world.id)
+      throw new Error(`${e.id}: the mission does not match its world`);
+    missions.push(mission);
+  }
+  return { catalog: community, world, missions };
+}
+
+/** The missions of a series, in playing order. A mission the catalogue lacks makes the series empty. */
+export function seriesMissions(series: CatalogEntry, catalog: Catalog): CatalogEntry[] {
+  const found = (series.missions ?? []).map((id) =>
+    catalog.packs.find((p) => p.id === id && p.kind === 'mission' && p.requires[0] === series.requires[0]),
+  );
+  return found.every((e): e is CatalogEntry => !!e) ? found : [];
 }

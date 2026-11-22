@@ -38,6 +38,8 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
   const score = (done?.score ?? game.score()) + defensePoints;
   const detail = game.scoreDetail();
   const factor = LEVEL_BONUS[detail.level].toLocaleString(locale);
+  // A community series: several missions in one save, so the last debrief gives the total.
+  const series = Object.keys(game.state.completed).length > 1;
   const campaign = Object.values(game.state.completed).reduce(
     (sum, m) => sum + m.score + (m.defense ?? 0),
     0,
@@ -121,6 +123,24 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           {t('debrief.reference')} : {mission.debrief.reference}
         </div>
       )}
+      {mission.debrief.facts && (
+        <>
+          <h3>{game.t(mission.debrief.facts.title)}</h3>
+          <ul>
+            {mission.debrief.facts.points.map((p) => (
+              <li key={p}>{game.t(p)}</li>
+            ))}
+          </ul>
+          <div className="fine">
+            {t('debrief.sources')}
+            {mission.debrief.facts.sources.map((x) => (
+              <div key={x.url}>
+                {x.label} · {x.url}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       {mission.side === 'defense' && <AttackerPath />}
       {!defense && mission.side !== 'defense' && (
         <h3>{t(playKind() === 'community' ? 'debrief.soc.community' : 'debrief.soc')}</h3>
@@ -148,10 +168,22 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
       ) : (
         <p className="fine">{t('debrief.soc.none')}</p>
       )}
-      {!next && playKind() === 'community' && (
+      {!next && playKind() === 'community' && !series && (
         <>
           <h3>{t('debrief.community.title')}</h3>
           <p>{t('debrief.community.body')}</p>
+        </>
+      )}
+      {!next && playKind() === 'community' && series && (
+        <>
+          <h3>{t('debrief.series.title')}</h3>
+          <p>{t('debrief.series.body')}</p>
+          <div className="stats">
+            <span>
+              {t('debrief.series.total')}
+              <b>{campaign}</b>
+            </span>
+          </div>
         </>
       )}
       {!next && playKind() === 'replay' && (

@@ -83,6 +83,15 @@ describe('repairs and questions', () => {
     expect(g.state.objectives.fix).toBe(true);
   });
 
+  it('a repair that breaks the file does not complete the objective', async () => {
+    const g = await repairGame();
+    g.writeFile('missions/app.conf', '# nothing left\n');
+    const result = await run(g, 'verify');
+    expect(result.out).toContain('[ OK ] Debug mode is off');
+    expect(result.out).toContain('[FAIL] Still listens on 443');
+    expect(g.state.objectives.fix).toBe(false);
+  });
+
   it('the editor saves through the same event', async () => {
     const g = await repairGame();
     expect((await run(g, 'edit missions/app.conf')).status).toBe(0);

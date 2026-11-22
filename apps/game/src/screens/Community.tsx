@@ -2,8 +2,8 @@ import { LEVEL_BONUS } from '@breach/engine';
 import type { Catalog, CatalogEntry } from '@breach/pack-schema';
 import { useEffect, useState } from 'react';
 import { COMMUNITY_CATALOG_URL } from '../community.ts';
-import { engineSatisfies, loadCommunityCatalog } from '../packs.ts';
-import type { StartMode } from '../session.ts';
+import { engineSatisfies, loadCommunityCatalog, seriesMissions } from '../packs.ts';
+import { type CampaignProgress, type StartMode, seriesProgress } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 
@@ -20,6 +20,8 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [picked, setPicked] = useState<CatalogEntry | null>(null);
+  const [opened, setOpened] = useState<{ series: CatalogEntry; progress: CampaignProgress } | null>(null);
+  const [restart, setRestart] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` is the retry button
@@ -35,9 +37,80 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
     };
   }, [attempt]);
 
-  const missions = (catalog?.packs ?? []).filter((p) => p.kind === 'mission');
+  // Series first; a mission that belongs to a series is played through it, not on its own.
+  const series = (catalog?.packs ?? []).filter((p) => p.kind === 'series');
+  const inSeries = new Set(series.flatMap((s) => s.missions ?? []));
+  const missions = [
+    ...series,
+    ...(catalog?.packs ?? []).filter((p) => p.kind === 'mission' && !inSeries.has(p.id)),
+  ];
   const text = (v: { fr?: string; en?: string } | undefined) => (v ? (v[locale] ?? v.fr ?? v.en ?? '') : '');
   const host = new URL(COMMUNITY_CATALOG_URL, location.href).host;
+
+  if (opened && catalog && !picked) {
+    const { series: s, progress } = opened;
+    const list = seriesMissions(s, catalog);
+    const next = progress.current ?? list.find((m) => !(m.id in progress.completed))?.id;
+    const started = Object.keys(progress.completed).length > 0 || progress.current !== null;
+    return (
+      <main className="title community">
+        <div className="title-inner">
+          <h1 className="levels-title">{text(s.title)}</h1>
+          <p className="community-intro">{text(s.summary)}</p>
+          <ol className="series-list">
+            {list.map((m, i) => {
+              const score = progress.completed[m.id];
+              const open = score !== undefined || m.id === next;
+              return (
+                <li key={m.id} data-state={score !== undefined ? 'done' : m.id === next ? 'next' : 'locked'}>
+                  <b>
+                    {String(i + 1).padStart(2, '0')} · {text(m.title)}
+                  </b>
+                  <span>{open ? text(m.summary) : t('missions.lockedHint')}</span>
+                  <i>
+                    {score !== undefined
+                      ? `✓ ${t('missions.done', { score })}`
+                      : m.id === next
+                        ? `▶ ${t(progress.current === m.id ? 'missions.current' : 'missions.next')}`
+                        : `⊘ ${t('missions.locked')}`}
+                  </i>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="title-actions community-actions">
+            <button
+              type="button"
+              className="btn primary"
+              autoFocus
+              onClick={() => {
+                setRestart(!next);
+                if (started && next) onStart({ community: s, catalog });
+                else setPicked(s);
+              }}
+            >
+              {t(!started ? 'series.start' : next ? 'series.continue' : 'series.again')}
+            </button>
+            {started && next && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setRestart(true);
+                  setPicked(s);
+                }}
+              >
+                {t('series.restart')}
+              </button>
+            )}
+            <button type="button" className="btn" onClick={() => setOpened(null)}>
+              {t('community.back')}
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (picked)
     return (
@@ -53,7 +126,7 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
                 autoFocus={i === 0}
                 onClick={() => {
                   updateSettings({ guidance: g });
-                  onStart({ community: picked, catalog: catalog! });
+                  onStart({ community: picked, catalog: catalog!, restart });
                 }}
               >
                 <b>{t(`guidance.${g}` as UiKey)}</b>
@@ -94,12 +167,14 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
         ) : (
           <div className="levels community-list">
             {missions.map((m, i) => {
-              const blocked = !engineSatisfies(m.engine)
-                ? t('community.engine')
-                : !m.locales.includes(locale)
-                  ? t('community.locale')
-                  : null;
+              const blocked =
+                !engineSatisfies(m.engine) || (m.kind === 'series' && !seriesMissions(m, catalog).length)
+                  ? t('community.engine')
+                  : !m.locales.includes(locale)
+                    ? t('community.locale')
+                    : null;
               const details = [
+                m.kind === 'series' ? t('series.count', { n: m.missions?.length ?? 0 }) : null,
                 m.authors?.length ? t('community.by', { authors: m.authors.join(', ') }) : null,
                 m.locales.map((l) => l.toUpperCase()).join(' '),
                 m.reviewed ? `✓ ${t('community.reviewed')}` : null,
@@ -112,7 +187,10 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
                   className="level"
                   autoFocus={i === 0}
                   disabled={!!blocked}
-                  onClick={() => setPicked(m)}
+                  onClick={async () => {
+                    if (m.kind !== 'series') return setPicked(m);
+                    setOpened({ series: m, progress: await seriesProgress(m) });
+                  }}
                 >
                   <b>{text(m.title)}</b>
                   <span>{blocked ?? text(m.summary)}</span>

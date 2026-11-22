@@ -581,6 +581,32 @@ const mission = z.strictObject({
     lesson: i18nKey,
     points: z.array(i18nKey).min(1).max(8),
     reference: z.string().max(80).optional(),
+    /**
+     * For a mission inspired by a documented incident: what really happened, told after the fiction.
+     * The sources are shown as plain text, never as links, and are the only place where a pack may
+     * write a real address.
+     */
+    facts: z
+      .strictObject({
+        title: i18nKey,
+        points: z.array(i18nKey).min(1).max(8),
+        sources: z
+          .array(
+            z.strictObject({
+              label: z.string().min(1).max(120),
+              url: z
+                .string()
+                .max(200)
+                .regex(
+                  /^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(\/[\w\-./%~]*)?$/,
+                  'a plain https address expected',
+                ),
+            }),
+          )
+          .min(1)
+          .max(6),
+      })
+      .optional(),
   }),
   /** Settings of the target for this mission, over the world's. */
   config: z.record(id, scalar).default({}),
@@ -597,6 +623,17 @@ const mission = z.strictObject({
 export type Mission = z.infer<typeof mission>;
 
 /* ---------- pack ---------- */
+
+export const KINDS = ['world', 'mission', 'series'] as const;
+
+/**
+ * A series chains missions of one world into a short campaign: they are played in the order listed,
+ * in a single save, so what the player did in one mission is still there in the next.
+ */
+const series = z.strictObject({
+  missions: z.array(id).min(2).max(12),
+});
+export type Series = z.infer<typeof series>;
 
 export const TRACKS = ['campaign', 'training'] as const;
 export const SKILLS = [
@@ -618,7 +655,7 @@ const packBase = z.strictObject({
   version: z.string().regex(/^\d+\.\d+\.\d+$/),
   /** Engine compatibility range: ">=0.1 <1". */
   engine: z.string().max(40),
-  kind: z.enum(['world', 'mission']),
+  kind: z.enum(KINDS),
   requires: z.array(id).default([]),
   title: i18nText,
   summary: i18nText.optional(),
@@ -632,6 +669,7 @@ const packBase = z.strictObject({
   skills: z.array(z.enum(SKILLS)).max(4).default([]),
   world: world.optional(),
   mission: mission.optional(),
+  series: series.optional(),
   i18n: z.partialRecord(z.enum(LOCALES), z.record(z.string(), z.string().max(8000))).default({}),
 });
 
@@ -642,6 +680,12 @@ export const packSchema = packBase.superRefine((pack, ctx) => {
     ctx.addIssue({ code: 'custom', message: 'a mission pack needs `mission`' });
   if (pack.kind === 'mission' && pack.requires.length === 0)
     ctx.addIssue({ code: 'custom', message: 'a mission pack must require its world pack' });
+  if (pack.kind === 'series' && !pack.series)
+    ctx.addIssue({ code: 'custom', message: 'a series pack needs `series`' });
+  if (pack.kind === 'series' && pack.requires.length === 0)
+    ctx.addIssue({ code: 'custom', message: 'a series pack must require its world pack' });
+  if (pack.kind === 'series' && new Set(pack.series?.missions).size !== pack.series?.missions.length)
+    ctx.addIssue({ code: 'custom', message: 'a series lists each mission once' });
   for (const problem of checkPackSafety(pack)) ctx.addIssue({ code: 'custom', message: problem });
 });
 export type Pack = z.infer<typeof packSchema>;
@@ -657,7 +701,7 @@ export const catalogSchema = z.strictObject({
     z.strictObject({
       id,
       version: z.string(),
-      kind: z.enum(['world', 'mission']),
+      kind: z.enum(KINDS),
       engine: z.string(),
       requires: z.array(id),
       title: i18nText,
@@ -667,6 +711,8 @@ export const catalogSchema = z.strictObject({
       track: z.enum(TRACKS).optional(),
       difficulty: z.number().int().min(1).max(3).optional(),
       skills: z.array(z.enum(SKILLS)).max(4).optional(),
+      /** For a series: its missions in playing order. */
+      missions: z.array(id).max(12).optional(),
       locales: z.array(z.enum(LOCALES)),
       file: z.string().regex(/^[a-z0-9._-]+\.breachpack$/),
       sha256: z.string().regex(/^[0-9a-f]{64}$/),

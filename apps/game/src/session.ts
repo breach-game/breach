@@ -31,7 +31,7 @@ export type StartMode =
   | 'new'
   | 'continue'
   | { replay: string }
-  | { community: CatalogEntry; catalog: Catalog };
+  | { community: CatalogEntry; catalog: Catalog; restart?: boolean };
 
 /** What is being played: the campaign, or a single mission outside it. */
 export type PlayKind = 'campaign' | 'replay' | 'community';
@@ -103,6 +103,19 @@ export async function campaignProgress(): Promise<CampaignProgress> {
   return { completed, current };
 }
 
+/** Progress of a community series, read from its own save: finished missions and the one under way. */
+export async function seriesProgress(series: CatalogEntry): Promise<CampaignProgress> {
+  const save = await get<SaveData>(`save:community:${series.id}@${series.version}`).catch(() => undefined);
+  const log = Array.isArray(save?.log) ? save.log : [];
+  const completed = Object.fromEntries(Object.entries(completedIn(log)).map(([id, m]) => [id, m.score]));
+  let current: string | null = null;
+  for (const e of log) {
+    if (e.type === 'MissionStarted') current = e.mission;
+    if (e.type === 'MissionCompleted' && current === e.mission) current = null;
+  }
+  return { completed, current };
+}
+
 /** Best known result of each mission played on its own (trainings, replays), by id: its last score. */
 export async function singleScores(entries: CatalogEntry[]): Promise<Record<string, number>> {
   const scores: Record<string, number> = {};
@@ -156,8 +169,11 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
   kind = typeof mode !== 'object' ? 'campaign' : 'community' in mode ? 'community' : 'replay';
   const c = await missionsFor(mode, onProgress);
   const single = c.missions[0];
-  saveKey = kind === 'campaign' || !single ? SAVE_KEY : `save:${kind}:${single.id}@${single.version}`;
-  const alone = kind !== 'campaign';
+  // A community series is a small campaign: one save for all its missions, resumed like the campaign.
+  const series = typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series';
+  const saved = series ? mode.community : single;
+  saveKey = kind === 'campaign' || !saved ? SAVE_KEY : `save:${kind}:${saved.id}@${saved.version}`;
+  const alone = kind !== 'campaign' && !series;
   const options = {
     world: c.world,
     missions: c.missions,
@@ -166,7 +182,7 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
   };
   let plan: ResumePlan = { kind: 'fresh' };
   let notice: string | null = null;
-  if (mode !== 'new') {
+  if (mode !== 'new' && !(typeof mode === 'object' && 'restart' in mode && mode.restart)) {
     const save = await get<SaveData>(saveKey).catch(() => undefined);
     plan = planResume(save, c.world, c.missions);
     if (alone && single) {
