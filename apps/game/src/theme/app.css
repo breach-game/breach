@@ -132,6 +132,11 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .caret::after { content: ''; position: absolute; left: 2px; top: 50%; width: 7px; height: 15px; margin-top: -7.5px; background: currentColor; }
 /* What is still to be typed: in the layout, so lines break as in the final message, but unseen. */
 .ghost { visibility: hidden; }
+/* Only as tall as the lines typed so far (height set by `Typing`). */
+.typing-p { overflow: hidden; }
+/* A `code` span being typed: only the typed part has the chip's background, which grows with it. */
+code.typing { background: none; }
+code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px 5px; margin-left: -5px; border-radius: 4px 0 0 4px; }
 
 /* Notebook */
 .notes { height: 100%; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; font: 400 14px/1.4 var(--human); }

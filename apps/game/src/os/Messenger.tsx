@@ -4,7 +4,7 @@ import { playSfx } from '../audio.ts';
 import { resumeSeq, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
-import { reveal, textOf } from './typewriter.tsx';
+import { Typing, textOf } from './typewriter.tsx';
 
 /** Render `code` spans. Anything else is plain text: content never becomes HTML. */
 function rich(text: string): ReactNode[] {
@@ -72,7 +72,7 @@ export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typi
             </div>
             <div>
               <div className="t">ADA · {time(m.t)}</div>
-              <p>{isCurrent ? reveal(rich(text), typed) : rich(game.t(m.key))}</p>
+              {isCurrent ? <Typing shown={typed}>{rich(text)}</Typing> : <p>{rich(game.t(m.key))}</p>}
             </div>
           </div>
         );

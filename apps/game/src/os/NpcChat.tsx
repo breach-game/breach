@@ -4,7 +4,7 @@ import { activeBrain, BRAIN_CALL_LIMIT, BRAIN_USES, reportBrain, useBrain } from
 import { elapsed, resumeSeq, touch, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
-import { reveal, textOf } from './typewriter.tsx';
+import { Typing, textOf } from './typewriter.tsx';
 
 /** Show flags in the success colour and `code` spans. Anything else is plain text. */
 function rich(text: string): ReactNode[] {
@@ -174,8 +174,10 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
                   <i />
                   <i />
                 </p>
+              ) : isCurrent ? (
+                <Typing shown={typed}>{shown(line)}</Typing>
               ) : (
-                <p>{isCurrent ? reveal(shown(line), typed) : shown(line)}</p>
+                <p>{shown(line)}</p>
               )}
             </div>
           );
