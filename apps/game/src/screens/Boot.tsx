@@ -3,6 +3,7 @@ import type { PackProgress } from '../packs.ts';
 import { type StartMode, start } from '../session.ts';
 import { getSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { isOutdated, RecoverScreen } from './Recover.tsx';
 
 interface Line {
   id: number;
@@ -26,6 +27,7 @@ export function Boot({
   const t = useT();
   const [lines, setLines] = useState<Line[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [outdated, setOutdated] = useState(false);
   const started = useRef(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: the boot sequence runs once
@@ -70,11 +72,13 @@ export function Boot({
         await sleep(350);
         onReady();
       } catch (e) {
+        setOutdated(isOutdated(e));
         setError((e as Error).message);
       }
     })();
   }, []);
 
+  if (outdated) return <RecoverScreen outdated />;
   return (
     <div className="boot">
       <div className="boot-log" role="status">

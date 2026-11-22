@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/breach-game/breach/security/advisories/new
+    about: Report vulnerabilities privately, never in a public issue.
+  - name: Idea for a new mission
+    url: https://github.com/breach-game/packs/issues/new/choose
+    about: Missions are written as packs in breach-game/packs. Anyone can write one, no code needed.
+  - name: A community mission is broken
+    url: https://github.com/breach-game/packs/issues/new/choose
+    about: Report problems in community missions in breach-game/packs.

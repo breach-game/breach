@@ -110,7 +110,12 @@ export type EventBody =
   | { type: 'Contained'; containment: string; impact: number }
   | { type: 'AnswerSubmitted'; question: string | null; correct: boolean }
   /** The attacker reached its goal in a defence mission. */
-  | { type: 'MissionFailed'; key: string };
+  | { type: 'MissionFailed'; key: string }
+  /**
+   * Missions finished in an earlier save, kept with their scores: the save could not be replayed
+   * after an update changed its packs, or the player imported a progress file. Always the first event.
+   */
+  | { type: 'ProgressCarried'; missions: Record<string, { score: number }>; source: 'update' | 'import' };
 
 export type GameEvent = EventBody & { seq: number; t: number };
 export type EventType = EventBody['type'];

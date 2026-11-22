@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in the game does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. For a security problem, do not use this form: see SECURITY.md.
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The mission, window or command involved, e.g. "Mission 3, browser window" or "`git log` in the terminal".
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Paste the terminal output if it helps.
+    validations:
+      required: true
+  - type: dropdown
+    id: level
+    attributes:
+      label: Guidance level
+      options:
+        - Guided
+        - Standard
+        - Expert
+        - Not relevant
+  - type: dropdown
+    id: language
+    attributes:
+      label: Game language
+      options:
+        - English
+        - French
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: Firefox 150 on macOS
+  - type: checkboxes
+    id: key
+    attributes:
+      label: Model help
+      options:
+        - label: I had my own API key set in the settings when it happened.
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Optional. Drag an image here. Never paste an API key.

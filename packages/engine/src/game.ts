@@ -80,6 +80,8 @@ const DEFENSE_POINTS = [80, 40, 20];
 export interface SaveData {
   engine: string;
   world: { id: string; version: string };
+  /** Version of each mission pack loaded when the log was recorded. Missing from older saves. */
+  missions?: Record<string, string>;
   locale: Locale;
   log: GameEvent[];
 }
@@ -319,6 +321,7 @@ export class Game {
     return {
       engine: ENGINE_VERSION,
       world: { id: this.worldPack.id, version: this.worldPack.version },
+      missions: Object.fromEntries([...this.missions.values()].map((m) => [m.id, m.version])),
       locale: this.state.locale,
       log: this.log,
     };
@@ -645,6 +648,18 @@ export class Game {
       case 'AnswerSubmitted':
         if (e.correct && e.question) s.answers[e.question] = true;
         break;
+      case 'ProgressCarried': {
+        for (const [id, m] of Object.entries(e.missions))
+          if (this.missions.has(id) && Number.isSafeInteger(m.score) && m.score >= 0)
+            s.completed[id] = { score: m.score };
+        // Every mission already finished: stay on the last one, its debrief still open to read.
+        const last = this.campaign.at(-1);
+        if (last && !this.nextMission()) {
+          s.mission = last.id;
+          s.missionDone = true;
+        }
+        break;
+      }
       default:
         break;
     }

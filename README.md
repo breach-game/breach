@@ -15,11 +15,42 @@ The game is available in English and French.
 
 > **Nothing here is real.** The commands are simulated, the targets are fictional, and the game never sends a single packet to anyone. See [Everything is simulated](#everything-is-simulated).
 
-## Status
+<p align="center">
+  <a href="https://breach-game.github.io/breach/"><b>▶ Play now</b></a> ·
+  <a href="https://github.com/breach-game/packs">Community missions</a> ·
+  <a href="https://github.com/breach-game/docs">Design docs</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
-The four v1 missions are playable end to end, in English and French: 0 "The Mandate", 1 "Footprint" (reconnaissance), 2 "The Talkative Intern" (social engineering) and 3 "Nova Knows Too Much" (prompt injection).
+<p align="center">
+  <a href="https://github.com/breach-game/breach/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/breach-game/breach/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-2DE2FF"></a>
+  <img alt="Languages: English, French" src="https://img.shields.io/badge/languages-EN%20%C2%B7%20FR-9B5CFF">
+  <img alt="Players aged 16 and over" src="https://img.shields.io/badge/players-16%2B-FF3D5A">
+</p>
 
-![LR-OS desktop](docs/screens/lot0-03-carte-nmap.png)
+![The LR-OS desktop after a ping sweep: terminal, Ada's messages, objectives and the network map as wallpaper](docs/screens/readme-terminal-recon.jpg)
+
+## The campaign
+
+Seven missions, playable end to end in English and French. Each one ends with a Blue Team debrief: how to defend against what you just did, the OWASP reference, and the log of everything NovaMind's SOC saw of you.
+
+| # | Mission | You learn |
+| --- | --- | --- |
+| 0 | **The mandate** | Why a pentest starts with a signed contract and a scope |
+| 1 | **Footprint** | Reconnaissance: DNS, network mapping, a secret forgotten in a git history (OWASP A05) |
+| 2 | **The talkative intern** | Social engineering on a support chat (MITRE ATT&CK T1598) |
+| 3 | **Nova knows too much** | Prompt injection and system prompt leakage (OWASP LLM01, LLM07) |
+| 4 | **The trapped CV** | Indirect prompt injection in a document read by an AI (LLM01, LLM06) |
+| 5 | **Too much power** | An AI agent with excessive agency (LLM06) |
+| 6 | **On Mute's trail** | Incident response: retrace an intruder's path without changing anything (MITRE ATT&CK) |
+
+Three guidance levels: **Guided** (Ada gives every command), **Standard** (Ada gives the direction) and **Expert** (briefing and objectives only). The more you play on your own, the higher the score multiplier. Missions written by players appear under *Community missions* on the title screen.
+
+| | |
+| --- | --- |
+| ![The network map: each discovered host lights up, AI systems in violet](docs/screens/readme-network-map.jpg) | ![Talking to Nova, NovaMind's chatbot, in the in-game browser](docs/screens/readme-prompt-injection.jpg) |
+| ![The Blue Team debrief with score, defender advice and the SOC log](docs/screens/readme-blue-team-debrief.jpg) | ![The title screen](docs/screens/readme-title.jpg) |
 
 ## Everything is simulated
 
@@ -63,7 +94,7 @@ pnpm packs:check  # validates the content
 pnpm build        # static site in apps/game/dist
 ```
 
-Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically. Security model and how to report a problem: [SECURITY.md](SECURITY.md).
+Going live: [docs/deploy.md](docs/deploy.md). GitHub Pages publishes the game after every merge to `main`; saves survive updates that do not touch the mission in progress. Security model and how to report a problem: [SECURITY.md](SECURITY.md).
 
 | Folder | Role |
 | --- | --- |
@@ -78,6 +109,10 @@ A mission is a declarative pack with no code. Official missions live in `content
 
 Design documents (game design, architecture, reviews, mockups) live in [breach-game/docs](https://github.com/breach-game/docs).
 
+## Contributing
+
+Bug reports, ideas and fixes are welcome: read [CONTRIBUTING.md](CONTRIBUTING.md) first. To write a mission, you need no code at all: see the [pack guide](https://github.com/breach-game/packs/blob/main/CONTRIBUTING.md). Everyone taking part follows the [Code of Conduct](https://github.com/breach-game/.github/blob/main/CODE_OF_CONDUCT.md). Security problems go through [private reporting](SECURITY.md), never a public issue.
+
 ## License
 
-MIT, see [LICENSE](LICENSE).
+The code and the official missions are under the MIT licence, see [LICENSE](LICENSE). The fonts bundled through `@fontsource` (Space Grotesk, JetBrains Mono) are under the SIL Open Font License 1.1. The brand kit lives in [breach-game/.github](https://github.com/breach-game/.github/tree/main/brand), under CC BY 4.0.
