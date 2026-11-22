@@ -1,4 +1,12 @@
 export { GUIDANCE_LEVELS, type Guidance } from '@breach/pack-schema';
+export {
+  acceptWording,
+  BrainError,
+  type BrainInput,
+  type BrainIssue,
+  type NpcBrain,
+  splitReply,
+} from './brain.ts';
 export { commands } from './commands/index.ts';
 export type { Chunk, Command } from './commands/types.ts';
 export type { EventBody, EventType, GameEvent } from './events.ts';

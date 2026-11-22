@@ -1,5 +1,6 @@
 import { gameDate, socLevel } from '@breach/engine';
 import { useState } from 'react';
+import { useBrain } from '../brain.ts';
 import { Mark } from '../brand.tsx';
 import { liveClock, useGame } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
@@ -11,13 +12,15 @@ interface Props {
   noise: number;
   onResetLayout(): void;
   onQuit(): void;
+  onBrain(): void;
 }
 
-export function StatusBar({ noise, onResetLayout, onQuit }: Props) {
+export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
   const game = useGame();
   const t = useT();
   const settings = useSettings();
   const [menu, setMenu] = useState(false);
+  const brain = useBrain();
   const pack = game.state.mission ? game.missions.get(game.state.mission) : undefined;
   const title = pack?.title[settings.locale] ?? pack?.title.fr ?? pack?.title.en ?? '';
   const level = socLevel(noise);
@@ -124,6 +127,21 @@ export function StatusBar({ noise, onResetLayout, onQuit }: Props) {
                 onClick={() => updateSettings({ effects: false })}
               >
                 {t('off')}
+              </button>
+            </span>
+          </div>
+          <div className="row">
+            {t('settings.brain')}
+            <span className="seg">
+              <button
+                type="button"
+                data-ai={brain.config.key ? 'on' : 'off'}
+                onClick={() => {
+                  onBrain();
+                  setMenu(false);
+                }}
+              >
+                {t(brain.config.key ? 'settings.brain.on' : 'settings.brain.off')} ›
               </button>
             </span>
           </div>

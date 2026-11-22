@@ -1,8 +1,9 @@
 import { gameDate } from '@breach/engine';
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import { activeBrain, reportBrain, useBrain } from '../brain.ts';
 import { elapsed, resumeSeq, touch, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
-import { useT } from '../ui.ts';
+import { type UiKey, useT } from '../ui.ts';
 
 /** Show flags in the success colour and `code` spans. Anything else is plain text. */
 function rich(text: string): ReactNode[] {
@@ -19,8 +20,9 @@ function rich(text: string): ReactNode[] {
 }
 
 /**
- * A conversation with a character, embedded in a page. The engine's scripted brain answers at
- * once; this component only stages the reply (a pause, then the text typed out).
+ * A conversation with a character, embedded in a page. The engine's scripted brain decides the
+ * answer at once; this component stages it (a pause, then the text typed out). When the player has
+ * set their own API key, a model words that answer first, and the wait shows as the same pause.
  */
 export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
   const game = useGame();
@@ -32,6 +34,9 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
   // Number of lines fully shown. What was said before this window opened is shown at once.
   const [settled, setSettled] = useState(lines.length);
   const [typed, setTyped] = useState(-1);
+  // Waiting for a model to word the reply.
+  const [pending, setPending] = useState(false);
+  const brain = useBrain();
   const log = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -66,21 +71,30 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
   useEffect(() => {
     // Scroll the conversation itself, not the page around it.
     if (log.current) log.current.scrollTop = log.current.scrollHeight;
-  }, [typed, settled, lines.length]);
+  }, [typed, settled, lines.length, pending]);
 
   useEffect(() => {
     if (active) input.current?.focus({ preventScroll: true });
   }, [active]);
 
   if (!npc) return null;
-  const busy = current !== undefined;
+  const busy = current !== undefined || pending;
   const time = (ms: number) => gameDate(game.world.startTime, ms).time.slice(0, 5);
   const send = (e: FormEvent) => {
     e.preventDefault();
     const message = draft.trim();
     if (!message || busy) return;
     setDraft('');
-    game.chat(npcId, message, 'browser', elapsed());
+    const model = activeBrain();
+    if (model) {
+      setPending(true);
+      void game
+        .converse(npcId, message, model, elapsed())
+        .then((r) => {
+          if (r.ok) reportBrain(r.issue ?? 'ok');
+        })
+        .finally(() => setPending(false));
+    } else game.chat(npcId, message, 'browser', elapsed());
     box.current?.scrollIntoView({ block: 'nearest' });
     touch();
   };
@@ -99,6 +113,19 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
             {game.t(npc.role)}
           </small>
         </span>
+        {brain.config.key && (
+          <span
+            className="voice"
+            data-tone={brain.last === null || brain.last === 'ok' ? 'on' : 'warn'}
+            title={t(
+              brain.last === null || brain.last === 'ok'
+                ? 'brain.state.on'
+                : (`brain.issue.${brain.last}` as UiKey),
+            )}
+          >
+            {t(brain.last === null || brain.last === 'ok' ? 'chat.voice.on' : 'chat.voice.script')}
+          </span>
+        )}
       </header>
       <div className="npc-log scroll" aria-live="polite" ref={log}>
         {npc.greeting && (
@@ -130,6 +157,16 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
             </div>
           );
         })}
+        {pending && settled >= lines.length && (
+          <div className="msg npc">
+            <span className="who">{npc.name}</span>
+            <p className="dots" role="status" aria-label={t('chat.typing', { name: npc.name })}>
+              <i />
+              <i />
+              <i />
+            </p>
+          </div>
+        )}
       </div>
       <form onSubmit={send}>
         <input
