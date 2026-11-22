@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Wordmark } from '../brand.tsx';
 import { eraseSave, hasSave } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
-import { useT } from '../ui.ts';
+import { type UiKey, useT } from '../ui.ts';
+
+const LEVELS = ['guided', 'standard', 'expert'] as const;
 
 const MIN_WIDTH = 900;
 
@@ -10,6 +12,7 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
   const t = useT();
   const settings = useSettings();
   const [save, setSave] = useState<boolean | null>(null);
+  const [picking, setPicking] = useState(false);
   const [wide, setWide] = useState(window.innerWidth >= MIN_WIDTH);
 
   useEffect(() => {
@@ -27,7 +30,27 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
           {t('title.tagline')}
           <span className="cursor" />
         </div>
-        {wide ? (
+        {wide && picking ? (
+          <div className="levels" role="group" aria-label={t('title.level')}>
+            <div className="levels-title">{t('title.level')}</div>
+            {LEVELS.map((g, i) => (
+              <button
+                key={g}
+                type="button"
+                className="level"
+                autoFocus={i === 0}
+                onClick={() => {
+                  updateSettings({ guidance: g });
+                  onStart('new');
+                }}
+              >
+                <b>{t(`guidance.${g}` as UiKey)}</b>
+                <span>{t(`guidance.${g}.desc` as UiKey)}</span>
+              </button>
+            ))}
+            <div className="levels-note">{t('title.level.note')}</div>
+          </div>
+        ) : wide ? (
           <div className="title-actions">
             {save ? (
               <>
@@ -39,7 +62,8 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
                   className="btn"
                   onClick={async () => {
                     await eraseSave();
-                    onStart('new');
+                    setSave(false);
+                    setPicking(true);
                   }}
                 >
                   {t('title.restart')}
@@ -51,7 +75,7 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
                 className="btn primary"
                 autoFocus
                 disabled={save === null}
-                onClick={() => onStart('new')}
+                onClick={() => setPicking(true)}
               >
                 {t('title.new')}
               </button>

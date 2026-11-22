@@ -1,4 +1,4 @@
-import { type Pack, parsePack } from '@breach/pack-schema';
+import { type Guidance, type Pack, parsePack } from '@breach/pack-schema';
 import { type Chunk, Game, sha256, stripAnsi } from '../src/index.ts';
 
 export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
@@ -107,18 +107,30 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
           do: [{ 'objective.complete': 'scan' }, { 'checkpoint.save': 'scanned' }],
         },
         { on: { event: 'CommandRun', command: 'whoami' }, do: [{ 'objective.complete': 'bonus' }] },
+        { on: { event: 'CommandRun', command: 'pwd' }, do: [{ 'ada.guide': 'g.pwd' }] },
+        { on: { event: 'CommandRun', command: 'id' }, do: [{ 'ada.guide': 'g.id' }] },
       ],
       hints: { scan: ['h1', 'h2'] },
       debrief: { title: 'd.t', lesson: 'd.l', points: ['d.p'] },
     },
-    i18n: { en: { brief: 'Brief', hello: 'Hello', h1: 'Hint one', h2: 'Hint two' } },
+    i18n: {
+      en: {
+        brief: 'Brief',
+        hello: 'Hello',
+        'g.pwd': 'Type pwd',
+        'g.pwd.standard': 'Find where you are',
+        'g.id': 'Type id',
+        h1: 'Hint one',
+        h2: 'Hint two',
+      },
+    },
   });
   return { world, mission };
 }
 
-export async function newGame() {
+export async function newGame(guidance?: Guidance) {
   const { world, mission } = await fixture();
-  const game = new Game({ world, missions: [mission], locale: 'en' });
+  const game = new Game({ world, missions: [mission], locale: 'en', guidance });
   game.startMission(mission.id);
   return game;
 }

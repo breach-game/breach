@@ -31,6 +31,13 @@ describe('official content', () => {
     },
   );
 
+  it('mission 1 never leaves a guided player without a next step', async () => {
+    const m1 = missions.find((m) => m.pack.id === 'breach.official.m01')!;
+    const lines = ['dig novamind.test ANY', 'nmap -sn 10.13.0.0/24', 'curl https://www.novamind.test/'];
+    const { game } = await replaySolution(world, m1.pack, lines, 'fr');
+    expect(game.state.messages.at(-1)?.key).toBe('m1.ada.home');
+  });
+
   it('compiles to gzipped packs and a valid catalogue', () => {
     const { catalog, files } = buildAll(packs, new Date(0));
     expect(catalogSchema.parse(catalog).campaign).toEqual(['breach.official.m00', 'breach.official.m01']);

@@ -17,6 +17,18 @@ describe('missions and rules', () => {
     expect((await run(g, 'submit FLAG{x}')).out).toContain('already');
   });
 
+  it('adapts Ada to the guidance level: commands, directions, or silence', async () => {
+    const keys = async (guidance: 'guided' | 'standard' | 'expert') => {
+      const g = await newGame(guidance);
+      await run(g, 'pwd');
+      await run(g, 'id');
+      return g.state.messages.map((m) => m.key);
+    };
+    expect(await keys('guided')).toEqual(['hello', 'g.pwd', 'g.id']);
+    expect(await keys('standard')).toEqual(['hello', 'g.pwd.standard']);
+    expect(await keys('expert')).toEqual(['hello']);
+  });
+
   it('never stores a flag in clear text', async () => {
     const { mission } = await fixture();
     expect(JSON.stringify(mission)).not.toContain('FLAG{x}');

@@ -44,7 +44,7 @@ const mix = (a: string, b: string, t: number) => {
 export function Desktop({ onQuit }: { onQuit(): void }) {
   const game = useGame();
   const t = useT();
-  const { effects, locale } = useSettings();
+  const { effects, locale, guidance } = useSettings();
   const [layout, setLayout] = useState(defaultLayout);
   const [order, setOrder] = useState<WinId[]>(['notes', 'ada', 'terminal']);
   const [noise, setNoise] = useState(() => liveNoise(game));
@@ -64,6 +64,9 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
 
   // The game speaks the interface language.
   useEffect(() => game.setLocale(locale), [game, locale]);
+  useEffect(() => {
+    game.guidance = guidance;
+  }, [game, guidance]);
 
   // Live gauge: noise decays between commands.
   useEffect(() => {

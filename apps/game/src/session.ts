@@ -52,7 +52,7 @@ export async function start(mode: 'new' | 'continue', onProgress?: (p: PackProgr
     // A save only replays on the world version it was recorded with.
     if (save && save.world.id === c.world.id && save.world.version === c.world.version) log = save.log;
   }
-  game = new Game({ world: c.world, missions: c.missions, locale, log });
+  game = new Game({ world: c.world, missions: c.missions, locale, guidance: getSettings().guidance, log });
   resumedAt = game.log.at(-1)?.seq ?? 0;
   game.subscribe((event) => {
     for (const l of eventListeners) l(event);

@@ -16,32 +16,39 @@ rules:
   - on: { event: MissionStarted }
     do:
       - ada.say: m1.ada.brief
-      - ada.say: m1.ada.dns
+      - ada.guide: m1.ada.dns
   - on: { event: DnsQuery, name: { glob: "*novamind.test" }, found: true }
     do:
       - objective.complete: dns
-      - ada.say: m1.ada.nmap
+      - ada.guide: m1.ada.nmap
   - on: { event: Scan }
     do:
-      - ada.say: m1.ada.scanning
+      - ada.guide: m1.ada.scanning
   - on: { event: HostDiscovered }
     if: { discovered: { gte: 4 } }
     do:
       - objective.complete: map
       - checkpoint.save: mapped
-      - ada.say: m1.ada.web
+      - ada.guide: m1.ada.web
+  - on: { event: HttpRequest, host: www, path: / }
+    if: { not: { objective: find-repo } }
+    do:
+      - ada.guide: m1.ada.home
+  - on: { event: HttpRequest, host: www, path: /staging }
+    do:
+      - ada.say: m1.ada.staging
   - on: { event: HttpRequest, host: www, path: /careers }
     do:
-      - ada.say: m1.ada.careers
+      - ada.guide: m1.ada.careers
   - on: { event: HttpRequest, host: git, status: 200 }
     do:
       - objective.complete: find-repo
-      - ada.say: m1.ada.clone
+      - ada.guide: m1.ada.clone
   - on: { event: RepoCloned }
     do:
       - objective.complete: find-repo
       - checkpoint.save: cloned
-      - ada.say: m1.ada.history
+      - ada.guide: m1.ada.history
   - on: { event: CommitViewed, commit: { in: ["9f2c1e4", "3ab77d0"] } }
     do:
       - ada.say: m1.ada.secret

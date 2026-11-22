@@ -1,6 +1,6 @@
 import { socView } from '@breach/engine';
 import { useGame } from '../session.ts';
-import { useT } from '../ui.ts';
+import { type UiKey, useT } from '../ui.ts';
 
 /**
  * End-of-mission debrief: the defender's lesson, and the player's own commands as the target's
@@ -30,6 +30,10 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
         <span>
           {t('debrief.hints')}
           <b>{game.state.hintsUsed}</b>
+        </span>
+        <span>
+          {t('debrief.level')}
+          <b>{t(`guidance.${game.guidance}` as UiKey)}</b>
         </span>
       </div>
       <p>{game.t(mission.debrief.lesson)}</p>
