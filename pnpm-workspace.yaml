@@ -1,6 +1,6 @@
 packages:
   - packages/*
   - apps/*
-onlyBuiltDependencies:
-  - esbuild
-  - '@biomejs/biome'
+allowBuilds:
+  esbuild: true
+  '@biomejs/biome': true

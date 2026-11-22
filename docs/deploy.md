@@ -7,7 +7,7 @@ Rien n'est publié automatiquement. Les deux voies ci-dessous demandent une acti
 ## Voie 1 : Cloudflare Pages
 
 1. Dans Cloudflare, créer un projet Pages relié au dépôt `breach-game/breach`.
-2. Commande de build : `pnpm install --frozen-lockfile && pnpm build`. Dossier de sortie : `apps/game/dist`. Variable `NODE_VERSION` : `22`.
+2. Commande de build : `pnpm install --frozen-lockfile && pnpm build`. Dossier de sortie : `apps/game/dist`. Variable `NODE_VERSION` : `26`.
 3. Brancher le domaine choisi.
 
 Le build écrit un fichier `_headers` que Cloudflare Pages applique : politique de sécurité du contenu en en-tête (avec `frame-ancestors 'none'`, que la balise meta ne peut pas exprimer), `nosniff`, pas de référent, permissions fermées, cache long sur `/assets/` et pas de cache sur le catalogue des packs.
