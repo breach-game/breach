@@ -11,12 +11,25 @@ import { getSettings } from './settings.ts';
 
 const SAVE_KEY = 'save:campaign';
 
-/** How a game starts: the official campaign, new or resumed, or one community mission. */
-export type StartMode = 'new' | 'continue' | { community: CatalogEntry; catalog: Catalog };
+/**
+ * How a game starts: the official campaign, new or resumed; one official mission the player has
+ * already reached, replayed on its own; or one community mission.
+ */
+export type StartMode =
+  | 'new'
+  | 'continue'
+  | { replay: string }
+  | { community: CatalogEntry; catalog: Catalog };
 
-/** Where the running game is saved. Each community mission has its own save, apart from the campaign. */
+/** What is being played: the campaign, or a single mission outside it. */
+export type PlayKind = 'campaign' | 'replay' | 'community';
+
+/**
+ * Where the running game is saved. A replayed or community mission has its own save, apart from
+ * the campaign, so playing it never changes the campaign's progress or score.
+ */
 let saveKey = SAVE_KEY;
-let community = false;
+let kind: PlayKind = 'campaign';
 
 let game: Game | null = null;
 let campaign: Campaign | null = null;
@@ -51,18 +64,48 @@ export async function prepare(onProgress?: (p: PackProgress) => void): Promise<C
   return campaign;
 }
 
+export interface CampaignProgress {
+  /** Score of each finished mission, by id. */
+  completed: Record<string, number>;
+  /** The mission the campaign is on, if one was started and not finished. */
+  current: string | null;
+}
+
+/** Progress of the saved campaign, read from its event log without starting a game. */
+export async function campaignProgress(): Promise<CampaignProgress> {
+  const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
+  const completed: Record<string, number> = {};
+  let current: string | null = null;
+  for (const e of save?.log ?? []) {
+    if (e.type === 'MissionStarted') current = e.mission;
+    if (e.type === 'MissionCompleted') {
+      completed[e.mission] = e.score;
+      if (current === e.mission) current = null;
+    }
+  }
+  return { completed, current };
+}
+
+/** The missions a mode plays: the whole campaign, or just one mission. */
+async function missionsFor(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Campaign> {
+  if (typeof mode !== 'object') return prepare(onProgress);
+  if ('community' in mode) return loadCommunityMission(mode.community, mode.catalog, onProgress);
+  const c = await prepare(onProgress);
+  const mission = c.missions.find((m) => m.id === mode.replay);
+  if (!mission) throw new Error(`${mode.replay}: not a mission of this campaign`);
+  return { ...c, missions: [mission] };
+}
+
 /**
- * Start a new campaign, or resume the saved one. A community mission resumes where the player left
- * it, unless it was finished: then it starts over.
+ * Start a new campaign, or resume the saved one. A single mission (replayed or from the community)
+ * resumes where the player left it, unless it was finished: then it starts over.
  */
 export async function start(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Game> {
-  community = typeof mode === 'object';
-  const c =
-    typeof mode === 'object'
-      ? await loadCommunityMission(mode.community, mode.catalog, onProgress)
-      : await prepare(onProgress);
-  saveKey =
-    typeof mode === 'object' ? `save:community:${mode.community.id}@${mode.community.version}` : SAVE_KEY;
+  kind = typeof mode !== 'object' ? 'campaign' : 'community' in mode ? 'community' : 'replay';
+  const c = await missionsFor(mode, onProgress);
+  const single = c.missions[0];
+  saveKey = kind === 'campaign' || !single ? SAVE_KEY : `save:${kind}:${single.id}@${single.version}`;
+  const community = kind !== 'campaign';
   const locale = getSettings().locale;
   let log: GameEvent[] | undefined;
   if (mode !== 'new') {
@@ -89,8 +132,8 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
   return game;
 }
 
-/** Is the running game a community mission, played outside the campaign? */
-export const isCommunity = () => community;
+/** What the running game is: the campaign, a replayed mission or a community mission. */
+export const playKind = (): PlayKind => kind;
 
 export async function eraseSave() {
   clearTimeout(saveTimer);

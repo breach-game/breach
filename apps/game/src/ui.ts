@@ -13,6 +13,20 @@ const fr = {
   'title.error': 'Impossible de charger les missions.',
   'title.retry': 'Réessayer',
   'title.community': 'Missions de la communauté',
+  'title.missions': 'Rejouer une mission',
+  'missions.title': 'Missions de la campagne',
+  'missions.intro':
+    'Rejoue une mission déjà atteinte, à un autre niveau ou pour faire mieux. Ta partie de campagne et son score ne changent pas.',
+  'missions.done': 'terminée · {score} pts',
+  'missions.current': 'en cours',
+  'missions.next': 'à suivre',
+  'missions.locked': 'verrouillée',
+  'missions.lockedHint': 'Termine les missions précédentes pour la débloquer.',
+  'missions.resume': 'La campagne reprend ici : utilise « Continuer ».',
+  'missions.level': 'Choisis ton niveau pour « {title} »',
+  'debrief.replay.title': 'Mission rejouée',
+  'debrief.replay.body':
+    "Ce score ne remplace pas celui de ta campagne. Retourne à l'écran titre pour rejouer une autre mission ou reprendre l'enquête.",
   'community.intro':
     "Écrites par des joueurs, relues par l'équipe BREACH avant publication. Chacune se joue seule, en dehors de la campagne.",
   'community.loading': 'Lecture du catalogue communautaire…',
@@ -222,6 +236,20 @@ const en: typeof fr = {
   'title.error': 'Could not load the missions.',
   'title.retry': 'Retry',
   'title.community': 'Community missions',
+  'title.missions': 'Replay a mission',
+  'missions.title': 'Campaign missions',
+  'missions.intro':
+    'Replay a mission you have already reached, at another level or to do better. Your campaign and its score do not change.',
+  'missions.done': 'finished · {score} pts',
+  'missions.current': 'in progress',
+  'missions.next': 'up next',
+  'missions.locked': 'locked',
+  'missions.lockedHint': 'Finish the previous missions to unlock it.',
+  'missions.resume': 'The campaign carries on here: use “Continue”.',
+  'missions.level': 'Choose your level for “{title}”',
+  'debrief.replay.title': 'Mission replayed',
+  'debrief.replay.body':
+    'This score does not replace your campaign score. Go back to the title screen to replay another mission or resume the investigation.',
   'community.intro':
     'Written by players, reviewed by the BREACH team before they are published. Each one is played on its own, outside the campaign.',
   'community.loading': 'Reading the community catalogue…',

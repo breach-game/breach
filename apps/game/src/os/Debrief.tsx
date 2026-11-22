@@ -1,6 +1,6 @@
 import { LEVEL_BONUS, socView } from '@breach/engine';
 import { useEffect, useRef } from 'react';
-import { isCommunity, useGame } from '../session.ts';
+import { playKind, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 
@@ -79,7 +79,7 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           {t('debrief.reference')} : {mission.debrief.reference}
         </div>
       )}
-      <h3>{t(isCommunity() ? 'debrief.soc.community' : 'debrief.soc')}</h3>
+      <h3>{t(playKind() === 'community' ? 'debrief.soc.community' : 'debrief.soc')}</h3>
       {entries.length ? (
         <>
           <div className="soclog">
@@ -103,13 +103,19 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
       ) : (
         <p className="fine">{t('debrief.soc.none')}</p>
       )}
-      {!next && isCommunity() && (
+      {!next && playKind() === 'community' && (
         <>
           <h3>{t('debrief.community.title')}</h3>
           <p>{t('debrief.community.body')}</p>
         </>
       )}
-      {!next && !isCommunity() && (
+      {!next && playKind() === 'replay' && (
+        <>
+          <h3>{t('debrief.replay.title')}</h3>
+          <p>{t('debrief.replay.body')}</p>
+        </>
+      )}
+      {!next && playKind() === 'campaign' && (
         <>
           <h3>{t('debrief.end.title')}</h3>
           <p>{t('debrief.end.body')}</p>
