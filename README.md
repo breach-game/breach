@@ -35,6 +35,8 @@ pnpm packs:check  # validates the content
 pnpm build        # static site in apps/game/dist
 ```
 
+Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically.
+
 | Folder | Role |
 | --- | --- |
 | `packages/engine` | deterministic engine, no DOM |

@@ -131,6 +131,39 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
             </span>
           </div>
           <div className="row">
+            {t('settings.sound')}
+            <span className="seg">
+              <button
+                type="button"
+                aria-pressed={settings.sound}
+                onClick={() => updateSettings({ sound: true })}
+              >
+                {t('sound.on')}
+              </button>
+              <button
+                type="button"
+                aria-pressed={!settings.sound}
+                onClick={() => updateSettings({ sound: false })}
+              >
+                {t('sound.off')}
+              </button>
+            </span>
+          </div>
+          {(['music', 'sfx'] as const).map((k) => (
+            <label className="row" key={k}>
+              {t(`settings.${k}`)}
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={Math.round(settings[k] * 100)}
+                disabled={!settings.sound}
+                onChange={(e) => updateSettings({ [k]: Number(e.target.value) / 100 })}
+              />
+            </label>
+          ))}
+          <div className="row">
             {t('settings.brain')}
             <span className="seg">
               <button
