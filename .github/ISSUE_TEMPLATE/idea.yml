@@ -1,0 +1,27 @@
+name: Idea or improvement
+description: Suggest a feature, a command, an interface change or a better explanation.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New missions are written as packs in [breach-game/packs](https://github.com/breach-game/packs). Use this form for the game itself.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What would change for the player, and why it would help them learn or enjoy the game.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Mockups, references, similar games, links to OWASP pages.
+  - type: checkboxes
+    id: frame
+    attributes:
+      label: Framework
+      options:
+        - label: The idea keeps everything simulated, with fictional targets and no real exploit.
+          required: true
