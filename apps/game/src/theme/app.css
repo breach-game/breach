@@ -296,6 +296,21 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .brain label input:focus-visible, .brain select:focus-visible { outline: none; border-color: var(--ai); }
 .brain label.check { flex-direction: row; align-items: center; gap: 10px; min-height: 44px; font: 400 13.5px/1.4 var(--human); letter-spacing: 0; text-transform: none; color: var(--text); cursor: pointer; }
 .brain label.check input { width: 18px; height: 18px; accent-color: var(--ai); }
+.brain .uses { margin: 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.brain .uses legend { padding: 0 6px; font: 500 11px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.brain .use { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; border-bottom: 1px dashed var(--line); }
+.brain .use label.check { align-items: flex-start; }
+.brain .use label.check input { margin-top: 3px; flex: none; }
+.brain .use label.check span { display: flex; flex-direction: column; gap: 3px; }
+.brain .use label.check b { font: 600 14.5px var(--human); color: #fff; }
+.brain .use label.check small { font: 400 13px/1.45 var(--human); color: var(--text-2); }
+.brain .use[data-on='true'] label.check b::before { content: '◆ '; color: var(--ai); }
+.brain .use-model { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-left: 28px; }
+.brain .use-model select { flex: 1 1 360px; max-width: 420px; min-width: 0; }
+.brain .use-model select:disabled { opacity: 0.45; }
+.brain .use-model .cost { font: 400 12.5px var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+.brain .use[data-on='false'] .cost { color: var(--text-2); }
+.brain .uses .total { font: 400 13px/1.45 var(--human); color: var(--text); }
 .brain .state { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line); font: 400 13px/1.4 var(--human); }
 .brain .state i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
 .brain .usage { font: 400 12px/1.4 var(--mono); color: var(--text-2); }

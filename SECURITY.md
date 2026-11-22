@@ -24,11 +24,19 @@ Please use GitHub's private vulnerability reporting: **Security > Report a vulne
 
 ## Bring your own key
 
-The optional character voices use the player's own Anthropic API key:
+The optional model help uses the player's own Anthropic API key. The player switches on each use separately, picks its model, and sees an estimate of what it costs per message and per campaign, plus what this tab has spent so far:
+
+- **Understand my messages**: a model reads the player's message and names which of the character's word groups and which technique families it means, even when worded freely. Its answer is constrained to JSON and checked by the engine (`acceptHearing`): only groups from the character's vocabulary and families from the engine's fixed list are kept. So a model, even one the player manipulates through prompt injection, can only add what the player could have typed. Intents marked `literal` (names and code words found during the mission) never take a model's word for it, and their words are never sent to the model. The scripted brain then decides as usual.
+- **Reword the replies**: the model only rewords a line the script has already chosen; it never sees a secret before the script gives it away, and the engine rejects any wording that adds, drops or invents a flag.
+
+For both uses:
 
 - the key is kept in session storage (or local storage if the player asks), never in the save, and is sent only to `api.anthropic.com`;
-- the model only rewords a line the script has already chosen; it never sees a secret before the script gives it away, and the engine rejects any wording that adds, drops or invents a flag;
-- one tab asks for at most 150 model replies, so a stuck key cannot run up a bill. The settings screen recommends a key made for the game, with a spending limit.
+- the model has no tools and its text is only ever shown as text; on any error, refusal, failed check or delay, the script works alone and the player is never blocked;
+- what the model understood is recorded in the save, so a resumed game replays without calling it;
+- each use is capped at 150 calls per tab, so a stuck key cannot run up a bill. The settings screen recommends a key made for the game, with a spending limit.
+
+Pack text that reaches the model (a character's vocabulary and style sheet, a scripted line) is schema-checked like any pack content. A hostile community pack could at worst steer what a model hears or says, which the checks above bound to what the pack's own script already allows.
 
 ## Known limits
 

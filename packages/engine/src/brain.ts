@@ -1,13 +1,33 @@
-import type { Locale } from '@breach/pack-schema';
+import type { Family, Locale } from '@breach/pack-schema';
 
 /**
- * A language model that gives a character its voice. It never decides anything: the scripted
- * brain picks the reply, and a model may only say that same reply in other words.
+ * A language model that helps a character, in up to two ways the player chooses. It never decides
+ * anything: the scripted brain picks the reply.
+ * - `hear` interprets the player's message: it names which of the character's own word groups and
+ *   which technique families the message means, even when worded freely. The engine keeps only
+ *   what is in those closed lists, so a model can never give more than the player could type.
+ * - `reply` says the reply the script chose, in other words.
  */
 export interface NpcBrain {
   id: 'webllm' | 'gateway' | 'byok';
   isAvailable(): Promise<boolean>;
-  reply(input: BrainInput): Promise<{ text: string }>;
+  hear?(input: HearInput): Promise<{ words: unknown; families: unknown }>;
+  reply?(input: BrainInput): Promise<{ text: string }>;
+}
+
+export interface HearInput {
+  npcId: string;
+  name: string;
+  role: string;
+  kind: 'human' | 'ai';
+  /** The last lines of the conversation, oldest first, without the new message. */
+  history: { from: 'player' | 'npc'; text: string }[];
+  message: string;
+  locale: Locale;
+  /** The word groups the character listens for, normalized (lower case, no accents). */
+  vocabulary: string[];
+  /** The technique families the engine knows. */
+  families: readonly Family[];
 }
 
 export interface BrainInput {

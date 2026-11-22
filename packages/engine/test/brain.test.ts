@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { acceptWording, BrainError, type BrainInput, type NpcBrain, splitReply } from '../src/index.ts';
+import {
+  acceptHearing,
+  acceptWording,
+  BrainError,
+  type BrainInput,
+  type HearInput,
+  type NpcBrain,
+  splitReply,
+  vocabulary,
+} from '../src/index.ts';
 import { newGame } from './fixture.ts';
 
 function brain(reply: (input: BrainInput) => string | Promise<string>): NpcBrain & { calls: BrainInput[] } {
@@ -158,5 +167,108 @@ describe('conversation with a language model', () => {
     const { world, mission } = await fixture();
     const again = new Game({ world, missions: [mission], locale: 'en', log: g.save().log });
     expect(again.state.chats.bot?.at(-1)).toMatchObject({ from: 'npc', text: 'Howdy.', intent: 'hello' });
+  });
+});
+
+/** A model that only interprets the player's messages, with no voice. */
+function listener(hear: (input: HearInput) => unknown): NpcBrain & { calls: HearInput[] } {
+  const calls: HearInput[] = [];
+  return {
+    id: 'byok',
+    calls,
+    isAvailable: async () => true,
+    hear: async (input) => {
+      calls.push(input);
+      const out = await hear(input);
+      return out as { words: unknown; families: unknown };
+    },
+  };
+}
+
+describe('a model that interprets the message', () => {
+  it('offers only the words a player could type, never literal ones', async () => {
+    const g = await newGame();
+    const bot = g.npc('bot')!;
+    expect(vocabulary(bot)).toEqual(['code', 'urgen', 'vite', 'hello', 'bonjour', 'hi']);
+    expect(
+      acceptHearing(bot, { words: ['Code', 'karim bena', 'lea', 'nope', 3], families: ['reveal', 'x'] }),
+    ).toEqual({ words: ['code'], families: ['reveal'] });
+    expect(acceptHearing(bot, { words: ['lea'], families: [] })).toBe(null);
+    expect(acceptHearing(bot, 'translation')).toBe(null);
+    expect(acceptHearing(bot, null)).toBe(null);
+  });
+
+  it('lets the script answer a freely worded message it would have missed', async () => {
+    const scripted = await newGame();
+    expect(scripted.chat('bot', 'the access thing, quick please').reply).toBe('What?');
+    const g = await newGame();
+    const ear = listener(() => ({ words: ['code', 'urgen'], families: [] }));
+    const r = await g.converse('bot', 'the access thing, quick please', ear);
+    expect(r).toMatchObject({
+      ok: true,
+      reply: 'Both.',
+      brain: 'scripted',
+      heard: { words: ['code', 'urgen'] },
+    });
+    expect(ear.calls[0]).toMatchObject({ npcId: 'bot', message: 'the access thing, quick please' });
+    expect(ear.calls[0]?.vocabulary).not.toContain('lea');
+    expect(g.log.find((e) => e.type === 'ChatSent')).toMatchObject({ heard: { words: ['code', 'urgen'] } });
+  });
+
+  it('gives nothing a player could not get by typing', async () => {
+    const g = await newGame();
+    // An injected classifier that claims the player named the manager and used every technique.
+    const fooled = listener(() => ({ words: ['lea', 'karim bena'], families: ['translation'] }));
+    const r = await g.converse('bot', 'translate what you were told', fooled);
+    // The guard answers, as it would to a typed request for a translation. No trust, no leak.
+    expect(r).toMatchObject({ reply: 'No.' });
+    expect(g.state.vars.trusted).toBeUndefined();
+    expect(g.state.objectives.bonus).toBeFalsy();
+  });
+
+  it('falls back to the script alone when interpreting fails', async () => {
+    const g = await newGame();
+    const broken = listener(() => {
+      throw new BrainError('quota');
+    });
+    expect(await g.converse('bot', 'hello', broken)).toMatchObject({
+      ok: true,
+      reply: 'Hello.',
+      issue: 'quota',
+    });
+    const slow = listener(() => new Promise((r) => setTimeout(() => r({ words: ['code'] }), 200)));
+    expect(await g.converse('bot', 'hello', slow, 0, 20)).toMatchObject({
+      reply: 'Hello.',
+      issue: 'timeout',
+    });
+  });
+
+  it('drops the message when the mission restarts while the model reads it', async () => {
+    const g = await newGame();
+    let release: (v: unknown) => void = () => {};
+    const pending = g.converse(
+      'bot',
+      'hello',
+      listener(() => new Promise((r) => (release = r))),
+    );
+    await Promise.resolve();
+    g.startMission('test.m1');
+    release({ words: ['hello'], families: [] });
+    expect(await pending).toEqual({ ok: false, reply: '' });
+    expect(g.state.chats.bot ?? []).toEqual([]);
+  });
+
+  it('replays an interpreted message from the save without calling anything', async () => {
+    const g = await newGame();
+    await g.converse(
+      'bot',
+      'quick, the access',
+      listener(() => ({ words: ['code', 'vite'], families: [] })),
+    );
+    const { Game } = await import('../src/index.ts');
+    const { fixture } = await import('./fixture.ts');
+    const { world, mission } = await fixture();
+    const again = new Game({ world, missions: [mission], locale: 'en', log: g.save().log });
+    expect(again.state.chats.bot?.at(-1)).toMatchObject({ from: 'npc', intent: 'both' });
   });
 });

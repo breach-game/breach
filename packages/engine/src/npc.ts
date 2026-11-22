@@ -1,4 +1,4 @@
-import type { Family, Intent, Npc } from '@breach/pack-schema';
+import { FAMILIES, type Family, type Intent, type Npc } from '@breach/pack-schema';
 import { evaluate } from './rules.ts';
 import type { GameState, Scalar } from './state.ts';
 
@@ -77,9 +77,66 @@ function groupMatches(group: string, words: string[]): boolean {
   );
 }
 
-function intentMatches(intent: Intent, words: string[], families: Family[], state: GameState): boolean {
-  if (intent.words.length && !intent.words.some((g) => groupMatches(g, words))) return false;
-  if (intent.also.length && !intent.also.some((g) => groupMatches(g, words))) return false;
+/**
+ * What a language model understood in the player's message, already checked: word groups taken
+ * from the character's own vocabulary, and technique families from the engine's fixed list.
+ * It can only contain what the player could have typed, so it never gives more than typing would.
+ */
+export interface Heard {
+  words: string[];
+  families: Family[];
+}
+
+/**
+ * The word groups a model may recognise in a message, normalized, for one character. Intents marked
+ * `literal` keep theirs out: those words (a name, a code word) must be found and typed by the player.
+ */
+export function vocabulary(npc: Npc): string[] {
+  const groups = new Set<string>();
+  for (const intent of npc.intents) {
+    if (intent.literal) continue;
+    for (const g of [...intent.words, ...intent.also]) {
+      const n = normalizeText(g);
+      if (n) groups.add(n);
+    }
+  }
+  return [...groups];
+}
+
+/**
+ * Deterministic check of what a model says it heard. Anything outside the character's vocabulary
+ * or the engine's families is dropped, as is anything malformed. Returns null when nothing is left.
+ */
+export function acceptHearing(npc: Npc, raw: unknown): Heard | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const { words, families } = raw as { words?: unknown; families?: unknown };
+  const allowed = new Set(vocabulary(npc));
+  const pick = (list: unknown, keep: (s: string) => boolean) =>
+    Array.isArray(list)
+      ? [...new Set(list.filter((x): x is string => typeof x === 'string').map(normalizeText))].filter(keep)
+      : [];
+  const heard: Heard = {
+    words: pick(words, (w) => allowed.has(w)).slice(0, 12),
+    families: pick(families, (f) => (FAMILIES as readonly string[]).includes(f)) as Family[],
+  };
+  return heard.words.length || heard.families.length ? heard : null;
+}
+
+function groupHeard(group: string, intent: Intent, heard: Heard | undefined): boolean {
+  return !intent.literal && heard !== undefined && heard.words.includes(normalizeText(group));
+}
+
+function intentMatches(
+  intent: Intent,
+  words: string[],
+  families: Family[],
+  state: GameState,
+  heard?: Heard,
+): boolean {
+  const any = (groups: string[]) =>
+    groups.some((g) => groupMatches(g, words) || groupHeard(g, intent, heard));
+  if (intent.words.length && !any(intent.words)) return false;
+  if (intent.also.length && !any(intent.also)) return false;
   if (intent.families.length && !intent.families.some((f) => families.includes(f))) return false;
   return evaluate(intent.if, state);
 }
@@ -95,14 +152,16 @@ export interface Decision {
 
 /**
  * The scripted brain. It is deterministic: the same conversation always gets the same replies,
- * and it alone decides what a character gives away, whatever writes the final wording.
+ * and it alone decides what a character gives away, whatever writes the final wording. `heard`,
+ * when a model interpreted the message, only adds words and families the player could have typed.
  */
-export function decide(npc: Npc, message: string, state: GameState): Decision {
+export function decide(npc: Npc, message: string, state: GameState, heard?: Heard): Decision {
   const words = normalizeText(message).split(' ').filter(Boolean);
-  const families = detectFamilies(message);
+  const detected = detectFamilies(message);
+  const families = [...new Set([...detected, ...(heard?.families ?? [])])];
   const said = (id: string) =>
     (state.chats[npc.id] ?? []).filter((l) => l.from === 'npc' && l.intent === id).length;
-  const intent = npc.intents.find((i) => intentMatches(i, words, families, state));
+  const intent = npc.intents.find((i) => intentMatches(i, words, families, state, heard));
   if (!intent) {
     const key = npc.fallback[said('fallback') % npc.fallback.length]!;
     return { intent: 'fallback', key, families, set: {} };

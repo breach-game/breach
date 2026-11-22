@@ -20,7 +20,14 @@ export type EventBody =
   | { type: 'ServiceDiscovered'; host: string; port: number }
   | { type: 'HttpRequest'; host: string; path: string; method: string; status: number }
   | { type: 'AppOpened'; app: 'browser'; url: string }
-  | { type: 'ChatSent'; npc: string; text: string; via: 'browser' | 'api' }
+  | {
+      type: 'ChatSent';
+      npc: string;
+      text: string;
+      via: 'browser' | 'api';
+      /** What a language model understood in the message, already checked, when it interpreted it. */
+      heard?: { words: string[]; families: string[] };
+    }
   | {
       type: 'ChatReply';
       npc: string;
