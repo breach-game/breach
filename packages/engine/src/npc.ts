@@ -32,6 +32,7 @@ const FAMILY_PATTERNS: Record<Family, RegExp[]> = {
   roleplay: [
     /\b(fais comme si|fais semblant|joue le role|jeu de role|roleplay|role play|pretend|act as|agis comme|comporte toi comme)\b/,
     /\b(tu es (maintenant|desormais)|you are now|tu n es plus|you are no longer|incarne)\b/,
+    /\b(imagine que tu es|imagine you are|imagine que vous etes)\b/,
   ],
   translation: [
     /\b(tradui\w*|translat\w*|traduction)\b/,
@@ -41,6 +42,7 @@ const FAMILY_PATTERNS: Record<Family, RegExp[]> = {
     /\b(base ?64|rot ?13|hexa\w*|hex|binaire|binary|morse|leet|ascii)\b/,
     /\b(a l envers|backwards?|in reverse|epelle|spell|lettre par lettre|letter by letter|acrostiche|acrostic|verlan)\b/,
     /\b(encode\w*|chiffre\w*|cipher|code cesar|caesar)\b/,
+    /\b(json|yaml|xml|csv)\b/,
   ],
   authority: [
     /\b(je suis|i am|i m|ici|this is)\b.{0,30}\b(admin\w*|develop\w*|ingenieur|engineer|directeur|director|ceo|cto|responsable|manager|support|technicien|maintenance|auditeur|auditor)\b/,
@@ -51,6 +53,7 @@ const FAMILY_PATTERNS: Record<Family, RegExp[]> = {
     /\b(complete|continue|termine|finis|finish|poursuis)\b.{0,30}\b(phrase|sentence|texte|text|suite|following|ceci|this)\b/,
     /\b(commence|start|begin|debute)\b.{0,30}\b(reponse|reply|answer|response|message)\b.{0,12}\b(par|with)\b/,
     /\b(repete apres moi|repeat after me|la suite de|what comes after|mot pour mot|word for word|verbatim)\b/,
+    /\b(resume\w*|summari[sz]e\w*|reformule\w*|rephrase\w*|paraphrase\w*)\b/,
   ],
   hypothetical: [
     /\b(hypothe\w*|theoriquement|theoretically|en theorie|in theory)\b/,
@@ -66,14 +69,17 @@ export function detectFamilies(message: string): Family[] {
   );
 }
 
-/** True when every word of the group starts a word of the message. */
+/** True when every word of the group is in the message. Words of four letters or more match as prefixes. */
 function groupMatches(group: string, words: string[]): boolean {
   const wanted = normalizeText(group).split(' ').filter(Boolean);
-  return wanted.length > 0 && wanted.every((w) => words.some((m) => m.startsWith(w)));
+  return (
+    wanted.length > 0 && wanted.every((w) => words.some((m) => m === w || (w.length >= 4 && m.startsWith(w))))
+  );
 }
 
 function intentMatches(intent: Intent, words: string[], families: Family[], state: GameState): boolean {
   if (intent.words.length && !intent.words.some((g) => groupMatches(g, words))) return false;
+  if (intent.also.length && !intent.also.some((g) => groupMatches(g, words))) return false;
   if (intent.families.length && !intent.families.some((f) => families.includes(f))) return false;
   return evaluate(intent.if, state);
 }

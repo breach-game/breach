@@ -188,7 +188,13 @@ const effect = z.union([
   }),
   z.strictObject({ 'ada.warn': i18nKey }),
   z.strictObject({ 'objective.complete': id }),
-  z.strictObject({ 'noise.add': z.number().min(-100).max(100) }),
+  /** Noise made by a reaction of the target. With `as`, the SOC log shows it under that text. */
+  z.strictObject({
+    'noise.add': z.union([
+      z.number().min(-100).max(100),
+      z.strictObject({ points: z.number().min(-100).max(100), as: i18nKey }),
+    ]),
+  }),
   z.strictObject({ 'host.reveal': id }),
   z.strictObject({ 'checkpoint.save': id }),
   z.strictObject({ 'var.set': z.strictObject({ name: id, value: scalar }) }),
@@ -224,10 +230,14 @@ export type Family = (typeof FAMILIES)[number];
 const intent = z.strictObject({
   id,
   /**
-   * Word groups. A group matches when each of its words starts a word of the message, whatever
-   * the case or accents. The intent needs one matching group, or none if the list is empty.
+   * Word groups. A group matches when each of its words is in the message, whatever the case or
+   * accents. A word of four letters or more also matches longer words that start with it
+   * ("urgen" matches "urgent" and "urgence"). The intent needs one matching group, or none if the
+   * list is empty.
    */
-  words: z.array(z.string().min(1).max(80)).max(60).default([]),
+  words: z.array(z.string().min(1).max(80)).max(80).default([]),
+  /** A second list of word groups: when it is not empty, one of these must match too. */
+  also: z.array(z.string().min(1).max(80)).max(80).default([]),
   /** Technique families: one of them must be detected, or none if the list is empty. */
   families: z.array(z.enum(FAMILIES)).default([]),
   if: condition.optional(),
