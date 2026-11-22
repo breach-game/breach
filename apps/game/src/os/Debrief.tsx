@@ -86,6 +86,24 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           {t('debrief.reference')} : {mission.debrief.reference}
         </div>
       )}
+      {mission.debrief.facts && (
+        <>
+          <h3>{game.t(mission.debrief.facts.title)}</h3>
+          <ul>
+            {mission.debrief.facts.points.map((p) => (
+              <li key={p}>{game.t(p)}</li>
+            ))}
+          </ul>
+          <div className="fine">
+            {t('debrief.sources')}
+            {mission.debrief.facts.sources.map((x) => (
+              <div key={x.url}>
+                {x.label} · {x.url}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
       <h3>{t(playKind() === 'community' ? 'debrief.soc.community' : 'debrief.soc')}</h3>
       {entries.length ? (
         <>

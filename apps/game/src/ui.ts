@@ -277,6 +277,7 @@ const fr = {
     "Tu as terminé tout ce que contient cette version. La suite de l'enquête (l'injection indirecte, l'agent trop puissant, puis la piste du groupe Mute) arrive.",
   'debrief.close': 'Rester sur le bureau',
   'debrief.reference': 'Référence',
+  'debrief.sources': 'Sources (à ouvrir toi-même, le jeu ne suit aucun lien) :',
   'card.mission': 'MISSION',
   'card.training': 'ENTRAÎNEMENT',
 };
@@ -558,6 +559,7 @@ const en: typeof fr = {
     'You finished everything this version contains. The rest of the investigation (indirect injection, the over-powered agent, then the trail of the Mute group) is on its way.',
   'debrief.close': 'Stay on the desktop',
   'debrief.reference': 'Reference',
+  'debrief.sources': 'Sources (open them yourself, the game follows no link):',
   'card.mission': 'MISSION',
   'card.training': 'TRAINING',
 };

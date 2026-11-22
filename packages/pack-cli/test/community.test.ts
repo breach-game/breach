@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { catalogSchema, verifySignature } from '@breach/pack-schema';
+import { catalogSchema, checkPackSafety, packSchema, verifySignature } from '@breach/pack-schema';
 import { describe, expect, it } from 'vitest';
 import { buildAll, checkAll, generateKeys, type LoadedPack, loadAll, signBytes } from '../src/index.ts';
 
@@ -104,5 +104,30 @@ describe('catalogue signature', () => {
 
   it('only signs with a P-256 key', () => {
     expect(() => signBytes(bytes, 'not a key')).toThrow();
+  });
+
+  it('lets a debrief cite real sources as plain addresses, and nothing else name a real host', () => {
+    const door = community.find((p) => p.pack.id === 'example.closing-the-door')!;
+    const url = 'https://about.codecov.io/apr-2021-post-mortem/';
+    const withSource = (label: string, address: string) => {
+      const pack = structuredClone(door.pack);
+      pack.mission!.debrief.facts = {
+        title: 'cd.debrief.title',
+        points: ['cd.debrief.p1'],
+        sources: [{ label, url: address }],
+      };
+      return pack;
+    };
+    expect(packSchema.safeParse(withSource('Post-mortem', url)).success).toBe(true);
+    expect(checkPackSafety(withSource('Post-mortem', url))).toEqual([]);
+    expect(checkPackSafety(withSource('See about.codecov.io', url)).join()).toMatch(/not a reserved domain/);
+    for (const bad of [
+      'http://about.codecov.io/',
+      'https://user:pw@about.codecov.io/',
+      'https://about.codecov.io:8443/',
+      'https://about.codecov.io/?q=1',
+      'javascript:alert(1)',
+    ])
+      expect(packSchema.safeParse(withSource('Post-mortem', bad)).success, bad).toBe(false);
   });
 });

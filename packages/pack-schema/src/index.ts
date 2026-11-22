@@ -408,6 +408,32 @@ const mission = z.strictObject({
     lesson: i18nKey,
     points: z.array(i18nKey).min(1).max(8),
     reference: z.string().max(80).optional(),
+    /**
+     * For a mission inspired by a documented incident: what really happened, told after the fiction.
+     * The sources are shown as plain text, never as links, and are the only place where a pack may
+     * write a real address.
+     */
+    facts: z
+      .strictObject({
+        title: i18nKey,
+        points: z.array(i18nKey).min(1).max(8),
+        sources: z
+          .array(
+            z.strictObject({
+              label: z.string().min(1).max(120),
+              url: z
+                .string()
+                .max(200)
+                .regex(
+                  /^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(\/[\w\-./%~]*)?$/,
+                  'a plain https address expected',
+                ),
+            }),
+          )
+          .min(1)
+          .max(6),
+      })
+      .optional(),
   }),
 });
 export type Mission = z.infer<typeof mission>;

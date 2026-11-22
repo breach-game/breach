@@ -123,6 +123,24 @@ type PackLike = {
   authors?: unknown;
 };
 
+/**
+ * The sources of a debrief's `facts` card cite the real world on purpose (a post-mortem, an advisory).
+ * Their addresses are shaped by the schema and shown as plain text, so they skip the host name check.
+ * Everything else in the mission, the labels included, is still scanned.
+ */
+function withoutSourceUrls(mission: unknown): unknown {
+  const m = mission as { debrief?: { facts?: { sources?: { label?: unknown }[] } } } | undefined;
+  const sources = m?.debrief?.facts?.sources;
+  if (!m || !Array.isArray(sources)) return mission;
+  return {
+    ...m,
+    debrief: {
+      ...m.debrief,
+      facts: { ...m.debrief?.facts, sources: sources.map((x) => ({ label: x?.label })) },
+    },
+  };
+}
+
 export function checkPackSafety(pack: PackLike): string[] {
   const problems: string[] = [];
   const w = pack.world;
@@ -139,7 +157,7 @@ export function checkPackSafety(pack: PackLike): string[] {
       if (!isReservedDomain(name)) problems.push(`DNS name ${name} is not reserved`);
   }
   walk(pack.world, 'world', problems);
-  walk(pack.mission, 'mission', problems);
+  walk(withoutSourceUrls(pack.mission), 'mission', problems);
   walk(pack.i18n, 'i18n', problems);
   return [...new Set(problems)].slice(0, 30);
 }
