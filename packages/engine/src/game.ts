@@ -218,6 +218,13 @@ export class Game {
       if (text !== undefined)
         return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
     }
+    // A message kept from an earlier mission (Ada's history, notes) still reads in that mission's words.
+    for (const loc of [locale, other])
+      for (const pack of this.missions.values()) {
+        const text = pack.i18n[loc]?.[key];
+        if (text !== undefined)
+          return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
+      }
     return key;
   }
 

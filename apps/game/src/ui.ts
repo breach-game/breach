@@ -216,9 +216,9 @@ const fr = {
   'debrief.soc.note':
     "Chaque ligne est une de tes actions, ou une réaction qu'elle a provoquée, telle qu'elle apparaît dans les journaux de la cible.",
   'debrief.next': 'Mission suivante',
-  'debrief.end.title': 'Fin des missions disponibles',
+  'debrief.end.title': 'Campagne NovaMind terminée',
   'debrief.end.body':
-    "Tu as terminé tout ce que contient cette version. La suite de l'enquête (l'injection indirecte, l'agent trop puissant, puis la piste du groupe Mute) arrive.",
+    "Du mandat signé jusqu'à la piste de Mute, tu as mené tout le test d'intrusion de NovaMind. Les missions de la communauté t'attendent depuis l'écran titre.",
   'debrief.close': 'Rester sur le bureau',
   'debrief.reference': 'Référence',
   'card.mission': 'MISSION',
@@ -440,9 +440,9 @@ const en: typeof fr = {
   'debrief.soc.note':
     "Each line is one of your actions, or a reaction it caused, as it shows up in the target's logs.",
   'debrief.next': 'Next mission',
-  'debrief.end.title': 'End of the available missions',
+  'debrief.end.title': 'NovaMind campaign complete',
   'debrief.end.body':
-    'You finished everything this version contains. The rest of the investigation (indirect injection, the over-powered agent, then the trail of the Mute group) is on its way.',
+    "From the signed mandate to Mute's trail, you carried out NovaMind's whole penetration test. Community missions are waiting on the title screen.",
   'debrief.close': 'Stay on the desktop',
   'debrief.reference': 'Reference',
   'card.mission': 'MISSION',
