@@ -138,6 +138,9 @@ export interface ScoreDetail {
   /** Points lost to hints and to detections. */
   hints: number;
   detections: number;
+  /** Defence missions: points of the investigation answers, and what the containment cost. */
+  answers: number;
+  impact: number;
   total: number;
 }
 
@@ -757,11 +760,16 @@ export class Game {
       .filter((f) => this.state.flags[f.id])
       .reduce((sum, f) => sum + f.points, 0);
     const objectives = Object.values(this.state.objectives).filter(Boolean).length * 50;
-    const bonus = Math.round((flags + objectives) * (LEVEL_BONUS[level] - 1));
+    const answers = (mission?.questions ?? [])
+      .filter((q) => this.state.answers?.[q.id])
+      .reduce((sum, q) => sum + q.points, 0);
+    const bonus = Math.round((flags + objectives + answers) * (LEVEL_BONUS[level] - 1));
     const hints = this.state.hintsUsed * 10;
     const detections = this.state.detections * 25;
-    const total = Math.max(0, flags + objectives + bonus - hints - detections);
-    return { level, flags, objectives, bonus, hints, detections, total };
+    // Each point of business impact costs 3 points: isolating everything is never free.
+    const impact = Math.round((this.state.impact ?? 0) * 3);
+    const total = Math.max(0, flags + objectives + answers + bonus - hints - detections - impact);
+    return { level, flags, objectives, bonus, hints, detections, answers, impact, total };
   }
 
   /* ---------- noise and detection ---------- */
@@ -1093,6 +1101,8 @@ export class Game {
       from: this.state.missionStartSeq,
       to: attack ? this.missionEndSeq() : undefined,
       background: true,
+      // A defence mission reads the logs live: nothing after the current time.
+      ...(attack ? {} : { until: this.state.clock }),
     });
   }
 
@@ -1292,7 +1302,7 @@ export class Game {
       actor: adv.id,
       step: step.id,
       host: step.host,
-      blocked: evaluate(step.blockedIf, s),
+      blocked: step.blockedIf ? evaluate(step.blockedIf, s) : false,
     });
   }
 
@@ -1303,6 +1313,20 @@ export class Game {
     this.emit({ type: 'Contained', containment: id, impact: order.impact });
     for (const [key, value] of Object.entries(order.sets))
       this.emit({ type: 'ConfigPatched', key, value, by: id });
+    // An attacker already inside feels it at once: his next step fails now, not at his next turn.
+    const adv = this.mission?.adversary;
+    const s = this.state;
+    const step = adv?.steps[s.adversary.next];
+    if (
+      adv &&
+      step?.blockedIf &&
+      s.adversary.next > 0 &&
+      !s.adversary.stopped &&
+      !s.missionDone &&
+      !this.replaying
+    )
+      if (evaluate(step.blockedIf, s))
+        this.emit({ type: 'AdversaryStep', actor: adv.id, step: step.id, host: step.host, blocked: true });
   }
 
   /* ---------- missions ---------- */

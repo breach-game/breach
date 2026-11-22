@@ -326,6 +326,7 @@ describe('official content', () => {
       'breach.official.m04',
       'breach.official.m05',
       'breach.official.m06',
+      'breach.official.b01',
     ]);
     for (const f of files) expect(() => parsePack(JSON.parse(gunzipSync(f.bytes).toString()))).not.toThrow();
   });

@@ -137,6 +137,8 @@ export interface TelemetryOptions {
   to?: number;
   /** Add the target's ordinary activity over the same time span. */
   background?: boolean;
+  /** Live logs (defence missions): the background stops at this time, and starts 40 minutes before. */
+  until?: number;
 }
 
 /** The pieces of a game that telemetry reads, so a test can pass a plain log. */
@@ -324,7 +326,10 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
     }
     track(e);
   }
-  if (options.background && Number.isFinite(firstT)) {
+  if (options.background && options.until !== undefined) {
+    const to = options.until;
+    lines.push(...backgroundLines(world, Math.max(0, to - 40 * 60_000), to, game.mission?.background ?? []));
+  } else if (options.background && Number.isFinite(firstT)) {
     // At least half an hour of ordinary activity around the player's own.
     const from = Math.max(0, firstT - 10 * 60_000);
     const to = Math.max(lastT + 5 * 60_000, from + 30 * 60_000);

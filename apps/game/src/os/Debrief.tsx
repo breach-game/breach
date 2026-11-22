@@ -65,9 +65,11 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
         </span>
       </div>
       <div className="tally">
-        <span>
-          {t('debrief.tally.flags')} <b>+{detail.flags}</b>
-        </span>
+        {mission.flags.length > 0 && (
+          <span>
+            {t('debrief.tally.flags')} <b>+{detail.flags}</b>
+          </span>
+        )}
         <span>
           {t('debrief.tally.objectives')} <b>+{detail.objectives}</b>
         </span>
@@ -83,6 +85,16 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
         {detail.detections > 0 && (
           <span>
             {t('debrief.detections')} <b>−{detail.detections}</b>
+          </span>
+        )}
+        {detail.answers > 0 && (
+          <span>
+            {t('debrief.tally.answers')} <b>+{detail.answers}</b>
+          </span>
+        )}
+        {detail.impact > 0 && (
+          <span>
+            {t('debrief.tally.impact', { impact: game.state.impact })} <b>−{detail.impact}</b>
           </span>
         )}
         {defensePoints > 0 && (
@@ -104,8 +116,11 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           {t('debrief.reference')} : {mission.debrief.reference}
         </div>
       )}
-      {!defense && <h3>{t(playKind() === 'community' ? 'debrief.soc.community' : 'debrief.soc')}</h3>}
-      {defense ? null : entries.length ? (
+      {mission.side === 'defense' && <AttackerPath />}
+      {!defense && mission.side !== 'defense' && (
+        <h3>{t(playKind() === 'community' ? 'debrief.soc.community' : 'debrief.soc')}</h3>
+      )}
+      {defense || mission.side === 'defense' ? null : entries.length ? (
         <>
           <div className="soclog">
             <div className="lg head">
@@ -164,5 +179,38 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
         </button>
       </div>
     </div>
+  );
+}
+
+/** Defence missions: what the attacker did on the target, and where the containment stopped it. */
+function AttackerPath() {
+  const game = useGame();
+  const t = useT();
+  const adversary = game.mission?.adversary;
+  if (!adversary) return null;
+  const lines = game.socLines().filter((l) => l.actor === 'adversary');
+  const blocked = game.state.adversary.blockedAt;
+  const step = adversary.steps.find((s) => s.id === blocked);
+  const hostname = step ? (game.world.hosts.find((h) => h.id === step.host)?.hostname ?? step.host) : '';
+  return (
+    <>
+      <h3>{t('debrief.attacker', { name: adversary.name })}</h3>
+      <ol className="def-path">
+        {lines.map((l) => (
+          <li key={l.id}>
+            <span className="host">{l.hostname.split('.')[0]}</span>
+            <span className="text">{l.text}</span>
+          </li>
+        ))}
+        {step && (
+          <li className="stopped">
+            <span className="host" aria-hidden="true">
+              ✓
+            </span>
+            <span className="text">{t('debrief.attacker.stopped', { host: hostname })}</span>
+          </li>
+        )}
+      </ol>
+    </>
   );
 }

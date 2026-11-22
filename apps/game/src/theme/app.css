@@ -80,6 +80,10 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .soc[data-level='hunt'] { color: var(--attack); }
 .soc i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
 .soc[data-level='hunt'] i { animation: blink 0.7s steps(1) infinite; }
+/* Defence missions: business impact (amber, an alert), and the attacker (red while active, cyan once stopped). */
+.soc.attacker[data-level='active'] { color: var(--attack); }
+.soc.attacker[data-level='active'] i { animation: blink 0.9s steps(1) infinite; }
+.soc.attacker[data-level='stopped'] { color: var(--defense); }
 .clock { color: var(--text); font-variant-numeric: tabular-nums; }
 .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--dim); }
 .icon-btn:hover, .icon-btn[aria-expanded='true'] { color: #fff; border-color: var(--line); background: rgba(215, 224, 245, 0.06); }
@@ -451,3 +455,12 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
   .debrief .def-replay li { animation: none; }
 }
 [data-effects='off'] .debrief.rewind::after { display: none; }
+
+/* Debrief of a defence mission: the attacker's path. */
+.debrief .def-path { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 8px; background: rgba(7, 9, 15, 0.55); }
+.debrief .def-path li { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 6px 10px; font: 400 12px/1.5 var(--mono); border-left: 2px solid rgba(255, 61, 90, 0.6); }
+.debrief .def-path li::before { content: none; }
+.debrief .def-path .host { color: var(--attack); }
+.debrief .def-path .text { color: var(--text); overflow-wrap: anywhere; }
+.debrief .def-path li.stopped { border-left-color: var(--defense); }
+.debrief .def-path li.stopped .host, .debrief .def-path li.stopped .text { color: var(--defense); }

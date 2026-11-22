@@ -1,0 +1,69 @@
+b1.briefing: "Day 9, 9 a.m. Mute signed off with “see you soon”. NovaMind's SOC is now wired to your workstation, and Ligne Rouge holds the incident response contract. If Mute comes back, you will see it live: find him in the logs, pick the containment that stops him without breaking everything, then answer the investigation's questions."
+b1.file.order: |
+  ==============================================================
+   ORDER NO. NM-2026-114-B  ·  INCIDENT RESPONSE
+  ==============================================================
+
+  1. PURPOSE     Watch NovaMind's logs and contain any new
+                 intrusion by "m.".
+
+  2. MEANS       SOC console (soc command), containment orders
+                 (contain command), investigation questions
+                 (answer command).
+
+  3. RULE        Contain as close to the attacker as possible.
+                 Every host shut down also stops the clinics
+                 that rely on it. Isolating the production
+                 database: last resort only.
+
+  Signed: Inès Carron (CTO, NovaMind) · Ada (Ligne Rouge)
+b1.obj.contain: "Stop Mute before the data leaves"
+b1.obj.entry: "Name the account Mute came in through"
+b1.obj.source: "Name where the attack comes from"
+b1.obj.pivot: "Name the account Mute used on the database"
+b1.contain.block: "Firewall: all traffic to and from 10.13.0.99 is cut, open sessions included."
+b1.contain.revoke: "Keys of the nm-deploy account removed and its sessions closed. Deployments will wait for a new key."
+b1.contain.reset: "Keys and password of the backup account renewed. Tonight's backup will have to be run again."
+b1.contain.git: "Forge git.novamind.test shut down. Nobody deploys, nobody pushes code."
+b1.contain.db: "Production database cut off from the network. The 1,402 clinics can no longer reach their records."
+b1.alert.deploy: "Interactive login of the nm-deploy deployment account"
+b1.alert.deploy.why: "A deployment account is for the CI only. A session opened by hand is abnormal."
+b1.alert.backup: "The backup account connects to the database from the forge"
+b1.alert.backup.why: "The forge has no reason to reach the database over SSH."
+b1.alert.copy: "Bulk export (COPY) on the production database"
+b1.alert.copy.why: "A full COPY of a table, outside the scheduled backup, looks like exfiltration."
+b1.q.entry: "Which account did Mute use to get into the forge?"
+b1.q.source: "Which IP address does the attack come from?"
+b1.q.pivot: "Which account did he use to hop onto the database?"
+b1.ada.brief: "We switch sides. This time we are not following week-old traces: we are watching NovaMind's logs live. If Mute comes back, every command he runs will leave a line. Your job: see him, cut him off, and say what he did. We don't touch his machines, we protect NovaMind's."
+b1.ada.start: "Start by seeing what the SOC watches: `soc sources`. Then ask it for its alerts: `soc alerts`."
+b1.ada.start.standard: "The SOC console shows you NovaMind's logs and alerts. Look around, and watch for Mute."
+b1.ada.alert: "Something's ringing. Someone just opened a session on the forge. Run `soc alerts` again, then look at the forge's authentication log: `soc logs git auth`."
+b1.ada.alert.standard: "An alert just fired on the forge. Look closely at its authentication logs."
+b1.ada.seen: "nm-deploy, from 10.13.0.99: Mute's machine, the one that received the data last week. You have five possible moves, type `contain` to see them. The most precise one cuts his address: `contain block 10.13.0.99`. Isolating the database would work too, but 1,402 clinics would stop with it."
+b1.ada.seen.standard: "You have the account and the address. `contain` lists the possible moves: pick the one that stops him and breaks the least."
+b1.ada.recon: "He's reading the deployment account's SSH configuration. Last week, that's how he found the way to the database. We need to act."
+b1.ada.hop: "He's on the production database, as backup. Two more steps and the data is gone."
+b1.ada.dump: "COPY clients: he's exporting the clinics table. This is the last moment to cut him off."
+b1.ada.fail: "Too late: 48 MB just left for 10.13.0.99. We start again from the first alert, and this time we cut earlier."
+b1.ada.stopped: "His next attempt failed. Mute is cut off. All that's left is to write down what we know for the report."
+b1.ada.costly.db: "That will stop him, but the database is offline. The clinics are already calling Inès. Look at the impact gauge at the top."
+b1.ada.costly.git: "The forge is down: no deployments until it comes back. Effective, but expensive."
+b1.ada.entry: "For the report: which account did he come in through? Answer with `answer entry <account>`."
+b1.ada.entry.standard: "Answer the investigation's questions with `answer`. The first one: the entry account."
+b1.ada.source: "And where was he coming from? `answer source <IP address>`."
+b1.ada.source.standard: "Last required question: the address the attack comes from."
+b1.ada.done: "Mute is out, and nothing left. Head to the debrief. Inès will sleep a little better tonight."
+b1.hint.contain.1: "`soc alerts` shows what's ringing, `soc logs <host> <source>` shows the raw lines."
+b1.hint.contain.2: "Look at the accepted logins on the forge: the account and the source address tell you everything."
+b1.hint.contain.3: "`contain block 10.13.0.99` cuts Mute off without stopping NovaMind."
+b1.hint.entry.1: "The first alert names the account."
+b1.hint.entry.2: "`answer entry nm-deploy`"
+b1.hint.source.1: "The address is at the end of the “Accepted publickey for … from …” line."
+b1.hint.source.2: "`answer source 10.13.0.99`"
+b1.debrief.title: "Cut as close as you can"
+b1.debrief.lesson: "Containing means choosing. Isolating the database would have stopped Mute, and the 1,402 clinics with him. Cutting an address or revoking a key stops him too, for almost nothing. The right move depends on what you read in the logs, and fast: every step the attacker takes closes another door."
+b1.debrief.p1: "Read before acting: an alert says something is happening, the raw line says who, from where and with what."
+b1.debrief.p2: "Contain as close to the attacker as possible: his address, his account, his key. A whole host is shut down only as a last resort."
+b1.debrief.p3: "Last week, Mute's key had been removed from one place only. Incomplete eradication is a door left open."
+b1.debrief.p4: "Write everything down during the incident: time, account, address, action. The report and the notification to the data protection authority depend on it."

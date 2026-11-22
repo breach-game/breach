@@ -133,3 +133,63 @@ describe('detection rules', () => {
     expect(text).toContain('condition:');
   });
 });
+
+describe('defence mission: Mute returns', () => {
+  const b1 = packs.find((p) => p.pack.id === 'breach.official.b01')!;
+  const play = async (game: Game, lines: string[]) => {
+    let out = '';
+    for (const line of lines)
+      for await (const c of game.exec(line, 5000)) if (c.k === 'out' || c.k === 'err') out += c.text;
+    return out;
+  };
+
+  it('stops Mute with the narrowest containment, for no impact', async () => {
+    const { game, done } = await replaySolution(world, b1.pack, b1.solution!, 'fr');
+    expect(done).toBe(true);
+    expect(game.state.adversary.stopped).toBe(true);
+    expect(game.state.impact).toBe(0);
+    expect(game.scoreDetail()).toMatchObject({ answers: 200, impact: 0 });
+    // Mute's own lines are in the logs, and the exfiltration never happened.
+    const mine = game.socLines().filter((l) => l.actor === 'adversary');
+    expect(mine.map((l) => l.source)).toEqual(['auth', 'audit']);
+  });
+
+  it('isolating the database works, but costs the clinics', async () => {
+    const { game } = await replaySolution(
+      world,
+      b1.pack,
+      [
+        'soc alerts',
+        'soc alerts',
+        'contain isolate db.novamind.test',
+        'soc alerts',
+        'soc alerts',
+        'soc alerts',
+      ],
+      'en',
+    );
+    expect(game.state.objectives.contain).toBe(true);
+    expect(game.state.impact).toBe(60);
+    expect(game.scoreDetail().impact).toBe(180);
+  });
+
+  it('fails when the data leaves, and starts again from the alert', async () => {
+    const { game } = await replaySolution(world, b1.pack, [], 'fr');
+    const out = await play(game, Array(10).fill('soc alerts'));
+    expect(game.state.detections).toBe(1);
+    expect(out).toContain('10.13.0.99');
+    // Back before the attack: Mute starts over, and the player can do better.
+    expect(game.state.adversary.next).toBe(0);
+    await play(game, ['soc alerts', 'soc alerts', 'contain block 10.13.0.99', 'answer pivot backup']);
+    expect(game.state.adversary.stopped).toBe(true);
+    expect(game.state.answers.pivot).toBe(true);
+  });
+
+  it('refuses SOC and containment commands outside a defence mission', async () => {
+    const m0 = attacks.find((m) => m.pack.id === 'breach.official.m00')!;
+    const { game } = await replaySolution(world, m0.pack, [], 'en');
+    const out = await play(game, ['soc alerts', 'contain block 10.13.0.99']);
+    expect(out).toContain(game.t('soc.unavailable'));
+    expect(game.state.contained).toEqual({});
+  });
+});
