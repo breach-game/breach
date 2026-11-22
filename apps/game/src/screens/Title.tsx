@@ -12,9 +12,11 @@ const MIN_WIDTH = 900;
 export function Title({
   onStart,
   onCommunity,
+  onMissions,
 }: {
   onStart: (mode: 'new' | 'continue') => void;
   onCommunity: () => void;
+  onMissions: () => void;
 }) {
   const t = useT();
   const settings = useSettings();
@@ -64,6 +66,9 @@ export function Title({
               <>
                 <button type="button" className="btn primary" autoFocus onClick={() => onStart('continue')}>
                   {t('title.continue')}
+                </button>
+                <button type="button" className="btn" onClick={onMissions}>
+                  {t('title.missions')}
                 </button>
                 <button
                   type="button"

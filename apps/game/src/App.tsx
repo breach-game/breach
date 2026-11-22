@@ -5,11 +5,13 @@ import type { StartMode } from './session.ts';
 // The title screen loads alone: the engine, the terminal and the desktop come when a game starts.
 const Boot = lazy(() => import('./screens/Boot.tsx').then((m) => ({ default: m.Boot })));
 const Desktop = lazy(() => import('./os/Desktop.tsx').then((m) => ({ default: m.Desktop })));
+const Missions = lazy(() => import('./screens/Missions.tsx').then((m) => ({ default: m.Missions })));
 const Community = lazy(() => import('./screens/Community.tsx').then((m) => ({ default: m.Community })));
 
 type Screen =
   | { name: 'title' }
   | { name: 'community' }
+  | { name: 'missions' }
   | { name: 'boot'; mode: StartMode }
   | { name: 'desktop' };
 
@@ -20,11 +22,17 @@ export function App() {
       <Title
         onStart={(mode) => setScreen({ name: 'boot', mode })}
         onCommunity={() => setScreen({ name: 'community' })}
+        onMissions={() => setScreen({ name: 'missions' })}
       />
     );
   return (
     <Suspense fallback={<main className="title" aria-busy="true" />}>
-      {screen.name === 'community' ? (
+      {screen.name === 'missions' ? (
+        <Missions
+          onStart={(mode) => setScreen({ name: 'boot', mode })}
+          onBack={() => setScreen({ name: 'title' })}
+        />
+      ) : screen.name === 'community' ? (
         <Community
           onStart={(mode) => setScreen({ name: 'boot', mode })}
           onBack={() => setScreen({ name: 'title' })}
