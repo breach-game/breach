@@ -121,6 +121,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .ada .t { font: 500 10.5px/1 var(--mono); color: var(--dim); letter-spacing: 0.1em; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
 .ada.warn .t { color: var(--alert); }
 .ada p { margin: 0; font: 400 14.5px/1.48 var(--human); color: var(--text); text-wrap: pretty; }
+.chat-hint { margin: auto 0 0; padding-top: 10px; border-top: 1px solid rgba(215, 224, 245, 0.08); font: 400 12px/1.4 var(--mono); color: var(--dim); }
 .caret { display: inline-block; width: 7px; height: 15px; background: currentColor; vertical-align: -2px; margin-left: 2px; animation: blink 1s steps(1) infinite; }
 
 /* Notebook */
@@ -187,3 +188,10 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 [data-effects='off'] .glitch, [data-effects='off'] .stage.detect .vignette { animation: none; }
 [data-effects='off'] .wm .wm-top, [data-effects='off'] .wm .wm-beam { animation-duration: 1ms; animation-delay: 0ms; }
 [data-effects='off'] .card h1 { animation-duration: 1ms; }
+
+/* Mission complete: the debrief waits for the player instead of covering Ada's last message. */
+.ready { position: absolute; left: 50%; bottom: 28px; z-index: 40; translate: -50% 0; display: flex; align-items: center; gap: 20px; padding: 12px 14px 12px 20px; border: 1px solid color-mix(in srgb, var(--defense) 55%, transparent); border-radius: 10px; background: rgba(8, 16, 26, 0.92); backdrop-filter: blur(14px); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--defense) 22%, transparent); font: 400 14px/1.4 var(--human); color: var(--text); animation: ready-in 500ms cubic-bezier(0.16, 1, 0.3, 1) 1800ms both; max-width: calc(100vw - 56px); }
+.ready b { display: block; font: 500 11px var(--mono); letter-spacing: 0.3em; color: var(--success); margin-bottom: 3px; }
+.ready .btn { white-space: nowrap; }
+@keyframes ready-in { from { opacity: 0; translate: -50% 16px; } to { opacity: 1; translate: -50% 0; } }
+@media (prefers-reduced-motion: reduce) { .ready { animation: none; } }

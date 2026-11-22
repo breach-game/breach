@@ -49,7 +49,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
   const [order, setOrder] = useState<WinId[]>(['notes', 'ada', 'terminal']);
   const [noise, setNoise] = useState(() => liveNoise(game));
   const [card, setCard] = useState<string | null>(game.state.missionDone ? null : game.state.mission);
-  const [debrief, setDebrief] = useState(game.state.missionDone);
+  const [debrief, setDebrief] = useState(false);
   const [stamp, setStamp] = useState(0);
   const [detect, setDetect] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -99,8 +99,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       else if (e.type === 'MissionStarted') {
         setDebrief(false);
         setCard(e.mission);
-      } else if (e.type === 'MissionCompleted') later(() => setDebrief(true), 2600);
-      else if (e.type === 'Detected') {
+      } else if (e.type === 'Detected') {
         setDetect(true);
         for (const el of document.querySelectorAll('.win')) {
           el.classList.remove('glitch');
@@ -219,6 +218,18 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
             />
           </Window>
         </>
+      )}
+
+      {game.state.missionDone && !debrief && !card && (
+        <div className="ready" role="status">
+          <span>
+            <b>{t('debrief.complete')}</b>
+            {t('ready.body')}
+          </span>
+          <button type="button" className="btn defense" onClick={() => setDebrief(true)}>
+            {t('ready.open')} →
+          </button>
+        </div>
       )}
 
       {stamp > 0 && (

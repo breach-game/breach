@@ -12,7 +12,7 @@ m1.ada.web: "Voilà leur surface exposée. Commençons par la vitrine : `curl ht
 m1.ada.careers: "« Forge Gitea auto-hébergée », « une partie de nos dépôts est publique ». Les offres d'emploi sont une mine d'or. Va voir ce que raconte git.novamind.test."
 m1.ada.clone: "Un dépôt public. Récupère-le avec `git clone` et l'adresse affichée, puis entre dedans avec `cd`."
 m1.ada.history: "Tu as le code, mais surtout tout son passé. Un fichier supprimé n'est jamais supprimé de l'historique. `git log` liste les commits, `git show <id>` montre ce que chacun a changé. Cherche un commit qui « nettoie » quelque chose."
-m1.ada.secret: "Et voilà. Une clé committée « temporairement » un vendredi soir, retirée le lundi. Sauf que Git n'oublie rien. Envoie-la-moi avec `submit`."
+m1.ada.secret: "Et voilà. Une clé committée « temporairement » un vendredi soir, retirée le lundi. Sauf que Git n'oublie rien. Envoie-la-moi depuis le terminal avec `submit`."
 m1.ada.odd: "Attends. Ce commit-là : 3 h 17 un dimanche, par un compte de déploiement, vers une adresse qui n'est dans aucun de leurs DNS. Personne chez NovaMind ne travaille à cette heure-là. Je le note, on y reviendra."
 m1.ada.flag: "Clé validée. Avec ça, n'importe qui pouvait parler à leur API interne. On n'ira pas plus loin aujourd'hui : on documente et on prévient le client."
 m1.ada.done: "Belle reconnaissance. Passe au débrief : je veux que tu voies ce que leur SOC a vu de toi."

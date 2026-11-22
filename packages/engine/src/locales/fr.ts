@@ -3,6 +3,7 @@ export const fr: Record<string, string> = {
   'engine.detected.line1': 'Connection reset by peer',
   'engine.detected.line2':
     '[SOC NovaMind] Activité suspecte détectée. Session coupée, retour au dernier point de sauvegarde.',
+  'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
   'engine.gitUnavailable': "n'est pas disponible sur ce poste. Essaie clone, log, show, status ou remote.",
