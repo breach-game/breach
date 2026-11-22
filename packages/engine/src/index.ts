@@ -4,6 +4,7 @@ export {
   BrainError,
   type BrainInput,
   type BrainIssue,
+  type HearInput,
   type NpcBrain,
   splitReply,
 } from './brain.ts';
@@ -22,7 +23,14 @@ export {
 } from './game.ts';
 export { formatUrl, pageHtml, parseUrl } from './http.ts';
 export { engineStrings, interpolate } from './i18n.ts';
-export { detectFamilies, normalizeText } from './npc.ts';
+export {
+  acceptHearing,
+  decide,
+  detectFamilies,
+  type Heard,
+  normalizeText,
+  vocabulary,
+} from './npc.ts';
 export { type SocEntry, socView } from './soc.ts';
 export {
   type ChatLine,

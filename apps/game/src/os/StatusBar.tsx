@@ -1,6 +1,6 @@
 import { gameDate, socLevel } from '@breach/engine';
 import { useState } from 'react';
-import { useBrain } from '../brain.ts';
+import { activeBrain, useBrain } from '../brain.ts';
 import { Mark } from '../brand.tsx';
 import { liveClock, useGame } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
@@ -174,7 +174,7 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
                   setMenu(false);
                 }}
               >
-                {t(brain.config.key ? 'settings.brain.on' : 'settings.brain.off')} ›
+                {t(activeBrain() ? 'settings.brain.on' : 'settings.brain.off')} ›
               </button>
             </span>
           </div>

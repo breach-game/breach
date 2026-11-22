@@ -1,6 +1,6 @@
 import { gameDate } from '@breach/engine';
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
-import { activeBrain, BRAIN_CALL_LIMIT, reportBrain, useBrain } from '../brain.ts';
+import { activeBrain, BRAIN_CALL_LIMIT, BRAIN_USES, reportBrain, useBrain } from '../brain.ts';
 import { elapsed, resumeSeq, touch, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
@@ -113,7 +113,7 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
             {game.t(npc.role)}
           </small>
         </span>
-        {brain.config.key && (
+        {activeBrain() && (
           <span
             className="voice"
             data-tone={brain.last === null || brain.last === 'ok' ? 'on' : 'warn'}
@@ -124,7 +124,13 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
               { limit: BRAIN_CALL_LIMIT },
             )}
           >
-            {t(brain.last === null || brain.last === 'ok' ? 'chat.voice.on' : 'chat.voice.script')}
+            {brain.last === null || brain.last === 'ok'
+              ? t('chat.voice.on', {
+                  uses: BRAIN_USES.filter((u) => brain.config[u].on)
+                    .map((u) => t(`chat.use.${u}` as UiKey))
+                    .join(' + '),
+                })
+              : t('chat.voice.script')}
           </span>
         )}
       </header>

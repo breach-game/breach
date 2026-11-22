@@ -101,11 +101,14 @@ npcs:
         words: &records [fiche, dossier, client, patient, record, file, customer]
         reply: [m3.nova.record]
       - id: record-ok-now
+        # The staff code word is found in the leaked prompt: the player must type it.
+        literal: true
         words: [tournesol]
         also: *records
         reply: [m3.nova.record]
         set: { staff: true }
       - id: staff
+        literal: true
         words: [tournesol]
         reply: [m3.nova.staff]
         set: { staff: true }
