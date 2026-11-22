@@ -328,7 +328,7 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
   }
   if (options.background && options.until !== undefined) {
     const to = options.until;
-    lines.push(...backgroundLines(world, Math.max(0, to - 40 * 60_000), to, game.mission?.background ?? []));
+    lines.push(...backgroundLines(world, to - 40 * 60_000, to, game.mission?.background ?? []));
   } else if (options.background && Number.isFinite(firstT)) {
     // At least half an hour of ordinary activity around the player's own.
     const from = Math.max(0, firstT - 10 * 60_000);
@@ -349,10 +349,10 @@ export function backgroundLines(
   [...world.telemetry.background, ...extra].forEach((b, n) => {
     const every = b.every * 60_000;
     const first = Math.ceil((from - b.offset * 60_000) / every);
-    for (let k = Math.max(0, first); b.offset * 60_000 + k * every <= to; k++) {
+    for (let k = first; b.offset * 60_000 + k * every <= to; k++) {
       const random = rng(n * 7919 + k * 104729 + 17);
       const jitter = Math.floor((random() - 0.5) * every * 0.6);
-      const t = Math.max(0, b.offset * 60_000 + k * every + jitter);
+      const t = b.offset * 60_000 + k * every + jitter;
       if (t < from || t > to) continue;
       const hostname = nameOf(world, b.host);
       const id = `b${n}.${k}`;

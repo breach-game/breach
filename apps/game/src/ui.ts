@@ -221,7 +221,9 @@ const fr = {
   'debrief.next': 'Mission suivante',
   'debrief.end.title': 'Campagne NovaMind terminée',
   'debrief.end.body':
-    "Du mandat signé jusqu'à la piste de Mute, tu as mené tout le test d'intrusion de NovaMind. Les missions de la communauté t'attendent depuis l'écran titre.",
+    "Du mandat signé jusqu'à la console du SOC, tu as attaqué NovaMind, rejoué chaque attaque côté défense, puis arrêté Mute et ceux qui ont suivi. Inès a reçu ton rapport ce matin : six constats, six correctifs vérifiés, trois incidents contenus. Ada, elle, a déjà un nouveau mandat sur son bureau. Les missions de la communauté t'attendent depuis l'écran titre.",
+  'debrief.end.report': 'Télécharger le rapport (.md)',
+  'debrief.end.reportHint': 'Le même rapport s’affiche dans le terminal avec la commande report.',
   'debrief.tally.defense': 'Défense',
   'debrief.tally.answers': 'Enquête',
   'debrief.tally.impact': 'Impact sur NovaMind ({impact} %)',
@@ -488,7 +490,9 @@ const en: typeof fr = {
   'debrief.next': 'Next mission',
   'debrief.end.title': 'NovaMind campaign complete',
   'debrief.end.body':
-    "From the signed mandate to Mute's trail, you carried out NovaMind's whole penetration test. Community missions are waiting on the title screen.",
+    'From the signed mandate to the SOC console, you attacked NovaMind, replayed every attack on the defence side, then stopped Mute and those who followed. Inès got your report this morning: six findings, six verified fixes, three incidents contained. Ada already has a new mandate on her desk. Community missions are waiting on the title screen.',
+  'debrief.end.report': 'Download the report (.md)',
+  'debrief.end.reportHint': 'The same report shows in the terminal with the report command.',
   'debrief.tally.defense': 'Defence',
   'debrief.tally.answers': 'Investigation',
   'debrief.tally.impact': 'Impact on NovaMind ({impact} %)',

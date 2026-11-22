@@ -145,7 +145,7 @@ rules:
   - on: { event: AdversaryStep, step: exfil, blocked: false }
     do:
       - mission.fail: b1.ada.fail
-  - on: { event: AdversaryStep, blocked: true }
+  - on: { event: AdversaryStep, stop: true }
     do:
       - ada.say: b1.ada.stopped
       - objective.complete: contain

@@ -1,5 +1,6 @@
 import type { LogSource } from '@breach/pack-schema';
 import { LOG_SOURCES } from '@breach/pack-schema';
+import { pentestReport } from '../report.ts';
 import { LOG_FILES, runDetection } from '../telemetry.ts';
 import { sha256, style } from '../util.ts';
 import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
@@ -171,4 +172,16 @@ const answer: Command = {
   },
 };
 
-export const defenseCommands: Command[] = [soc, contain, answer];
+/** The pentest report, from the journal. `report > rapport.md` keeps a copy on the workstation. */
+const report: Command = {
+  name: 'report',
+  summary: 'cmd.report',
+  group: 'game',
+  async *run(ctx): Run {
+    yield wait(300);
+    yield out(pentestReport(ctx.game).trimEnd());
+    return 0;
+  },
+};
+
+export const defenseCommands: Command[] = [soc, contain, answer, report];

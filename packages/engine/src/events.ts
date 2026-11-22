@@ -104,6 +104,8 @@ export type EventBody =
       step: string;
       host: string;
       blocked: boolean;
+      /** A blocked step stops the attacker, unless the step says it tries another way. */
+      stop?: boolean;
     }
   | { type: 'Contained'; containment: string; impact: number }
   | { type: 'AnswerSubmitted'; question: string | null; correct: boolean }

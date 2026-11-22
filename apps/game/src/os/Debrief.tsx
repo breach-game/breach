@@ -1,4 +1,4 @@
-import { LEVEL_BONUS, socView } from '@breach/engine';
+import { LEVEL_BONUS, pentestReport, socView } from '@breach/engine';
 import { useEffect, useRef, useState } from 'react';
 import { playKind, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
@@ -165,6 +165,12 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
               <b>{campaign}</b>
             </span>
           </div>
+          <div className="actions">
+            <button type="button" className="btn" onClick={() => downloadReport(pentestReport(game), locale)}>
+              {t('debrief.end.report')}
+            </button>
+          </div>
+          <p className="fine">{t('debrief.end.reportHint')}</p>
         </>
       )}
       <div className="actions">
@@ -213,4 +219,14 @@ function AttackerPath() {
       </ol>
     </>
   );
+}
+
+/** The pentest report as a Markdown file, built in the browser: nothing leaves the machine. */
+function downloadReport(markdown: string, locale: string) {
+  const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = locale === 'fr' ? 'rapport-NM-2026-114.md' : 'report-NM-2026-114.md';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

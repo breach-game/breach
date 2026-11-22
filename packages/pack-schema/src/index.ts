@@ -443,6 +443,8 @@ const adversaryStep = z.strictObject({
   fields,
   /** The step fails (and the attacker stops) while this holds: a containment did its job. */
   blockedIf: condition.optional(),
+  /** When blocked, the attacker carries on with the next step (another address, another way). */
+  continueIfBlocked: z.boolean().default(false),
 });
 
 /** In a defence mission, the attacker plays a script, one step every `pace` actions of the player. */

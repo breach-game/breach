@@ -632,7 +632,7 @@ export class Game {
       }
       case 'AdversaryStep':
         s.adversary.next++;
-        if (e.blocked) {
+        if (e.blocked && e.stop !== false) {
           s.adversary.stopped = true;
           s.adversary.blockedAt = e.step;
         }
@@ -1302,8 +1302,13 @@ export class Game {
       actor: adv.id,
       step: step.id,
       host: step.host,
-      blocked: step.blockedIf ? evaluate(step.blockedIf, s) : false,
+      ...this.stepOutcome(step),
     });
+  }
+
+  private stepOutcome(step: NonNullable<Mission['adversary']>['steps'][number]) {
+    const blocked = step.blockedIf ? evaluate(step.blockedIf, this.state) : false;
+    return { blocked, stop: blocked && !step.continueIfBlocked };
   }
 
   /** Order a containment of the current defence mission. */
@@ -1326,7 +1331,13 @@ export class Game {
       !this.replaying
     )
       if (evaluate(step.blockedIf, s))
-        this.emit({ type: 'AdversaryStep', actor: adv.id, step: step.id, host: step.host, blocked: true });
+        this.emit({
+          type: 'AdversaryStep',
+          actor: adv.id,
+          step: step.id,
+          host: step.host,
+          ...this.stepOutcome(step),
+        });
   }
 
   /* ---------- missions ---------- */

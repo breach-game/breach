@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { Game, runDetection, sigmaText } from '@breach/engine';
+import { Game, pentestReport, runDetection, sigmaText } from '@breach/engine';
 import { describe, expect, it } from 'vitest';
 import { loadAll, replaySolution } from '../src/index.ts';
 
@@ -191,5 +191,94 @@ describe('defence mission: Mute returns', () => {
     const out = await play(game, ['soc alerts', 'contain block 10.13.0.99']);
     expect(out).toContain(game.t('soc.unavailable'));
     expect(game.state.contained).toEqual({});
+  });
+});
+
+describe('defence missions: what the containment has to target', () => {
+  const find = (id: string) => packs.find((p) => p.pack.id === id)!;
+
+  it('shutting Atlas down after it created the account does not stop the attacker', async () => {
+    const b2 = find('breach.official.b02');
+    const late = [
+      'soc alerts',
+      'soc alerts',
+      'soc alerts',
+      'soc alerts',
+      'contain isolate ops.novamind.test',
+    ];
+    const { game } = await replaySolution(world, b2.pack, late, 'fr');
+    expect(game.state.adversary.stopped).toBe(false);
+    expect(game.state.impact).toBe(30);
+    // Early enough, asking for a human confirmation is enough.
+    const early = [
+      'soc alerts',
+      'soc alerts',
+      'contain disable atlas-admin-tools',
+      'soc alerts',
+      'soc alerts',
+    ];
+    const again = await replaySolution(world, b2.pack, early, 'fr');
+    expect(again.game.state.objectives.contain).toBe(true);
+  });
+
+  it('blocking the address only makes the scraper switch to another one', async () => {
+    const b3 = find('breach.official.b03');
+    const lines = [
+      'soc alerts',
+      'soc alerts',
+      'soc alerts',
+      'contain block 203.0.113.45',
+      'soc alerts',
+      'soc alerts',
+    ];
+    const { game } = await replaySolution(world, b3.pack, lines, 'en');
+    expect(game.state.adversary.stopped).toBe(false);
+    const sources = game
+      .socLines()
+      .filter((l) => l.actor === 'adversary')
+      .map((l) => l.fields.src);
+    expect(sources).toContain('203.0.113.46');
+    // Revoking the key stops it at once, from any address.
+    await (async () => {
+      for await (const _ of game.exec('contain revoke nm-partner-7f3a', 5000)) {
+      }
+    })();
+    expect(game.state.adversary.stopped).toBe(true);
+    expect(game.state.objectives.contain).toBe(true);
+  });
+
+  it('the enumeration alert has no false positive on ordinary traffic', async () => {
+    const b3 = find('breach.official.b03');
+    const { game } = await replaySolution(world, b3.pack, b3.solution!, 'fr');
+    const rule = b3.pack.mission!.alerts.find((a) => a.id === 'enumeration')!;
+    const result = runDetection(rule, game.socLines());
+    expect(result.caught).toBeGreaterThanOrEqual(3);
+    expect(result.falsePositives).toBe(0);
+  });
+});
+
+describe('pentest report', () => {
+  it('lists each finding with its validated fix, and each incident with its containment', async () => {
+    const m1 = attacks.find((m) => m.pack.id === 'breach.official.m01')!;
+    const { game } = await replaySolution(world, m1.pack, m1.solution!, 'en');
+    game.startDefense();
+    const d = game.mission!.defense!;
+    game.markLines(
+      game
+        .socLines()
+        .filter((l) => l.actor !== 'background')
+        .map((l) => l.id),
+    );
+    game.chooseRule(d.rules.find((r) => r.correct)!.id);
+    await game.applyFix(d.fixes.find((f) => f.correct)!.id);
+    const report = pentestReport(game);
+    expect(report).toContain(game.t(d.fixes.find((f) => f.correct)!.title));
+    expect(report).toContain(game.t(d.rules.find((r) => r.correct)!.title));
+    // Wrong fixes never appear as validated.
+    for (const f of d.fixes.filter((x) => !x.correct)) expect(report).not.toContain(game.t(f.title));
+
+    const b1 = packs.find((p) => p.pack.id === 'breach.official.b01')!;
+    const incident = await replaySolution(world, b1.pack, b1.solution!, 'fr');
+    expect(pentestReport(incident.game)).toContain('`contain block 10.13.0.99`');
   });
 });
