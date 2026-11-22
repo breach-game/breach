@@ -129,7 +129,7 @@ alerts:
     source: access
     where: { path: { contains: export } }
 
-questions:
+investigation:
   - { id: account, text: b2.q.account, value: audit-ext, points: 100, objective: account }
   - { id: source, text: b2.q.source, value: 198.51.100.140, points: 100, objective: source }
   - { id: tool, text: b2.q.tool, value: create_account, points: 100, objective: tool }

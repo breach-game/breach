@@ -134,43 +134,39 @@ const contain: Command = {
 /** Normalised answer: trimmed, lower case, inner spaces collapsed. The CLI hashes it the same way. */
 export const normalizeAnswer = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
-const answer: Command = {
-  name: 'answer',
-  summary: 'cmd.answer',
-  group: 'game',
-  async *run(ctx): Run {
-    const m = ctx.game.mission;
-    if (!m?.questions.length) {
-      yield err(ctx.t('answer.none'));
-      return 1;
-    }
-    const [id, ...rest] = ctx.args;
-    const question = m.questions.find((q) => q.id === id);
-    if (!question || !rest.length) {
-      yield out(ctx.t('answer.usage'));
-      for (const q of m.questions)
-        yield out(
-          `  ${ctx.state.answers[q.id] ? paint(ctx, style.green, '✔') : '·'} ${paint(ctx, style.cyan, q.id.padEnd(10))} ${ctx.t(q.text)}`,
-        );
-      return question ? 2 : id ? 1 : 0;
-    }
-    if (ctx.state.answers[question.id]) {
-      yield out(ctx.t('submit.already'));
-      return 0;
-    }
-    // Judged like a flag: a hash comparison, never a model's opinion.
-    const correct = (await sha256(normalizeAnswer(rest.join(' ')))) === question.sha256;
-    yield wait(350);
-    ctx.emit({ type: 'AnswerSubmitted', question: correct ? question.id : null, correct });
-    if (!correct) {
-      yield err(ctx.t('answer.wrong'));
-      return 1;
-    }
-    yield out(`${paint(ctx, style.green, ctx.t('answer.ok'))} +${question.points}`);
-    if (question.objective) ctx.game.completeObjective(question.objective);
+/**
+ * Investigation questions of a defence mission: `answer <id> <value>`, judged like a flag, by hash.
+ * Called by `answer`, which keeps Ada's multiple-choice questions. Returns null when it does not apply.
+ */
+export async function* investigate(ctx: CommandCtx): Run {
+  const m = ctx.game.mission;
+  const list = m?.investigation ?? [];
+  const [id, ...rest] = ctx.args;
+  const question = list.find((q) => q.id === id);
+  if (!question || !rest.length) {
+    yield out(ctx.t('investigation.usage'));
+    for (const q of list)
+      yield out(
+        `  ${ctx.state.answers[q.id] ? paint(ctx, style.green, '✔') : '·'} ${paint(ctx, style.cyan, q.id.padEnd(10))} ${ctx.t(q.text)}`,
+      );
+    return question ? 2 : id ? 1 : 0;
+  }
+  if (ctx.state.answers[question.id]) {
+    yield out(ctx.t('submit.already'));
     return 0;
-  },
-};
+  }
+  // Judged like a flag: a hash comparison, never a model's opinion.
+  const correct = (await sha256(normalizeAnswer(rest.join(' ')))) === question.sha256;
+  yield wait(350);
+  ctx.emit({ type: 'AnswerSubmitted', question: correct ? question.id : null, correct });
+  if (!correct) {
+    yield err(ctx.t('investigation.wrong'));
+    return 1;
+  }
+  yield out(`${paint(ctx, style.green, ctx.t('investigation.ok'))} +${question.points}`);
+  if (question.objective) ctx.game.completeObjective(question.objective);
+  return 0;
+}
 
 /** The pentest report, from the journal. `report > rapport.md` keeps a copy on the workstation. */
 const report: Command = {
@@ -184,4 +180,4 @@ const report: Command = {
   },
 };
 
-export const defenseCommands: Command[] = [soc, contain, answer, report];
+export const defenseCommands: Command[] = [soc, contain, report];

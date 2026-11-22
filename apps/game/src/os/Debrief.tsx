@@ -82,6 +82,11 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
             {t('debrief.hints')} <b>−{detail.hints}</b>
           </span>
         )}
+        {detail.mistakes > 0 && (
+          <span>
+            {t('debrief.mistakes')} <b>−{detail.mistakes}</b>
+          </span>
+        )}
         {detail.detections > 0 && (
           <span>
             {t('debrief.detections')} <b>−{detail.detections}</b>

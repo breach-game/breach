@@ -41,7 +41,7 @@ export type EventBody =
   | { type: 'ToolCall'; agent: string; tool: string; args: string; admin: boolean }
   /** A setting of the target changed: a defender's fix or a containment. */
   | { type: 'ConfigPatched'; key: string; value: string | number | boolean; by: string }
-  | { type: 'AppOpened'; app: 'browser'; url: string }
+  | { type: 'AppOpened'; app: 'browser' | 'editor'; url: string }
   | {
       type: 'ChatSent';
       npc: string;
@@ -88,6 +88,11 @@ export type EventBody =
   | { type: 'RuleFired'; rule: string }
   | { type: 'VarSet'; name: string; value: string | number | boolean }
   | { type: 'HostRevealed'; host: string }
+  /** Ada put a question of the mission to the player. */
+  | { type: 'Asked'; question: string }
+  | { type: 'Answered'; question: string; option: string; correct: boolean }
+  /** `verify` ran: which of the mission's checks hold now. */
+  | { type: 'Verified'; passed: string[]; failed: string[] }
   | { type: 'MissionCompleted'; mission: string; score: number }
   /* Defence replay at the end of an attack mission. */
   | { type: 'DefenseStarted'; mission: string }

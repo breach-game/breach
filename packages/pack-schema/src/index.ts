@@ -179,7 +179,9 @@ export type Condition =
   | { noise: { gte?: number; lt?: number } }
   | { var: string; eq: string | number | boolean }
   /** A setting of the target, that a defender's fix can change (`config` of the world). */
-  | { config: string; eq: string | number | boolean };
+  | { config: string; eq: string | number | boolean }
+  | { file: string; host?: string; contains?: string; lacks?: string }
+  | { answer: string; eq: string };
 
 const condition: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -192,6 +194,19 @@ const condition: z.ZodType<Condition> = z.lazy(() =>
     z.strictObject({ noise: z.strictObject({ gte: z.number().optional(), lt: z.number().optional() }) }),
     z.strictObject({ var: id, eq: scalar }),
     z.strictObject({ config: id, eq: scalar }),
+    /**
+     * A file as it stands now, on the player's workstation unless `host` names another one. `~` is the
+     * home directory. True when the file exists, holds `contains` and does not hold `lacks`. Plain
+     * text only: content never supplies a regular expression.
+     */
+    z.strictObject({
+      file: z.string().min(1).max(200),
+      host: id.optional(),
+      contains: z.string().min(1).max(400).optional(),
+      lacks: z.string().min(1).max(400).optional(),
+    }),
+    /** The option the player picked for a question. */
+    z.strictObject({ answer: id, eq: id }),
   ]),
 );
 
@@ -227,6 +242,8 @@ const effect = z.union([
   z.strictObject({ 'note.add': i18nKey }),
   /** The attack got through in a defence mission: back to the last checkpoint, with Ada's words. */
   z.strictObject({ 'mission.fail': i18nKey }),
+  /** Ada puts one of the mission's questions to the player. */
+  z.strictObject({ 'ada.ask': id }),
 ]);
 export type Effect = z.infer<typeof effect>;
 
@@ -473,7 +490,7 @@ const containment = z.strictObject({
 export type Containment = z.infer<typeof containment>;
 
 /** An investigation question, answered with `answer <id> <value>` and judged by hash. */
-const question = z.strictObject({
+const investigationQuestion = z.strictObject({
   id,
   text: i18nKey,
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
@@ -532,6 +549,33 @@ const mission = z.strictObject({
   guide: z.record(id, i18nKey).default({}),
   /** Three levels of hints per objective, from vague to explicit. */
   hints: z.record(id, z.array(i18nKey).min(1).max(3)).default({}),
+  /**
+   * Things the player must put right, judged by `verify`: each check is a condition on the state of
+   * the game, usually a file. A check that passes completes its objective.
+   */
+  checks: z
+    .array(z.strictObject({ id, text: i18nKey, if: condition, objective: id.optional() }))
+    .max(12)
+    .default([]),
+  /**
+   * Multiple-choice questions Ada asks with `ada.ask`. The right option completes the objective.
+   * A wrong one costs points and gets the option's `why`, and the player answers again.
+   */
+  questions: z
+    .array(
+      z.strictObject({
+        id,
+        text: i18nKey,
+        options: z
+          .array(z.strictObject({ id, text: i18nKey, why: i18nKey.optional() }))
+          .min(2)
+          .max(5),
+        correct: id,
+        objective: id.optional(),
+      }),
+    )
+    .max(12)
+    .default([]),
   debrief: z.strictObject({
     title: i18nKey,
     lesson: i18nKey,
@@ -547,11 +591,26 @@ const mission = z.strictObject({
   background: z.array(background).max(30).default([]),
   /** Rules running in the target's SOC during a defence mission (`soc alerts`). */
   alerts: z.array(detection).max(10).default([]),
-  questions: z.array(question).max(8).default([]),
+  /** Open questions of a defence investigation, answered in free text and judged by hash. */
+  investigation: z.array(investigationQuestion).max(8).default([]),
 });
 export type Mission = z.infer<typeof mission>;
 
 /* ---------- pack ---------- */
+
+export const TRACKS = ['campaign', 'training'] as const;
+export const SKILLS = [
+  'recon',
+  'web',
+  'social',
+  'llm',
+  'logs',
+  'linux',
+  'crypto',
+  'supply',
+  'defense',
+] as const;
+export type Skill = (typeof SKILLS)[number];
 
 const packBase = z.strictObject({
   format: z.literal(PACK_FORMAT),
@@ -565,6 +624,12 @@ const packBase = z.strictObject({
   summary: i18nText.optional(),
   authors: z.array(z.string().max(80)).min(1).max(10),
   locales: z.array(z.enum(LOCALES)).min(1),
+  /** Where a mission is listed: in the story, or among the short standalone trainings. */
+  track: z.enum(TRACKS).default('campaign'),
+  /** 1 easy, 2 medium, 3 hard. */
+  difficulty: z.number().int().min(1).max(3).optional(),
+  /** What the mission trains, shown as labels. */
+  skills: z.array(z.enum(SKILLS)).max(4).default([]),
   world: world.optional(),
   mission: mission.optional(),
   i18n: z.partialRecord(z.enum(LOCALES), z.record(z.string(), z.string().max(8000))).default({}),
@@ -586,6 +651,8 @@ export const catalogSchema = z.strictObject({
   format: z.literal(PACK_FORMAT),
   generatedAt: z.string(),
   campaign: z.array(id),
+  /** Short standalone missions, easiest first. */
+  training: z.array(id).default([]),
   packs: z.array(
     z.strictObject({
       id,
@@ -597,6 +664,9 @@ export const catalogSchema = z.strictObject({
       summary: i18nText.optional(),
       authors: z.array(z.string().max(80)).max(10).optional(),
       order: z.number().optional(),
+      track: z.enum(TRACKS).optional(),
+      difficulty: z.number().int().min(1).max(3).optional(),
+      skills: z.array(z.enum(SKILLS)).max(4).optional(),
       locales: z.array(z.enum(LOCALES)),
       file: z.string().regex(/^[a-z0-9._-]+\.breachpack$/),
       sha256: z.string().regex(/^[0-9a-f]{64}$/),

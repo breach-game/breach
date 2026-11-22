@@ -1,5 +1,6 @@
 import { gameDate } from '@breach/engine';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { playSfx } from '../audio.ts';
 import { resumeSeq, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
@@ -76,8 +77,45 @@ export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typi
           </div>
         );
       })}
+      <Questions hidden={current !== undefined} />
       <p className="chat-hint">{t('win.ada.reply')}</p>
       <div ref={end} />
     </div>
+  );
+}
+
+/** Ada's open question, as buttons. The engine judges the answer against the pack. */
+function Questions({ hidden }: { hidden: boolean }) {
+  const game = useGame();
+  const t = useT();
+  const [feedback, setFeedback] = useState<{ question: string; option: string; why?: string } | null>(null);
+  const question = game.openQuestions()[0];
+  if (!question) return null;
+  return (
+    <fieldset className="ask" hidden={hidden}>
+      <legend>{t('ask.title')}</legend>
+      <p>{rich(game.t(question.text))}</p>
+      {question.options.map((o, i) => (
+        <button
+          type="button"
+          key={o.id}
+          data-wrong={feedback?.question === question.id && feedback.option === o.id}
+          onClick={() => {
+            const result = game.answer(question.id, o.id);
+            if (!result) return;
+            playSfx(result.correct ? 'objective' : 'wrong');
+            setFeedback(result.correct ? null : { question: question.id, option: o.id, why: result.why });
+          }}
+        >
+          <i aria-hidden="true">{String.fromCharCode(65 + i)}</i>
+          <span>{rich(game.t(o.text))}</span>
+        </button>
+      ))}
+      {feedback?.question === question.id && (
+        <p className="ask-why" role="status">
+          <b>{t('ask.wrong')}</b> {feedback.why ? rich(feedback.why) : null}
+        </p>
+      )}
+    </fieldset>
   );
 }

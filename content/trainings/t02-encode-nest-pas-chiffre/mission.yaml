@@ -1,0 +1,80 @@
+order: 2
+stage: analysis
+briefing: t2.briefing
+
+files:
+  training/config.env: "# nova-widget, staging deployment\nAPP_ENV=staging\nLOG_LEVEL=debug\n# Token protected before commit, see the wiki page \"Secrets\"\nAPI_TOKEN_B64=RkxBR3tiNjQtbmVzdC1wYXMtdW4tY29mZnJlfQ==\nCACHE_TTL=300\n"
+
+objectives:
+  - { id: decode, text: t2.obj.decode }
+  - { id: fix, text: t2.obj.fix }
+  - { id: next, text: t2.obj.next }
+
+flags:
+  - { id: token, value: "FLAG{b64-nest-pas-un-coffre}", points: 100, objective: decode }
+
+checks:
+  - id: gone
+    text: t2.check.gone
+    if: { file: "~/training/config.env", lacks: "RkxBR3tiNjQtbmVzdC1wYXMtdW4tY29mZnJlfQ==" }
+  - id: vault
+    text: t2.check.vault
+    if:
+      all:
+        - { file: "~/training/config.env", lacks: "RkxBR3tiNjQtbmVzdC1wYXMtdW4tY29mZnJlfQ==" }
+        - { file: "~/training/config.env", contains: "API_TOKEN=vault:nova-widget/api-token" }
+    objective: fix
+  - id: rest
+    text: t2.check.rest
+    if: { file: "~/training/config.env", contains: "CACHE_TTL=300" }
+
+questions:
+  - id: next
+    text: t2.q.next
+    objective: next
+    correct: rotate
+    options:
+      - { id: done, text: t2.q.next.done, why: t2.q.next.done.why }
+      - { id: twice, text: t2.q.next.twice, why: t2.q.next.twice.why }
+      - { id: rotate, text: t2.q.next.rotate }
+      - { id: private, text: t2.q.next.private, why: t2.q.next.private.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t2.ada.brief
+  - on: { event: FileRead, path: { glob: "*config.env" } }
+    do:
+      - ada.guide: { key: t2.ada.spot, for: decode, step: 1 }
+  - on: { event: CommandRun, command: base64 }
+    do:
+      - ada.guide: { key: t2.ada.submit, for: decode, step: 2 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: t2.ada.decoded
+  - on: { event: Verified }
+    if: { not: { objective: fix } }
+    do:
+      - ada.guide: { key: t2.ada.exact, for: fix, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: fix }
+    do:
+      - ada.say: t2.ada.fixed
+      - ada.ask: next
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t2.ada.done
+
+guide:
+  decode: t2.ada.read
+  fix: t2.ada.fix
+  next: t2.ada.next
+
+hints:
+  decode: [t2.hint.decode.1, t2.hint.decode.2]
+  fix: [t2.hint.fix.1, t2.hint.fix.2]
+
+debrief:
+  title: t2.debrief.title
+  lesson: t2.debrief.lesson
+  points: [t2.debrief.p1, t2.debrief.p2, t2.debrief.p3]
+  reference: "OWASP Top 10 · A02 Cryptographic Failures"

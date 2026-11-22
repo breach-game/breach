@@ -1,0 +1,80 @@
+order: 1
+stage: analysis
+briefing: t1.briefing
+
+# What the client sent: last night's access log of the web front, and its deny list.
+files:
+  training/access.log: { $file: files/access.log }
+  training/blocklist.conf: "# Deny list of www.novamind.test, loaded by nginx.\n# One line per address: deny <address>;\ndeny 198.51.100.250;\n"
+
+objectives:
+  - { id: who, text: t1.obj.who }
+  - { id: account, text: t1.obj.account }
+  - { id: block, text: t1.obj.block }
+
+flags:
+  - { id: account, value: "c.morel", points: 100, objective: account }
+
+questions:
+  - id: who
+    text: t1.q.who
+    objective: who
+    correct: attacker
+    options:
+      - { id: monitor, text: t1.q.who.monitor, why: t1.q.who.monitor.why }
+      - { id: attacker, text: t1.q.who.attacker }
+      - { id: visitor, text: t1.q.who.visitor, why: t1.q.who.visitor.why }
+      - { id: self, text: t1.q.who.self, why: t1.q.who.self.why }
+
+checks:
+  - id: denied
+    text: t1.check.denied
+    if: { file: "~/training/blocklist.conf", contains: "deny 203.0.113.57;" }
+    objective: block
+  - id: kept
+    text: t1.check.kept
+    if: { file: "~/training/blocklist.conf", contains: "deny 198.51.100.250;" }
+  - id: monitor
+    text: t1.check.monitor
+    if: { file: "~/training/blocklist.conf", lacks: "10.13.0.5" }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t1.ada.brief
+      - ada.ask: who
+  - on: { event: FileRead, path: { glob: "*access.log" } }
+    do:
+      - ada.guide: { key: t1.ada.count, for: who, step: 1 }
+  - on: { event: Answered, question: who, correct: false }
+    do:
+      - ada.guide: { key: t1.ada.filter, for: who, step: 2 }
+  - on: { event: ObjectiveCompleted, objective: who }
+    do:
+      - ada.say: t1.ada.found
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: t1.ada.account
+  - on: { event: Verified }
+    if: { not: { objective: block } }
+    do:
+      - ada.guide: { key: t1.ada.syntax, for: block, step: 1 }
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t1.ada.done
+
+guide:
+  who: t1.ada.who
+  account: t1.ada.success
+  block: t1.ada.block
+
+hints:
+  who: [t1.hint.who.1, t1.hint.who.2, t1.hint.who.3]
+  account: [t1.hint.account.1, t1.hint.account.2]
+  block: [t1.hint.block.1, t1.hint.block.2]
+
+debrief:
+  title: t1.debrief.title
+  lesson: t1.debrief.lesson
+  points: [t1.debrief.p1, t1.debrief.p2, t1.debrief.p3, t1.debrief.p4]
+  reference: "MITRE ATT&CK · T1110 Brute Force"

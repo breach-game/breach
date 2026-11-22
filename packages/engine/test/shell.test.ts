@@ -142,3 +142,49 @@ describe('network commands', () => {
     expect((await run(g, 'git show ffff')).status).toBe(128);
   });
 });
+
+describe('text tools', () => {
+  it('sorts, counts and cuts', async () => {
+    const g = await newGame();
+    await run(g, 'echo "10.0.0.2 GET /a" > log');
+    await run(g, 'echo "10.0.0.9 GET /b" >> log');
+    await run(g, 'echo "10.0.0.2 POST /c" >> log');
+    expect((await run(g, 'cut -d " " -f 1 log | sort | uniq -c | sort -rn')).out).toBe(
+      '      2 10.0.0.2\n      1 10.0.0.9\n',
+    );
+    expect((await run(g, 'cut -d " " -f 2- log | head -1')).out).toBe('GET /a\n');
+    expect((await run(g, 'sort -r a.txt')).out).toBe('gamma\nbeta\nalpha\n');
+    expect((await run(g, 'cat a.txt | tr a-z A-Z')).out).toBe('ALPHA\nBETA\nGAMMA\n');
+    expect((await run(g, 'echo hello | tr -d l')).out).toBe('heo\n');
+  });
+
+  it('encodes, decodes and fingerprints', async () => {
+    const g = await newGame();
+    expect((await run(g, 'echo -n "clé:42" | base64')).out).toBe('Y2zDqTo0Mg==\n');
+    expect((await run(g, 'echo Y2zDqTo0Mg== | base64 -d')).out).toBe('clé:42');
+    expect((await run(g, 'echo "***" | base64 -d')).err).toBe('base64: invalid input\n');
+    expect((await run(g, 'echo -n abc | sha256sum')).out).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad  -\n',
+    );
+    expect((await run(g, 'sha256sum b.txt')).out).toMatch(/^[0-9a-f]{64} {2}b\.txt\n$/);
+  });
+
+  it('compares files', async () => {
+    const g = await newGame();
+    await run(g, 'sed "s/beta/BETA/" a.txt > c.txt');
+    await run(g, 'echo delta >> c.txt');
+    expect((await run(g, 'diff a.txt c.txt')).out).toBe('2c2\n< beta\n---\n> BETA\n3a4\n> delta\n');
+    expect((await run(g, 'diff a.txt a.txt')).status).toBe(0);
+    expect((await run(g, 'diff -q a.txt c.txt')).out).toBe('Files a.txt and c.txt differ\n');
+  });
+
+  it('rewrites a file in place with sed', async () => {
+    const g = await newGame();
+    expect((await run(g, 'sed "s/a/A/g" a.txt')).out).toBe('AlphA\nbetA\ngAmmA\n');
+    await run(g, 'sed -i "s|beta|x/y|" a.txt');
+    await run(g, 'sed -i /gamma/d a.txt');
+    expect((await run(g, 'cat a.txt')).out).toBe('alpha\nx/y\n');
+    expect((await run(g, 'sed -i s/a/b/ /etc/shadow')).status).toBe(1);
+    expect((await run(g, 'sed nope a.txt')).status).toBe(1);
+  });
+});

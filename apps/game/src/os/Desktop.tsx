@@ -6,6 +6,7 @@ import { useT } from '../ui.ts';
 import { BrainSettings } from './BrainSettings.tsx';
 import { Browser } from './Browser.tsx';
 import { Debrief } from './Debrief.tsx';
+import { Editor } from './Editor.tsx';
 import { Messenger } from './Messenger.tsx';
 import { NetworkMap } from './NetworkMap.tsx';
 import { Notebook } from './Notebook.tsx';
@@ -13,7 +14,7 @@ import { StatusBar } from './StatusBar.tsx';
 import { Terminal } from './Terminal.tsx';
 import { type Rect, Window } from './Window.tsx';
 
-type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'debrief' | 'brain';
+type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'editor' | 'debrief' | 'brain';
 
 function defaultLayout(): Record<WinId, Rect> {
   const W = window.innerWidth;
@@ -27,6 +28,12 @@ function defaultLayout(): Record<WinId, Rect> {
   const bw = Math.min(900, W - side - 28 * 3 - 40);
   return {
     browser: { x: 68, y: 104, w: Math.max(420, bw), h: Math.max(360, H - 104 - 72) },
+    editor: {
+      x: 96,
+      y: 132,
+      w: Math.max(420, Math.min(760, bw)),
+      h: Math.max(320, Math.min(520, H - 132 - 72)),
+    },
     terminal: { x: 28, y: 68, w: termW, h: termH },
     ada: { x: W - side - 28, y: 68, w: side, h: adaH },
     notes: { x: W - side - 28, y: 68 + adaH + 16, w: side, h: H - 68 - adaH - 16 - 28 },
@@ -76,6 +83,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
     kind: 'ai' | 'web';
     open: boolean;
   } | null>(null);
+  const [editor, setEditor] = useState<{ path: string; nonce: number; open: boolean } | null>(null);
   const stage = useRef<HTMLDivElement>(null);
   const active = debrief ? 'debrief' : order[order.length - 1]!;
 
@@ -143,6 +151,10 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       } else if (e.type === 'NpcMessage') {
         setUnread(true);
         playSfx('message');
+      } else if (e.type === 'AppOpened' && e.app === 'editor') {
+        setEditor((ed) => ({ path: e.url, nonce: (ed?.nonce ?? 0) + 1, open: true }));
+        focus('editor');
+        playSfx('open');
       } else if (e.type === 'AppOpened') {
         openBrowser(e.url);
         playSfx('open');
@@ -169,7 +181,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       off();
       timers.forEach(clearTimeout);
     };
-  }, [openBrowser]);
+  }, [openBrowser, focus]);
 
   // Music: the desk loop during a mission, a calmer one behind the debrief, silence on leaving.
   useEffect(() => {
@@ -306,6 +318,34 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
             nonce={browser.nonce}
             active={active === 'browser' && browser.open && !card}
             onNavigate={onNavigate}
+          />
+        </Window>
+      )}
+
+      {editor && (
+        <Window
+          id="editor"
+          name={t('win.editor')}
+          subtitle={editor.path.split('/').pop()}
+          meta={editor.path}
+          tint="defense"
+          rect={rect('editor')}
+          z={z('editor')}
+          active={active === 'editor'}
+          onFocus={() => focus('editor')}
+          onChange={change('editor')}
+          onClose={() => {
+            setEditor((ed) => (ed ? { ...ed, open: false } : ed));
+            setOrder((o) => (o.length > 1 ? o.filter((x) => x !== 'editor') : o));
+            terminalBridge.focus?.();
+          }}
+          closeLabel={t('win.close')}
+          hidden={!editor.open}
+        >
+          <Editor
+            path={editor.path}
+            nonce={editor.nonce}
+            active={active === 'editor' && editor.open && !card}
           />
         </Window>
       )}
@@ -457,7 +497,8 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
         <div className={`card${effects ? '' : ' static'}`} key={card} aria-live="polite">
           <div className="card-inner">
             <div className="num">
-              {t('card.mission')} {String(pack.mission?.order ?? 0).padStart(2, '0')}
+              {t(pack.track === 'training' ? 'card.training' : 'card.mission')}{' '}
+              {String(pack.mission?.order ?? 0).padStart(2, '0')}
             </div>
             <h1>{pack.title[locale] ?? pack.title.fr ?? pack.title.en}</h1>
             <div className="rule" />

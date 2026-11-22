@@ -5,7 +5,9 @@ import { loadAll, replaySolution } from '../src/index.ts';
 
 const packs = loadAll(resolve(import.meta.dirname, '../../../content'));
 const world = packs.find((p) => p.pack.kind === 'world')!.pack;
-const attacks = packs.filter((p) => p.pack.kind === 'mission' && p.pack.mission?.side !== 'defense');
+const attacks = packs.filter(
+  (p) => p.pack.kind === 'mission' && p.pack.mission?.side !== 'defense' && p.pack.mission?.defense,
+);
 
 describe('defence replay', () => {
   it.each(attacks.map((m) => [m.pack.id, m] as const))(

@@ -7,12 +7,14 @@ import type { StartMode } from './session.ts';
 const Boot = lazy(() => import('./screens/Boot.tsx').then((m) => ({ default: m.Boot })));
 const Desktop = lazy(() => import('./os/Desktop.tsx').then((m) => ({ default: m.Desktop })));
 const Missions = lazy(() => import('./screens/Missions.tsx').then((m) => ({ default: m.Missions })));
+const Training = lazy(() => import('./screens/Training.tsx').then((m) => ({ default: m.Training })));
 const Community = lazy(() => import('./screens/Community.tsx').then((m) => ({ default: m.Community })));
 
 type Screen =
   | { name: 'title' }
   | { name: 'community' }
   | { name: 'missions' }
+  | { name: 'training' }
   | { name: 'boot'; mode: StartMode }
   | { name: 'desktop' };
 
@@ -43,12 +45,18 @@ function Screens() {
         onStart={(mode) => setScreen({ name: 'boot', mode })}
         onCommunity={() => setScreen({ name: 'community' })}
         onMissions={() => setScreen({ name: 'missions' })}
+        onTraining={() => setScreen({ name: 'training' })}
       />
     );
   return (
     <Suspense fallback={<main className="title" aria-busy="true" />}>
       {screen.name === 'missions' ? (
         <Missions
+          onStart={(mode) => setScreen({ name: 'boot', mode })}
+          onBack={() => setScreen({ name: 'title' })}
+        />
+      ) : screen.name === 'training' ? (
+        <Training
           onStart={(mode) => setScreen({ name: 'boot', mode })}
           onBack={() => setScreen({ name: 'title' })}
         />

@@ -1,4 +1,5 @@
 import type {
+  Condition,
   Effect,
   Fix,
   Guidance,
@@ -34,9 +35,20 @@ import {
 } from './state.ts';
 import { type LogLine, runDetection, selects, telemetry } from './telemetry.ts';
 import { gameDate, sanitizeTerminal, stripAnsi, style } from './util.ts';
-import { buildFs, chown, globMatch, lookup, mkdir, mkdirp, normalize, writeFile } from './vfs.ts';
+import {
+  buildFs,
+  canRead,
+  canWrite,
+  chown,
+  globMatch,
+  lookup,
+  mkdir,
+  mkdirp,
+  normalize,
+  writeFile,
+} from './vfs.ts';
 
-export const ENGINE_VERSION = '0.3.0';
+export const ENGINE_VERSION = '0.4.0';
 
 export interface GameOptions {
   world: Pack;
@@ -143,6 +155,8 @@ export interface ScoreDetail {
   /** Defence missions: points of the investigation answers, and what the containment cost. */
   answers: number;
   impact: number;
+  /** Points lost to wrong answers. */
+  mistakes: number;
   total: number;
 }
 
@@ -374,6 +388,8 @@ export class Game {
       hints: {},
       hintsUsed: 0,
       detections: 0,
+      asked: {},
+      mistakes: 0,
       level: null,
       notes: [],
       messages: [],
@@ -456,6 +472,8 @@ export class Game {
         s.hints = {};
         s.hintsUsed = 0;
         s.detections = 0;
+        s.asked = {};
+        s.mistakes = 0;
         s.level = null;
         s.fired = {};
         s.guided = {};
@@ -530,6 +548,13 @@ export class Game {
         if (!ports.includes(e.port)) ports.push(e.port);
         break;
       }
+      case 'Asked':
+        if (!(e.question in s.asked)) s.asked[e.question] = null;
+        break;
+      case 'Answered':
+        if (e.correct) s.asked[e.question] = e.option;
+        else s.mistakes++;
+        break;
       case 'HostRevealed':
         s.revealed[e.host] = true;
         break;
@@ -689,7 +714,7 @@ export class Game {
     try {
       for (const { id, rule } of this.activeRules()) {
         if (rule.once && this.state.fired[id]) continue;
-        if (!triggerMatches(rule, event) || !evaluate(rule.if, this.state)) continue;
+        if (!triggerMatches(rule, event) || !this.holds(rule.if)) continue;
         this.emit({ type: 'RuleFired', rule: id });
         for (const effect of rule.do) this.perform(effect);
       }
@@ -726,6 +751,68 @@ export class Game {
       this.guide(key, { objective: open.id, step: 0 });
   }
 
+  /** Whether a condition of a pack holds now. */
+  holds(cond: Condition | undefined): boolean {
+    return evaluate(cond, this.state, { playerHost: this.world.player.host, home: this.playerHome });
+  }
+
+  private get playerHome(): string {
+    return this.homeOf(this.world.player.host, this.world.player.user);
+  }
+
+  /**
+   * Answer one of the questions Ada asked. The judge is the pack's `correct` option, nothing else.
+   * Returns null when there is no such open question or option.
+   */
+  answer(questionId: string, optionId: string): { correct: boolean; why?: string } | null {
+    const question = this.mission?.questions.find((q) => q.id === questionId);
+    const option = question?.options.find((o) => o.id === optionId);
+    if (!question || !option || this.state.asked[questionId] !== null || this.state.missionDone) return null;
+    const correct = option.id === question.correct;
+    this.emit({ type: 'Answered', question: questionId, option: optionId, correct });
+    if (correct && question.objective) this.completeObjective(question.objective);
+    return { correct, why: option.why ? this.t(option.why) : undefined };
+  }
+
+  /** Questions asked and not yet settled, in the order of the pack. */
+  openQuestions() {
+    return (this.mission?.questions ?? []).filter((q) => this.state.asked[q.id] === null);
+  }
+
+  /** Run the mission's checks: the ones that hold complete their objective. */
+  verify(): { id: string; text: string; ok: boolean }[] {
+    const checks = this.mission?.checks ?? [];
+    const results = checks.map((c) => ({ id: c.id, text: this.t(c.text), ok: this.holds(c.if) }));
+    if (!checks.length) return results;
+    // Objectives first, so that a rule reacting to `Verified` sees what this run settled.
+    for (const c of checks)
+      if (c.objective && results.find((r) => r.id === c.id)?.ok) this.completeObjective(c.objective);
+    this.emit({
+      type: 'Verified',
+      passed: results.filter((r) => r.ok).map((r) => r.id),
+      failed: results.filter((r) => !r.ok).map((r) => r.id),
+    });
+    return results;
+  }
+
+  /** Text of a file for the workstation's editor: '' for a new file, null when it cannot be read. */
+  readFile(path: string): string | null {
+    const node = lookup(this.state.fs, this.resolvePath(path));
+    if (!node) return '';
+    return node.t === 'f' && canRead(node, this.currentUser) ? node.content : null;
+  }
+
+  /** Save a file from the workstation's editor. Returns false when it cannot be written there. */
+  writeFile(path: string, content: string): boolean {
+    const abs = this.resolvePath(path);
+    const node = lookup(this.state.fs, abs);
+    const parent = lookup(this.state.fs, abs.slice(0, abs.lastIndexOf('/')) || '/');
+    if (node ? node.t !== 'f' || !canWrite(node, this.currentUser) : parent?.t !== 'd') return false;
+    if (content.length > 64_000) return false;
+    this.emit({ type: 'FileWritten', host: this.state.host, path: abs, content, append: false });
+    return true;
+  }
+
   private perform(effect: Effect) {
     if ('ada.say' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.say'], tone: 'info' });
@@ -751,6 +838,10 @@ export class Game {
       this.emit({ type: 'MissionFailed', key: effect['mission.fail'] });
       this.failPending = effect['mission.fail'];
       this.detectionPending = true;
+    } else if ('ada.ask' in effect) {
+      const id = effect['ada.ask'];
+      if (!(id in this.state.asked) && this.mission?.questions.some((q) => q.id === id))
+        this.emit({ type: 'Asked', question: id });
     }
   }
 
@@ -775,7 +866,7 @@ export class Game {
       .filter((f) => this.state.flags[f.id])
       .reduce((sum, f) => sum + f.points, 0);
     const objectives = Object.values(this.state.objectives).filter(Boolean).length * 50;
-    const answers = (mission?.questions ?? [])
+    const answers = (mission?.investigation ?? [])
       .filter((q) => this.state.answers?.[q.id])
       .reduce((sum, q) => sum + q.points, 0);
     const bonus = Math.round((flags + objectives + answers) * (LEVEL_BONUS[level] - 1));
@@ -783,8 +874,9 @@ export class Game {
     const detections = this.state.detections * 25;
     // Each point of business impact costs 3 points: isolating everything is never free.
     const impact = Math.round((this.state.impact ?? 0) * 3);
-    const total = Math.max(0, flags + objectives + answers + bonus - hints - detections - impact);
-    return { level, flags, objectives, bonus, hints, detections, answers, impact, total };
+    const mistakes = this.state.mistakes * 10;
+    const total = Math.max(0, flags + objectives + answers + bonus - hints - detections - impact - mistakes);
+    return { level, flags, objectives, bonus, hints, detections, answers, impact, mistakes, total };
   }
 
   /* ---------- noise and detection ---------- */
@@ -1594,7 +1686,6 @@ const RESTRICTED = [
   'chown',
   'vi',
   'vim',
-  'nano',
   'emacs',
   'python',
   'python3',

@@ -125,7 +125,7 @@ alerts:
     source: access
     where: { path: { contains: "key=" } }
 
-questions:
+investigation:
   - { id: key, text: b3.q.key, value: nm-partner-7f3a, points: 100, objective: key }
   - { id: path, text: b3.q.path, value: /v1/clinics, points: 100, objective: path }
   - { id: second, text: b3.q.second, value: 203.0.113.46, points: 100, objective: second }

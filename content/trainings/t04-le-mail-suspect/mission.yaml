@@ -1,0 +1,66 @@
+order: 4
+stage: analysis
+briefing: t4.briefing
+
+files:
+  training/mail.eml: t4.file.mail
+
+objectives:
+  - { id: origin, text: t4.obj.origin }
+  - { id: verdict, text: t4.obj.verdict }
+  - { id: action, text: t4.obj.action }
+
+flags:
+  - { id: origin, value: "novamind-support.example", points: 100, objective: origin }
+
+questions:
+  - id: verdict
+    text: t4.q.verdict
+    objective: verdict
+    correct: spf
+    options:
+      - { id: from, text: t4.q.verdict.from, why: t4.q.verdict.from.why }
+      - { id: spf, text: t4.q.verdict.spf }
+      - { id: tone, text: t4.q.verdict.tone, why: t4.q.verdict.tone.why }
+  - id: action
+    text: t4.q.action
+    objective: action
+    correct: report
+    options:
+      - { id: click, text: t4.q.action.click, why: t4.q.action.click.why }
+      - { id: reply, text: t4.q.action.reply, why: t4.q.action.reply.why }
+      - { id: delete, text: t4.q.action.delete, why: t4.q.action.delete.why }
+      - { id: report, text: t4.q.action.report }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t4.ada.brief
+  - on: { event: FileRead, path: { glob: "*mail.eml" } }
+    do:
+      - ada.guide: { key: t4.ada.headers, for: origin, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: t4.ada.origin
+      - ada.ask: verdict
+  - on: { event: ObjectiveCompleted, objective: verdict }
+    do:
+      - ada.say: t4.ada.verdict
+      - ada.ask: action
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t4.ada.done
+
+guide:
+  origin: t4.ada.read
+  verdict: t4.ada.ask
+  action: t4.ada.ask2
+
+hints:
+  origin: [t4.hint.origin.1, t4.hint.origin.2]
+
+debrief:
+  title: t4.debrief.title
+  lesson: t4.debrief.lesson
+  points: [t4.debrief.p1, t4.debrief.p2, t4.debrief.p3, t4.debrief.p4]
+  reference: "MITRE ATT&CK · T1566 Phishing"

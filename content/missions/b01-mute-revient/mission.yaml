@@ -118,7 +118,7 @@ alerts:
     source: db
     where: { query: { contains: COPY } }
 
-questions:
+investigation:
   - { id: entry, text: b1.q.entry, value: nm-deploy, points: 100, objective: entry }
   - { id: source, text: b1.q.source, value: 10.13.0.99, points: 100, objective: source }
   - { id: pivot, text: b1.q.pivot, value: backup, points: 100, objective: pivot }

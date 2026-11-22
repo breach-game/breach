@@ -162,6 +162,7 @@ const GAME_COMMANDS = new Set([
   'contain',
   'answer',
   'report',
+  'verify',
   'clear',
   'history',
 ]);

@@ -51,6 +51,10 @@ export interface GameState {
   hints: Record<string, number>;
   hintsUsed: number;
   detections: number;
+  /** Questions Ada asked in this mission, with the option that settled each one. */
+  asked: Record<string, string | null>;
+  /** Wrong answers given in this mission. */
+  mistakes: number;
   /** Most helpful guidance level used in this mission. Null on saves made before levels were scored. */
   level: Guidance | null;
   notes: string[];

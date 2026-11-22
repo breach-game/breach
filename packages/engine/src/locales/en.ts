@@ -109,7 +109,6 @@ export const en: Record<string, string> = {
     '(replay) This flag never showed up during the replay: the attack no longer gets it.',
   'cmd.soc': 'SOC console: logs, search, alerts',
   'cmd.contain': 'Order a containment measure',
-  'cmd.answer': 'Answer a question of the investigation',
   'explain.soc':
     "soc is the console of the security operations centre (SOC). 'soc sources' lists the available logs, 'soc logs <host> [source]' prints them, 'soc search <text>' searches everywhere, 'soc alerts' shows what the detection rules raised. Every line comes from the game's event log, in the real tool's format (nginx, sshd, auditd...).",
   'explain.contain':
@@ -120,10 +119,9 @@ export const en: Record<string, string> = {
   'contain.unknown': 'no such measure is planned for this target',
   'contain.already': 'Measure already applied.',
   'contain.impact': 'Impact on NovaMind: +{impact}',
-  'answer.none': 'This mission has no investigation questions.',
-  'answer.usage': 'usage: answer <question> <answer>. Questions:',
-  'answer.wrong': 'That is not the right answer.',
-  'answer.ok': 'ANSWER ACCEPTED',
+  'investigation.usage': 'usage: answer <question> <answer>. Questions:',
+  'investigation.wrong': 'That is not the right answer.',
+  'investigation.ok': 'ANSWER ACCEPTED',
   'cmd.report': 'writes the pentest report from your missions',
   'report.title': 'Penetration test report · NovaMind (mandate NM-2026-114)',
   'report.client': 'Client: NovaMind SAS, Lyon',
@@ -145,4 +143,32 @@ export const en: Record<string, string> = {
   'report.footer':
     'Fictional document produced in BREACH. NovaMind, its addresses and its data do not exist.',
   'report.saved': 'Report written to {path}',
+  'cmd.sort': 'Sort lines (-n numbers, -r reverse, -u unique, -k field)',
+  'cmd.uniq': 'Merge repeated lines that follow each other (-c counts them)',
+  'cmd.cut': 'Keep some columns of each line (-d delimiter, -f fields)',
+  'cmd.tr': 'Replace or delete characters in a stream (-d)',
+  'cmd.diff': 'Show the lines that differ between two files',
+  'cmd.base64': 'Encode to Base64, or decode with -d',
+  'cmd.sha256sum': 'Print the SHA-256 fingerprint of a file',
+  'cmd.sed': "Rewrite lines: `sed 's/old/new/' file`, -i changes the file",
+  'cmd.verify': 'Check that what you fixed holds',
+  'cmd.answer': 'Answer Ada: `answer a` for her questions, `answer <question> <answer>` in an investigation',
+  'cmd.edit': 'Open a file in the editor',
+  'cmd.nano': 'Open a file in the editor (same as edit)',
+  'engine.edit': 'Opening {path} in the editor…',
+  'verify.none': 'Nothing to verify right now.',
+  'verify.ok': 'All checks pass.',
+  'verify.failed': '{n} check(s) still fail. Fix the file, then run verify again.',
+  'answer.none': 'Ada has no open question.',
+  'answer.usage': 'Answer with its letter, for example: answer a',
+  'answer.right': 'Correct.',
+  'answer.wrong': 'Not quite. Try again.',
+  'explain.diff':
+    'diff compares two files line by line: `<` lines are only in the first, `>` lines only in the second. It is how you spot what changed between two versions of a script or a configuration.\n---\nComparing what is deployed with what is in the repository is a basic integrity check. Several supply-chain attacks were found exactly this way: the published file was not the one in the source.',
+  'explain.base64':
+    'base64 turns any bytes into plain letters and digits, and back with -d. It is an encoding, not encryption: anyone can decode it, no key needed.\n---\nA secret "hidden" in Base64 in a configuration or a token is a secret in clear text. Secrets belong in a vault, and detection tools decode Base64 before they search.',
+  'explain.sha256sum':
+    'sha256sum prints the fingerprint of a file. Change one character and the fingerprint changes completely.\n---\nPublishing the fingerprint of a release and checking it before running the file detects a tampered download, as long as the fingerprint comes from another channel than the file.',
+  'explain.sed':
+    "sed rewrites text line by line. `sed 's/old/new/' file` prints the result, `sed -i` changes the file itself, and `sed '/word/d'` deletes the matching lines.\n---\nA fix applied by hand on one server is lost at the next deployment. The lasting fix goes into the repository and the deployment pipeline.",
 };
