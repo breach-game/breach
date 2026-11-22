@@ -533,6 +533,10 @@ export class Game {
     this.emit({ type: 'CommandRun', line, command: name, args, cwd: this.state.cwd, dt });
     const command: Command | undefined = commands.get(name);
     if (!command) {
+      if (/^FLAG\{[^}]*\}$/.test(name)) {
+        yield { k: 'err', text: `${this.t('engine.flagHint', { flag: name })}\n` };
+        return 127;
+      }
       const known = RESTRICTED.includes(name);
       yield {
         k: 'err',

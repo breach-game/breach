@@ -58,6 +58,9 @@ describe('shell', () => {
     const unknown = await run(g, 'frobnicate');
     expect(unknown.err).toBe('lrsh: frobnicate: command not found\n');
     expect(unknown.status).toBe(127);
+    const bare = await run(g, 'FLAG{some-code}');
+    expect(bare.err).toContain('submit FLAG{some-code}');
+    expect(bare.err).not.toContain('command not found');
     expect((await run(g, 'ls |')).err).toContain('syntax error');
     expect((await run(g, 'vim a.txt')).err).toContain('not installed');
     expect((await run(g, 'ls 2>/dev/null')).status).toBe(0);
