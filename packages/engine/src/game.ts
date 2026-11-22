@@ -5,21 +5,28 @@ import type {
   Locale,
   Mission,
   NoiseTable,
+  Npc,
   Pack,
+  Page,
+  Route,
   Rule,
   World,
 } from '@breach/pack-schema';
+import { acceptWording, BrainError, type BrainIssue, type NpcBrain, splitReply } from './brain.ts';
 import { commands } from './commands/index.ts';
 import type { Chunk, Command, CommandCtx } from './commands/types.ts';
 import type { EventBody, GameEvent } from './events.ts';
+import { errorHtml, findRoute, formatUrl, pageHtml, parseUrl, type Url } from './http.ts';
 import { engineStrings, interpolate } from './i18n.ts';
+import { resolveTarget } from './net.ts';
+import { type Decision, decide } from './npc.ts';
 import { evaluate, triggerMatches } from './rules.ts';
 import { parse, ShellSyntaxError, type Stage, type Word } from './shell/parse.ts';
 import { type GameState, NOISE_AFTER_RESTORE, NOISE_DECAY_PER_MIN, NOISE_MAX } from './state.ts';
 import { gameDate, style } from './util.ts';
 import { buildFs, chown, globMatch, lookup, mkdirp, normalize, writeFile } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 
 export interface GameOptions {
   world: Pack;
@@ -36,6 +43,48 @@ export interface SaveData {
   world: { id: string; version: string };
   locale: Locale;
   log: GameEvent[];
+}
+
+export interface HttpResponse {
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+  route: Route | undefined;
+}
+
+export type BrowseResult =
+  | {
+      ok: true;
+      url: string;
+      host: Host;
+      status: number;
+      /** The page to draw, or null when the answer is not a page (plain text, JSON). */
+      page: Page | null;
+      /** What the server sent: shown by "view source", and identical to what `curl` prints. */
+      source: string;
+    }
+  | { ok: false; url: string; error: 'malformed' | 'scope' | 'dns' | 'refused' };
+
+export interface ChatResult {
+  ok: boolean;
+  /** The character's answer, in the game's language. */
+  reply: string;
+  /** What wrote the wording: the script, or a language model. */
+  brain?: string;
+  /** Why the model's wording was not used, when the script had to answer alone. */
+  issue?: BrainIssue;
+}
+
+/** How long a language model may take before the script answers alone. */
+const BRAIN_TIMEOUT_MS = 20_000;
+
+interface ChatTurn {
+  npc: Npc;
+  text: string;
+  /** Sequence number of the player's message. */
+  seq: number;
+  mission: string | null;
+  decision: Decision;
 }
 
 type Listener = (event: GameEvent, game: Game) => void;
@@ -55,6 +104,8 @@ export class Game {
   private replaying = false;
   private ruleDepth = 0;
   private detectionPending = false;
+  /** True while the shell runs a command: it handles a detection itself when the command ends. */
+  private busy = false;
 
   constructor(options: GameOptions) {
     if (!options.world.world) throw new Error(`${options.world.id} is not a world pack`);
@@ -203,6 +254,7 @@ export class Game {
       detections: 0,
       notes: [],
       messages: [],
+      chats: {},
       vars: {},
       fired: {},
       guided: {},
@@ -253,6 +305,7 @@ export class Game {
         s.detections = 0;
         s.fired = {};
         s.guided = {};
+        s.chats = {};
         s.vars = {};
         s.checkpoint = null;
         s.missionStartSeq = e.seq;
@@ -302,6 +355,19 @@ export class Game {
       case 'NpcMessage':
         s.messages.push({ seq: e.seq, t: e.t, npc: e.npc, key: e.key, tone: e.tone });
         if (e.guide) s.guided[e.guide.objective] = Math.max(s.guided[e.guide.objective] ?? 0, e.guide.step);
+        break;
+      case 'ChatSent':
+        (s.chats[e.npc] ??= []).push({ seq: e.seq, t: e.t, from: 'player', text: e.text });
+        break;
+      case 'ChatReply':
+        (s.chats[e.npc] ??= []).push({
+          seq: e.seq,
+          t: e.t,
+          from: 'npc',
+          key: e.key,
+          text: e.text,
+          intent: e.intent,
+        });
         break;
       case 'ObjectiveCompleted':
         s.objectives[e.objective] = true;
@@ -404,8 +470,11 @@ export class Game {
     } else if ('ada.warn' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.warn'], tone: 'warn' });
     else if ('objective.complete' in effect) this.completeObjective(effect['objective.complete']);
-    else if ('noise.add' in effect) this.addNoise(effect['noise.add'], 'rule');
-    else if ('host.reveal' in effect) this.emit({ type: 'HostRevealed', host: effect['host.reveal'] });
+    else if ('noise.add' in effect) {
+      const n = effect['noise.add'];
+      if (typeof n === 'number') this.addNoise(n, 'rule');
+      else this.addNoise(n.points, `soc:${n.as}`);
+    } else if ('host.reveal' in effect) this.emit({ type: 'HostRevealed', host: effect['host.reveal'] });
     else if ('checkpoint.save' in effect)
       this.emit({ type: 'CheckpointSaved', name: effect['checkpoint.save'] });
     else if ('var.set' in effect) this.emit({ type: 'VarSet', ...effect['var.set'] });
@@ -475,6 +544,195 @@ export class Game {
     if (start?.type === 'MissionStarted') this.react(start);
   }
 
+  /* ---------- web and characters ---------- */
+
+  /** A character of the current mission, or of the world. */
+  npc(id: string): Npc | undefined {
+    return this.mission?.npcs.find((n) => n.id === id) ?? this.world.npcs.find((n) => n.id === id);
+  }
+
+  /**
+   * Answer a simulated HTTP request. The caller has already taken `host` through the scope gate.
+   * Nothing here touches the network: the answer is read from the world pack.
+   */
+  http(host: Host, url: Url, method: string): HttpResponse {
+    const product = host.services.find((s) => s.port === url.port)?.product ?? 'nginx';
+    const route = findRoute(host, url.path);
+    const status = route?.status ?? 404;
+    this.emit({ type: 'HttpRequest', host: host.id, path: url.path, method, status });
+    const body = !route
+      ? errorHtml(404, product)
+      : route.page
+        ? pageHtml(route.page, host, this.state.locale, (k) => this.t(k))
+        : route.bodyKey
+          ? this.t(route.bodyKey)
+          : (route.body ?? '');
+    const headers = {
+      server: product.replace(' ', '/'),
+      date: this.date().unix,
+      'content-type': 'text/html; charset=utf-8',
+      'content-length': String(new TextEncoder().encode(body).length),
+      ...(route?.headers ?? {}),
+    };
+    return { status, headers, body, route };
+  }
+
+  /** Open a page in the workstation's browser. `dt` is the real time since the player's last action. */
+  browse(raw: string, dt = 0): BrowseResult {
+    const url = parseUrl(raw, 'https');
+    if (!url) return { ok: false, url: raw, error: 'malformed' };
+    const shown = formatUrl(url);
+    if (dt > 0) this.emit({ type: 'ClockAdvanced', ms: Math.min(dt, MAX_DT) });
+    const target = resolveTarget(this.world, url.hostname);
+    if (target.kind === 'out-of-scope') {
+      this.emit({ type: 'OutOfScope', target: url.hostname, command: 'browser' });
+      return { ok: false, url: shown, error: 'scope' };
+    }
+    if (target.kind !== 'host') return { ok: false, url: shown, error: 'dns' };
+    const host = target.host;
+    this.addNoise(this.noiseCost('browse', []), `browser GET ${shown}`);
+    const result = this.settle<BrowseResult>(() => {
+      if (!host.services.some((s) => s.port === url.port) || !host.web)
+        return { ok: false, url: shown, error: 'refused' };
+      const res = this.http(host, url, 'GET');
+      return {
+        ok: true,
+        url: shown,
+        host,
+        status: res.status,
+        page: res.route?.page ?? null,
+        source: res.body,
+      };
+    });
+    return result ?? { ok: false, url: shown, error: 'refused' };
+  }
+
+  /**
+   * Say something to a character. The scripted brain decides the answer, so what a character gives
+   * away never depends on a language model.
+   */
+  chat(npcId: string, message: string, via: 'browser' | 'api' = 'browser', dt = 0): ChatResult {
+    const turn = this.openChat(npcId, message, via, dt);
+    if (!turn) return { ok: false, reply: '' };
+    const reply = this.closeChat(turn);
+    return reply === null ? { ok: false, reply: '' } : { ok: true, reply, brain: 'scripted' };
+  }
+
+  /**
+   * Same as `chat`, with a language model for the wording. The scripted brain has already decided
+   * what the character says before the model is called, and the model only gets that reply to say
+   * in its own words. Its text is checked (`acceptWording`): on any doubt, error or delay, the
+   * scripted reply is used as it is.
+   */
+  async converse(
+    npcId: string,
+    message: string,
+    brain: NpcBrain | null,
+    dt = 0,
+    timeoutMs = BRAIN_TIMEOUT_MS,
+  ): Promise<ChatResult> {
+    const turn = this.openChat(npcId, message, 'browser', dt);
+    if (!turn) return { ok: false, reply: '' };
+    let text: string | undefined;
+    let issue: BrainIssue | undefined;
+    if (brain) {
+      const { npc } = turn;
+      const scripted = this.t(turn.decision.key);
+      const { spoken, block } = splitReply(scripted);
+      const history = (this.state.chats[npcId] ?? [])
+        .filter((l) => l.seq < turn.seq)
+        .slice(-12)
+        .map((l) => ({ from: l.from, text: l.text ?? (l.key ? this.t(l.key) : '') }));
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const late = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new BrainError('timeout')), timeoutMs);
+        });
+        const answer = await Promise.race([
+          brain.reply({
+            npcId,
+            name: npc.name,
+            role: this.t(npc.role),
+            kind: npc.kind,
+            sheet: npc.sheet,
+            history,
+            message: turn.text,
+            locale: this.state.locale,
+            scripted: spoken,
+          }),
+          late,
+        ]);
+        const wording = acceptWording(spoken, answer.text);
+        if (wording === null) issue = 'rejected';
+        else text = wording + block;
+      } catch (error) {
+        issue = error instanceof BrainError ? error.issue : 'error';
+      } finally {
+        clearTimeout(timer);
+      }
+      // The player may have been caught, or have left the mission, while the model was writing.
+      const line = this.state.chats[npcId]?.find((l) => l.seq === turn.seq);
+      if (this.state.mission !== turn.mission || line?.from !== 'player' || line.text !== turn.text)
+        return { ok: false, reply: '' };
+    }
+    const reply = this.closeChat(turn, text, brain?.id);
+    if (reply === null) return { ok: false, reply: '' };
+    return { ok: true, reply, brain: text === undefined ? 'scripted' : brain?.id, issue };
+  }
+
+  /** The player's half of an exchange: pay for the request, log the message, let the script decide. */
+  private openChat(npcId: string, message: string, via: 'browser' | 'api', dt: number): ChatTurn | null {
+    const npc = this.npc(npcId);
+    const text = message.trim().slice(0, 600);
+    if (!npc || !text || this.detectionPending) return null;
+    if (dt > 0) this.emit({ type: 'ClockAdvanced', ms: Math.min(dt, MAX_DT) });
+    // Through the API, `curl` has already paid for the request.
+    if (via === 'browser')
+      this.addNoise(this.noiseCost('chat', [npcId]), `browser POST ${this.chatUrl(npcId)}`);
+    return this.settle(() => {
+      this.emit({ type: 'ChatSent', npc: npcId, text, via });
+      const seq = this.log[this.log.length - 1]!.seq;
+      return { npc, text, seq, mission: this.state.mission, decision: decide(npc, text, this.state) };
+    });
+  }
+
+  /** The character's half. `text` is a model's wording of the decided reply, already checked. */
+  private closeChat(turn: ChatTurn, text?: string, brain = 'scripted'): string | null {
+    const d = turn.decision;
+    return this.settle(() => {
+      for (const [name, value] of Object.entries(d.set)) this.emit({ type: 'VarSet', name, value });
+      this.emit({
+        type: 'ChatReply',
+        npc: turn.npc.id,
+        key: d.key,
+        ...(text === undefined ? {} : { text }),
+        intent: d.intent,
+        families: d.families,
+        brain: text === undefined ? 'scripted' : brain,
+      });
+      return this.detectionPending ? null : (text ?? this.t(d.key));
+    });
+  }
+
+  /** Address of the endpoint a character answers on, for the logs. */
+  private chatUrl(npcId: string): string {
+    for (const host of this.world.hosts)
+      for (const [path, route] of Object.entries(host.web ?? {}))
+        if (route.chat === npcId) return `https://${host.hostname}${path}`;
+    return npcId;
+  }
+
+  /**
+   * Run an action taken outside the terminal. If it got the player caught, go back to the last
+   * checkpoint, as the shell does at the end of a command, and return null.
+   */
+  private settle<T>(action: () => T | null): T | null {
+    const value = this.detectionPending ? null : action();
+    if (!this.detectionPending || this.busy) return value;
+    this.restore();
+    return null;
+  }
+
   /* ---------- missions ---------- */
 
   startMission(id: string) {
@@ -519,6 +777,15 @@ export class Game {
    * `dt` is the real time elapsed since the previous command, in milliseconds.
    */
   async *exec(line: string, dt = 0): AsyncGenerator<Chunk, number> {
+    this.busy = true;
+    try {
+      return yield* this.run(line, dt);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  private async *run(line: string, dt: number): AsyncGenerator<Chunk, number> {
     const env = { HOME: this.home, USER: this.user, PWD: this.state.cwd };
     const cleaned = line.replace(/\s2>\s*(&1|\/dev\/null)/g, '');
     let pipelines: ReturnType<typeof parse>;

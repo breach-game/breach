@@ -21,7 +21,8 @@ BREACH est un thriller de cybersécurité jouable dans le navigateur. Le joueur,
 - `apps/game` : Vite + React, xterm.js pour le terminal, carte réseau en canvas (fond d'écran vivant)
 - Polices auto-hébergées (@fontsource), aucune ressource tierce au runtime
 - IndexedDB (idb-keyval) pour la sauvegarde et le cache des packs
-- Plus tard : son (Tone.js), PNJ BYOK, passerelle LLM (Cloudflare Workers, après la v1)
+- PNJ BYOK optionnel (`@anthropic-ai/sdk`, chargé à la demande)
+- Plus tard : son (Tone.js), passerelle LLM (Cloudflare Workers, après la v1)
 - Déploiement statique : Cloudflare Pages ou GitHub Pages. Aucun backend pour le jeu.
 
 ## Structure
@@ -32,7 +33,7 @@ packages/
   engine/       moteur déterministe, sans DOM : événements, état, VFS, réseau simulé, shell, commandes, règles
   pack-cli/     validation, rejeu des solutions, construction des .breachpack et du catalogue
 apps/
-  game/         l'interface : écran titre, boot, bureau LR-OS, fenêtres, carte, débrief
+  game/         l'interface : écran titre, boot, bureau LR-OS, fenêtres (terminal, navigateur, messagerie, carnet), carte, débrief
 content/
   worlds/       un monde = un pack (hôtes, fichiers, DNS, table de bruit, textes FR et EN)
   missions/     une mission = un pack (objectifs, flags, règles, indices, débrief, solution.txt)
@@ -50,7 +51,10 @@ Architecture détaillée et décisions : dépôt `breach-game/docs` (`architectu
 - **Les flags** se valident par `submit FLAG{...}`, comparés par empreinte sha256. Jamais par un LLM.
 - **Trois niveaux de guidage** choisis par le joueur : Guidé (Ada donne chaque commande), Autonome (Ada donne la direction), Expert (briefing et objectifs seulement). Dans un pack, `ada.say` est du récit, toujours affiché. L'aide passe par deux canaux : la table `guide` de la mission (une phrase d'ouverture par objectif obligatoire, que le moteur donne dès que le premier objectif ouvert n'a pas encore eu d'instruction) et l'effet `ada.guide: { key, for, step }` pour les étapes plus fines à l'intérieur d'un objectif. Une aide n'est jamais donnée pour un objectif déjà atteint ni pour une étape déjà dépassée, donc le joueur peut jouer dans le désordre. En Autonome, le moteur utilise la clé `<clé>.standard` si elle existe.
 - **Valider une mission à la main** : `pnpm --filter @breach/pack-cli exec tsx scripts/qa.ts guided <id> none "cmd ;; cmd"` affiche ce que dit Ada après chaque commande. À faire aux trois niveaux, dans l'ordre prévu et dans le désordre.
-- **La garde de périmètre** (`resolveTarget` dans `engine/src/net.ts`) est le passage obligé de toute commande réseau.
+- **Les pages web sont des blocs déclaratifs** (`page: { title, blocks }` sur une route : `h1`, `h2`, `p`, `list`, `code`, `nav`, `link`, `comment`, `chat`, `footer`). Le navigateur du poste les dessine lui-même, et `curl` comme « Voir la source » affichent le HTML que le moteur en déduit (`pageHtml`). Un pack ne fournit jamais de balisage. Un bloc `comment` n'existe que dans la source.
+- **Les personnages sont scriptés** (`npcs` du monde, qu'une mission peut redéfinir par `id`). Un personnage est une liste ordonnée d'intentions : groupes de mots (`words`, sans tenir compte des accents ; un mot de quatre lettres ou plus vaut aussi comme préfixe ; `also` ajoute une seconde liste dont un groupe doit correspondre aussi), familles de techniques reconnues par le moteur (`families` : `override`, `reveal`, `roleplay`, `translation`, `encoding`, `authority`, `completion`, `hypothetical`) et condition `if`. La première intention qui correspond répond, ses réponses s'enchaînent, et `set` mémorise une variable. Ce cerveau scripté (`decide` dans `engine/src/npc.ts`) décide seul de ce qu'un personnage lâche : un futur cerveau LLM ne fera que reformuler.
+- **Parler à un personnage** : bloc `chat` dans une page (fenêtre navigateur) ou `curl -d "message" <route avec chat>`. Les deux passent par `game.chat()`, qui émet `ChatSent` puis `ChatReply { npc, intent, families }`. Les règles des missions réagissent à `ChatReply` (objectif, bruit, message d'Ada). Une réaction de la cible se note `noise.add: { points, as: <clé> }` : elle apparaît alors sous ce texte dans le journal du SOC au débrief. Les solutions des missions utilisent `curl -d`.
+- **La garde de périmètre** (`resolveTarget` dans `engine/src/net.ts`) est le passage obligé de toute commande réseau, et du navigateur (`game.browse()`).
 
 ## Direction artistique
 
@@ -95,18 +99,23 @@ Effets : scanlines et bloom légers (désactivables), glitch par aberration chro
 
 ```ts
 export interface NpcBrain {
-  id: 'scripted' | 'webllm' | 'gateway' | 'byok';
+  id: 'webllm' | 'gateway' | 'byok';
   isAvailable(): Promise<boolean>;
   reply(input: {
-    npcId: string;            // ex. 'nova', 'support-lea'
+    npcId: string;            // ex. 'nova', 'theo'
+    name: string; role: string; kind: 'human' | 'ai';
+    sheet?: string;           // fiche de style du personnage, sans aucun secret
     history: { from: 'player' | 'npc'; text: string }[];
     message: string;
     locale: 'fr' | 'en';
+    scripted: string;         // la réplique déjà décidée par le script
   }): Promise<{ text: string }>;
 }
 ```
 
-Le moteur de missions inspecte `text` pour détecter les flags. Si un cerveau échoue ou si son quota est épuisé, on repasse en `scripted` sans bloquer le joueur.
+Un cerveau LLM ne fait que donner sa voix à un personnage. `game.converse(npc, message, brain)` laisse d'abord le cerveau scripté décider (`decide`), puis donne au modèle la seule réplique choisie à redire. Le modèle ne connaît donc aucun secret avant que le script ait décidé de le lâcher. Son texte passe par `acceptWording` (`engine/src/brain.ts`) : mêmes flags et mêmes passages entre accents graves que la réplique du script, aucun flag inventé, longueur bornée. Un bloc collé par le personnage (tout ce qui suit la première ligne vide d'une réplique) n'est jamais envoyé au modèle : le moteur le rajoute tel quel. Au moindre doute, erreur, refus ou délai dépassé, la réplique du script est utilisée et le joueur n'est jamais bloqué. Les règles des missions réagissent au même `ChatReply` dans les deux cas.
+
+Le mode BYOK (`apps/game/src/brain.ts`) appelle l'API Anthropic avec le SDK officiel, chargé à la demande, depuis le navigateur du joueur. La clé reste en `sessionStorage` (ou en `localStorage` si le joueur le demande), jamais dans la sauvegarde ni ailleurs. Sans clé, le jeu ne fait aucune requête extérieure. La CSP n'autorise que `https://api.anthropic.com` en plus de l'origine.
 
 ## Définition de « fini » pour chaque lot
 

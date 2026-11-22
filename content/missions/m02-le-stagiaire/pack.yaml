@@ -1,0 +1,13 @@
+id: breach.official.m02
+version: 0.1.0
+engine: ">=0.2 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Le stagiaire bavard
+  en: The talkative intern
+summary:
+  fr: Ingénierie sociale. Le support en ligne de NovaMind est tenu par un stagiaire qui veut bien faire. Trop bien.
+  en: Social engineering. NovaMind's online support is run by an intern who wants to do well. Too well.
+authors: [BREACH]
+locales: [fr, en]

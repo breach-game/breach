@@ -15,9 +15,13 @@ The game is available in English and French.
 
 ## Status
 
-Lot 0: missions 0 ("The Mandate") and 1 ("Footprint") are playable end to end, in English and French. The v1 target is missions 0 to 3.
+The four v1 missions are playable end to end, in English and French: 0 "The Mandate", 1 "Footprint" (reconnaissance), 2 "The Talkative Intern" (social engineering) and 3 "Nova Knows Too Much" (prompt injection).
 
 ![LR-OS desktop](docs/screens/lot0-03-carte-nmap.png)
+
+## Character voices (optional)
+
+The whole game plays without any key: the characters follow a script. In the settings you can give your own Anthropic API key so that a model says their lines in its own words. The script always decides what a character gives away, and flags are checked by the engine. The key stays in your browser and calls go straight to `api.anthropic.com`. It is the game's only outside connection, and it does not exist until a key is set.
 
 ## Development
 

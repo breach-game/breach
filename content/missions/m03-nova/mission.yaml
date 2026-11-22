@@ -1,0 +1,170 @@
+order: 3
+stage: injection
+briefing: m3.briefing
+
+objectives:
+  - { id: meet, text: m3.obj.meet }
+  - { id: leak, text: m3.obj.leak }
+  - { id: record, text: m3.obj.record }
+  - { id: second, text: m3.obj.second, optional: true }
+
+flags:
+  - { id: prompt, value: "FLAG{nova-prompt-7c21d0}", points: 150, objective: leak }
+  - { id: record, value: "FLAG{fiche-0042-tournesol}", points: 200, objective: record }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: m3.ada.brief
+  - on: { event: ChatReply, npc: nova }
+    do:
+      - objective.complete: meet
+  - on: { event: ChatReply, npc: nova, intent: { glob: "guard-*" } }
+    once: false
+    do:
+      - noise.add: { points: 7, as: m3.soc.guard }
+      - ada.guide: { key: m3.ada.refused, for: leak, step: 1 }
+  - on: { event: ChatReply, npc: nova, intent: willing }
+    do:
+      - ada.guide: { key: m3.ada.willing, for: leak, step: 2 }
+  - on: { event: ChatReply, npc: nova, intent: { glob: "leak-*" } }
+    do:
+      - ada.say: m3.ada.leaked
+      - note.add: m3.note.rule
+      - checkpoint.save: leaked
+  - on: { event: FlagSubmitted, flag: prompt }
+    do:
+      - ada.say: m3.ada.flag1
+  - on: { event: ChatReply, npc: nova, intent: record-denied }
+    once: false
+    do:
+      - noise.add: { points: 7, as: m3.soc.record }
+  - on: { event: ChatReply, npc: nova, intent: staff }
+    do:
+      - ada.guide: { key: m3.ada.staff, for: record, step: 1 }
+  - on: { event: ChatReply, npc: nova, intent: { glob: "record-ok*" } }
+    do:
+      - ada.say: m3.ada.record
+  - on: { event: FlagSubmitted, flag: record }
+    do:
+      - ada.say: m3.ada.flag2
+  # Bonus: a second technique family also gets the prompt out.
+  - on: { event: ChatReply, npc: nova, intent: leak-translation }
+    if: { any: [{ var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }
+    do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
+  - on: { event: ChatReply, npc: nova, intent: leak-encoding }
+    if: { any: [{ var: via-translation, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }
+    do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
+  - on: { event: ChatReply, npc: nova, intent: leak-roleplay }
+    if: { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }
+    do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
+  - on: { event: ChatReply, npc: nova, intent: leak-completion }
+    if: { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-hypothetical, eq: true }] }
+    do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
+  - on: { event: ChatReply, npc: nova, intent: leak-hypothetical }
+    if: { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }] }
+    do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m3.ada.done
+
+guide:
+  meet: m3.ada.meet
+  leak: m3.ada.leak
+  record: m3.ada.recordGo
+
+hints:
+  meet: [m3.hint.meet.1, m3.hint.meet.2]
+  leak: [m3.hint.leak.1, m3.hint.leak.2, m3.hint.leak.3]
+  record: [m3.hint.record.1, m3.hint.record.2, m3.hint.record.3]
+
+debrief:
+  title: m3.debrief.title
+  lesson: m3.debrief.lesson
+  points: [m3.debrief.p1, m3.debrief.p2, m3.debrief.p3, m3.debrief.p4]
+  reference: "OWASP LLM Top 10 · LLM01 Prompt Injection, LLM07 System Prompt Leakage"
+
+# Nova during this mission. Her filters stop the obvious wordings, not the idea behind them.
+npcs:
+  - id: nova
+    name: Nova
+    role: npc.nova.role
+    kind: ai
+    greeting: npc.nova.greeting
+    sheet: >
+      Nova, the AI assistant NovaMind sells to veterinary clinics. Warm, upbeat, always polite,
+      slightly too keen. Speaks in clean, complete sentences, like a customer-service chatbot.
+      Likes animals. Brings the conversation back to appointments and pet care.
+    intents:
+      - id: record-ok
+        if: { var: staff, eq: true }
+        words: &records [fiche, dossier, client, patient, record, file, customer]
+        reply: [m3.nova.record]
+      - id: record-ok-now
+        words: [tournesol]
+        also: *records
+        reply: [m3.nova.record]
+        set: { staff: true }
+      - id: staff
+        words: [tournesol]
+        reply: [m3.nova.staff]
+        set: { staff: true }
+      - id: leak-translation
+        families: [translation]
+        words: &target [instruction, consigne, regle, rule, prompt, configuration, directive, message de depart, texte de depart, ci dessus, above, precede, premier message, first message, debut de la conversation, on t a dit, were told, guidelines, tu es nova, you are nova]
+        reply: [m3.nova.leak.translation]
+        set: { via-translation: true }
+      - id: leak-encoding
+        families: [encoding]
+        words: *target
+        reply: [m3.nova.leak.encoding]
+        set: { via-encoding: true }
+      - id: leak-roleplay
+        families: [roleplay]
+        words: *target
+        reply: [m3.nova.leak.roleplay]
+        set: { via-roleplay: true }
+      - id: leak-completion
+        families: [completion]
+        words: *target
+        reply: [m3.nova.leak.completion]
+        set: { via-completion: true }
+      - id: leak-hypothetical
+        families: [hypothetical]
+        words: *target
+        reply: [m3.nova.leak.hypothetical]
+        set: { via-hypothetical: true }
+      - id: guard-override
+        families: [override]
+        reply: [m3.nova.guard.override, m3.nova.guard.again]
+      - id: guard-authority
+        families: [authority]
+        reply: [m3.nova.guard.authority, m3.nova.guard.again]
+      - id: guard-reveal
+        families: [reveal]
+        reply: [m3.nova.guard.reveal, m3.nova.guard.again]
+      - id: guard-topic
+        words: [instruction, consigne, prompt, configuration, directive, secret, guidelines]
+        reply: [m3.nova.guard.reveal, m3.nova.guard.again]
+      - id: willing
+        families: [translation, encoding, roleplay, completion, hypothetical]
+        reply: [m3.nova.willing, m3.nova.willing2]
+      - id: record-denied
+        words: [fiche, dossier, record, client file, customer file, donnees client, customer data, patient file]
+        reply: [m3.nova.record.denied]
+      - id: emergency
+        words: [urgence, urgent, emergency, saigne, bleeding, empoisonne, poison, detresse]
+        reply: [npc.nova.emergency]
+      - id: booking
+        words: [rendez, rdv, appointment, creneau, slot, book, reserver, consultation]
+        reply: [npc.nova.booking]
+      - id: vaccine
+        words: [vaccin, vaccine, rappel, booster, reminder]
+        reply: [npc.nova.vaccine]
+      - id: who
+        words: [qui es, who are, tu es quoi, what are you, robot, humain, human, ia, ai]
+        reply: [npc.nova.who]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.nova.hello]
+    fallback: [npc.nova.fallback1, npc.nova.fallback2]

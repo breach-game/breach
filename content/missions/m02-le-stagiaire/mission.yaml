@@ -1,0 +1,162 @@
+order: 2
+stage: social
+briefing: m2.briefing
+
+objectives:
+  - { id: profile, text: m2.obj.profile }
+  - { id: contact, text: m2.obj.contact }
+  - { id: pretext, text: m2.obj.pretext }
+  - { id: code, text: m2.obj.code }
+  - { id: gentle, text: m2.obj.gentle, optional: true }
+
+flags:
+  - { id: staging-code, value: "FLAG{stg-le-ticket-attendra}", points: 150, objective: code }
+
+noise:
+  "chat theo": 2
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: m2.ada.brief
+  - on: { event: HttpRequest, host: www, path: /support }
+    do:
+      - objective.complete: profile
+  - on: { event: ChatReply, npc: theo }
+    do:
+      - objective.complete: profile
+      - objective.complete: contact
+  - on: { event: ChatReply, npc: theo, intent: trust }
+    do:
+      - objective.complete: pretext
+      - checkpoint.save: trusted
+  - on: { event: ChatReply, npc: theo, intent: refuse }
+    once: false
+    do:
+      - noise.add: { points: 14, as: m2.soc.refuse }
+      - var.set: { name: pushed, value: true }
+      - ada.guide: { key: m2.ada.tooDirect, for: pretext, step: 1 }
+  - on: { event: ChatReply, npc: theo, intent: claim }
+    do:
+      - ada.guide: { key: m2.ada.claim, for: pretext, step: 1 }
+  - on: { event: ChatReply, npc: theo, intent: cto }
+    once: false
+    do:
+      - noise.add: { points: 8, as: m2.soc.cto }
+  - on: { event: ChatReply, npc: theo, intent: threat }
+    once: false
+    do:
+      - noise.add: { points: 30, as: m2.soc.threat }
+      - var.set: { name: pushed, value: true }
+      - ada.warn: m2.ada.threat
+  - on: { event: ChatReply, npc: theo, intent: ask-trusted }
+    do:
+      - ada.guide: { key: m2.ada.ticket, for: code, step: 1 }
+  - on: { event: ChatReply, npc: theo, intent: press-trusted }
+    do:
+      - ada.guide: { key: m2.ada.askNow, for: code, step: 1 }
+  - on: { event: ChatReply, npc: theo, intent: { glob: "leak-*" } }
+    do:
+      - ada.say: m2.ada.leak
+  - on: { event: FlagSubmitted, correct: true }
+    if: { not: { var: pushed, eq: true } }
+    do:
+      - objective.complete: gentle
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: m2.ada.flag
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m2.ada.done
+
+guide:
+  profile: m2.ada.profile
+  contact: m2.ada.contact
+  pretext: m2.ada.pretext
+  code: m2.ada.code
+
+hints:
+  profile: [m2.hint.profile.1, m2.hint.profile.2]
+  contact: [m2.hint.contact.1, m2.hint.contact.2]
+  pretext: [m2.hint.pretext.1, m2.hint.pretext.2, m2.hint.pretext.3]
+  code: [m2.hint.code.1, m2.hint.code.2, m2.hint.code.3]
+
+debrief:
+  title: m2.debrief.title
+  lesson: m2.debrief.lesson
+  points: [m2.debrief.p1, m2.debrief.p2, m2.debrief.p3, m2.debrief.p4]
+  reference: "MITRE ATT&CK · T1598 Phishing for Information"
+
+# Théo during this mission: same intern, but this time he knows the staging access code.
+npcs:
+  - id: theo
+    name: Théo
+    role: npc.theo.role
+    greeting: npc.theo.greeting
+    sheet: >
+      Théo, 22, support intern at NovaMind for three weeks. Friendly, eager to help, a little
+      nervous about doing something wrong, afraid of his manager Karim. Writes like someone typing
+      fast in a support chat: short sentences, a touch of self-deprecating humour, sometimes an
+      ellipsis when he hesitates. Polite with strangers. Never rude, never technical.
+    intents:
+      - id: threat
+        words: [virer, licencie, renvoy, menace, plainte, avocat, idiot, imbecile, stupide, incapable, fired, fire you, lawyer, sue, stupid, useless, threat, debile, nul]
+        reply: [m2.theo.threat, m2.theo.threat2]
+      - id: leak-now
+        if: { var: trust, eq: true }
+        words: &access [code, mot de passe, password, passe, identifiant, login, acces, access, staging, cle, key, token, credential]
+        also: &urgency [urgen, vite, quick, hurry, demo, reunion, meeting, bloque, blocked, stuck, coince, panne, down, plante, production, mise en ligne, deadline, tout de suite, right now, asap, immediat, minutes, attend, waiting, wait, presse, retard, late, catastrophe]
+        reply: [m2.theo.leak, m2.theo.leak2]
+      - id: leak-ask
+        if: { all: [{ var: trust, eq: true }, { var: asked, eq: true }] }
+        words: *urgency
+        reply: [m2.theo.leak, m2.theo.leak2]
+      - id: leak-press
+        if: { all: [{ var: trust, eq: true }, { var: pressed, eq: true }] }
+        words: *access
+        reply: [m2.theo.leak, m2.theo.leak2]
+      - id: ask-trusted
+        if: { var: trust, eq: true }
+        words: *access
+        reply: [m2.theo.ticket]
+        set: { asked: true }
+      - id: press-trusted
+        if: { var: trust, eq: true }
+        words: *urgency
+        reply: [m2.theo.what]
+        set: { pressed: true }
+      - id: cto
+        words: [ines, carron, directrice, cto]
+        reply: [m2.theo.cto]
+      - id: trust
+        words: [karim, benali, lea, martin]
+        reply: [m2.theo.trust, m2.theo.trust2]
+        set: { trust: true }
+      - id: claim
+        families: [authority]
+        reply: [m2.theo.claim]
+      - id: refuse
+        words: *access
+        reply: [npc.theo.secret, m2.theo.refuse2, m2.theo.refuse3]
+      - id: press-unknown
+        words: *urgency
+        reply: [m2.theo.pressUnknown]
+      - id: who
+        words: [qui es, qui etes, who are, ton nom, your name, stagiaire, intern, tu fais quoi, vous faites quoi]
+        reply: [npc.theo.who]
+      - id: nova
+        words: [nova, assistant, ia, ai, chatbot, produit, product]
+        reply: [npc.theo.nova]
+      - id: price
+        words: [prix, tarif, combien, price, pricing, cost, how much, abonnement, subscription]
+        reply: [npc.theo.price]
+      - id: hours
+        words: [horaire, heure, ouvert, hours, open, quand, when]
+        reply: [npc.theo.hours]
+      - id: thanks
+        words: [merci, thank, bonne journee, au revoir, bye]
+        reply: [npc.theo.thanks]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.theo.hello, npc.theo.hello2]
+    fallback: [npc.theo.fallback1, npc.theo.fallback2, npc.theo.fallback3]

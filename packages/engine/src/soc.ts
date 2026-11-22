@@ -23,7 +23,8 @@ export function socView(game: Game): SocEntry[] {
     entries.push({
       time: gameDate(game.world.startTime, e.t).time,
       source: game.playerHost.ip,
-      action: e.cause,
+      // A reaction of the target that a mission chose to show, or the player's own command line.
+      action: e.cause.startsWith('soc:') ? game.t(e.cause.slice(4)) : e.cause,
       noise: e.delta,
     });
   }

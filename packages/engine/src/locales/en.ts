@@ -5,6 +5,8 @@ export const en: Record<string, string> = {
     '[NovaMind SOC] Suspicious activity detected. Session cut, back to the last checkpoint.',
   'stage.cadrage': 'scoping',
   'stage.recon': 'reconnaissance',
+  'stage.social': 'social engineering',
+  'stage.injection': 'prompt injection',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',
@@ -39,7 +41,11 @@ export const en: Record<string, string> = {
   'cmd.dig': 'Query the DNS',
   'cmd.whois': 'Registration record of a domain',
   'cmd.nmap': 'Discover hosts and services',
-  'cmd.curl': 'Send an HTTP request (-I for headers)',
+  'cmd.curl': 'Send an HTTP request (-I headers, -d sends data)',
+  'cmd.open': 'Open an address in the browser',
+  'engine.open': 'Opening {url} in the browser…',
+  'explain.open':
+    'open shows an address in the workstation browser. The browser draws the page as a visitor would see it, and "View source" shows what the server really sent, comments included.\n---\nFor the server, a browser visit and a curl request are the same line in the access log. Browsing like a normal visitor blends into the usual traffic.',
   'cmd.ping': 'Check whether a host answers',
   'cmd.ssh': 'Open a remote session',
   'cmd.git': 'clone, log, show: read a repository and its history',
@@ -65,7 +71,7 @@ export const en: Record<string, string> = {
   'explain.nmap':
     'nmap sends packets to a machine or an address range to learn what answers and which services listen. -sn only finds hosts, -sV asks each service for its version, -T sets the speed.\n---\nA scan leaves dozens of refused connections in the firewall logs within seconds. The faster it is (-T4, -A), the easier the detection rule is to write. It is the noisiest action of reconnaissance.',
   'explain.curl':
-    'curl sends an HTTP request and prints the raw response. -I shows only the headers, which often give away the server and its version.\n---\nEvery request is recorded in the web server access log, with your IP address, the time, the page and your User-Agent. Many 404 pages in a row point to someone searching blindly.',
+    'curl sends an HTTP request and prints the raw response. -I shows only the headers, which often give away the server and its version. -d sends data (a POST request), for example a message to the API of an assistant.\n---\nEvery request is recorded in the web server access log, with your IP address, the time, the page and your User-Agent. Many 404 pages in a row point to someone searching blindly.',
   'explain.ping':
     'ping sends a small ICMP packet and measures the response time. It checks that a machine is reachable.\n---\nA single ping goes unnoticed. Sweeping a whole range shows up in the firewall logs.',
   'explain.ssh':

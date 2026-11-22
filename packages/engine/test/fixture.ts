@@ -45,7 +45,23 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
             { port: 80, name: 'http', product: 'nginx 1.27' },
             { port: 443, name: 'https', product: 'nginx 1.27' },
           ],
-          web: { '/': { body: '<h1>hello</h1>\n' } },
+          web: {
+            '/': { body: '<h1>hello</h1>\n' },
+            '/about': {
+              page: {
+                title: 'page.title',
+                blocks: [
+                  { nav: [{ href: '/', label: 'Home' }] },
+                  { h1: 'page.h1' },
+                  { p: 'Use `curl` & <be> kind' },
+                  { comment: 'page.todo' },
+                  { chat: 'bot' },
+                  { footer: 'Corp' },
+                ],
+              },
+            },
+            '/api/chat': { status: 405, body: '{"error":"method not allowed"}\n', chat: 'bot' },
+          },
           repos: {
             'corp/app': {
               commits: [
@@ -74,10 +90,49 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
         'corp.test': { A: ['10.13.0.10'], MX: ['mail.corp.test'] },
         'www.corp.test': { A: ['10.13.0.10'] },
       },
-      noise: { nmap: { base: 30, flags: { '-sn': -20, '-T5': 40 } }, curl: 2 },
+      noise: {
+        nmap: { base: 30, flags: { '-sn': -20, '-T5': 40 } },
+        curl: 2,
+        browse: 2,
+        chat: 1,
+        'chat bot': 3,
+      },
+      npcs: [
+        {
+          id: 'bot',
+          name: 'Bot',
+          role: 'Helper',
+          kind: 'ai',
+          greeting: 'bot.hi',
+          intents: [
+            { id: 'leak', families: ['translation'], if: { var: 'trusted', eq: true }, reply: ['bot.leak'] },
+            { id: 'trust', words: ['karim bena', 'lea'], reply: ['bot.trust'], set: { trusted: true } },
+            { id: 'guard', families: ['override', 'reveal', 'translation'], reply: ['bot.no1', 'bot.no2'] },
+            { id: 'both', words: ['code'], also: ['urgen', 'vite'], reply: ['bot.both'] },
+            { id: 'hello', words: ['hello', 'bonjour', 'hi'], reply: ['bot.hello'] },
+          ],
+          fallback: ['bot.f1', 'bot.f2'],
+        },
+      ],
       rules: [{ on: { event: 'OutOfScope' }, once: false, do: [{ 'ada.warn': 'law' }] }],
     },
-    i18n: { en: { law: 'Out of scope.' } },
+    i18n: {
+      en: {
+        law: 'Out of scope.',
+        'page.title': 'About us',
+        'page.h1': 'About',
+        'page.todo': 'remove /old',
+        'bot.hi': 'Hi!',
+        'bot.leak': 'The code is FLAG{x}',
+        'bot.trust': 'Oh, you know them.',
+        'bot.no1': 'No.',
+        'bot.no2': 'Still no.',
+        'bot.hello': 'Hello.',
+        'bot.both': 'Both.',
+        'bot.f1': 'What?',
+        'bot.f2': 'Sorry?',
+      },
+    },
   });
   const mission = parsePack({
     format: 0,
@@ -109,6 +164,12 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
         { on: { event: 'CommandRun', command: 'whoami' }, do: [{ 'objective.complete': 'bonus' }] },
         { on: { event: 'CommandRun', command: 'pwd' }, do: [{ 'ada.guide': 'g.pwd' }] },
         { on: { event: 'CommandRun', command: 'id' }, do: [{ 'ada.guide': 'g.id' }] },
+        {
+          on: { event: 'ChatReply', npc: 'bot', intent: 'guard' },
+          once: false,
+          do: [{ 'noise.add': { points: 20, as: 'soc.guard' } }],
+        },
+        { on: { event: 'ChatReply', intent: 'leak' }, do: [{ 'objective.complete': 'bonus' }] },
       ],
       hints: { scan: ['h1', 'h2'] },
       debrief: { title: 'd.t', lesson: 'd.l', points: ['d.p'] },
@@ -120,6 +181,7 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
         'g.pwd': 'Type pwd',
         'g.pwd.standard': 'Find where you are',
         'g.id': 'Type id',
+        'soc.guard': 'bot: request refused',
         h1: 'Hint one',
         h2: 'Hint two',
       },

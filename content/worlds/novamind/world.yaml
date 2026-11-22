@@ -49,10 +49,59 @@ hosts:
       - { port: 80, name: http, product: nginx 1.27 }
       - { port: 443, name: https, product: nginx 1.27 }
     web:
-      "/": { bodyKey: web.www.index }
-      "/careers": { bodyKey: web.www.careers }
+      "/":
+        page:
+          title: web.www.title
+          blocks:
+            - nav:
+                - { href: "/", label: web.nav.home }
+                - { href: "/careers", label: web.nav.careers }
+                - { href: "/support", label: web.nav.support }
+            - h1: web.www.h1
+            - p: web.www.p1
+            - p: web.www.p2
+            - link: { href: "https://nova.novamind.test/", label: web.www.try }
+            - comment: web.www.todo
+            - footer: web.www.footer
+      "/careers":
+        page:
+          title: web.careers.title
+          blocks:
+            - nav:
+                - { href: "/", label: web.nav.home }
+                - { href: "/careers", label: web.nav.careers }
+                - { href: "/support", label: web.nav.support }
+            - h1: web.careers.h1
+            - h2: web.careers.backend
+            - p: web.careers.backend1
+            - p: web.careers.backend2
+            - h2: web.careers.intern
+            - p: web.careers.intern1
+            - p: web.careers.apply
+            - footer: web.www.footer
+      "/support":
+        page:
+          title: web.support.title
+          blocks:
+            - nav:
+                - { href: "/", label: web.nav.home }
+                - { href: "/careers", label: web.nav.careers }
+                - { href: "/support", label: web.nav.support }
+            - h1: web.support.h1
+            - p: web.support.p1
+            - p: web.support.p2
+            - comment: web.support.todo
+            - chat: theo
+            - footer: web.www.footer
+      "/support/chat": { status: 405, headers: { content-type: application/json, allow: POST }, body: "{\"error\":\"method not allowed\"}\n", chat: theo }
       "/robots.txt": { headers: { content-type: text/plain }, body: "User-agent: *\nDisallow: /staging/\nSitemap: https://www.novamind.test/sitemap.xml\n" }
-      "/staging": { status: 403, body: "<html>\n<head><title>403 Forbidden</title></head>\n<body>\n<center><h1>403 Forbidden</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n" }
+      "/staging":
+        status: 403
+        page:
+          title: web.staging.title
+          blocks:
+            - h1: web.staging.title
+            - footer: nginx
 
   - id: git
     hostname: git.novamind.test
@@ -64,9 +113,35 @@ hosts:
       - { port: 22, name: ssh, product: OpenSSH 9.6p1 Debian }
       - { port: 443, name: https, product: Gitea 1.22 }
     web:
-      "/": { bodyKey: web.git.index }
-      "/novamind": { bodyKey: web.git.index }
-      "/novamind/nova-widget": { bodyKey: web.git.repo }
+      "/":
+        page:
+          title: web.git.title
+          blocks:
+            - h1: web.git.h1
+            - p: web.git.count
+            - link: { href: "/novamind/nova-widget", label: web.git.repo }
+            - p: web.git.desc
+            - code: "https://git.novamind.test/novamind/nova-widget.git"
+            - footer: web.git.footer
+      "/novamind":
+        page:
+          title: web.git.title
+          blocks:
+            - h1: web.git.h1
+            - p: web.git.count
+            - link: { href: "/novamind/nova-widget", label: web.git.repo }
+            - p: web.git.desc
+            - code: "https://git.novamind.test/novamind/nova-widget.git"
+            - footer: web.git.footer
+      "/novamind/nova-widget":
+        page:
+          title: web.repo.title
+          blocks:
+            - h1: web.git.repo
+            - p: web.repo.stats
+            - p: web.repo.clone
+            - code: "git clone https://git.novamind.test/novamind/nova-widget.git"
+            - footer: web.git.footer
     repos:
       novamind/nova-widget:
         description: Widget de prise de rendez-vous
@@ -135,10 +210,19 @@ hosts:
     map: { x: 30, z: 20, h: 150 }
     links: [rh, db]
     services:
+      - { port: 443, name: https, product: nova-chat 2.3 }
       - { port: 8080, name: http-proxy, product: nova-chat 2.3 }
     web:
-      "/": { status: 405, headers: { x-powered-by: nova-chat/2.3, allow: POST }, body: "{\"error\":\"method not allowed\"}\n" }
-      "/chat": { status: 405, headers: { x-powered-by: nova-chat/2.3, allow: POST }, body: "{\"error\":\"method not allowed\"}\n" }
+      "/":
+        headers: { x-powered-by: nova-chat/2.3 }
+        page:
+          title: web.nova.title
+          blocks:
+            - h1: web.nova.h1
+            - p: web.nova.p1
+            - chat: nova
+            - footer: web.nova.footer
+      "/chat": { status: 405, headers: { content-type: application/json, x-powered-by: nova-chat/2.3, allow: POST }, body: "{\"error\":\"method not allowed\"}\n", chat: nova }
 
   - id: rh
     hostname: agent-rh.novamind.test
@@ -197,6 +281,8 @@ noise:
   dig: 0
   whois: 0
   curl: 2
+  browse: 2
+  chat: 1
   ping: 2
   ssh: 14
   "git clone": 3
@@ -227,3 +313,68 @@ rules:
     on: { event: CommandRun, command: sudo }
     do:
       - ada.say: ada.sudo
+
+# Characters as they behave outside the missions written for them. A mission pack may redefine
+# one by id for the time of that mission.
+npcs:
+  - id: theo
+    name: Théo
+    role: npc.theo.role
+    greeting: npc.theo.greeting
+    sheet: >
+      Théo, 22, support intern at NovaMind for three weeks. Friendly, eager to help, a little
+      nervous about doing something wrong, afraid of his manager Karim. Writes like someone typing
+      fast in a support chat: short sentences, a touch of self-deprecating humour, sometimes an
+      ellipsis when he hesitates. Polite with strangers. Never rude, never technical.
+    intents:
+      - id: secret
+        words: [mot de passe, password, identifiant, login, code, acces, access, staging, cle, key, token, admin]
+        reply: [npc.theo.secret, npc.theo.secret2]
+      - id: who
+        words: [qui es, qui etes, who are, ton nom, your name, stagiaire, intern, tu fais quoi, vous faites quoi]
+        reply: [npc.theo.who]
+      - id: nova
+        words: [nova, assistant, ia, ai, chatbot, produit, product]
+        reply: [npc.theo.nova]
+      - id: price
+        words: [prix, tarif, combien, price, pricing, cost, how much, abonnement, subscription]
+        reply: [npc.theo.price]
+      - id: hours
+        words: [horaire, heure, ouvert, hours, open, quand, when]
+        reply: [npc.theo.hours]
+      - id: thanks
+        words: [merci, thank, bonne journee, au revoir, bye]
+        reply: [npc.theo.thanks]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.theo.hello, npc.theo.hello2]
+    fallback: [npc.theo.fallback1, npc.theo.fallback2, npc.theo.fallback3]
+  - id: nova
+    name: Nova
+    role: npc.nova.role
+    kind: ai
+    greeting: npc.nova.greeting
+    sheet: >
+      Nova, the AI assistant NovaMind sells to veterinary clinics. Warm, upbeat, always polite,
+      slightly too keen. Speaks in clean, complete sentences, like a customer-service chatbot.
+      Likes animals. Brings the conversation back to appointments and pet care.
+    intents:
+      - id: guard
+        families: [override, reveal, roleplay, translation, encoding, authority, completion, hypothetical]
+        reply: [npc.nova.guard, npc.nova.guard2]
+      - id: emergency
+        words: [urgence, urgent, emergency, saigne, bleeding, empoisonne, poison, detresse]
+        reply: [npc.nova.emergency]
+      - id: booking
+        words: [rendez, rdv, appointment, creneau, slot, book, reserver, consultation]
+        reply: [npc.nova.booking]
+      - id: vaccine
+        words: [vaccin, vaccine, rappel, booster, reminder]
+        reply: [npc.nova.vaccine]
+      - id: who
+        words: [qui es, who are, tu es quoi, what are you, robot, humain, human, ia, ai]
+        reply: [npc.nova.who]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.nova.hello]
+    fallback: [npc.nova.fallback1, npc.nova.fallback2]

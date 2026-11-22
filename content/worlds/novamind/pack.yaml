@@ -1,6 +1,6 @@
 id: breach.world.novamind
-version: 0.1.0
-engine: ">=0.1 <1"
+version: 0.3.0
+engine: ">=0.2 <1"
 kind: world
 title:
   fr: NovaMind

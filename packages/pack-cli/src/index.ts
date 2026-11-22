@@ -7,6 +7,7 @@ import {
   type Catalog,
   type Locale,
   MAX_PACK_BYTES,
+  type Npc,
   PACK_FORMAT,
   type Pack,
   parsePack,
@@ -20,7 +21,7 @@ export interface LoadedPack {
 }
 
 const sha256 = (data: string | Uint8Array) => createHash('sha256').update(data).digest('hex');
-const readYaml = (file: string): unknown => parseYaml(readFileSync(file, 'utf8'), { maxAliasCount: 0 });
+const readYaml = (file: string): unknown => parseYaml(readFileSync(file, 'utf8'), { maxAliasCount: 100 });
 
 /** Replace `{ $file: "relative/path" }` by the content of that file. Paths cannot leave the pack. */
 function include(value: unknown, dir: string): unknown {
@@ -115,6 +116,68 @@ export async function replaySolution(
   return { done: game.state.missionDone, transcript, game };
 }
 
+/** A text that names a translation, as opposed to a short literal such as a product name. */
+const looksLikeKey = (text: string) => /^[a-z0-9]+(\.[A-Za-z0-9_-]+)+$/.test(text);
+
+function npcTexts(npc: Npc): string[] {
+  return [
+    npc.role,
+    ...(npc.greeting ? [npc.greeting] : []),
+    ...npc.fallback,
+    ...npc.intents.flatMap((i) => i.reply),
+  ];
+}
+
+function npcProblems(npc: Npc): string[] {
+  const problems: string[] = [];
+  const seen = new Set<string>(['fallback']);
+  for (const intent of npc.intents) {
+    if (seen.has(intent.id)) problems.push(`character ${npc.id}: intent id ${intent.id} is used twice`);
+    seen.add(intent.id);
+    if (!intent.words.length && !intent.families.length && !intent.if)
+      problems.push(`character ${npc.id}: intent ${intent.id} matches every message, use fallback instead`);
+  }
+  return problems;
+}
+
+/** Texts and references of a world's pages and characters. */
+function worldProblems(pack: Pack): string[] {
+  const problems: string[] = [];
+  const w = pack.world!;
+  const npcs = new Set(w.npcs.map((n) => n.id));
+  const texts: string[] = [];
+  for (const host of w.hosts)
+    for (const [path, route] of Object.entries(host.web ?? {})) {
+      const where = `${host.hostname}${path}`;
+      if (route.chat && !npcs.has(route.chat)) problems.push(`${where}: unknown character ${route.chat}`);
+      if (!route.page) continue;
+      texts.push(route.page.title);
+      for (const block of route.page.blocks) {
+        if ('chat' in block) {
+          if (!npcs.has(block.chat)) problems.push(`${where}: unknown character ${block.chat}`);
+          continue;
+        }
+        const links = 'nav' in block ? block.nav : 'link' in block ? [block.link] : [];
+        for (const l of links) {
+          texts.push(l.label);
+          if (!/^(\/|https?:\/\/)/.test(l.href))
+            problems.push(`${where}: link ${l.href} must be a path or a URL`);
+        }
+        if ('list' in block) texts.push(...block.list);
+        for (const value of Object.values(block)) if (typeof value === 'string') texts.push(value);
+      }
+    }
+  for (const npc of w.npcs) {
+    texts.push(...npcTexts(npc));
+    problems.push(...npcProblems(npc));
+  }
+  for (const key of new Set(texts.filter(looksLikeKey)))
+    for (const locale of pack.locales)
+      if (pack.i18n[locale]?.[key] === undefined)
+        problems.push(`text key ${key} has no translation in ${locale}`);
+  return problems.map((p) => `${pack.id}: ${p}`);
+}
+
 /** Every problem found in a set of packs: schema, dependencies, translations, solutions. */
 export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
   const problems: string[] = [];
@@ -131,6 +194,7 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
       for (const key of have)
         if (!keys.includes(key)) problems.push(`${pack.id}: i18n key ${key} is missing in ${first}`);
     }
+    if (pack.world) problems.push(...worldProblems(pack));
     if (pack.kind !== 'mission') continue;
     const world = byId.get(pack.requires[0] ?? '')?.pack;
     if (!world?.world) {
@@ -148,7 +212,9 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
       ...m.objectives.map((o) => o.text),
       ...Object.values(m.hints).flat(),
       ...Object.values(m.guide),
+      ...m.npcs.flatMap(npcTexts).filter(looksLikeKey),
     ];
+    for (const npc of m.npcs) problems.push(...npcProblems(npc).map((p) => `${pack.id}: ${p}`));
     const objectiveIds = new Set(m.objectives.map((o) => o.id));
     for (const o of m.objectives)
       if (!o.optional && !m.guide[o.id]) problems.push(`${pack.id}: objective ${o.id} has no entry in guide`);
@@ -164,6 +230,8 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
             problems.push(`${pack.id}: ada.guide names unknown objective ${g.for}`);
           continue;
         }
+        const noise = (effect as Record<string, unknown>)['noise.add'];
+        if (noise && typeof noise === 'object') keysUsed.push((noise as { as: string }).as);
         const key =
           (effect as Record<string, unknown>)['ada.say'] ??
           guide ??
