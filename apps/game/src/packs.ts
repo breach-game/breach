@@ -29,6 +29,17 @@ export function pinnedSha(entry: Pick<CatalogEntry, 'id' | 'version'>): string |
     : undefined;
 }
 
+/**
+ * The catalogue next to the game no longer matches the packs this page was built with: the site was
+ * updated after the page was loaded. Reloading the page brings the matching game.
+ */
+export class OutdatedBuildError extends Error {
+  override name = 'OutdatedBuildError';
+  constructor(id: string) {
+    super(`${id}: this page is older than the packs online, reload it`);
+  }
+}
+
 export interface PackProgress {
   entry: CatalogEntry;
   state: 'cached' | 'downloading' | 'verified';
@@ -103,8 +114,12 @@ export async function loadPack(
     throw new Error(`${entry.id}: an official pack cannot come from the community catalogue, refused`);
   // ...and must be the very one this build was made with, whatever the catalogue says.
   const pinned = pinnedSha(entry);
-  if (pinning && isOfficialId(entry.id) && pinned !== entry.sha256)
+  if (pinning && isOfficialId(entry.id) && pinned !== entry.sha256) {
+    // From the game's own catalogue, a pack this build does not know is almost always a newer
+    // release: the page was loaded before the site was updated. A reload settles it.
+    if (source === 'official') throw new OutdatedBuildError(entry.id);
     throw new Error(`${entry.id}: not the official pack this game was built with, refused`);
+  }
   const base = source === 'community' ? COMMUNITY_CATALOG_URL : CATALOG_URL;
   const key = `pack:${entry.sha256}`;
   let bytes = await get<ArrayBuffer>(key).catch(() => undefined);
@@ -146,8 +161,7 @@ export async function loadCampaign(onProgress?: (p: PackProgress) => void): Prom
   if (!worldEntry) throw new Error('catalogue has no world pack for the campaign');
   // The campaign is made of official packs only: a catalogue cannot slip another pack into it.
   for (const entry of [worldEntry, ...entries])
-    if (pinning && pinnedSha(entry) === undefined)
-      throw new Error(`${entry.id}: not an official pack of this build, refused in the campaign`);
+    if (pinning && pinnedSha(entry) === undefined) throw new OutdatedBuildError(entry.id);
   const world = await loadPack(worldEntry, onProgress);
   const missions: Pack[] = [];
   for (const entry of entries) missions.push(await loadPack(entry, onProgress));

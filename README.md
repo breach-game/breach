@@ -94,7 +94,7 @@ pnpm packs:check  # validates the content
 pnpm build        # static site in apps/game/dist
 ```
 
-Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically. Security model and how to report a problem: [SECURITY.md](SECURITY.md).
+Going live: [docs/deploy.md](docs/deploy.md). GitHub Pages publishes the game after every merge to `main`; saves survive updates that do not touch the mission in progress. Security model and how to report a problem: [SECURITY.md](SECURITY.md).
 
 | Folder | Role |
 | --- | --- |

@@ -31,6 +31,17 @@ export {
   normalizeText,
   vocabulary,
 } from './npc.ts';
+export {
+  type Completed,
+  completedIn,
+  MAX_PROGRESS_BYTES,
+  type ProgressFile,
+  ProgressFileError,
+  parseProgressFile,
+  planResume,
+  progressFile,
+  type ResumePlan,
+} from './progress.ts';
 export { type SocEntry, socView } from './soc.ts';
 export {
   type ChatLine,

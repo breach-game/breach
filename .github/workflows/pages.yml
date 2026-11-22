@@ -1,9 +1,15 @@
 name: Deploy to GitHub Pages
 
-# Runs only when someone starts it by hand (Actions > Deploy to GitHub Pages > Run workflow).
-# Nothing is published on a push. GitHub Pages must first be enabled for this repository with
-# "GitHub Actions" as the source. See docs/deploy.md.
+# Publishes the game after every merge to main, and can still be started by hand
+# (Actions > Deploy to GitHub Pages > Run workflow). A change to documentation alone publishes
+# nothing. Players already in a game are not disturbed: the page they loaded keeps running, and
+# the new version arrives on their next visit. See docs/deploy.md.
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:

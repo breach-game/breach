@@ -16,6 +16,14 @@ export const en: Record<string, string> = {
   'engine.gitUnavailable': 'is not available on this workstation. Try clone, log, show, status or remote.',
   'engine.sudo': 'This incident will be reported to Ada.',
   'engine.exit': 'You are on your own workstation. Nothing to leave.',
+  'save.update.restart':
+    'BREACH was updated while you were away, and the mission you had started cannot pick up where you left it. Your finished missions and their scores are kept. This one starts again from the beginning.',
+  'save.update.kept':
+    'BREACH was updated while you were away. Your finished missions and their scores are kept, let us carry on.',
+  'save.import':
+    'Progress imported. Your finished missions and their scores are here, we pick up at the next one.',
+  'save.mission.restart':
+    'This mission was updated since you last played it. Your save no longer applies: it starts again from the beginning.',
 
   'help.group.game': 'Game',
   'help.group.files': 'Files',

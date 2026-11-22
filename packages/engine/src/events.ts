@@ -66,7 +66,12 @@ export type EventBody =
   | { type: 'RuleFired'; rule: string }
   | { type: 'VarSet'; name: string; value: string | number | boolean }
   | { type: 'HostRevealed'; host: string }
-  | { type: 'MissionCompleted'; mission: string; score: number };
+  | { type: 'MissionCompleted'; mission: string; score: number }
+  /**
+   * Missions finished in an earlier save, kept with their scores: the save could not be replayed
+   * after an update changed its packs, or the player imported a progress file. Always the first event.
+   */
+  | { type: 'ProgressCarried'; missions: Record<string, { score: number }>; source: 'update' | 'import' };
 
 export type GameEvent = EventBody & { seq: number; t: number };
 export type EventType = EventBody['type'];
