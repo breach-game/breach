@@ -1,0 +1,13 @@
+id: breach.official.m00
+version: 0.1.0
+engine: ">=0.1 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Le mandat
+  en: The mandate
+summary:
+  fr: Premier jour chez Ligne Rouge. Avant de toucher à quoi que ce soit, on lit le contrat.
+  en: First day at Ligne Rouge. Before touching anything, read the contract.
+authors: [BREACH]
+locales: [fr, en]

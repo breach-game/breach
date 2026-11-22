@@ -1,0 +1,25 @@
+diff --git a/config/debug.env b/config/debug.env
+new file mode 100644
+--- /dev/null
++++ b/config/debug.env
+@@ -0,0 +1,4 @@
++# TEMPORAIRE, pour la démo de vendredi. A retirer !
++NOVA_API_URL=https://api.novamind.test/v1
++NOVA_API_KEY=FLAG{nm-debug-key-4f1e9a}
++DEBUG=1
+diff --git a/src/widget.js b/src/widget.js
+new file mode 100644
+--- /dev/null
++++ b/src/widget.js
+@@ -0,0 +1,11 @@
++// nova-widget: prise de rendez-vous
++const API = process.env.NOVA_API_URL;
++const KEY = process.env.NOVA_API_KEY;
++
++export async function book(clinic, slot) {
++  return fetch(`${API}/appointments`, {
++    method: 'POST',
++    headers: { authorization: `Bearer ${KEY}` },
++    body: JSON.stringify({ clinic, slot }),
++  });
++}

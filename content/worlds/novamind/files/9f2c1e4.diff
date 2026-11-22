@@ -1,0 +1,16 @@
+diff --git a/config/app.env.example b/config/app.env.example
+new file mode 100644
+--- /dev/null
++++ b/config/app.env.example
+@@ -0,0 +1,2 @@
++NOVA_API_URL=https://api.novamind.test/v1
++NOVA_API_KEY=
+diff --git a/config/debug.env b/config/debug.env
+deleted file mode 100644
+--- a/config/debug.env
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# TEMPORAIRE, pour la démo de vendredi. A retirer !
+-NOVA_API_URL=https://api.novamind.test/v1
+-NOVA_API_KEY=FLAG{nm-debug-key-4f1e9a}
+-DEBUG=1

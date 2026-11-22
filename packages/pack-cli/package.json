@@ -1,0 +1,15 @@
+{
+  "name": "@breach/pack-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "bin": { "breach-pack": "./src/cli.ts" },
+  "scripts": { "cli": "tsx src/cli.ts", "typecheck": "tsc -p ." },
+  "dependencies": {
+    "@breach/engine": "workspace:*",
+    "@breach/pack-schema": "workspace:*",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": { "tsx": "^4.20.0", "@types/node": "^22.0.0" }
+}

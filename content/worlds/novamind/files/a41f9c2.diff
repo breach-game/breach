@@ -1,0 +1,14 @@
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,9 @@
+ # nova-widget
+ 
+-Squelette du projet.
++Widget de prise de rendez-vous pour les cliniques clientes de NovaMind.
++Il parle à l'assistante Nova via l'API interne.
++
++## Configuration
++
++Copier `config/app.env.example` vers `config/app.env` et renseigner la clé.
++Ne jamais committer `config/app.env`.

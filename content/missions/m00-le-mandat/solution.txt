@@ -1,0 +1,7 @@
+# Mission 0: the mandate
+whoami
+ls
+cat mandat/NM-2026-114.txt
+submit FLAG{perimetre-novamind-test}
+ping example.com
+dig novamind.test

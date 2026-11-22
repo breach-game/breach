@@ -1,0 +1,23 @@
+{
+  "name": "breach",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "packs": "pnpm --filter @breach/pack-cli run cli build ../../content --out ../../apps/game/public/packs",
+    "packs:check": "pnpm --filter @breach/pack-cli run cli check ../../content",
+    "dev": "pnpm packs && pnpm --filter @breach/game dev",
+    "build": "pnpm packs && pnpm --filter @breach/game build",
+    "preview": "pnpm --filter @breach/game preview",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.8",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0"
+  }
+}

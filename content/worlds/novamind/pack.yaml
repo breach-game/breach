@@ -1,0 +1,12 @@
+id: breach.world.novamind
+version: 0.1.0
+engine: ">=0.1 <1"
+kind: world
+title:
+  fr: NovaMind
+  en: NovaMind
+summary:
+  fr: Le réseau de NovaMind, start-up lyonnaise qui vend des assistants IA aux cliniques vétérinaires.
+  en: The network of NovaMind, a Lyon start-up selling AI assistants to veterinary clinics.
+authors: [BREACH]
+locales: [fr, en]

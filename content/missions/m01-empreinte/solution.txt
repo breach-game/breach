@@ -1,0 +1,12 @@
+# Mission 1: footprint
+whois novamind.test | head -5
+dig novamind.test ANY
+nmap -sn 10.13.0.0/24
+curl https://www.novamind.test/careers
+curl https://git.novamind.test/
+git clone https://git.novamind.test/novamind/nova-widget.git
+cd nova-widget
+git log --oneline
+git show 5d0e7b8
+git show 9f2c1e4 | grep KEY
+submit FLAG{nm-debug-key-4f1e9a}

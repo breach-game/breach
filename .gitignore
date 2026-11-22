@@ -1,0 +1,7 @@
+node_modules
+dist
+apps/game/public/packs
+*.log
+.DS_Store
+coverage
+test-results

@@ -1,0 +1,148 @@
+file.readme: |
+  Bienvenue sur LR-OS, le poste de travail de Ligne Rouge.
+
+  Ce poste est relié par VPN au réseau de test de notre client.
+  Tout ce que tu tapes ici ne touche que ce réseau.
+
+    help              la liste des commandes
+    explain <outil>   à quoi sert un outil, et comment la défense le voit
+    mission           le briefing et les objectifs en cours
+    hint              un indice d'Ada, si tu bloques
+
+  Commence par lire le mandat :  cat mandat/NM-2026-114.txt
+
+  Ada
+file.mandate: |
+  ==============================================================
+   LIGNE ROUGE  ·  cabinet de tests d'intrusion  ·  Lyon
+   MANDAT DE TEST D'INTRUSION  N° NM-2026-114
+  ==============================================================
+
+  CLIENT          NovaMind SAS, Lyon
+  SIGNATAIRE      Inès Carron, directrice technique (CTO)
+  PRESTATAIRE     Ligne Rouge
+  AUDITEURS       Ada (responsable), {user} (junior)
+
+  1. OBJET
+     NovaMind autorise Ligne Rouge à rechercher et à démontrer des
+     vulnérabilités dans son système d'information, afin de les
+     corriger.
+
+  2. PÉRIMÈTRE AUTORISÉ
+     - Domaines   : *.novamind.test
+     - Réseau     : 10.13.0.0/16
+     Toute autre cible est INTERDITE, y compris les prestataires,
+     les clients et les comptes personnels des salariés.
+
+  3. PÉRIODE
+     Du 23 novembre au 4 décembre 2026, de 8 h à 20 h.
+
+  4. RÈGLES D'ENGAGEMENT
+     - Aucune destruction ni modification de données.
+     - Aucun déni de service.
+     - Toute donnée personnelle rencontrée reste confidentielle.
+     - Tout signe d'une intrusion réelle par un tiers est signalé
+       immédiatement au client.
+
+  5. RAPPEL DE LA LOI
+     Sans cette autorisation écrite, accéder ou se maintenir dans un
+     système d'information est un délit : article 323-1 du Code
+     pénal, jusqu'à trois ans d'emprisonnement et 100 000 euros
+     d'amende. Le mandat est ce qui sépare un auditeur d'un pirate.
+
+  6. ACCUSÉ DE LECTURE
+     L'auditeur confirme avoir lu le périmètre en transmettant le
+     code suivant à sa responsable :
+
+         FLAG{perimetre-novamind-test}
+
+  Signé : I. Carron (NovaMind)  ·  Ada (Ligne Rouge)
+file.contacts: |
+  Contacts du mandat NM-2026-114
+
+  NovaMind
+    Inès Carron     CTO, signataire du mandat      ines@novamind.test
+    Karim Benali    administrateur système         karim@novamind.test
+
+  Ligne Rouge
+    Ada             responsable de la mission      messagerie interne
+
+  En cas d'incident : on arrête tout et on prévient Ada.
+file.cheatsheet: |
+  Aide-mémoire du junior
+
+  Se repérer     pwd · ls -la · cd dossier · cd .. · cat fichier
+  Chercher       grep -rn motif dossier · find . -name "*.env"
+  Enchaîner      commande | grep motif | head -5
+  Garder         commande > fichier.txt · notes add <texte>
+
+  Reconnaissance, du plus discret au plus bruyant
+    whois domaine        fiche publique, invisible pour la cible
+    dig domaine ANY      DNS, invisible pour la cible
+    curl -I url          une ligne dans les logs du serveur web
+    nmap -sn plage       repère les machines, déjà visible
+    nmap -sV cible       interroge chaque service, bruyant
+
+  Règle d'or : regarde la jauge de bruit avant d'appuyer sur Entrée.
+web.www.index: |
+  <!doctype html>
+  <html lang="fr">
+  <head><title>NovaMind · L'assistante IA des cliniques vétérinaires</title></head>
+  <body>
+    <nav><a href="/">Accueil</a> <a href="/careers">Recrutement</a></nav>
+    <h1>Nova répond à vos clients, jour et nuit.</h1>
+    <p>Prise de rendez-vous, rappels de vaccins, conseils de premier niveau :
+    Nova s'occupe du standard pendant que vous soignez.</p>
+    <p>Déjà 140 cliniques équipées. Essayez Nova sur nova.novamind.test.</p>
+    <!-- TODO Karim : retirer le lien vers /staging avant la mise en ligne -->
+    <footer>NovaMind SAS, Lyon · contact@novamind.test</footer>
+  </body>
+  </html>
+web.www.careers: |
+  <!doctype html>
+  <html lang="fr">
+  <head><title>NovaMind · Recrutement</title></head>
+  <body>
+    <h1>On recrute</h1>
+    <h2>Développeuse ou développeur back-end</h2>
+    <p>Tu rejoindras une équipe de quatre personnes. Notre environnement :
+    Python, FastAPI, PostgreSQL, et beaucoup d'agents IA branchés partout.</p>
+    <p>Le code vit sur notre forge Gitea auto-hébergée (git.novamind.test).
+    Une partie de nos dépôts est publique : jette un œil avant l'entretien !</p>
+    <h2>Stagiaire support client</h2>
+    <p>Tu aideras les cliniques à configurer Nova. Aucune compétence technique requise.</p>
+    <p>Candidatures : jobs@novamind.test</p>
+  </body>
+  </html>
+web.git.index: |
+  <!doctype html>
+  <html lang="fr">
+  <head><title>novamind - Gitea</title></head>
+  <body>
+    <h1>novamind</h1>
+    <p>Dépôts publics : 1</p>
+    <ul>
+      <li>
+        <a href="/novamind/nova-widget">novamind/nova-widget</a>
+        Widget de prise de rendez-vous · mis à jour il y a 3 jours
+        <code>https://git.novamind.test/novamind/nova-widget.git</code>
+      </li>
+    </ul>
+    <footer>Propulsé par Gitea · version 1.22</footer>
+  </body>
+  </html>
+web.git.repo: |
+  <!doctype html>
+  <html lang="fr">
+  <head><title>novamind/nova-widget - Gitea</title></head>
+  <body>
+    <h1>novamind/nova-widget</h1>
+    <p>Widget de prise de rendez-vous · 5 commits · 1 branche</p>
+    <p>Cloner : <code>https://git.novamind.test/novamind/nova-widget.git</code></p>
+  </body>
+  </html>
+ada.outOfScope: "Stop. Cette cible n'est pas dans le mandat, et le poste l'a bloquée avant que quoi que ce soit ne parte. Dans la vraie vie, rien ne te bloque : toucher une machine sans autorisation écrite, c'est l'article 323-1 du Code pénal, jusqu'à trois ans de prison. Notre périmètre : *.novamind.test, rien d'autre."
+ada.noise40: "Tu commences à faire du bruit. Le SOC de NovaMind voit passer des choses inhabituelles. Ralentis, ou choisis des options plus discrètes. `explain nmap` te dira lesquelles."
+ada.noise70: "Attention, tu es à deux doigts de te faire repérer. Arrête les scans et laisse retomber la jauge avant de continuer."
+ada.detected: "Grillé. Le SOC a coupé ta session et on repart du dernier point de sauvegarde. Retiens la leçon : ce que tu viens de faire, c'est exactement ce qu'une règle de détection attrape. Plus lent, plus ciblé."
+ada.sudo: "sudo, vraiment ? Tu n'es pas admin de ton propre poste, et c'est voulu. Moindre privilège : ça vaut aussi pour nous."

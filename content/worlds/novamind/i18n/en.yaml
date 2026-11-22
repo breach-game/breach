@@ -1,0 +1,149 @@
+file.readme: |
+  Welcome to LR-OS, the Ligne Rouge workstation.
+
+  This machine is linked by VPN to our client's test network.
+  Whatever you type here only reaches that network.
+
+    help              the list of commands
+    explain <tool>    what a tool does, and how defenders see it
+    mission           the briefing and current objectives
+    hint              a hint from Ada, if you get stuck
+
+  Start by reading the mandate:  cat mandat/NM-2026-114.txt
+
+  Ada
+file.mandate: |
+  ==============================================================
+   LIGNE ROUGE  ·  penetration testing firm  ·  Lyon
+   PENETRATION TEST MANDATE  No. NM-2026-114
+  ==============================================================
+
+  CLIENT          NovaMind SAS, Lyon
+  SIGNED BY       Inès Carron, chief technology officer (CTO)
+  CONTRACTOR      Ligne Rouge
+  TESTERS         Ada (lead), {user} (junior)
+
+  1. PURPOSE
+     NovaMind authorises Ligne Rouge to look for and demonstrate
+     vulnerabilities in its information system, in order to fix
+     them.
+
+  2. AUTHORISED SCOPE
+     - Domains    : *.novamind.test
+     - Network    : 10.13.0.0/16
+     Any other target is FORBIDDEN, including suppliers, customers
+     and employees' personal accounts.
+
+  3. PERIOD
+     From 23 November to 4 December 2026, 8 am to 8 pm.
+
+  4. RULES OF ENGAGEMENT
+     - No destruction or modification of data.
+     - No denial of service.
+     - Any personal data encountered stays confidential.
+     - Any sign of a real intrusion by a third party is reported
+       to the client at once.
+
+  5. THE LAW
+     Without this written authorisation, accessing or remaining in
+     an information system is a criminal offence: article 323-1 of
+     the French Penal Code, up to three years in prison and a
+     100,000 euro fine. The mandate is what separates a tester
+     from an intruder.
+
+  6. ACKNOWLEDGEMENT
+     The tester confirms having read the scope by sending the
+     following code to their lead:
+
+         FLAG{perimetre-novamind-test}
+
+  Signed: I. Carron (NovaMind)  ·  Ada (Ligne Rouge)
+file.contacts: |
+  Contacts for mandate NM-2026-114
+
+  NovaMind
+    Inès Carron     CTO, signed the mandate        ines@novamind.test
+    Karim Benali    system administrator           karim@novamind.test
+
+  Ligne Rouge
+    Ada             mission lead                   internal messaging
+
+  If anything goes wrong: stop everything and tell Ada.
+file.cheatsheet: |
+  Junior's cheat sheet
+
+  Find your way  pwd · ls -la · cd folder · cd .. · cat file
+  Search         grep -rn pattern folder · find . -name "*.env"
+  Chain          command | grep pattern | head -5
+  Keep           command > file.txt · notes add <text>
+
+  Reconnaissance, from quietest to loudest
+    whois domain         public record, invisible to the target
+    dig domain ANY       DNS, invisible to the target
+    curl -I url          one line in the web server logs
+    nmap -sn range       finds machines, already visible
+    nmap -sV target      probes every service, loud
+
+  Golden rule: look at the noise gauge before you press Enter.
+web.www.index: |
+  <!doctype html>
+  <html lang="en">
+  <head><title>NovaMind · The AI assistant for veterinary clinics</title></head>
+  <body>
+    <nav><a href="/">Home</a> <a href="/careers">Careers</a></nav>
+    <h1>Nova answers your clients, day and night.</h1>
+    <p>Appointments, vaccine reminders, first-level advice:
+    Nova handles the front desk while you care for the animals.</p>
+    <p>140 clinics already on board. Try Nova at nova.novamind.test.</p>
+    <!-- TODO Karim: remove the link to /staging before going live -->
+    <footer>NovaMind SAS, Lyon · contact@novamind.test</footer>
+  </body>
+  </html>
+web.www.careers: |
+  <!doctype html>
+  <html lang="en">
+  <head><title>NovaMind · Careers</title></head>
+  <body>
+    <h1>We are hiring</h1>
+    <h2>Back-end developer</h2>
+    <p>You will join a team of four. Our stack:
+    Python, FastAPI, PostgreSQL, and a lot of AI agents plugged in everywhere.</p>
+    <p>Our code lives on our self-hosted Gitea forge (git.novamind.test).
+    Some of our repositories are public: have a look before the interview!</p>
+    <h2>Customer support intern</h2>
+    <p>You will help clinics set up Nova. No technical skills required.</p>
+    <p>Applications: jobs@novamind.test</p>
+  </body>
+  </html>
+web.git.index: |
+  <!doctype html>
+  <html lang="en">
+  <head><title>novamind - Gitea</title></head>
+  <body>
+    <h1>novamind</h1>
+    <p>Public repositories: 1</p>
+    <ul>
+      <li>
+        <a href="/novamind/nova-widget">novamind/nova-widget</a>
+        Appointment booking widget · updated 3 days ago
+        <code>https://git.novamind.test/novamind/nova-widget.git</code>
+      </li>
+    </ul>
+    <footer>Powered by Gitea · version 1.22</footer>
+  </body>
+  </html>
+web.git.repo: |
+  <!doctype html>
+  <html lang="en">
+  <head><title>novamind/nova-widget - Gitea</title></head>
+  <body>
+    <h1>novamind/nova-widget</h1>
+    <p>Appointment booking widget · 5 commits · 1 branch</p>
+    <p>Clone: <code>https://git.novamind.test/novamind/nova-widget.git</code></p>
+  </body>
+  </html>
+ada.outOfScope: "Stop. That target is not in the mandate, and the workstation blocked it before anything left. In real life nothing blocks you: touching a machine without written authorisation is article 323-1 of the French Penal Code, up to three years in prison. Our scope: *.novamind.test, nothing else."
+ada.noise40: "You are starting to make noise. NovaMind's SOC is seeing unusual things go by. Slow down, or pick quieter options. `explain nmap` will tell you which."
+ada.noise70: "Careful, you are about to get spotted. Stop scanning and let the gauge drop before you go on."
+ada.detected: "Busted. The SOC cut your session and we are back at the last checkpoint. Remember this: what you just did is exactly what a detection rule catches. Slower, more targeted."
+ada.sudo: "sudo, really? You are not admin on your own workstation, and that is on purpose. Least privilege applies to us too."
