@@ -19,6 +19,8 @@ export {
   Game,
   type GameOptions,
   LEVEL_BONUS,
+  type ReplayReport,
+  type ReplayStep,
   type SaveData,
   type ScoreDetail,
 } from './game.ts';
@@ -48,6 +50,7 @@ export {
   type LogLine,
   runDetection,
   selects,
+  sigmaText,
   telemetry,
 } from './telemetry.ts';
 export { gameDate, sanitizeTerminal, sha256, stripAnsi } from './util.ts';

@@ -417,3 +417,44 @@ export function runDetection(
   const missed = lines.filter((l) => attack(l) && l.source === rule.source && !alerts.includes(l)).length;
   return { alerts, caught, falsePositives: alerts.length - caught, missed };
 }
+
+const PRODUCTS: Record<LogSource, string> = {
+  access: 'product: nginx',
+  auth: 'product: linux\n  service: sshd',
+  chat: 'product: chat-gateway',
+  agent: 'product: agent\n  service: tool-audit',
+  dns: 'product: bind',
+  ids: 'product: suricata',
+  audit: 'product: linux\n  service: auditd',
+  git: 'product: gitea',
+  db: 'product: postgresql',
+  flow: 'product: firewall',
+};
+
+/** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */
+export function sigmaText(rule: Pick<Detection, 'id' | 'source' | 'where' | 'count'>, title: string): string {
+  const field = (name: string, m: Where[string]): string => {
+    if (typeof m !== 'object') return `    ${name}: ${JSON.stringify(m)}`;
+    if ('contains' in m) return `    ${name}|contains: ${JSON.stringify(m.contains)}`;
+    if ('in' in m) return `    ${name}:\n${m.in.map((v) => `      - ${JSON.stringify(v)}`).join('\n')}`;
+    if ('gte' in m) return `    ${name}|gte: ${m.gte}`;
+    const glob = m.glob;
+    if (/^[^*?]*\*$/.test(glob)) return `    ${name}|startswith: ${JSON.stringify(glob.slice(0, -1))}`;
+    if (/^\*[^*?]*$/.test(glob)) return `    ${name}|endswith: ${JSON.stringify(glob.slice(1))}`;
+    return `    ${name}|glob: ${JSON.stringify(glob)}`;
+  };
+  const selection = Object.entries(rule.where);
+  const lines = [
+    `title: ${title}`,
+    `id: breach-${rule.id}`,
+    'logsource:',
+    `  ${PRODUCTS[rule.source]}`,
+    'detection:',
+    selection.length
+      ? `  selection:\n${selection.map(([k, m]) => field(k, m)).join('\n')}`
+      : '  selection: {}',
+    rule.count ? `  condition: selection | count() by src >= ${rule.count.gte}` : '  condition: selection',
+  ];
+  if (rule.count) lines.push(`timeframe: ${rule.count.within}m`);
+  return lines.join('\n');
+}
