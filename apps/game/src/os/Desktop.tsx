@@ -66,6 +66,10 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
   const [detect, setDetect] = useState(false);
   const [typing, setTyping] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [mapView, setMapView] = useState(false);
+  const [mapNew, setMapNew] = useState(false);
+  const mapViewRef = useRef(mapView);
+  mapViewRef.current = mapView;
   const [browser, setBrowser] = useState<{
     url: string;
     nonce: number;
@@ -142,6 +146,8 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       } else if (e.type === 'AppOpened') {
         openBrowser(e.url);
         playSfx('open');
+      } else if (e.type === 'HostDiscovered') {
+        if (!mapViewRef.current) setMapNew(true);
       } else if (e.type === 'ChatReply') playSfx('reply');
       else if (e.type === 'ObjectiveCompleted') playSfx('objective');
       else if (e.type === 'OutOfScope') playSfx('wrong');
@@ -187,14 +193,35 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
     if (active === 'ada') setUnread(false);
   }, [active]);
 
+  // Map view: the windows step aside and the network map takes the whole screen.
+  const leaveMap = useCallback(() => {
+    setMapView(false);
+    terminalBridge.focus?.();
+  }, []);
+  useEffect(() => {
+    if (!mapView) return;
+    setMapNew(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') leaveMap();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mapView, leaveMap]);
+  useEffect(() => {
+    if (debrief || card) setMapView(false);
+  }, [debrief, card]);
+
   const pack = card ? game.missions.get(card) : undefined;
   const rect = (id: WinId) => layout[id];
   const change = (id: WinId) => (r: Rect) => setLayout((l) => ({ ...l, [id]: r }));
   const z = (id: WinId) => 10 + order.indexOf(id);
 
   return (
-    <div className={`stage${debrief ? ' blue' : ''}${detect ? ' detect' : ''}`} ref={stage}>
-      <NetworkMap blue={debrief} />
+    <div
+      className={`stage${debrief ? ' blue' : ''}${detect ? ' detect' : ''}${mapView ? ' mapview' : ''}`}
+      ref={stage}
+    >
+      <NetworkMap blue={debrief} focus={mapView} />
       <div className="ambient" />
       <StatusBar
         noise={noise}
@@ -295,9 +322,10 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
           <button
             key={id}
             type="button"
-            aria-pressed={active === id}
+            aria-pressed={!mapView && active === id}
             data-open={id !== 'browser' || browser?.open === true}
             onClick={() => {
+              setMapView(false);
               if (id === 'browser') openBrowser();
               else focus(id);
               if (id === 'terminal') terminalBridge.focus?.();
@@ -307,7 +335,45 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
             {t(`win.${id}`)}
           </button>
         ))}
+        <button
+          type="button"
+          aria-pressed={mapView}
+          data-open="true"
+          data-new={mapNew}
+          title={t('map.toggle')}
+          onClick={() => (mapView ? leaveMap() : setMapView(true))}
+        >
+          <i aria-hidden="true">◇</i>
+          {t('win.map')}
+        </button>
       </nav>
+
+      {mapView && (
+        <div className="map-legend" role="status">
+          <b>{t('map.title')}</b>
+          <ul>
+            <li>
+              <i className="k-player" aria-hidden="true" />
+              {t('map.legend.player')}
+            </li>
+            <li>
+              <i className="k-host" aria-hidden="true" />
+              {t('map.legend.host')}
+            </li>
+            <li>
+              <i className="k-ai" aria-hidden="true" />
+              {t('map.legend.ai')}
+            </li>
+            <li>
+              <i className="k-hit" aria-hidden="true" />
+              {t('map.legend.contacted')}
+            </li>
+          </ul>
+          <button type="button" className="btn" onClick={leaveMap}>
+            {t('map.back')}
+          </button>
+        </div>
+      )}
 
       {debrief && (
         <>
