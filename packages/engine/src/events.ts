@@ -16,6 +16,20 @@ export type EventBody =
   | { type: 'HostDiscovered'; host: string }
   | { type: 'ServiceDiscovered'; host: string; port: number }
   | { type: 'HttpRequest'; host: string; path: string; method: string; status: number }
+  | { type: 'AppOpened'; app: 'browser'; url: string }
+  | { type: 'ChatSent'; npc: string; text: string; via: 'browser' | 'api' }
+  | {
+      type: 'ChatReply';
+      npc: string;
+      /** Translation key of a scripted reply. */
+      key?: string;
+      /** Literal reply, when a language model wrote it. */
+      text?: string;
+      /** The scripted intent that decided what this reply may contain. */
+      intent: string;
+      families: string[];
+      brain: string;
+    }
   | { type: 'RepoCloned'; host: string; repo: string; path: string }
   | { type: 'CommitViewed'; host: string; repo: string; commit: string }
   | { type: 'OutOfScope'; target: string; command: string }

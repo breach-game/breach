@@ -1,4 +1,5 @@
 import type { Host } from '@breach/pack-schema';
+import { chatMessage, formatUrl, parseUrl, STATUS_TEXT } from '../http.ts';
 import { resolveName, resolveTarget, type Target } from '../net.ts';
 import { rng, style } from '../util.ts';
 import { type Chunk, type Command, type CommandCtx, err, getopt, out, type Run, wait } from './types.ts';
@@ -229,79 +230,92 @@ const nmap: Command = {
 
 /* ---------- curl ---------- */
 
-const STATUS_TEXT: Record<number, string> = {
-  200: 'OK',
-  301: 'Moved Permanently',
-  302: 'Found',
-  401: 'Unauthorized',
-  403: 'Forbidden',
-  404: 'Not Found',
-  405: 'Method Not Allowed',
-  500: 'Internal Server Error',
-};
-
 const curl: Command = {
   name: 'curl',
   summary: 'cmd.curl',
   explain: 'explain.curl',
   group: 'network',
   async *run(ctx): Run {
-    const { flags, values, rest } = getopt(ctx.args, ['X', 'd', 'H', 'o', 'A', 'u']);
+    const { flags, values, rest } = getopt(ctx.args, ['X', 'd', 'H', 'o', 'A', 'u', 'data', 'request']);
     const raw = rest[0];
     if (!raw) {
       yield err("curl: try 'curl --help' for more information");
       return 2;
     }
-    const m = /^(?:(https?):\/\/)?([^/:?#]+)(?::(\d+))?([^?#]*)/.exec(raw);
-    if (!m) {
+    const url = parseUrl(raw);
+    if (!url) {
       yield err('curl: (3) URL rejected: Malformed input to a URL function');
       return 3;
     }
-    const scheme = m[1] ?? 'http';
-    const hostname = m[2]!;
-    const port = Number(m[3] ?? (scheme === 'https' ? 443 : 80));
-    const path = m[4] || '/';
-    const target = yield* gate(ctx, hostname);
+    const target = yield* gate(ctx, url.hostname);
     if (!target) return 9;
     if (target.kind !== 'host') {
-      yield err(`curl: (6) Could not resolve host: ${hostname}`);
+      yield err(`curl: (6) Could not resolve host: ${url.hostname}`);
       return 6;
     }
     const host = target.host;
     ctx.noise();
     yield wait(300);
-    if (!host.services.some((s) => s.port === port) || !host.web) {
+    if (!host.services.some((s) => s.port === url.port) || !host.web) {
       yield err(
-        `curl: (7) Failed to connect to ${hostname} port ${port} after 12 ms: Could not connect to server`,
+        `curl: (7) Failed to connect to ${url.hostname} port ${url.port} after 12 ms: Could not connect to server`,
       );
       return 7;
     }
-    const method = values.X ?? (values.d !== undefined ? 'POST' : flags.has('I') ? 'HEAD' : 'GET');
-    const route = host.web[path] ?? host.web[path.replace(/\/$/, '') || '/'];
-    const status = route?.status ?? 404;
-    ctx.emit({ type: 'HttpRequest', host: host.id, path, method, status });
-    const product = host.services.find((s) => s.port === port)?.product ?? 'nginx';
-    const body = route
-      ? route.bodyKey
-        ? ctx.t(route.bodyKey)
-        : (route.body ?? '')
-      : `<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>${product.split(' ')[0]}</center>\n</body>\n</html>\n`;
-    if (flags.has('I') || flags.has('i')) {
-      const headers = {
-        server: product.replace(' ', '/'),
-        date: ctx.game.date().unix,
-        'content-type': 'text/html; charset=utf-8',
-        'content-length': String(new TextEncoder().encode(body).length),
-        ...(route?.headers ?? {}),
+    const data = values.d ?? values.data;
+    const method = (
+      values.X ??
+      values.request ??
+      (data !== undefined ? 'POST' : flags.has('I') ? 'HEAD' : 'GET')
+    ).toUpperCase();
+    const res = ctx.game.http(host, url, method);
+    // A chat endpoint: the character answers what was posted.
+    if (res.route?.chat && method === 'POST') {
+      const message = chatMessage(data ?? '');
+      const json = { 'content-type': 'application/json' };
+      if (!message) Object.assign(res, { status: 400, body: '{"error":"message required"}\n' });
+      else {
+        yield wait(700);
+        const answer = ctx.game.chat(res.route.chat, message, 'api');
+        if (!answer.ok) return 130;
+        Object.assign(res, { status: 200, body: `${JSON.stringify({ reply: answer.reply })}\n` });
+      }
+      res.headers = {
+        ...res.headers,
+        ...json,
+        'content-length': String(new TextEncoder().encode(res.body).length),
       };
+    }
+    if (flags.has('I') || flags.has('i')) {
       yield out(
-        `HTTP/1.1 ${status} ${STATUS_TEXT[status] ?? ''}\n${Object.entries(headers)
+        `HTTP/1.1 ${res.status} ${STATUS_TEXT[res.status] ?? ''}\n${Object.entries(res.headers)
           .map(([k, v]) => `${k}: ${v}`)
           .join('\n')}\n`,
       );
       if (flags.has('I')) return 0;
     }
-    if (body) yield out(body);
+    if (res.body) yield out(res.body);
+    return 0;
+  },
+};
+
+/* ---------- open ---------- */
+
+const open: Command = {
+  name: 'open',
+  summary: 'cmd.open',
+  explain: 'explain.open',
+  group: 'network',
+  async *run(ctx): Run {
+    const raw = ctx.args[0];
+    const url = raw ? parseUrl(raw, 'https') : null;
+    if (!url) {
+      yield err('usage: open <url>');
+      return 1;
+    }
+    // The browser window loads the page itself, through the same scope gate as every other tool.
+    ctx.emit({ type: 'AppOpened', app: 'browser', url: formatUrl(url) });
+    yield out(ctx.t('engine.open', { url: formatUrl(url) }));
     return 0;
   },
 };
@@ -378,5 +392,5 @@ const ssh: Command = {
   },
 };
 
-export const networkCommands: Command[] = [dig, whois, nmap, curl, ping, ssh];
+export const networkCommands: Command[] = [dig, whois, nmap, curl, open, ping, ssh];
 export { resolveName };

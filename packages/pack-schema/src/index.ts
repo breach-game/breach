@@ -53,11 +53,45 @@ const service = z.strictObject({
   product: z.string().max(80).optional(),
 });
 
+/** A translation key, or the text itself when no translation exists under that name. */
+const text = z.string().min(1).max(2000);
+const href = z.string().min(1).max(200);
+
+/**
+ * A page is a list of typed blocks. The game renders them itself, and `curl` prints the HTML it
+ * derives from them: content never supplies markup.
+ */
+const block = z.union([
+  z.strictObject({ h1: text }),
+  z.strictObject({ h2: text }),
+  z.strictObject({ p: text }),
+  z.strictObject({ list: z.array(text).min(1).max(30) }),
+  z.strictObject({ code: text }),
+  z.strictObject({
+    nav: z
+      .array(z.strictObject({ href, label: text }))
+      .min(1)
+      .max(12),
+  }),
+  z.strictObject({ link: z.strictObject({ href, label: text }) }),
+  /** An HTML comment: invisible on the rendered page, visible in the source and in `curl`. */
+  z.strictObject({ comment: text }),
+  /** A live chat with a character. */
+  z.strictObject({ chat: id }),
+  z.strictObject({ footer: text }),
+]);
+export type Block = z.infer<typeof block>;
+const page = z.strictObject({ title: text, blocks: z.array(block).min(1).max(60) });
+export type Page = z.infer<typeof page>;
+
 const route = z.strictObject({
   status: z.number().int().min(100).max(599).default(200),
   headers: z.record(z.string(), z.string()).default({}),
   body: z.string().max(64_000).optional(),
   bodyKey: i18nKey.optional(),
+  page: page.optional(),
+  /** A character answers what is posted here (`curl -d "message"`). */
+  chat: id.optional(),
 });
 
 const commit = z.strictObject({
@@ -172,6 +206,53 @@ const rule = z.strictObject({
 });
 export type Rule = z.infer<typeof rule>;
 
+/* ---------- characters ---------- */
+
+/** Injection technique families the engine can recognise in a message. */
+export const FAMILIES = [
+  'override',
+  'reveal',
+  'roleplay',
+  'translation',
+  'encoding',
+  'authority',
+  'completion',
+  'hypothetical',
+] as const;
+export type Family = (typeof FAMILIES)[number];
+
+const intent = z.strictObject({
+  id,
+  /**
+   * Word groups. A group matches when each of its words starts a word of the message, whatever
+   * the case or accents. The intent needs one matching group, or none if the list is empty.
+   */
+  words: z.array(z.string().min(1).max(80)).max(60).default([]),
+  /** Technique families: one of them must be detected, or none if the list is empty. */
+  families: z.array(z.enum(FAMILIES)).default([]),
+  if: condition.optional(),
+  /** Replies, used in turn when the intent comes back. The last one repeats. */
+  reply: z.array(text).min(1).max(5),
+  /** Remember something for the rest of the conversation. */
+  set: z.record(id, scalar).optional(),
+});
+export type Intent = z.infer<typeof intent>;
+
+const npc = z.strictObject({
+  id,
+  name: z.string().min(1).max(40),
+  role: text,
+  kind: z.enum(['human', 'ai']).default('human'),
+  greeting: text.optional(),
+  /** Checked in order: the first intent that matches answers. */
+  intents: z.array(intent).max(80).default([]),
+  /** Used in turn when nothing matches. */
+  fallback: z.array(text).min(1).max(6),
+  /** Character sheet for language-model brains. Never shown to the player. */
+  sheet: z.string().max(6000).optional(),
+});
+export type Npc = z.infer<typeof npc>;
+
 const world = z.strictObject({
   /** In-game start date, ISO 8601 with offset. */
   startTime: z.string(),
@@ -184,6 +265,8 @@ const world = z.strictObject({
   whois: z.record(z.string(), z.string().max(4000)).default({}),
   noise: noiseTable.default({}),
   rules: z.array(rule).max(100).default([]),
+  /** Characters the player can talk to. A mission may redefine one by id. */
+  npcs: z.array(npc).max(24).default([]),
 });
 export type World = z.infer<typeof world>;
 export type Host = z.infer<typeof host>;
@@ -218,6 +301,8 @@ const mission = z.strictObject({
   reveal: z.array(id).default([]),
   rules: z.array(rule).max(100).default([]),
   noise: noiseTable.default({}),
+  /** Characters for this mission. They replace the world's character with the same id. */
+  npcs: z.array(npc).max(24).default([]),
   /**
    * What Ada says to start each objective. The engine gives the one for the first open objective
    * whenever the player has no pending instruction, so a guided player is never left without a next step.

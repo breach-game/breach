@@ -19,6 +19,11 @@ interface Props {
   className?: string;
   onFocus(): void;
   onChange(rect: Rect): void;
+  /** Shows a close button in the title bar. */
+  onClose?(): void;
+  closeLabel?: string;
+  /** Keeps the window's content alive without showing it. */
+  hidden?: boolean;
   children: ReactNode;
 }
 
@@ -37,6 +42,9 @@ export function Window({
   className,
   onFocus,
   onChange,
+  onClose,
+  closeLabel,
+  hidden,
   children,
 }: Props) {
   const drag = useRef<{ mode: 'move' | 'size'; px: number; py: number; start: Rect } | null>(null);
@@ -67,6 +75,7 @@ export function Window({
       className={`win${active ? ' active' : ''}${className ? ` ${className}` : ''}`}
       data-tint={tint}
       style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h, zIndex: z }}
+      hidden={hidden}
       aria-label={name}
       onPointerDownCapture={onFocus}
     >
@@ -81,6 +90,18 @@ export function Window({
         <span className="name">{name}</span>
         {subtitle && <span>{subtitle}</span>}
         {meta && <span className="meta">{meta}</span>}
+        {onClose && (
+          <button
+            type="button"
+            className={`win-close${meta ? '' : ' alone'}`}
+            aria-label={closeLabel}
+            title={closeLabel}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onClose}
+          >
+            ×
+          </button>
+        )}
       </div>
       <div className="body">{children}</div>
       <div

@@ -5,21 +5,27 @@ import type {
   Locale,
   Mission,
   NoiseTable,
+  Npc,
   Pack,
+  Page,
+  Route,
   Rule,
   World,
 } from '@breach/pack-schema';
 import { commands } from './commands/index.ts';
 import type { Chunk, Command, CommandCtx } from './commands/types.ts';
 import type { EventBody, GameEvent } from './events.ts';
+import { errorHtml, findRoute, formatUrl, pageHtml, parseUrl, type Url } from './http.ts';
 import { engineStrings, interpolate } from './i18n.ts';
+import { resolveTarget } from './net.ts';
+import { decide } from './npc.ts';
 import { evaluate, triggerMatches } from './rules.ts';
 import { parse, ShellSyntaxError, type Stage, type Word } from './shell/parse.ts';
 import { type GameState, NOISE_AFTER_RESTORE, NOISE_DECAY_PER_MIN, NOISE_MAX } from './state.ts';
 import { gameDate, style } from './util.ts';
 import { buildFs, chown, globMatch, lookup, mkdirp, normalize, writeFile } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 
 export interface GameOptions {
   world: Pack;
@@ -36,6 +42,32 @@ export interface SaveData {
   world: { id: string; version: string };
   locale: Locale;
   log: GameEvent[];
+}
+
+export interface HttpResponse {
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+  route: Route | undefined;
+}
+
+export type BrowseResult =
+  | {
+      ok: true;
+      url: string;
+      host: Host;
+      status: number;
+      /** The page to draw, or null when the answer is not a page (plain text, JSON). */
+      page: Page | null;
+      /** What the server sent: shown by "view source", and identical to what `curl` prints. */
+      source: string;
+    }
+  | { ok: false; url: string; error: 'malformed' | 'scope' | 'dns' | 'refused' };
+
+export interface ChatResult {
+  ok: boolean;
+  /** The character's answer, in the game's language. */
+  reply: string;
 }
 
 type Listener = (event: GameEvent, game: Game) => void;
@@ -55,6 +87,8 @@ export class Game {
   private replaying = false;
   private ruleDepth = 0;
   private detectionPending = false;
+  /** True while the shell runs a command: it handles a detection itself when the command ends. */
+  private busy = false;
 
   constructor(options: GameOptions) {
     if (!options.world.world) throw new Error(`${options.world.id} is not a world pack`);
@@ -203,6 +237,7 @@ export class Game {
       detections: 0,
       notes: [],
       messages: [],
+      chats: {},
       vars: {},
       fired: {},
       guided: {},
@@ -253,6 +288,7 @@ export class Game {
         s.detections = 0;
         s.fired = {};
         s.guided = {};
+        s.chats = {};
         s.vars = {};
         s.checkpoint = null;
         s.missionStartSeq = e.seq;
@@ -302,6 +338,19 @@ export class Game {
       case 'NpcMessage':
         s.messages.push({ seq: e.seq, t: e.t, npc: e.npc, key: e.key, tone: e.tone });
         if (e.guide) s.guided[e.guide.objective] = Math.max(s.guided[e.guide.objective] ?? 0, e.guide.step);
+        break;
+      case 'ChatSent':
+        (s.chats[e.npc] ??= []).push({ seq: e.seq, t: e.t, from: 'player', text: e.text });
+        break;
+      case 'ChatReply':
+        (s.chats[e.npc] ??= []).push({
+          seq: e.seq,
+          t: e.t,
+          from: 'npc',
+          key: e.key,
+          text: e.text,
+          intent: e.intent,
+        });
         break;
       case 'ObjectiveCompleted':
         s.objectives[e.objective] = true;
@@ -475,6 +524,107 @@ export class Game {
     if (start?.type === 'MissionStarted') this.react(start);
   }
 
+  /* ---------- web and characters ---------- */
+
+  /** A character of the current mission, or of the world. */
+  npc(id: string): Npc | undefined {
+    return this.mission?.npcs.find((n) => n.id === id) ?? this.world.npcs.find((n) => n.id === id);
+  }
+
+  /**
+   * Answer a simulated HTTP request. The caller has already taken `host` through the scope gate.
+   * Nothing here touches the network: the answer is read from the world pack.
+   */
+  http(host: Host, url: Url, method: string): HttpResponse {
+    const product = host.services.find((s) => s.port === url.port)?.product ?? 'nginx';
+    const route = findRoute(host, url.path);
+    const status = route?.status ?? 404;
+    this.emit({ type: 'HttpRequest', host: host.id, path: url.path, method, status });
+    const body = !route
+      ? errorHtml(404, product)
+      : route.page
+        ? pageHtml(route.page, host, this.state.locale, (k) => this.t(k))
+        : route.bodyKey
+          ? this.t(route.bodyKey)
+          : (route.body ?? '');
+    const headers = {
+      server: product.replace(' ', '/'),
+      date: this.date().unix,
+      'content-type': 'text/html; charset=utf-8',
+      'content-length': String(new TextEncoder().encode(body).length),
+      ...(route?.headers ?? {}),
+    };
+    return { status, headers, body, route };
+  }
+
+  /** Open a page in the workstation's browser. `dt` is the real time since the player's last action. */
+  browse(raw: string, dt = 0): BrowseResult {
+    const url = parseUrl(raw, 'https');
+    if (!url) return { ok: false, url: raw, error: 'malformed' };
+    const shown = formatUrl(url);
+    if (dt > 0) this.emit({ type: 'ClockAdvanced', ms: Math.min(dt, MAX_DT) });
+    const target = resolveTarget(this.world, url.hostname);
+    if (target.kind === 'out-of-scope') {
+      this.emit({ type: 'OutOfScope', target: url.hostname, command: 'browser' });
+      return { ok: false, url: shown, error: 'scope' };
+    }
+    if (target.kind !== 'host') return { ok: false, url: shown, error: 'dns' };
+    const host = target.host;
+    this.addNoise(this.noiseCost('browse', []), `browser GET ${shown}`);
+    const result = this.settle<BrowseResult>(() => {
+      if (!host.services.some((s) => s.port === url.port) || !host.web)
+        return { ok: false, url: shown, error: 'refused' };
+      const res = this.http(host, url, 'GET');
+      return {
+        ok: true,
+        url: shown,
+        host,
+        status: res.status,
+        page: res.route?.page ?? null,
+        source: res.body,
+      };
+    });
+    return result ?? { ok: false, url: shown, error: 'refused' };
+  }
+
+  /**
+   * Say something to a character. The scripted brain decides the answer, so what a character gives
+   * away never depends on a language model.
+   */
+  chat(npcId: string, message: string, via: 'browser' | 'api' = 'browser', dt = 0): ChatResult {
+    const npc = this.npc(npcId);
+    const text = message.trim().slice(0, 600);
+    if (!npc || !text || this.detectionPending) return { ok: false, reply: '' };
+    if (dt > 0) this.emit({ type: 'ClockAdvanced', ms: Math.min(dt, MAX_DT) });
+    this.addNoise(this.noiseCost('chat', [npcId]), `chat ${npcId}`);
+    const done = this.settle(() => {
+      this.emit({ type: 'ChatSent', npc: npcId, text, via });
+      const d = decide(npc, text, this.state);
+      for (const [name, value] of Object.entries(d.set)) this.emit({ type: 'VarSet', name, value });
+      this.emit({
+        type: 'ChatReply',
+        npc: npcId,
+        key: d.key,
+        intent: d.intent,
+        families: d.families,
+        brain: 'scripted',
+      });
+      return this.detectionPending ? null : this.t(d.key);
+    });
+    return done === null ? { ok: false, reply: '' } : { ok: true, reply: done };
+  }
+
+  /**
+   * Run an action taken outside the terminal. If it got the player caught, go back to the last
+   * checkpoint, as the shell does at the end of a command, and return null.
+   */
+  private settle<T>(action: () => T | null): T | null {
+    const value = this.detectionPending ? null : action();
+    if (!this.detectionPending || this.busy) return value;
+    this.restore();
+    return null;
+  }
+
   /* ---------- missions ---------- */
 
   startMission(id: string) {
@@ -519,6 +669,15 @@ export class Game {
    * `dt` is the real time elapsed since the previous command, in milliseconds.
    */
   async *exec(line: string, dt = 0): AsyncGenerator<Chunk, number> {
+    this.busy = true;
+    try {
+      return yield* this.run(line, dt);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  private async *run(line: string, dt: number): AsyncGenerator<Chunk, number> {
     const env = { HOME: this.home, USER: this.user, PWD: this.state.cwd };
     const cleaned = line.replace(/\s2>\s*(&1|\/dev\/null)/g, '');
     let pipelines: ReturnType<typeof parse>;

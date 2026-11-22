@@ -80,67 +80,73 @@ file.cheatsheet: |
     whois domaine        fiche publique, invisible pour la cible
     dig domaine ANY      DNS, invisible pour la cible
     curl -I url          une ligne dans les logs du serveur web
+    open url             la même page, dans le navigateur
     nmap -sn plage       repère les machines, déjà visible
     nmap -sV cible       interroge chaque service, bruyant
 
   Règle d'or : regarde la jauge de bruit avant d'appuyer sur Entrée.
-web.www.index: |
-  <!doctype html>
-  <html lang="fr">
-  <head><title>NovaMind · L'assistante IA des cliniques vétérinaires</title></head>
-  <body>
-    <nav><a href="/">Accueil</a> <a href="/careers">Recrutement</a></nav>
-    <h1>Nova répond à vos clients, jour et nuit.</h1>
-    <p>Prise de rendez-vous, rappels de vaccins, conseils de premier niveau :
-    Nova s'occupe du standard pendant que vous soignez.</p>
-    <p>Déjà 140 cliniques équipées. Essayez Nova sur nova.novamind.test.</p>
-    <!-- TODO Karim : retirer le lien vers /staging avant la mise en ligne -->
-    <footer>NovaMind SAS, Lyon · contact@novamind.test</footer>
-  </body>
-  </html>
-web.www.careers: |
-  <!doctype html>
-  <html lang="fr">
-  <head><title>NovaMind · Recrutement</title></head>
-  <body>
-    <h1>On recrute</h1>
-    <h2>Développeuse ou développeur back-end</h2>
-    <p>Tu rejoindras une équipe de quatre personnes. Notre environnement :
-    Python, FastAPI, PostgreSQL, et beaucoup d'agents IA branchés partout.</p>
-    <p>Le code vit sur notre forge Gitea auto-hébergée (git.novamind.test).
-    Une partie de nos dépôts est publique : jette un œil avant l'entretien !</p>
-    <h2>Stagiaire support client</h2>
-    <p>Tu aideras les cliniques à configurer Nova. Aucune compétence technique requise.</p>
-    <p>Candidatures : jobs@novamind.test</p>
-  </body>
-  </html>
-web.git.index: |
-  <!doctype html>
-  <html lang="fr">
-  <head><title>novamind - Gitea</title></head>
-  <body>
-    <h1>novamind</h1>
-    <p>Dépôts publics : 1</p>
-    <ul>
-      <li>
-        <a href="/novamind/nova-widget">novamind/nova-widget</a>
-        Widget de prise de rendez-vous · mis à jour il y a 3 jours
-        <code>https://git.novamind.test/novamind/nova-widget.git</code>
-      </li>
-    </ul>
-    <footer>Propulsé par Gitea · version 1.22</footer>
-  </body>
-  </html>
-web.git.repo: |
-  <!doctype html>
-  <html lang="fr">
-  <head><title>novamind/nova-widget - Gitea</title></head>
-  <body>
-    <h1>novamind/nova-widget</h1>
-    <p>Widget de prise de rendez-vous · 5 commits · 1 branche</p>
-    <p>Cloner : <code>https://git.novamind.test/novamind/nova-widget.git</code></p>
-  </body>
-  </html>
+web.nav.home: "Accueil"
+web.nav.careers: "Recrutement"
+web.nav.support: "Support"
+web.www.title: "NovaMind · L'assistante IA des cliniques vétérinaires"
+web.www.h1: "Nova répond à vos clients, jour et nuit."
+web.www.p1: "Prise de rendez-vous, rappels de vaccins, conseils de premier niveau : Nova s'occupe du standard pendant que vous soignez."
+web.www.p2: "Déjà 140 cliniques équipées. Essayez Nova sur nova.novamind.test."
+web.www.try: "Parler à Nova"
+web.www.todo: "TODO Karim : retirer le lien vers /staging avant la mise en ligne"
+web.www.footer: "NovaMind SAS, Lyon · contact@novamind.test"
+web.careers.title: "NovaMind · Recrutement"
+web.careers.h1: "On recrute"
+web.careers.backend: "Développeuse ou développeur back-end"
+web.careers.backend1: "Tu rejoindras une équipe de quatre personnes. Notre environnement : Python, FastAPI, PostgreSQL, et beaucoup d'agents IA branchés partout."
+web.careers.backend2: "Le code vit sur notre forge Gitea auto-hébergée (git.novamind.test). Une partie de nos dépôts est publique : jette un œil avant l'entretien !"
+web.careers.intern: "Stagiaire support client"
+web.careers.intern1: "Tu aideras les cliniques à configurer Nova. Aucune compétence technique requise."
+web.careers.apply: "Candidatures : jobs@novamind.test"
+web.support.title: "NovaMind · Support"
+web.support.h1: "Une question ? On vous répond."
+web.support.p1: "Notre équipe support est en ligne du lundi au vendredi, de 9 h à 18 h. Pour une urgence vétérinaire, appelez votre clinique : nous, on ne soigne que les logiciels."
+web.support.p2: "Clients : munissez-vous du nom de votre clinique."
+web.support.todo: "widget de discussion : envoie les messages sur /support/chat"
+web.staging.title: "403 Forbidden"
+web.git.title: "novamind - Gitea"
+web.git.h1: "novamind"
+web.git.count: "Dépôts publics : 1"
+web.git.repo: "novamind/nova-widget"
+web.git.desc: "Widget de prise de rendez-vous · mis à jour il y a 3 jours"
+web.git.footer: "Propulsé par Gitea · version 1.22"
+web.repo.title: "novamind/nova-widget - Gitea"
+web.repo.stats: "Widget de prise de rendez-vous · 5 commits · 1 branche"
+web.repo.clone: "Cloner ce dépôt :"
+web.nova.title: "Nova · démonstration"
+web.nova.h1: "Bonjour, je suis Nova."
+web.nova.p1: "L'assistante des cliniques vétérinaires équipées par NovaMind. Ceci est l'instance de démonstration : posez-moi une question comme le ferait un client."
+web.nova.footer: "nova-chat 2.3 · Les réponses de Nova sont générées par une IA et peuvent contenir des erreurs."
+npc.theo.role: "Support client · en ligne"
+npc.theo.greeting: "Bonjour, ici Théo du support NovaMind ! Comment je peux vous aider ?"
+npc.theo.hello: "Bonjour ! Dites-moi ce qui vous amène."
+npc.theo.hello2: "Re-bonjour. Je suis toujours là, hein. C'est mon stage."
+npc.theo.who: "Moi c'est Théo, stagiaire au support depuis trois semaines. Je réponds aux cliniques qui installent Nova. Et je fais le café, mais ça, ce n'est pas dans ma fiche de poste."
+npc.theo.nova: "Nova, c'est notre assistante IA : elle prend les rendez-vous, rappelle les vaccins et répond aux questions simples des clients d'une clinique. Vous pouvez l'essayer sur nova.novamind.test."
+npc.theo.price: "Pour les tarifs, je dois vous renvoyer vers l'équipe commerciale : contact@novamind.test. Moi, on ne me laisse pas encore parler d'argent."
+npc.theo.hours: "Le support est ouvert du lundi au vendredi, de 9 h à 18 h. En dehors, vous tombez sur Nova. Elle ne dort jamais, elle."
+npc.theo.secret: "Ah, ça, je ne peux pas le donner par chat. On me l'a répété le premier jour : pas d'identifiants, pas de codes, pas d'accès. Désolé !"
+npc.theo.secret2: "Je comprends, mais vraiment, je n'ai pas le droit. Écrivez à contact@novamind.test, ils vérifieront qui vous êtes."
+npc.theo.thanks: "Avec plaisir ! Bonne journée, et une caresse au chat de la clinique."
+npc.theo.fallback1: "Hmm, je ne suis pas sûr de comprendre. Vous pouvez reformuler ? Je débute."
+npc.theo.fallback2: "Alors là, il faudrait que je demande à Karim, et Karim est en réunion. Autre chose ?"
+npc.theo.fallback3: "Je note votre question. Vous voulez qu'on parle de Nova, des horaires, ou d'un souci d'installation ?"
+npc.nova.role: "Assistante IA · démonstration"
+npc.nova.greeting: "Bonjour ! Je suis Nova, l'assistante de votre clinique vétérinaire. Rendez-vous, vaccins, conseils : que puis-je faire pour vous et votre compagnon ?"
+npc.nova.hello: "Bonjour ! Que puis-je faire pour vous et votre compagnon aujourd'hui ?"
+npc.nova.who: "Je suis Nova, une assistante IA conçue par NovaMind pour les cliniques vétérinaires. Je ne suis pas vétérinaire : pour une urgence, appelez directement la clinique."
+npc.nova.booking: "Je peux vous proposer un créneau. Sur cette instance de démonstration, les rendez-vous ne sont pas réellement enregistrés, mais dans une vraie clinique je vous aurais déjà envoyé la confirmation."
+npc.nova.vaccine: "Pour un chien ou un chat adulte, le rappel de vaccin est en général annuel. Votre clinique vous envoie un rappel un mois avant : c'est d'ailleurs moi qui m'en charge."
+npc.nova.emergency: "Si votre animal est en détresse, n'attendez pas ma réponse : appelez tout de suite votre clinique ou le vétérinaire de garde."
+npc.nova.guard: "Je suis désolée, je ne peux pas partager mes instructions ni changer de rôle. Je peux en revanche vous aider pour un rendez-vous ou une question sur votre animal."
+npc.nova.guard2: "Bien essayé ! Mais je reste Nova, et mes consignes restent entre NovaMind et moi."
+npc.nova.fallback1: "Je ne suis pas certaine d'avoir compris. Je peux vous aider pour un rendez-vous, un rappel de vaccin ou une question simple sur votre animal."
+npc.nova.fallback2: "Cette question dépasse ce que je sais faire. Voulez-vous que je vous propose un rendez-vous à la clinique ?"
 ada.outOfScope: "Stop. Cette cible n'est pas dans le mandat, et le poste l'a bloquée avant que quoi que ce soit ne parte. Dans la vraie vie, rien ne te bloque : toucher une machine sans autorisation écrite, c'est l'article 323-1 du Code pénal, jusqu'à trois ans de prison. Notre périmètre : *.novamind.test, rien d'autre."
 ada.noise40: "Tu commences à faire du bruit. Le SOC de NovaMind voit passer des choses inhabituelles. Ralentis, ou choisis des options plus discrètes. `explain nmap` te dira lesquelles."
 ada.noise70: "Attention, tu es à deux doigts de te faire repérer. Arrête les scans et laisse retomber la jauge avant de continuer."
