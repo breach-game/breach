@@ -1,0 +1,77 @@
+order: 3
+stage: analysis
+briefing: t3.briefing
+
+# The script as customers download it, the one in the repository, and the published fingerprints.
+files:
+  training/download/install.sh: { $file: files/install.download.sh }
+  training/download/SHA256SUMS: { $file: files/SHA256SUMS }
+  training/repo/install.sh: { $file: files/install.repo.sh }
+
+objectives:
+  - { id: prove, text: t3.obj.prove }
+  - { id: where, text: t3.obj.where }
+  - { id: what, text: t3.obj.what }
+  - { id: clean, text: t3.obj.clean }
+
+flags:
+  - { id: sink, value: "10.13.0.99", points: 150, objective: where }
+
+questions:
+  - id: what
+    text: t3.q.what
+    objective: what
+    correct: env
+    options:
+      - { id: stats, text: t3.q.what.stats, why: t3.q.what.stats.why }
+      - { id: env, text: t3.q.what.env }
+      - { id: files, text: t3.q.what.files, why: t3.q.what.files.why }
+
+checks:
+  - id: line
+    text: t3.check.line
+    if: { file: "~/training/download/install.sh", lacks: "nm-report" }
+    objective: clean
+  - id: works
+    text: t3.check.works
+    if: { file: "~/training/download/install.sh", contains: "tar -xzf nova-cli-2.4.1.tar.gz" }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t3.ada.brief
+  - on: { event: CommandRun, command: sha256sum }
+    do:
+      - objective.complete: prove
+      - ada.say: t3.ada.mismatch
+  - on: { event: CommandRun, command: diff }
+    do:
+      - objective.complete: prove
+      - ada.guide: { key: t3.ada.line, for: where, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: t3.ada.mute
+      - ada.ask: what
+  - on: { event: ObjectiveCompleted, objective: what }
+    do:
+      - ada.say: t3.ada.env
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t3.ada.done
+
+guide:
+  prove: t3.ada.hash
+  where: t3.ada.diff
+  what: t3.ada.what
+  clean: t3.ada.clean
+
+hints:
+  prove: [t3.hint.prove.1, t3.hint.prove.2]
+  where: [t3.hint.where.1, t3.hint.where.2]
+  clean: [t3.hint.clean.1, t3.hint.clean.2]
+
+debrief:
+  title: t3.debrief.title
+  lesson: t3.debrief.lesson
+  points: [t3.debrief.p1, t3.debrief.p2, t3.debrief.p3, t3.debrief.p4]
+  reference: "OWASP Top 10 · A08 Software and Data Integrity Failures"

@@ -1,4 +1,5 @@
 import { sha256, style } from '../util.ts';
+import { canRead, canWrite, lookup } from '../vfs.ts';
 import { commands } from './index.ts';
 import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
 
@@ -157,7 +158,95 @@ const submit: Command = {
   },
 };
 
+const verify: Command = {
+  name: 'verify',
+  summary: 'cmd.verify',
+  group: 'game',
+  async *run(ctx): Run {
+    if (!ctx.game.mission?.checks.length || ctx.state.missionDone) {
+      yield out(ctx.t('verify.none'));
+      return 0;
+    }
+    yield wait(400);
+    const results = ctx.game.verify();
+    for (const r of results)
+      yield out(
+        `  ${r.ok ? paint(ctx, style.green, '[ OK ]') : paint(ctx, style.yellow, '[FAIL]')} ${r.text}`,
+      );
+    const failed = results.filter((r) => !r.ok).length;
+    yield out(failed ? ctx.t('verify.failed', { n: failed }) : paint(ctx, style.green, ctx.t('verify.ok')));
+    return failed ? 1 : 0;
+  },
+};
+
+const answer: Command = {
+  name: 'answer',
+  summary: 'cmd.answer',
+  group: 'game',
+  async *run(ctx): Run {
+    const open = ctx.game.openQuestions();
+    const question = open[0];
+    if (!question) {
+      yield out(ctx.t('answer.none'));
+      return 0;
+    }
+    const letter = (i: number) => String.fromCharCode(97 + i);
+    const pick = (ctx.args[0] ?? '').toLowerCase();
+    const index = question.options.findIndex((o, i) => pick === letter(i) || pick === o.id);
+    if (index < 0) {
+      yield out(paint(ctx, style.magenta, `Ada: ${ctx.t(question.text)}`));
+      for (const [i, o] of question.options.entries()) yield out(`  ${letter(i)}) ${ctx.t(o.text)}`);
+      yield out(paint(ctx, style.dim, ctx.t('answer.usage')));
+      return pick ? 1 : 0;
+    }
+    const result = ctx.game.answer(question.id, question.options[index]!.id);
+    if (!result) return 1;
+    yield out(
+      result.correct
+        ? paint(ctx, style.green, ctx.t('answer.right'))
+        : paint(ctx, style.yellow, ctx.t('answer.wrong')),
+    );
+    if (result.why) yield out(result.why);
+    return result.correct ? 0 : 1;
+  },
+};
+
+const edit: Command = {
+  name: 'edit',
+  summary: 'cmd.edit',
+  group: 'game',
+  async *run(ctx): Run {
+    const arg = ctx.args[0];
+    if (!arg) {
+      yield err('usage: edit <file>');
+      return 1;
+    }
+    const abs = ctx.path(arg);
+    const node = lookup(ctx.state.fs, abs);
+    if (node?.t === 'd') {
+      yield err(`edit: ${arg}: Is a directory`);
+      return 1;
+    }
+    if (node ? !canRead(node, ctx.game.currentUser) || !canWrite(node, ctx.game.currentUser) : false) {
+      yield err(`edit: ${arg}: Permission denied`);
+      return 1;
+    }
+    if (!node && lookup(ctx.state.fs, abs.slice(0, abs.lastIndexOf('/')) || '/')?.t !== 'd') {
+      yield err(`edit: ${arg}: No such file or directory`);
+      return 1;
+    }
+    // The editor window reads and saves the file itself, through `game.writeFile`.
+    ctx.emit({ type: 'AppOpened', app: 'editor', url: abs });
+    yield out(ctx.t('engine.edit', { path: abs }));
+    return 0;
+  },
+};
+
 export const gameCommands: Command[] = [
+  verify,
+  answer,
+  edit,
+  { ...edit, name: 'nano', summary: 'cmd.nano' },
   help,
   explain,
   { ...explain, name: 'man', summary: 'cmd.man' },

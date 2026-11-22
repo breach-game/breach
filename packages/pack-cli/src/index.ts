@@ -255,6 +255,11 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       ...Object.values(m.guide),
       ...m.npcs.flatMap(npcTexts).filter(looksLikeKey),
       ...Object.values(m.files).filter(looksLikeKey),
+      ...m.checks.map((c) => c.text),
+      ...m.questions.flatMap((q) => [
+        q.text,
+        ...q.options.flatMap((o) => (o.why ? [o.text, o.why] : [o.text])),
+      ]),
     ];
     for (const npc of m.npcs) problems.push(...npcProblems(npc).map((p) => `${pack.id}: ${p}`));
     const objectiveIds = new Set(m.objectives.map((o) => o.id));
@@ -283,6 +288,21 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       }
     for (const key of keysUsed)
       if (!known(key)) problems.push(`${pack.id}: text key ${key} has no translation`);
+    for (const check of m.checks)
+      if (check.objective && !objectiveIds.has(check.objective))
+        problems.push(`${pack.id}: check ${check.id} points to unknown objective ${check.objective}`);
+    for (const q of m.questions) {
+      if (q.objective && !objectiveIds.has(q.objective))
+        problems.push(`${pack.id}: question ${q.id} points to unknown objective ${q.objective}`);
+      if (!q.options.some((o) => o.id === q.correct))
+        problems.push(`${pack.id}: question ${q.id} has no option ${q.correct}`);
+    }
+    for (const rule of m.rules)
+      for (const effect of rule.do) {
+        const asked = (effect as Record<string, unknown>)['ada.ask'];
+        if (typeof asked === 'string' && !m.questions.some((q) => q.id === asked))
+          problems.push(`${pack.id}: ada.ask names unknown question ${asked}`);
+      }
     for (const flag of m.flags)
       if (flag.objective && !m.objectives.some((o) => o.id === flag.objective))
         problems.push(`${pack.id}: flag ${flag.id} points to unknown objective ${flag.objective}`);
@@ -337,6 +357,9 @@ export function buildAll(
       summary: pack.summary,
       authors: pack.authors,
       order: pack.mission?.order,
+      ...(pack.kind === 'mission' ? { track: pack.track } : {}),
+      ...(pack.difficulty ? { difficulty: pack.difficulty } : {}),
+      ...(pack.skills.length ? { skills: pack.skills } : {}),
       locales: pack.locales,
       file,
       sha256: sha256(bytes),
@@ -344,14 +367,25 @@ export function buildAll(
       reviewed: true,
     });
   }
-  const campaign = options.community
-    ? []
-    : packs
-        .filter((p) => p.pack.kind === 'mission')
-        .sort((a, b) => a.pack.mission!.order - b.pack.mission!.order)
-        .map((p) => p.pack.id);
+  const track = (name: Pack['track']) =>
+    options.community
+      ? []
+      : packs
+          .filter((p) => p.pack.kind === 'mission' && p.pack.track === name)
+          .sort(
+            (a, b) =>
+              (name === 'training' ? (a.pack.difficulty ?? 1) - (b.pack.difficulty ?? 1) : 0) ||
+              a.pack.mission!.order - b.pack.mission!.order,
+          )
+          .map((p) => p.pack.id);
   return {
-    catalog: { format: PACK_FORMAT, generatedAt: now.toISOString(), campaign, packs: entries },
+    catalog: {
+      format: PACK_FORMAT,
+      generatedAt: now.toISOString(),
+      campaign: track('campaign'),
+      training: track('training'),
+      packs: entries,
+    },
     files,
   };
 }

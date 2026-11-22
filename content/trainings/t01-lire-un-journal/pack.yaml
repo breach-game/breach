@@ -1,0 +1,16 @@
+id: breach.training.t01
+version: 0.1.0
+engine: ">=0.4 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [logs, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Lire un journal
+  en: Reading a log
+summary:
+  fr: Analyse de journaux. Cent vingt lignes d'accès, une seule adresse qui force la porte. Trouve-la, trouve le compte qui a cédé, puis bloque-la.
+  en: Log analysis. A hundred and twenty access lines, one address forcing the door. Find it, find the account that gave in, then block it.
+authors: [BREACH]
+locales: [fr, en]

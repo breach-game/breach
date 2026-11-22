@@ -14,10 +14,12 @@ export function Title({
   onStart,
   onCommunity,
   onMissions,
+  onTraining,
 }: {
   onStart: (mode: 'new' | 'continue') => void;
   onCommunity: () => void;
   onMissions: () => void;
+  onTraining: () => void;
 }) {
   const t = useT();
   const settings = useSettings();
@@ -94,6 +96,9 @@ export function Title({
                 {t('title.new')}
               </button>
             )}
+            <button type="button" className="btn" disabled={save === null} onClick={onTraining}>
+              {t('title.training')}
+            </button>
             <button type="button" className="btn" disabled={save === null} onClick={onCommunity}>
               {t('title.community')}
             </button>

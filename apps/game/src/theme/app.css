@@ -392,3 +392,32 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .progress-confirm .btn { height: 44px; width: auto; min-width: 0; padding: 0 18px; }
 .recover-title { font: 700 28px var(--human); color: #fff; text-align: center; margin: 0; }
 .recover-body { max-width: 52ch; text-align: center; font: 400 16px/1.5 var(--human); color: var(--text); margin: 0; }
+
+/* Editor window and Ada's questions */
+.editor { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.editor-body { flex: 1; min-height: 0; display: grid; grid-template-columns: auto 1fr; overflow: auto; background: rgba(4, 6, 12, 0.55); }
+.editor-gutter { margin: 0; padding: 12px 10px 12px 12px; font: 400 13px/1.55 var(--mono); color: var(--dim); text-align: right; user-select: none; border-right: 1px solid rgba(45, 226, 255, 0.14); }
+.editor textarea { box-sizing: border-box; min-height: 100%; width: 100%; resize: none; border: 0; outline: 0; padding: 12px; background: transparent; color: var(--text); font: 400 13px/1.55 var(--mono); tab-size: 2; white-space: pre; overflow: hidden; caret-color: var(--defense); }
+.editor textarea:focus-visible { box-shadow: inset 2px 0 0 var(--defense); }
+.editor-bar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-top: 1px solid rgba(45, 226, 255, 0.16); }
+.editor-bar .btn { height: 44px; }
+.editor-bar .btn:disabled { opacity: 0.45; box-shadow: none; }
+.editor-hint { flex: 1; font: 400 12px/1.4 var(--mono); color: var(--dim); }
+.editor-status { font: 500 12px var(--mono); color: var(--dim); }
+.editor-status[data-status="saved"] { color: var(--defense); }
+.editor-status[data-status="denied"] { color: var(--alert); }
+.editor-msg { padding: 20px; font: 400 14px var(--human); color: var(--dim); }
+.ask { margin: 4px 0 0; padding: 12px; border: 1px solid rgba(45, 226, 255, 0.35); border-radius: 10px; background: rgba(45, 226, 255, 0.05); display: grid; gap: 8px; animation: fadein 240ms both; }
+.ask legend { padding: 0 6px; font: 500 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--defense); }
+.ask p { margin: 0; font: 500 14.5px/1.45 var(--human); color: var(--text); }
+.ask button { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: center; min-height: 44px; padding: 8px 10px; text-align: left; border-radius: 8px; border: 1px solid rgba(215, 224, 245, 0.16); background: rgba(14, 19, 32, 0.7); color: var(--text); font: 400 14px/1.4 var(--human); transition: border-color var(--t-snap), background var(--t-snap); }
+.ask button:hover { border-color: var(--defense); background: rgba(45, 226, 255, 0.1); }
+.ask button i { font: 600 12px var(--mono); font-style: normal; color: var(--defense); width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid rgba(45, 226, 255, 0.4); border-radius: 6px; }
+.ask button[data-wrong="true"] { border-color: var(--alert); opacity: 0.7; }
+.ask button[data-wrong="true"] i { color: var(--alert); border-color: var(--alert); }
+.ask .ask-why { font: 400 13.5px/1.45 var(--human); color: var(--text); }
+.ask .ask-why b { color: var(--alert); }
+.level .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font: 500 11px var(--mono); color: var(--dim); }
+.level .tags .tag { font: 500 11px var(--mono); color: var(--dim); padding: 2px 7px; border: 1px solid var(--line); border-radius: 5px; }
+.level .tags .difficulty { display: inline-flex; gap: 6px; align-items: center; color: var(--text); font: 500 11px var(--mono); }
+.ask[hidden] { display: none; }

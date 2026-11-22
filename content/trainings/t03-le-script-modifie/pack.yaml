@@ -1,0 +1,16 @@
+id: breach.training.t03
+version: 0.1.0
+engine: ">=0.4 <1"
+kind: mission
+track: training
+difficulty: 2
+skills: [supply, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Le script modifié
+  en: The altered script
+summary:
+  fr: Chaîne logicielle. Le script d'installation que NovaMind distribue n'est plus tout à fait celui de son dépôt. Prouve-le, trouve la ligne en trop et où elle envoie quoi.
+  en: Supply chain. The installer NovaMind hands out is no longer quite the one in its repository. Prove it, find the extra line and what it sends where.
+authors: [BREACH]
+locales: [fr, en]
