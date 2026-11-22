@@ -65,7 +65,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
   // The game speaks the interface language.
   useEffect(() => game.setLocale(locale), [game, locale]);
   useEffect(() => {
-    game.guidance = guidance;
+    if (game.guidance !== guidance) game.setGuidance(guidance);
   }, [game, guidance]);
 
   // Live gauge: noise decays between commands.
@@ -186,7 +186,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
         id="notes"
         name={t('win.notes')}
         subtitle={t('win.notes.objectives')}
-        meta={game.mission ? `${t('notes.stage')} · ${game.mission.stage}` : undefined}
+        meta={game.mission ? `${t('notes.stage')} · ${game.stageName()}` : undefined}
         tint="human"
         rect={rect('notes')}
         z={z('notes')}

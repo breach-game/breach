@@ -147,12 +147,26 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
       ...m.debrief.points,
       ...m.objectives.map((o) => o.text),
       ...Object.values(m.hints).flat(),
+      ...Object.values(m.guide),
     ];
+    const objectiveIds = new Set(m.objectives.map((o) => o.id));
+    for (const o of m.objectives)
+      if (!o.optional && !m.guide[o.id]) problems.push(`${pack.id}: objective ${o.id} has no entry in guide`);
+    for (const key of Object.keys(m.guide))
+      if (!objectiveIds.has(key)) problems.push(`${pack.id}: guide names unknown objective ${key}`);
     for (const rule of [...m.rules, ...world.world.rules])
       for (const effect of rule.do) {
+        const guide = (effect as Record<string, unknown>)['ada.guide'];
+        if (guide && typeof guide === 'object') {
+          const g = guide as { key: string; for: string };
+          keysUsed.push(g.key);
+          if (rule && m.rules.includes(rule) && !objectiveIds.has(g.for))
+            problems.push(`${pack.id}: ada.guide names unknown objective ${g.for}`);
+          continue;
+        }
         const key =
           (effect as Record<string, unknown>)['ada.say'] ??
-          (effect as Record<string, unknown>)['ada.guide'] ??
+          guide ??
           (effect as Record<string, unknown>)['ada.warn'] ??
           (effect as Record<string, unknown>)['note.add'];
         if (typeof key === 'string') keysUsed.push(key);

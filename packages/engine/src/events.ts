@@ -20,7 +20,14 @@ export type EventBody =
   | { type: 'CommitViewed'; host: string; repo: string; commit: string }
   | { type: 'OutOfScope'; target: string; command: string }
   | { type: 'FlagSubmitted'; flag: string | null; correct: boolean }
-  | { type: 'NpcMessage'; npc: string; key: string; tone: 'info' | 'warn' }
+  | {
+      type: 'NpcMessage';
+      npc: string;
+      key: string;
+      tone: 'info' | 'warn';
+      /** Set on guidance: which objective it helps with, and how far along. */
+      guide?: { objective: string; step: number };
+    }
   | { type: 'ObjectiveCompleted'; objective: string }
   | { type: 'NoiseChanged'; delta: number; value: number; cause: string }
   | { type: 'HintUsed'; objective: string; level: number }

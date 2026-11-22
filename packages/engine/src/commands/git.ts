@@ -129,7 +129,8 @@ const git: Command = {
         ['n'],
       );
       const limit = values.n ? Number(values.n) : found.repo.commits.length;
-      for (const c of found.repo.commits.slice(0, limit)) {
+      const shown = found.repo.commits.slice(0, limit);
+      for (const c of shown) {
         if (flags.has('oneline')) {
           yield out(
             `${ctx.tty ? style.yellow(c.id.slice(0, 7)) : c.id.slice(0, 7)} ${c.message.split('\n')[0]}`,
@@ -140,6 +141,7 @@ const git: Command = {
             ctx.emit({ type: 'CommitViewed', host: found.host, repo: found.name, commit: c.id });
             yield out(`${paintDiff(c.diff, ctx.tty)}\n`);
           }
+          if (c !== shown[shown.length - 1]) yield out('\n');
         }
       }
       return 0;

@@ -16,39 +16,34 @@ rules:
   - on: { event: MissionStarted }
     do:
       - ada.say: m1.ada.brief
-      - ada.guide: m1.ada.dns
   - on: { event: DnsQuery, name: { glob: "*novamind.test" }, found: true }
     do:
       - objective.complete: dns
-      - ada.guide: m1.ada.nmap
   - on: { event: Scan }
     do:
-      - ada.guide: m1.ada.scanning
+      - ada.say: m1.ada.scanning
   - on: { event: HostDiscovered }
     if: { discovered: { gte: 4 } }
     do:
       - objective.complete: map
       - checkpoint.save: mapped
-      - ada.guide: m1.ada.web
-  - on: { event: HttpRequest, host: www, path: / }
-    if: { not: { objective: find-repo } }
+  - on: { event: HttpRequest, host: www, path: /, method: GET }
     do:
-      - ada.guide: m1.ada.home
+      - ada.guide: { key: m1.ada.home, for: find-repo, step: 1 }
   - on: { event: HttpRequest, host: www, path: /staging }
     do:
       - ada.say: m1.ada.staging
   - on: { event: HttpRequest, host: www, path: /careers }
     do:
-      - ada.guide: m1.ada.careers
+      - ada.guide: { key: m1.ada.careers, for: find-repo, step: 2 }
   - on: { event: HttpRequest, host: git, status: 200 }
     do:
       - objective.complete: find-repo
-      - ada.guide: m1.ada.clone
   - on: { event: RepoCloned }
     do:
       - objective.complete: find-repo
       - checkpoint.save: cloned
-      - ada.guide: m1.ada.history
+      - ada.guide: { key: m1.ada.history, for: leaked-key, step: 1 }
   - on: { event: CommitViewed, commit: { in: ["9f2c1e4", "3ab77d0"] } }
     do:
       - ada.say: m1.ada.secret
@@ -63,6 +58,12 @@ rules:
   - on: { event: MissionCompleted }
     do:
       - ada.say: m1.ada.done
+
+guide:
+  dns: m1.ada.dns
+  map: m1.ada.nmap
+  find-repo: m1.ada.web
+  leaked-key: m1.ada.clone
 
 hints:
   dns: [m1.hint.dns.1, m1.hint.dns.2, m1.hint.dns.3]

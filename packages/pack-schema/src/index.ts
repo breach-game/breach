@@ -145,7 +145,13 @@ export type Guidance = (typeof GUIDANCE_LEVELS)[number];
 const effect = z.union([
   z.strictObject({ 'ada.say': i18nKey }),
   /** Guidance, as opposed to story. Shown in `guided`; in `standard` only if `<key>.standard` exists. */
-  z.strictObject({ 'ada.guide': i18nKey }),
+  z.strictObject({
+    'ada.guide': z.union([
+      i18nKey,
+      /** A finer step inside an objective: dropped once the objective is done or a later step was given. */
+      z.strictObject({ key: i18nKey, for: id, step: z.number().int().min(1).max(20).default(1) }),
+    ]),
+  }),
   z.strictObject({ 'ada.warn': i18nKey }),
   z.strictObject({ 'objective.complete': id }),
   z.strictObject({ 'noise.add': z.number().min(-100).max(100) }),
@@ -212,6 +218,11 @@ const mission = z.strictObject({
   reveal: z.array(id).default([]),
   rules: z.array(rule).max(100).default([]),
   noise: noiseTable.default({}),
+  /**
+   * What Ada says to start each objective. The engine gives the one for the first open objective
+   * whenever the player has no pending instruction, so a guided player is never left without a next step.
+   */
+  guide: z.record(id, i18nKey).default({}),
   /** Three levels of hints per objective, from vague to explicit. */
   hints: z.record(id, z.array(i18nKey).min(1).max(3)).default({}),
   debrief: z.strictObject({

@@ -127,7 +127,11 @@ const submit: Command = {
   summary: 'cmd.submit',
   group: 'game',
   async *run(ctx): Run {
-    const value = ctx.args.join(' ').trim();
+    // `flag{...}` is the same flag: only the prefix is case-insensitive.
+    const value = ctx.args
+      .join(' ')
+      .trim()
+      .replace(/^flag(?=\{)/i, 'FLAG');
     const m = ctx.game.mission;
     if (!value || !m) {
       yield err(ctx.t('submit.usage'));

@@ -36,6 +36,8 @@ export interface GameState {
   messages: Message[];
   vars: Record<string, Scalar>;
   fired: Record<string, true>;
+  /** Furthest guidance step already given for each objective. */
+  guided: Record<string, number>;
   checkpoint: { name: string; seq: number } | null;
   missionStartSeq: number;
   missionDone: boolean;

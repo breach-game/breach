@@ -127,6 +127,19 @@ export class Game {
     );
   }
 
+  /** Change how much Ada helps. A player who asks for more help gets the pending instruction at once. */
+  setGuidance(guidance: Guidance) {
+    this.guidance = guidance;
+    this.nextStep();
+  }
+
+  /** Display name of the mission's attack stage. */
+  stageName(): string {
+    const stage = this.mission?.stage ?? '';
+    const text = this.t(`stage.${stage}`);
+    return text === `stage.${stage}` ? stage : text;
+  }
+
   setLocale(locale: Locale) {
     this.state.locale = locale;
   }
@@ -192,6 +205,7 @@ export class Game {
       messages: [],
       vars: {},
       fired: {},
+      guided: {},
       checkpoint: null,
       missionStartSeq: 0,
       missionDone: false,
@@ -238,6 +252,7 @@ export class Game {
         s.hintsUsed = 0;
         s.detections = 0;
         s.fired = {};
+        s.guided = {};
         s.vars = {};
         s.checkpoint = null;
         s.missionStartSeq = e.seq;
@@ -286,6 +301,7 @@ export class Game {
         break;
       case 'NpcMessage':
         s.messages.push({ seq: e.seq, t: e.t, npc: e.npc, key: e.key, tone: e.tone });
+        if (e.guide) s.guided[e.guide.objective] = Math.max(s.guided[e.guide.objective] ?? 0, e.guide.step);
         break;
       case 'ObjectiveCompleted':
         s.objectives[e.objective] = true;
@@ -348,17 +364,43 @@ export class Game {
     } finally {
       this.ruleDepth--;
     }
+    if (this.ruleDepth === 0) this.nextStep();
+  }
+
+  /** Say a piece of guidance, in the form the player's level calls for. */
+  private guide(key: string, target?: { objective: string; step: number }) {
+    if (this.state.missionDone) return;
+    if (target) {
+      if (this.state.objectives[target.objective]) return;
+      if ((this.state.guided[target.objective] ?? -1) >= target.step) return;
+    }
+    const variant = `${key}.standard`;
+    const say =
+      this.guidance === 'guided'
+        ? key
+        : this.guidance === 'standard' && this.hasText(variant)
+          ? variant
+          : null;
+    if (say) this.emit({ type: 'NpcMessage', npc: 'ada', key: say, tone: 'info', guide: target });
+  }
+
+  /** Whenever the first open objective has had no guidance yet, give its opening line. */
+  private nextStep() {
+    const mission = this.mission;
+    if (!mission || this.state.missionDone || this.replaying) return;
+    const open = mission.objectives.find((o) => !o.optional && !this.state.objectives[o.id]);
+    const key = open && mission.guide[open.id];
+    if (open && key && this.state.guided[open.id] === undefined)
+      this.guide(key, { objective: open.id, step: 0 });
   }
 
   private perform(effect: Effect) {
     if ('ada.say' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.say'], tone: 'info' });
     else if ('ada.guide' in effect) {
-      const key = effect['ada.guide'];
-      const variant = `${key}.standard`;
-      if (this.guidance === 'guided') this.emit({ type: 'NpcMessage', npc: 'ada', key, tone: 'info' });
-      else if (this.guidance === 'standard' && this.hasText(variant))
-        this.emit({ type: 'NpcMessage', npc: 'ada', key: variant, tone: 'info' });
+      const g = effect['ada.guide'];
+      if (typeof g === 'string') this.guide(g);
+      else this.guide(g.key, { objective: g.for, step: g.step });
     } else if ('ada.warn' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.warn'], tone: 'warn' });
     else if ('objective.complete' in effect) this.completeObjective(effect['objective.complete']);
