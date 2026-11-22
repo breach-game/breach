@@ -8,7 +8,7 @@ Please use GitHub's private vulnerability reporting: **Security > Report a vulne
 
 ## What the game guarantees
 
-**No real network activity from gameplay.** The engine (`packages/engine`) has no network API and no dependency besides the pack schema. Commands and the in-game browser only read the fictional world held in memory. The page itself makes three kinds of request: its own files, the mission packs from the same origin, and `api.anthropic.com` when the player sets their own key.
+**No real network activity from gameplay.** The engine (`packages/engine`) has no network API and no dependency besides the pack schema. Commands and the in-game browser only read the fictional world held in memory. The page itself makes four kinds of request: its own files, the mission packs from the same origin, the community catalogue when the player opens *Community missions*, and `api.anthropic.com` when the player sets their own key.
 
 **Content cannot carry code or real targets.** A pack is data, checked against a strict schema (`packages/pack-schema`):
 
@@ -17,6 +17,8 @@ Please use GitHub's private vulnerability reporting: **Security > Report a vulne
 - size is capped before and after decompression.
 
 **Official packs are pinned.** The build compiles the SHA-256 of each official pack into the game's code. The game refuses an official pack whose bytes differ, and refuses a campaign that lists a pack this build does not know, even if the catalogue next to it was changed.
+
+**Community packs are signed and checked like the others.** Missions written by players come from the `breach-game/packs` repository, published on GitHub Pages after review. Its `index.json` is signed (ECDSA P-256) by the publishing workflow, and the game checks that signature with a public key compiled into its code before reading any entry, also when the catalogue comes from the cache. Each entry pins its pack's SHA-256, then the pack goes through the same schema and safety checks as an official one. A community catalogue cannot list an id starting with `breach.`, cannot form a campaign, and a copy older than the last one seen is ignored, so a withdrawn pack cannot come back. Each community mission is saved apart from the campaign. The private key is a secret of the `packs` repository and never appears in a repository.
 
 **Nothing is rendered as HTML.** Pages, messages and character replies are drawn with React as text. Terminal output keeps colour codes only: every other escape sequence is removed, and the terminal never opens a link.
 
@@ -42,4 +44,6 @@ Pack text that reaches the model (a character's vocabulary and style sheet, a sc
 
 - Flags can be read in the pack files and in some hints. The score is for the player alone; it is not a competition and there is no leaderboard.
 - On GitHub Pages, headers cannot be set: the policy comes from the page's meta tag, which cannot express `frame-ancestors`. Cloudflare Pages is the recommended host.
-- Community packs from another origin will need a signed catalogue before they are opened. The LLM gateway (after v1) will get its own review.
+- Without a custom domain, every GitHub Pages site of the `breach-game` organisation shares the origin `breach-game.github.io`, so the game shares its storage with them. The `packs` site publishes data files only (no HTML, no script); keep it that way, or move the game to its own domain.
+- The development server (`pnpm dev`) accepts an unsigned local catalogue set with `VITE_COMMUNITY_CATALOG`, so authors can try their packs. A production build always requires the signature.
+- The LLM gateway (after v1) will get its own review.
