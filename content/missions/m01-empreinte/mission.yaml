@@ -1,0 +1,70 @@
+order: 1
+stage: recon
+briefing: m1.briefing
+
+objectives:
+  - { id: dns, text: m1.obj.dns }
+  - { id: map, text: m1.obj.map }
+  - { id: find-repo, text: m1.obj.repo }
+  - { id: leaked-key, text: m1.obj.key }
+  - { id: odd-commit, text: m1.obj.odd, optional: true }
+
+flags:
+  - { id: debug-key, value: "FLAG{nm-debug-key-4f1e9a}", points: 100, objective: leaked-key }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: m1.ada.brief
+      - ada.say: m1.ada.dns
+  - on: { event: DnsQuery, name: { glob: "*novamind.test" }, found: true }
+    do:
+      - objective.complete: dns
+      - ada.say: m1.ada.nmap
+  - on: { event: Scan }
+    do:
+      - ada.say: m1.ada.scanning
+  - on: { event: HostDiscovered }
+    if: { discovered: { gte: 4 } }
+    do:
+      - objective.complete: map
+      - checkpoint.save: mapped
+      - ada.say: m1.ada.web
+  - on: { event: HttpRequest, host: www, path: /careers }
+    do:
+      - ada.say: m1.ada.careers
+  - on: { event: HttpRequest, host: git, status: 200 }
+    do:
+      - objective.complete: find-repo
+      - ada.say: m1.ada.clone
+  - on: { event: RepoCloned }
+    do:
+      - objective.complete: find-repo
+      - checkpoint.save: cloned
+      - ada.say: m1.ada.history
+  - on: { event: CommitViewed, commit: { in: ["9f2c1e4", "3ab77d0"] } }
+    do:
+      - ada.say: m1.ada.secret
+  - on: { event: CommitViewed, commit: "5d0e7b8" }
+    do:
+      - objective.complete: odd-commit
+      - ada.say: m1.ada.odd
+      - note.add: m1.note.odd
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: m1.ada.flag
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m1.ada.done
+
+hints:
+  dns: [m1.hint.dns.1, m1.hint.dns.2, m1.hint.dns.3]
+  map: [m1.hint.map.1, m1.hint.map.2, m1.hint.map.3]
+  find-repo: [m1.hint.repo.1, m1.hint.repo.2, m1.hint.repo.3]
+  leaked-key: [m1.hint.key.1, m1.hint.key.2, m1.hint.key.3]
+
+debrief:
+  title: m1.debrief.title
+  lesson: m1.debrief.lesson
+  points: [m1.debrief.p1, m1.debrief.p2, m1.debrief.p3, m1.debrief.p4]
+  reference: "OWASP Top 10 · A05 Security Misconfiguration"

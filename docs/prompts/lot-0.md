@@ -1,5 +1,7 @@
 # Lot 0 — la tranche verticale
 
+> **Lot 0 livré.** Ce prompt est conservé pour mémoire. Le lot livré s'écarte de ce texte sur les points décidés pendant la revue du GDD et la revue de design : monorepo avec moteur séparé, contenu sous forme de packs (`content/worlds`, `content/missions`), missions 0 et 1, prompt `kestrel@lignerouge`, deux polices auto-hébergées, Biome à la place d'ESLint et Prettier, validation des flags par `submit`, carte réseau en fond d'écran. La référence à jour est `CLAUDE.md`.
+
 À coller dans Claude Code depuis la racine du projet.
 
 ---

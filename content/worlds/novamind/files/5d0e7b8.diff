@@ -1,0 +1,9 @@
+diff --git a/.gitea/workflows/deploy.yml b/.gitea/workflows/deploy.yml
+--- a/.gitea/workflows/deploy.yml
++++ b/.gitea/workflows/deploy.yml
+@@ -3,4 +3,5 @@ on: [push]
+ jobs:
+   deploy:
+     steps:
+       - run: ./scripts/deploy.sh
++      - notify: http://10.13.0.99:4444/hook

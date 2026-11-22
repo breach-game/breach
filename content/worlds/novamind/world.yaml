@@ -1,0 +1,229 @@
+# Everything here is fictional: reserved .test domains and private addresses only.
+startTime: "2026-11-23T09:00:00+01:00"
+mandate: NM-2026-114
+scope:
+  domains: ["*.novamind.test"]
+  networks: ["10.13.0.0/16"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.13.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.13.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -330, z: 60, h: 70 }
+    links: [www, git, api, mail]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          LISEZMOI.txt: { $t: file.readme }
+          mandat:
+            NM-2026-114.txt: { $t: file.mandate }
+            contacts.txt: { $t: file.contacts }
+          outils:
+            aide-memoire.txt: { $t: file.cheatsheet }
+          .bash_history: "ls\ncat LISEZMOI.txt\n"
+      etc:
+        hostname: "lignerouge\n"
+        hosts: "127.0.0.1 localhost\n10.13.0.66 lignerouge\n"
+        passwd: "root:x:0:0:root:/root:/bin/bash\nkestrel:x:1000:1000:Kestrel,,,:/home/kestrel:/bin/lrsh\nada:x:1001:1001:Ada,,,:/home/ada:/bin/lrsh\n"
+        shadow: { $content: "root:!:20415:0:99999:7:::\n", $mode: "600" }
+        os-release: "NAME=\"LR-OS\"\nVERSION=\"4.2 (Ligne Rouge)\"\nID=lros\n"
+      var:
+        log:
+          vpn.log: "Nov 23 08:58:41 lignerouge vpn[412]: tunnel up, peer lab-novamind\nNov 23 08:58:41 lignerouge vpn[412]: assigned 10.13.0.66\n"
+
+  - id: www
+    hostname: www.novamind.test
+    ip: 10.13.0.10
+    os: Linux 6.8 (Ubuntu 24.04)
+    map: { x: -150, z: -210, h: 110 }
+    links: [nova, mail]
+    services:
+      - { port: 80, name: http, product: nginx 1.27 }
+      - { port: 443, name: https, product: nginx 1.27 }
+    web:
+      "/": { bodyKey: web.www.index }
+      "/careers": { bodyKey: web.www.careers }
+      "/robots.txt": { headers: { content-type: text/plain }, body: "User-agent: *\nDisallow: /staging/\nSitemap: https://www.novamind.test/sitemap.xml\n" }
+      "/staging": { status: 403, body: "<html>\n<head><title>403 Forbidden</title></head>\n<body>\n<center><h1>403 Forbidden</h1></center>\n<hr><center>nginx</center>\n</body>\n</html>\n" }
+
+  - id: git
+    hostname: git.novamind.test
+    ip: 10.13.0.21
+    os: Linux 6.8 (Debian 12)
+    map: { x: 200, z: 250, h: 100 }
+    links: [db]
+    services:
+      - { port: 22, name: ssh, product: OpenSSH 9.6p1 Debian }
+      - { port: 443, name: https, product: Gitea 1.22 }
+    web:
+      "/": { bodyKey: web.git.index }
+      "/novamind": { bodyKey: web.git.index }
+      "/novamind/nova-widget": { bodyKey: web.git.repo }
+    repos:
+      novamind/nova-widget:
+        description: Widget de prise de rendez-vous
+        commits:
+          - id: a41f9c2
+            author: "Léa Martin <lea@novamind.test>"
+            date: "Fri Nov 20 17:02:11 2026 +0100"
+            message: "docs: README du widget"
+            diff: { $file: files/a41f9c2.diff }
+          - id: 9f2c1e4
+            author: "Léa Martin <lea@novamind.test>"
+            date: "Mon Nov 16 09:12:54 2026 +0100"
+            message: "chore: remove debug config"
+            diff: { $file: files/9f2c1e4.diff }
+          - id: 5d0e7b8
+            author: "nm-deploy <deploy@novamind.test>"
+            date: "Sun Nov 15 03:17:44 2026 +0100"
+            message: "ci: update deploy hook"
+            diff: { $file: files/5d0e7b8.diff }
+          - id: 3ab77d0
+            author: "Léa Martin <lea@novamind.test>"
+            date: "Fri Nov 13 18:47:30 2026 +0100"
+            message: "feat: widget de prise de rendez-vous"
+            diff: { $file: files/3ab77d0.diff }
+          - id: 1c02a55
+            author: "Karim Benali <karim@novamind.test>"
+            date: "Thu Nov 12 10:05:02 2026 +0100"
+            message: "init: squelette du projet"
+            diff: { $file: files/1c02a55.diff }
+        tree:
+          README.md: "# nova-widget\n\nWidget de prise de rendez-vous pour les cliniques clientes de NovaMind.\nIl parle à l'assistante Nova via l'API interne.\n\n## Configuration\n\nCopier `config/app.env.example` vers `config/app.env` et renseigner la clé.\nNe jamais committer `config/app.env`.\n"
+          config:
+            app.env.example: "NOVA_API_URL=https://api.novamind.test/v1\nNOVA_API_KEY=\n"
+          src:
+            widget.js: "// nova-widget: prise de rendez-vous\nconst API = process.env.NOVA_API_URL;\nconst KEY = process.env.NOVA_API_KEY;\n\nexport async function book(clinic, slot) {\n  return fetch(`${API}/appointments`, {\n    method: 'POST',\n    headers: { authorization: `Bearer ${KEY}` },\n    body: JSON.stringify({ clinic, slot }),\n  });\n}\n"
+          .gitea:
+            workflows:
+              deploy.yml: "name: deploy\non: [push]\njobs:\n  deploy:\n    steps:\n      - run: ./scripts/deploy.sh\n      - notify: http://10.13.0.99:4444/hook\n"
+
+  - id: mail
+    hostname: mail.novamind.test
+    ip: 10.13.0.25
+    os: Linux 6.1 (Debian 12)
+    map: { x: -20, z: -330, h: 60 }
+    services:
+      - { port: 25, name: smtp, product: Postfix smtpd }
+      - { port: 993, name: imaps, product: Dovecot imapd }
+
+  - id: api
+    hostname: api.novamind.test
+    ip: 10.13.0.30
+    os: Linux 6.8 (Ubuntu 24.04)
+    map: { x: -140, z: 260, h: 70 }
+    links: [nova]
+    services:
+      - { port: 443, name: https, product: uvicorn 0.34 }
+    web:
+      "/": { status: 401, headers: { content-type: application/json, www-authenticate: Bearer }, body: "{\"detail\":\"Not authenticated\"}\n" }
+      "/v1": { status: 401, headers: { content-type: application/json, www-authenticate: Bearer }, body: "{\"detail\":\"Not authenticated\"}\n" }
+
+  - id: nova
+    hostname: nova.novamind.test
+    ip: 10.13.0.42
+    kind: ai
+    os: Linux 6.8 (container)
+    map: { x: 30, z: 20, h: 150 }
+    links: [rh, db]
+    services:
+      - { port: 8080, name: http-proxy, product: nova-chat 2.3 }
+    web:
+      "/": { status: 405, headers: { x-powered-by: nova-chat/2.3, allow: POST }, body: "{\"error\":\"method not allowed\"}\n" }
+      "/chat": { status: 405, headers: { x-powered-by: nova-chat/2.3, allow: POST }, body: "{\"error\":\"method not allowed\"}\n" }
+
+  - id: rh
+    hostname: agent-rh.novamind.test
+    ip: 10.13.0.44
+    kind: ai
+    hidden: true
+    map: { x: 210, z: -230, h: 100 }
+
+  - id: db
+    hostname: db.novamind.test
+    ip: 10.13.0.50
+    hidden: true
+    map: { x: 360, z: 10, h: 80 }
+    links: [unk]
+
+  - id: unk
+    hostname: unknown.novamind.test
+    ip: 10.13.0.99
+    kind: unknown
+    hidden: true
+    map: { x: 420, z: 300, h: 50 }
+
+dns:
+  novamind.test:
+    A: ["10.13.0.10"]
+    MX: ["mail.novamind.test"]
+    NS: ["ns1.novamind.test"]
+    TXT: ["v=spf1 mx -all", "forge=git.novamind.test"]
+  www.novamind.test: { A: ["10.13.0.10"] }
+  git.novamind.test: { A: ["10.13.0.21"] }
+  mail.novamind.test: { A: ["10.13.0.25"] }
+  api.novamind.test: { A: ["10.13.0.30"] }
+  nova.novamind.test: { A: ["10.13.0.42"] }
+  ns1.novamind.test: { A: ["10.13.0.2"] }
+
+whois:
+  novamind.test: |
+    Domain Name: NOVAMIND.TEST
+    Registry Domain ID: D2026-114-TEST
+    Creation Date: 2024-03-11T09:21:07Z
+    Registry Expiry Date: 2027-03-11T09:21:07Z
+    Registrant Organization: NovaMind SAS
+    Registrant City: Lyon
+    Registrant Country: FR
+    Tech Name: Karim Benali
+    Tech Email: karim@novamind.test
+    Name Server: NS1.NOVAMIND.TEST
+    DNSSEC: unsigned
+
+# Noise seen by NovaMind's SOC, in points out of 100. Missions can override an entry.
+noise:
+  nmap:
+    base: 22
+    flags: { "-sn": -14, "-sV": 10, "-A": 30, "-T0": -16, "-T1": -14, "-T2": -8, "-T4": 18, "-T5": 36, "-p-": 16 }
+  "dig axfr": 12
+  dig: 0
+  whois: 0
+  curl: 2
+  ping: 2
+  ssh: 14
+  "git clone": 3
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    if: { not: { var: tutorial, eq: true } }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-40
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 40, lt: 70 } }
+    do:
+      - ada.say: ada.noise40
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+  - id: sudo
+    on: { event: CommandRun, command: sudo }
+    do:
+      - ada.say: ada.sudo

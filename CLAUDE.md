@@ -17,38 +17,44 @@ BREACH est un thriller de cybersécurité jouable dans le navigateur. Le joueur,
 
 ## Stack
 
-- Vite + React + TypeScript (strict), pnpm
-- xterm.js pour le terminal, react-three-fiber pour la carte réseau 3D (repli 2D automatique)
-- GSAP pour les animations d'interface, Tone.js pour le son
-- i18next (FR et EN dès le départ)
-- WebLLM pour le mode local, IndexedDB (idb) pour la sauvegarde
-- Vitest pour les tests, Playwright plus tard pour les captures
+- Monorepo pnpm, TypeScript strict partout, Biome (lint et format), Vitest
+- `apps/game` : Vite + React, xterm.js pour le terminal, carte réseau en canvas (fond d'écran vivant)
+- Polices auto-hébergées (@fontsource), aucune ressource tierce au runtime
+- IndexedDB (idb-keyval) pour la sauvegarde et le cache des packs
+- Plus tard : son (Tone.js), PNJ BYOK, passerelle LLM (Cloudflare Workers, après la v1)
 - Déploiement statique : Cloudflare Pages ou GitHub Pages. Aucun backend pour le jeu.
 
 ## Structure
 
 ```
-src/
-  os/          bureau LR-OS : gestionnaire de fenêtres, barre de statut, dock
-  terminal/    interpréteur, parseur, commandes (une commande = un fichier), autocomplétion
-  world/       monde simulé : hôtes, système de fichiers virtuel, comptes, logs
-  missions/    moteur de missions : objectifs, flags, bruit, indices, checkpoints
-  npc/         interface NpcBrain + implémentations (scripted, webllm, gateway, byok)
-  map/         carte réseau 3D et repli 2D
-  audio/       musique générative et sons d'interface
-  i18n/        fr.json, en.json
-  theme/       tokens de design (CSS variables) et typographies
+packages/
+  pack-schema/  format des packs (zod) + contrôles de sécurité du contenu
+  engine/       moteur déterministe, sans DOM : événements, état, VFS, réseau simulé, shell, commandes, règles
+  pack-cli/     validation, rejeu des solutions, construction des .breachpack et du catalogue
+apps/
+  game/         l'interface : écran titre, boot, bureau LR-OS, fenêtres, carte, débrief
 content/
-  missions/    une mission = un fichier YAML (voir m01-empreinte.yaml)
-gateway/       passerelle LLM (projet séparé, déployé sur le VPS)
-docs/          GDD, maquettes, prompts par lot
+  worlds/       un monde = un pack (hôtes, fichiers, DNS, table de bruit, textes FR et EN)
+  missions/     une mission = un pack (objectifs, flags, règles, indices, débrief, solution.txt)
+gateway/        passerelle LLM (après la v1)
+docs/           GDD, maquettes, captures, prompts par lot
 ```
+
+Architecture détaillée et décisions : dépôt `breach-game/docs` (`architecture/architecture.md`).
+
+### Principes d'architecture
+
+- **Tout est événement.** `Game.emit()` ajoute au journal, `apply()` est le seul endroit qui modifie l'état. La sauvegarde est le journal, la reprise est un rejeu. Les règles ne réagissent qu'aux événements en direct.
+- **Le contenu est un pack déclaratif.** Aucun code dans un pack. Les missions officielles passent par le même chemin que les futures missions de la communauté : catalogue `index.json`, téléchargement à la demande, vérification sha256, validation du schéma, cache.
+- **Ajouter une mission** : créer `content/missions/<id>/` (`pack.yaml`, `mission.yaml`, `i18n/fr.yaml`, `i18n/en.yaml`, `solution.txt`), puis `pnpm packs:check`. La solution est rejouée par les tests : une mission qui ne se termine pas avec sa solution casse la CI.
+- **Les flags** se valident par `submit FLAG{...}`, comparés par empreinte sha256. Jamais par un LLM.
+- **La garde de périmètre** (`resolveTarget` dans `engine/src/net.ts`) est le passage obligé de toute commande réseau.
 
 ## Direction artistique
 
 Thriller néon diégétique : l'écran entier est le poste du pentesteur (LR-OS). Pas de menu de jeu classique, tout vit dans des fenêtres. Chaque écran doit mériter une capture.
 
-Tokens (à exposer en CSS variables dans `src/theme/tokens.css`) :
+Tokens (CSS variables dans `apps/game/src/theme/tokens.css`) :
 
 | Token | Valeur | Sens |
 | --- | --- | --- |
@@ -57,14 +63,16 @@ Tokens (à exposer en CSS variables dans `src/theme/tokens.css`) :
 | `--red` | `#FF3D5A` | attaque, machine compromise |
 | `--cyan` | `#2DE2FF` | défense, logs, mode Blue Team |
 | `--violet` | `#9B5CFF` | tout ce qui est IA |
-| `--green` | `#3DFF9A` | succès, flag, poste du joueur |
+| `--green` | `#3DFF9A` | succès et flag uniquement (le joueur est en blanc) |
 | `--amber` | `#FFB020` | bruit, alerte, détection |
 | `--text` | `#D7E0F5` | texte principal |
 | `--text-2` | `#7D8BAA` | texte secondaire (contraste AA sur `--night`) |
 
 Règle forte : la couleur porte le sens. Rouge = attaque, cyan = défense, violet = IA. Jamais d'autre usage. Toute information de couleur est doublée d'une icône ou d'un libellé.
 
-Typographies (Google Fonts) : JetBrains Mono (terminal, données, barres), Space Grotesk (titres, génériques), Inter (interface, messages).
+Typographies (auto-hébergées) : JetBrains Mono pour tout ce que dit la machine (terminal, données, barres), Space Grotesk pour tout ce que disent les humains (titres, messages, interface).
+
+La carte réseau est le fond d'écran du bureau. Une seule fenêtre active à la fois. La lumière d'ambiance suit la jauge de bruit (`--tension`). Le glitch n'existe que comme événement du moteur (150 à 400 ms), jamais en permanence. Le prompt du joueur est `kestrel@lignerouge`.
 
 Fenêtres : fond `--panel`, bordure 1 px teintée selon le rôle, rayon 10 px, en-tête 32 px en mono 12 px, ombre portée profonde plus un halo léger de la couleur du rôle.
 
@@ -72,10 +80,11 @@ Effets : scanlines et bloom légers (désactivables), glitch par aberration chro
 
 ## Conventions de code
 
-- Aucune chaîne visible en dur : tout passe par i18next, clés en anglais (`terminal.errors.outOfScope`).
-- Une commande du terminal = un module `src/terminal/commands/<nom>.ts` qui exporte `{ name, help, run(args, ctx) }`. Les sorties imitent le format réel de l'outil.
-- Le monde et les missions sont des données (YAML chargé au build), jamais du code.
-- Tests Vitest obligatoires pour le parseur, chaque commande et le moteur de missions.
+- Aucune chaîne visible en dur. Interface : `apps/game/src/ui.ts`. Moteur : `packages/engine/src/locales/`. Récit : fichiers `i18n/` des packs. Clés en anglais.
+- Les sorties des commandes restent en anglais et imitent le format réel de l'outil. Le récit, Ada et l'interface sont traduits.
+- Les commandes vivent dans `packages/engine/src/commands/`, regroupées par famille (fichiers, réseau, git, système, jeu). Une commande est un générateur asynchrone qui produit des morceaux de sortie.
+- Le monde et les missions sont des données (packs YAML), jamais du code.
+- Tests Vitest obligatoires pour le parseur, chaque commande et le moteur. Le moteur ne dépend ni du DOM ni de React.
 - Pas de dépendance réseau au runtime, sauf la passerelle LLM et le mode BYOK, tous deux optionnels.
 - CSP stricte, aucun script tiers, aucun analytics.
 - Accessibilité : vrais `<button>`, focus visible, cibles de 44 px, contraste AA.
@@ -99,7 +108,7 @@ Le moteur de missions inspecte `text` pour détecter les flags. Si un cerveau é
 
 ## Définition de « fini » pour chaque lot
 
-- `pnpm build` et `pnpm test` passent.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm packs:check` et `pnpm build` passent.
 - FR et EN complets pour tout nouvel écran.
 - Une capture d'écran du rendu est ajoutée dans `docs/screens/` et comparée aux maquettes.
 - Le cadre non négociable ci-dessus est respecté.

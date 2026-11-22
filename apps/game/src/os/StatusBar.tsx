@@ -1,0 +1,130 @@
+import { gameDate, socLevel } from '@breach/engine';
+import { useState } from 'react';
+import { Mark } from '../brand.tsx';
+import { liveClock, useGame } from '../session.ts';
+import { updateSettings, useSettings } from '../settings.ts';
+import { type UiKey, useT } from '../ui.ts';
+
+interface Props {
+  noise: number;
+  onResetLayout(): void;
+  onQuit(): void;
+}
+
+export function StatusBar({ noise, onResetLayout, onQuit }: Props) {
+  const game = useGame();
+  const t = useT();
+  const settings = useSettings();
+  const [menu, setMenu] = useState(false);
+  const pack = game.state.mission ? game.missions.get(game.state.mission) : undefined;
+  const title = pack?.title[settings.locale] ?? pack?.title.fr ?? pack?.title.en ?? '';
+  const level = socLevel(noise);
+  return (
+    <>
+      <header className="bar">
+        <div className="os">
+          <Mark aria-hidden="true" />
+          LR-OS <span>{t('bar.os')}</span>
+        </div>
+        <div className="mission">
+          {t('bar.mission')} {String(pack?.mission?.order ?? 0).padStart(2, '0')} <b>/</b> {title}
+        </div>
+        <div
+          className="gauge"
+          role="meter"
+          aria-label={t('bar.noise')}
+          aria-valuenow={Math.round(noise)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <span>{t('bar.noise')}</span>
+          <div className="track">
+            <div className="fill" style={{ width: `${noise}%` }} />
+          </div>
+          <span className="val">{Math.round(noise)} %</span>
+        </div>
+        <div className="soc" data-level={level}>
+          <i />
+          <span>{t(`bar.soc.${level}` as UiKey)}</span>
+        </div>
+        <div className="clock">{gameDate(game.world.startTime, liveClock(game)).time}</div>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={t('bar.settings')}
+          aria-expanded={menu}
+          onClick={() => setMenu((m) => !m)}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path d="M2 4h8M13 4h1M2 8h2M7 8h7M2 12h6M11 12h3" strokeLinecap="round" />
+            <circle cx="11.5" cy="4" r="1.5" />
+            <circle cx="5.5" cy="8" r="1.5" />
+            <circle cx="9.5" cy="12" r="1.5" />
+          </svg>
+        </button>
+      </header>
+      {menu && (
+        <div className="menu" role="dialog" aria-label={t('bar.settings')}>
+          <div className="row">
+            {t('settings.language')}
+            <span className="seg">
+              {(['fr', 'en'] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={settings.locale === l}
+                  onClick={() => {
+                    updateSettings({ locale: l });
+                    game.setLocale(l);
+                  }}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </span>
+          </div>
+          <div className="row">
+            {t('settings.effects')}
+            <span className="seg">
+              <button
+                type="button"
+                aria-pressed={settings.effects}
+                onClick={() => updateSettings({ effects: true })}
+              >
+                {t('on')}
+              </button>
+              <button
+                type="button"
+                aria-pressed={!settings.effects}
+                onClick={() => updateSettings({ effects: false })}
+              >
+                {t('off')}
+              </button>
+            </span>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              onResetLayout();
+              setMenu(false);
+            }}
+          >
+            {t('settings.layout')}
+          </button>
+          <button type="button" className="btn" onClick={onQuit}>
+            {t('settings.quit')}
+          </button>
+        </div>
+      )}
+    </>
+  );
+}

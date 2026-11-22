@@ -1,0 +1,56 @@
+order: 0
+stage: cadrage
+briefing: m0.briefing
+
+objectives:
+  - { id: whoami, text: m0.obj.whoami }
+  - { id: read-mandate, text: m0.obj.read }
+  - { id: confirm-scope, text: m0.obj.confirm }
+  - { id: test-guardrail, text: m0.obj.guardrail }
+  - { id: first-recon, text: m0.obj.recon }
+
+flags:
+  - { id: scope, value: "FLAG{perimetre-novamind-test}", points: 50, objective: confirm-scope }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - var.set: { name: tutorial, value: true }
+      - ada.say: m0.ada.welcome
+      - ada.say: m0.ada.whoami
+  - on: { event: CommandRun, command: whoami }
+    do:
+      - objective.complete: whoami
+      - ada.say: m0.ada.read
+  - on: { event: FileRead, path: { glob: "*/mandat/NM-2026-114.txt" } }
+    do:
+      - objective.complete: read-mandate
+      - ada.say: m0.ada.submit
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - checkpoint.save: mandate-read
+      - ada.say: m0.ada.guardrail
+  - on: { event: OutOfScope }
+    do:
+      - objective.complete: test-guardrail
+      - ada.warn: m0.ada.law
+      - ada.say: m0.ada.dig
+  - on: { event: DnsQuery, name: { glob: "*novamind.test" } }
+    do:
+      - objective.complete: first-recon
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m0.ada.done
+
+hints:
+  whoami: [m0.hint.whoami.1, m0.hint.whoami.2]
+  read-mandate: [m0.hint.read.1, m0.hint.read.2, m0.hint.read.3]
+  confirm-scope: [m0.hint.confirm.1, m0.hint.confirm.2]
+  test-guardrail: [m0.hint.guardrail.1, m0.hint.guardrail.2]
+  first-recon: [m0.hint.recon.1, m0.hint.recon.2]
+
+debrief:
+  title: m0.debrief.title
+  lesson: m0.debrief.lesson
+  points: [m0.debrief.p1, m0.debrief.p2, m0.debrief.p3, m0.debrief.p4]
+  reference: "Code pénal, art. 323-1"

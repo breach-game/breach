@@ -1,0 +1,32 @@
+/* Design tokens. Colour carries meaning: red = attack, cyan = defence, violet = AI,
+   green = success only, amber = noise and detection, white = the player. */
+@property --accent { syntax: '<color>'; inherits: true; initial-value: #ff3d5a; }
+@property --amb { syntax: '<color>'; inherits: true; initial-value: #3b2a7a; }
+@property --edge { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+:root {
+  color-scheme: dark;
+  --night: #07090f;
+  --glass: rgba(14, 19, 32, 0.72);
+  --glass-dim: rgba(14, 19, 32, 0.6);
+  --attack: #ff3d5a;
+  --defense: #2de2ff;
+  --ai: #9b5cff;
+  --success: #3dff9a;
+  --alert: #ffb020;
+  --player: #eef2ff;
+  --text: #d7e0f5;
+  --dim: #7d8baa;
+  --line: rgba(215, 224, 245, 0.1);
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --human: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --accent: var(--attack);
+  --amb: #3b2a7a;
+  --edge: 0;
+  --tension: 0;
+  --bar-h: 44px;
+  /* Motion: instant, snap, glide, scene, cinematic. */
+  --t-snap: 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-glide: 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  --t-scene: 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}

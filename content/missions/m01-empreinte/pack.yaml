@@ -1,0 +1,13 @@
+id: breach.official.m01
+version: 0.1.0
+engine: ">=0.1 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Empreinte
+  en: Footprint
+summary:
+  fr: Reconnaissance. Ce que NovaMind expose sans le savoir, et ce qui traîne dans son historique Git.
+  en: Reconnaissance. What NovaMind exposes without knowing it, and what lingers in its Git history.
+authors: [BREACH]
+locales: [fr, en]
