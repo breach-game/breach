@@ -42,7 +42,7 @@ function include(value: unknown, dir: string): unknown {
 /** Read a pack's source directory and return the validated, compiled pack. */
 export function loadPack(dir: string): LoadedPack {
   const raw = readYaml(join(dir, 'pack.yaml')) as Record<string, unknown>;
-  for (const part of ['world', 'mission'] as const) {
+  for (const part of ['world', 'mission', 'series'] as const) {
     const file = join(dir, `${part}.yaml`);
     if (existsSync(file)) raw[part] = readYaml(file);
   }
@@ -185,6 +185,47 @@ function worldProblems(pack: Pack): string[] {
   return problems.map((p) => `${pack.id}: ${p}`);
 }
 
+/**
+ * A series holds together: its missions exist, share its world, are numbered in playing order, and
+ * their solutions finish one after the other in a single game, as the player will play them.
+ */
+async function seriesProblems(pack: Pack, byId: Map<string, LoadedPack>): Promise<string[]> {
+  const problems: string[] = [];
+  const worldId = pack.requires[0] ?? '';
+  const world = byId.get(worldId)?.pack;
+  if (!world?.world) return [`${pack.id}: its first requirement must be a world pack`];
+  const missions: LoadedPack[] = [];
+  for (const id of pack.series!.missions) {
+    const m = byId.get(id);
+    if (!m || m.pack.kind !== 'mission') problems.push(`${pack.id}: ${id} is not a mission pack`);
+    else if (m.pack.requires[0] !== worldId)
+      problems.push(`${pack.id}: ${id} is played in ${m.pack.requires[0]}, not in ${worldId}`);
+    else missions.push(m);
+  }
+  for (const locale of pack.locales)
+    for (const m of missions)
+      if (!m.pack.locales.includes(locale)) problems.push(`${pack.id}: ${m.pack.id} has no ${locale} text`);
+  if (problems.length) return problems;
+  const orders = missions.map((m) => m.pack.mission!.order);
+  if (orders.some((o, i) => i > 0 && o <= orders[i - 1]!))
+    problems.push(`${pack.id}: its missions must have increasing \`order\` values, in the order listed`);
+  if (missions.some((m) => !m.solution) || problems.length) return problems;
+  for (const locale of pack.locales) {
+    const game = new Game({ world, missions: missions.map((m) => m.pack), locale });
+    for (const m of missions) {
+      game.startMission(m.pack.id);
+      for (const line of m.solution!) for await (const _ of game.exec(line, 20_000));
+      if (!game.state.missionDone) {
+        problems.push(
+          `${pack.id}: ${m.pack.id} does not finish when played after the missions before it (${locale})`,
+        );
+        break;
+      }
+    }
+  }
+  return problems;
+}
+
 export interface CheckOptions {
   /**
    * Packs that are only there to resolve dependencies (the official world, for a community mission).
@@ -236,6 +277,7 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
         if (!keys.includes(key)) problems.push(`${pack.id}: i18n key ${key} is missing in ${first}`);
     }
     if (pack.world) problems.push(...worldProblems(pack));
+    if (pack.kind === 'series') problems.push(...(await seriesProblems(pack, byId)));
     if (pack.kind !== 'mission') continue;
     const world = byId.get(pack.requires[0] ?? '')?.pack;
     if (!world?.world) {
@@ -360,6 +402,7 @@ export function buildAll(
       ...(pack.kind === 'mission' ? { track: pack.track } : {}),
       ...(pack.difficulty ? { difficulty: pack.difficulty } : {}),
       ...(pack.skills.length ? { skills: pack.skills } : {}),
+      ...(pack.series ? { missions: pack.series.missions } : {}),
       locales: pack.locales,
       file,
       sha256: sha256(bytes),

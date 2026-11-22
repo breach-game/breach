@@ -22,6 +22,8 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
   const score = game.state.completed[game.state.mission]?.score ?? game.score();
   const detail = game.scoreDetail();
   const factor = LEVEL_BONUS[detail.level].toLocaleString(locale);
+  // A community series: several missions in one save, so the last debrief gives the total.
+  const series = Object.keys(game.state.completed).length > 1;
   const campaign = Object.values(game.state.completed).reduce((sum, m) => sum + m.score, 0);
   return (
     <div className="debrief scroll">
@@ -108,10 +110,22 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
       ) : (
         <p className="fine">{t('debrief.soc.none')}</p>
       )}
-      {!next && playKind() === 'community' && (
+      {!next && playKind() === 'community' && !series && (
         <>
           <h3>{t('debrief.community.title')}</h3>
           <p>{t('debrief.community.body')}</p>
+        </>
+      )}
+      {!next && playKind() === 'community' && series && (
+        <>
+          <h3>{t('debrief.series.title')}</h3>
+          <p>{t('debrief.series.body')}</p>
+          <div className="stats">
+            <span>
+              {t('debrief.series.total')}
+              <b>{campaign}</b>
+            </span>
+          </div>
         </>
       )}
       {!next && playKind() === 'replay' && (

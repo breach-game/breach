@@ -51,11 +51,36 @@ describe('community packs', () => {
     const { catalog, files } = buildAll(community, new Date(0), { community: true });
     expect(catalogSchema.parse(catalog).campaign).toEqual([]);
     expect(catalog.packs.map((p) => p.id).sort()).toEqual([
+      'example.atelier-pixel',
+      'example.closing-the-door',
       'example.forgotten-backup',
       'example.pixel-world',
     ]);
     expect(catalog.packs[0]?.authors).toEqual(['BREACH team']);
-    expect(files).toHaveLength(2);
+    expect(files).toHaveLength(4);
+  });
+
+  it('lists a series with its missions in playing order', () => {
+    const { catalog } = buildAll(community, new Date(0), { community: true });
+    const series = catalogSchema.parse(catalog).packs.find((p) => p.kind === 'series');
+    expect(series?.missions).toEqual(['example.forgotten-backup', 'example.closing-the-door']);
+  });
+
+  it('refuses a series whose missions are missing, out of order or from another world', async () => {
+    const series = community.find((p) => p.pack.kind === 'series')!;
+    const others = community.filter((p) => p !== series);
+    const check = async (packs: LoadedPack[]) =>
+      (await checkAll(packs, { community: true, dependencies: official })).join('\n');
+    const missing = variant(series, {
+      series: { missions: ['example.forgotten-backup', 'example.nowhere'] },
+    });
+    expect(await check([...others, missing])).toMatch(/example.nowhere is not a mission pack/);
+    const reversed = variant(series, {
+      series: { missions: ['example.closing-the-door', 'example.forgotten-backup'] },
+    });
+    expect(await check([...others, reversed])).toMatch(/increasing `order` values/);
+    const elsewhere = variant(series, { requires: ['breach.world.novamind'] });
+    expect(await check([...others, elsewhere])).toMatch(/is played in example.pixel-world/);
   });
 });
 

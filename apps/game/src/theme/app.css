@@ -342,6 +342,15 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .community-list { max-height: min(52vh, 560px); overflow-y: auto; padding: 4px; }
 .community-list .level b { font-size: 17px; line-height: 1.2; text-transform: none; letter-spacing: 0.02em; }
 .level:disabled { cursor: not-allowed; opacity: 0.55; translate: none; border-color: var(--line); }
+.series-list { list-style: none; margin: 0; padding: 4px; width: min(640px, 100%); max-height: min(48vh, 520px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.series-list li { display: grid; gap: 4px; padding: 12px 14px; text-align: left; border: 1px solid rgba(215, 224, 245, 0.14); border-radius: 10px; background: var(--panel); }
+.series-list li b { font: 600 16px/1.2 var(--human); color: var(--text); }
+.series-list li span { font: 400 14px/1.45 var(--human); color: var(--text-2); }
+.series-list li i { font: 400 12px var(--mono); font-style: normal; color: var(--text-2); }
+.series-list li[data-state="done"] i { color: var(--green); }
+.series-list li[data-state="next"] { border-color: rgba(215, 224, 245, 0.45); }
+.series-list li[data-state="next"] i { color: var(--text); }
+.series-list li[data-state="locked"] { opacity: 0.6; }
 .community-actions { flex-direction: row; justify-content: center; width: auto; animation: none; }
 .btn.link { display: inline-grid; place-items: center; color: var(--text); text-decoration: none; }
 .community-note { max-width: 70ch; }
