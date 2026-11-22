@@ -1,0 +1,176 @@
+# First defence mission: the player is the SOC, Mute plays a script.
+side: defense
+order: 7
+stage: response
+briefing: b1.briefing
+reveal: [git, db]
+
+files:
+  missions/ordre-NM-2026-114-B.txt: b1.file.order
+
+objectives:
+  - { id: contain, text: b1.obj.contain }
+  - { id: entry, text: b1.obj.entry }
+  - { id: source, text: b1.obj.source }
+  - { id: pivot, text: b1.obj.pivot, optional: true }
+
+flags: []
+
+# Switches the containment orders flip. The world already knows net.segment_git_db.
+config:
+  b1.mute_blocked: false
+  b1.deploy_revoked: false
+  b1.backup_reset: false
+  b1.db_isolated: false
+  b1.git_down: false
+
+# Mute's script: one step every two of the player's actions.
+adversary:
+  id: mute
+  name: Mute
+  from: unk
+  pace: 2
+  steps:
+    - id: login
+      host: git
+      source: auth
+      fields: { user: nm-deploy, result: Accepted, method: publickey }
+      blockedIf: { config: b1.mute_blocked, eq: true }
+    - id: recon
+      host: git
+      source: audit
+      fields: { user: nm-deploy, exe: /usr/bin/cat, cmd: "cat /home/nm-deploy/.ssh/config" }
+      blockedIf:
+        any:
+          - { config: b1.mute_blocked, eq: true }
+          - { config: b1.deploy_revoked, eq: true }
+          - { config: b1.git_down, eq: true }
+    - id: hop
+      host: db
+      source: auth
+      fields: { user: backup, result: Accepted, method: publickey, src: 10.13.0.21 }
+      blockedIf: &afterHop
+        any:
+          - { config: b1.mute_blocked, eq: true }
+          - { config: b1.deploy_revoked, eq: true }
+          - { config: b1.git_down, eq: true }
+          - { config: b1.backup_reset, eq: true }
+          - { config: b1.db_isolated, eq: true }
+          - { config: net.segment_git_db, eq: true }
+    - id: dump
+      host: db
+      source: db
+      fields: { user: backup, src: 10.13.0.21, query: "COPY clients TO STDOUT WITH CSV", rows: 1402 }
+      blockedIf: *afterHop
+    - id: exfil
+      host: db
+      source: flow
+      fields: { src: 10.13.0.50, dst: 10.13.0.99, dport: 4444, bytes: 48211904 }
+      blockedIf: *afterHop
+
+containment:
+  - id: block-mute
+    action: block
+    target: 10.13.0.99
+    text: b1.contain.block
+    sets: { b1.mute_blocked: true }
+    impact: 0
+  - id: revoke-deploy
+    action: revoke
+    target: nm-deploy
+    text: b1.contain.revoke
+    sets: { b1.deploy_revoked: true }
+    impact: 5
+  - id: reset-backup
+    action: reset
+    target: backup
+    text: b1.contain.reset
+    sets: { b1.backup_reset: true }
+    impact: 5
+  - id: disable-git
+    action: disable
+    target: git.novamind.test
+    text: b1.contain.git
+    sets: { b1.git_down: true }
+    impact: 25
+  - id: isolate-db
+    action: isolate
+    target: db.novamind.test
+    text: b1.contain.db
+    sets: { b1.db_isolated: true }
+    impact: 60
+
+# What `soc alerts` raises while Mute moves.
+alerts:
+  - id: deploy-shell
+    title: b1.alert.deploy
+    why: b1.alert.deploy.why
+    source: auth
+    where: { user: nm-deploy, result: Accepted }
+  - id: backup-from-forge
+    title: b1.alert.backup
+    why: b1.alert.backup.why
+    source: auth
+    where: { user: backup, src: 10.13.0.21 }
+  - id: db-copy
+    title: b1.alert.copy
+    why: b1.alert.copy.why
+    source: db
+    where: { query: { contains: COPY } }
+
+investigation:
+  - { id: entry, text: b1.q.entry, value: nm-deploy, points: 100, objective: entry }
+  - { id: source, text: b1.q.source, value: 10.13.0.99, points: 100, objective: source }
+  - { id: pivot, text: b1.q.pivot, value: backup, points: 100, objective: pivot }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: b1.ada.brief
+  - on: { event: AdversaryStep, step: login, blocked: false }
+    do:
+      - ada.guide: { key: b1.ada.alert, for: contain, step: 1 }
+  - on: { event: CommandRun, command: soc, args: { contains: auth } }
+    do:
+      - ada.guide: { key: b1.ada.seen, for: contain, step: 2 }
+  - on: { event: AdversaryStep, step: recon, blocked: false }
+    do:
+      - ada.warn: b1.ada.recon
+  - on: { event: AdversaryStep, step: hop, blocked: false }
+    do:
+      - ada.warn: b1.ada.hop
+  - on: { event: AdversaryStep, step: dump, blocked: false }
+    do:
+      - ada.warn: b1.ada.dump
+  - on: { event: AdversaryStep, step: exfil, blocked: false }
+    do:
+      - mission.fail: b1.ada.fail
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: b1.ada.stopped
+      - objective.complete: contain
+  - on: { event: Contained, containment: isolate-db }
+    do:
+      - ada.say: b1.ada.costly.db
+  - on: { event: Contained, containment: disable-git }
+    do:
+      - ada.say: b1.ada.costly.git
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: b1.ada.done
+
+guide:
+  contain: b1.ada.start
+  entry: b1.ada.entry
+  source: b1.ada.source
+
+hints:
+  contain: [b1.hint.contain.1, b1.hint.contain.2, b1.hint.contain.3]
+  entry: [b1.hint.entry.1, b1.hint.entry.2]
+  source: [b1.hint.source.1, b1.hint.source.2]
+
+debrief:
+  title: b1.debrief.title
+  lesson: b1.debrief.lesson
+  points: [b1.debrief.p1, b1.debrief.p2, b1.debrief.p3, b1.debrief.p4]
+  reference: "NIST SP 800-61 · Incident Handling · MITRE ATT&CK TA0008, TA0010"

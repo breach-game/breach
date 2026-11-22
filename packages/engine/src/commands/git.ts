@@ -1,10 +1,14 @@
 import type { Repo } from '@breach/pack-schema';
 import { resolveTarget } from '../net.ts';
+import { evaluate } from '../rules.ts';
 import { style } from '../util.ts';
 import { lookup } from '../vfs.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run, wait } from './types.ts';
 
 type Commit = Repo['commits'][number];
+
+/** Commits as they stand: a fix may have rewritten history. */
+const live = (ctx: CommandCtx, repo: Repo): Commit[] => repo.commits.filter((c) => evaluate(c.if, ctx.state));
 
 /** Stretch a short commit id to 40 hex characters, always the same way. */
 function fullId(id: string): string {
@@ -109,7 +113,7 @@ const git: Command = {
         yield err(`fatal: destination path '${dirName}' already exists and is not an empty directory.`);
         return 128;
       }
-      const n = repo.commits.length * 3;
+      const n = live(ctx, repo).length * 3;
       yield out(
         `remote: Enumerating objects: ${n}, done.\nremote: Counting objects: 100% (${n}/${n}), done.\nremote: Total ${n} (delta ${Math.floor(n / 4)}), reused ${n} (delta ${Math.floor(n / 4)}), pack-reused 0`,
       );
@@ -128,8 +132,8 @@ const git: Command = {
         args.map((a) => (a === '--oneline' ? '--oneline' : a)),
         ['n'],
       );
-      const limit = values.n ? Number(values.n) : found.repo.commits.length;
-      const shown = found.repo.commits.slice(0, limit);
+      const limit = values.n ? Number(values.n) : live(ctx, found.repo).length;
+      const shown = live(ctx, found.repo).slice(0, limit);
       for (const c of shown) {
         if (flags.has('oneline')) {
           yield out(
@@ -154,8 +158,8 @@ const git: Command = {
       const ref = args.find((a) => !a.startsWith('-')) ?? 'HEAD';
       const back = /^HEAD(?:~(\d+)|(\^+))?$/.exec(ref);
       const commit = back
-        ? found.repo.commits[back[1] ? Number(back[1]) : (back[2]?.length ?? 0)]
-        : found.repo.commits.find((c) => fullId(c.id).startsWith(ref.toLowerCase()) && ref.length >= 4);
+        ? live(ctx, found.repo)[back[1] ? Number(back[1]) : (back[2]?.length ?? 0)]
+        : live(ctx, found.repo).find((c) => fullId(c.id).startsWith(ref.toLowerCase()) && ref.length >= 4);
       if (!commit) {
         yield err(`fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`);
         return 128;

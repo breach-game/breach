@@ -1,5 +1,7 @@
+import { evaluate } from '../rules.ts';
 import { sha256, style } from '../util.ts';
 import { canRead, canWrite, lookup } from '../vfs.ts';
+import { investigate } from './defense.ts';
 import { commands } from './index.ts';
 import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
 
@@ -147,6 +149,11 @@ const submit: Command = {
       yield err(ctx.t('submit.wrong'));
       return 1;
     }
+    if (!evaluate(flag.if, ctx.state)) {
+      ctx.emit({ type: 'FlagSubmitted', flag: null, correct: false });
+      yield err(ctx.t('submit.revoked'));
+      return 1;
+    }
     if (ctx.state.flags[flag.id]) {
       yield out(ctx.t('submit.already'));
       return 0;
@@ -184,7 +191,11 @@ const answer: Command = {
   summary: 'cmd.answer',
   group: 'game',
   async *run(ctx): Run {
+    // A defence investigation: `answer <id> <value>`, unless Ada is waiting for a letter.
+    const investigation = ctx.game.mission?.investigation ?? [];
     const open = ctx.game.openQuestions();
+    if (investigation.length && (!open.length || investigation.some((q) => q.id === ctx.args[0])))
+      return yield* investigate(ctx);
     const question = open[0];
     if (!question) {
       yield out(ctx.t('answer.none'));

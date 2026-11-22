@@ -100,3 +100,41 @@ debrief:
   lesson: m6.debrief.lesson
   points: [m6.debrief.p1, m6.debrief.p2, m6.debrief.p3, m6.debrief.p4, m6.debrief.p5]
   reference: "MITRE ATT&CK · TA0008 Lateral Movement, TA0010 Exfiltration"
+
+# Defence replay: Mute's path went from the forge to the database; segmentation cuts it.
+defense:
+  intro: m6.def.intro
+  lesson: m6.def.lesson
+  find:
+    - { source: auth, where: { src: 10.13.0.21 }, text: m6.def.find.hop }
+  rules:
+    - id: forge
+      title: m6.def.rule.forge.title
+      why: m6.def.rule.forge.why
+      source: auth
+      where: { src: 10.13.0.21 }
+      correct: true
+    - id: accepted
+      title: m6.def.rule.accepted.title
+      why: m6.def.rule.accepted.why
+      source: auth
+      where: { result: Accepted }
+    - id: cat
+      title: m6.def.rule.cat.title
+      why: m6.def.rule.cat.why
+      source: audit
+      where: { exe: /usr/bin/cat }
+  fixes:
+    - id: segment
+      title: m6.def.fix.segment.title
+      why: m6.def.fix.segment.why
+      sets: { net.segment_git_db: true }
+      correct: true
+    - id: password
+      title: m6.def.fix.password.title
+      why: m6.def.fix.password.why
+      sets: { db.backup_password_changed: true }
+    - id: clean
+      title: m6.def.fix.clean.title
+      why: m6.def.fix.clean.why
+      sets: { db.tmp_cleaned: true }

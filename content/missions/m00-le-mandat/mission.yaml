@@ -56,3 +56,27 @@ debrief:
   lesson: m0.debrief.lesson
   points: [m0.debrief.p1, m0.debrief.p2, m0.debrief.p3, m0.debrief.p4]
   reference: "Code pénal, art. 323-1"
+
+# Defence replay: even a lawful test leaves lines; the SOC must know where it comes from.
+defense:
+  intro: m0.def.intro
+  lesson: m0.def.lesson
+  find:
+    - { source: dns, where: { src: 10.13.0.66 }, text: m0.def.find.dns }
+  rules:
+    - id: declared
+      title: m0.def.rule.declared.title
+      why: m0.def.rule.declared.why
+      source: dns
+      where: { src: 10.13.0.66 }
+      correct: true
+    - id: every-query
+      title: m0.def.rule.every-query.title
+      why: m0.def.rule.every-query.why
+      source: dns
+      where: { name: { glob: "*novamind.test" } }
+    - id: any-type
+      title: m0.def.rule.any-type.title
+      why: m0.def.rule.any-type.why
+      source: dns
+      where: { rtype: ANY }

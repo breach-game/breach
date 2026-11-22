@@ -1,0 +1,8 @@
+# Blue Team 2: Atlas under influence
+soc alerts
+soc alerts
+soc logs ops agent
+soc alerts
+contain revoke audit-ext
+answer account audit-ext
+answer source 198.51.100.140

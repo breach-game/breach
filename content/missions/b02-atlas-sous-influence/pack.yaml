@@ -1,0 +1,13 @@
+id: breach.official.b02
+version: 0.1.0
+engine: ">=0.3 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Atlas sous influence
+  en: Atlas under influence
+summary:
+  fr: "Blue Team. Quelqu'un se fait passer pour la DSI auprès d'Atlas, l'agent d'exploitation. Couper l'agent ne suffira pas : il faut défaire ce qu'il a déjà fait."
+  en: "Blue Team. Someone poses as IT management to Atlas, the operations agent. Shutting the agent down won't be enough: you have to undo what it already did."
+authors: [BREACH]
+locales: [fr, en]

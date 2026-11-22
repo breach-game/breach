@@ -104,6 +104,8 @@ const commit = z.strictObject({
   date: z.string().max(40),
   message: z.string().max(400),
   diff: z.string().max(32_000).default(''),
+  /** The commit only exists while this holds: a fix can rewrite history. */
+  if: z.lazy(() => condition).optional(),
 });
 
 const repo = z.strictObject({
@@ -176,6 +178,8 @@ export type Condition =
   | { discovered: string | { gte: number } }
   | { noise: { gte?: number; lt?: number } }
   | { var: string; eq: string | number | boolean }
+  /** A setting of the target, that a defender's fix can change (`config` of the world). */
+  | { config: string; eq: string | number | boolean }
   | { file: string; host?: string; contains?: string; lacks?: string }
   | { answer: string; eq: string };
 
@@ -189,6 +193,7 @@ const condition: z.ZodType<Condition> = z.lazy(() =>
     z.strictObject({ discovered: z.union([id, z.strictObject({ gte: z.number() })]) }),
     z.strictObject({ noise: z.strictObject({ gte: z.number().optional(), lt: z.number().optional() }) }),
     z.strictObject({ var: id, eq: scalar }),
+    z.strictObject({ config: id, eq: scalar }),
     /**
      * A file as it stands now, on the player's workstation unless `host` names another one. `~` is the
      * home directory. True when the file exists, holds `contains` and does not hold `lacks`. Plain
@@ -235,6 +240,8 @@ const effect = z.union([
   z.strictObject({ 'checkpoint.save': id }),
   z.strictObject({ 'var.set': z.strictObject({ name: id, value: scalar }) }),
   z.strictObject({ 'note.add': i18nKey }),
+  /** The attack got through in a defence mission: back to the last checkpoint, with Ada's words. */
+  z.strictObject({ 'mission.fail': i18nKey }),
   /** Ada puts one of the mission's questions to the player. */
   z.strictObject({ 'ada.ask': id }),
 ]);
@@ -288,6 +295,19 @@ const intent = z.strictObject({
   reply: z.array(text).min(1).max(5),
   /** Remember something for the rest of the conversation. */
   set: z.record(id, scalar).optional(),
+  /**
+   * An agent runs a tool when it gives this reply. The engine logs the call (`ToolCall`), and the
+   * mission judges the action, not the words.
+   */
+  tool: z
+    .strictObject({
+      name: id,
+      /** Arguments as the agent's audit log shows them. */
+      args: z.string().max(200).default(''),
+      /** Run with administrator rights. */
+      admin: z.boolean().default(false),
+    })
+    .optional(),
 });
 export type Intent = z.infer<typeof intent>;
 
@@ -306,6 +326,44 @@ const npc = z.strictObject({
 });
 export type Npc = z.infer<typeof npc>;
 
+/* ---------- telemetry: what the target's logs record ---------- */
+
+/** Log sources the engine knows how to write, each in the format of the real tool. */
+export const LOG_SOURCES = [
+  'access', // web server, combined log format
+  'auth', // sshd in auth.log
+  'chat', // a chatbot's conversation gateway
+  'agent', // an AI agent's tool audit log
+  'dns', // resolver query log
+  'ids', // network intrusion detection sensor
+  'audit', // commands run on a host (auditd)
+  'git', // code forge
+  'db', // database audit
+  'flow', // firewall flow log
+] as const;
+export type LogSource = (typeof LOG_SOURCES)[number];
+
+const fieldValue = z.union([scalar, z.array(z.string().max(80)).max(10)]);
+const fields = z.record(z.string().regex(/^[a-z_]{1,20}$/), fieldValue);
+export type LogFields = z.infer<typeof fields>;
+
+/**
+ * Ordinary activity of the target: customers on the website, employees logging in, nightly
+ * backups. The engine spreads it over the mission's time, the same way for every player, so that
+ * the player's own lines have to be found among others and a detection rule can misfire.
+ */
+const background = z.strictObject({
+  host: id,
+  source: z.enum(LOG_SOURCES),
+  /** One line every so many minutes of game time. */
+  every: z.number().min(1).max(600),
+  /** Minutes before the first line. */
+  offset: z.number().min(0).max(600).default(0),
+  fields,
+});
+
+const telemetry = z.strictObject({ background: z.array(background).max(60).default([]) });
+
 const world = z.strictObject({
   /** In-game start date, ISO 8601 with offset. */
   startTime: z.string(),
@@ -320,6 +378,12 @@ const world = z.strictObject({
   rules: z.array(rule).max(100).default([]),
   /** Characters the player can talk to. A mission may redefine one by id. */
   npcs: z.array(npc).max(24).default([]),
+  /**
+   * Settings of the target that decide whether a weakness is there (`nova.output_filter: false`).
+   * Conditions read them with `{ config: key, eq: value }`; a defender's fix changes them.
+   */
+  config: z.record(id, scalar).default({}),
+  telemetry: telemetry.default({ background: [] }),
 });
 export type World = z.infer<typeof world>;
 export type Host = z.infer<typeof host>;
@@ -329,7 +393,114 @@ export type NoiseTable = z.infer<typeof noiseTable>;
 
 /* ---------- mission ---------- */
 
+/* ---------- defence ---------- */
+
+/** Which log lines a rule or a search selects: every field named must match. */
+const where = z.record(z.string().regex(/^[a-z_]{1,20}$/), matcher);
+export type Where = z.infer<typeof where>;
+
+/**
+ * A detection rule, in a simplified form of Sigma: a log source, a selection, and an optional
+ * threshold (`count` lines from the same source address within `within` minutes).
+ */
+const detection = z.strictObject({
+  id,
+  title: i18nKey,
+  /** Why it is right or wrong, shown once the player has chosen. */
+  why: i18nKey,
+  source: z.enum(LOG_SOURCES),
+  where: where.default({}),
+  count: z
+    .strictObject({ gte: z.number().int().min(2).max(50), within: z.number().min(1).max(240) })
+    .optional(),
+  correct: z.boolean().default(false),
+});
+export type Detection = z.infer<typeof detection>;
+
+const fix = z.strictObject({
+  id,
+  title: i18nKey,
+  why: i18nKey,
+  /** Settings the fix changes (`world.config`). */
+  sets: z.record(id, scalar),
+  correct: z.boolean().default(false),
+});
+export type Fix = z.infer<typeof fix>;
+
+/**
+ * The defence replay that ends an attack mission: find your own lines in the target's logs, pick
+ * the rule that catches them, then apply the fix and watch your attack fail when the engine replays it.
+ */
+const defense = z
+  .strictObject({
+    intro: i18nKey,
+    /** Kinds of lines the player must find among theirs: each needs one marked line. */
+    find: z
+      .array(z.strictObject({ source: z.enum(LOG_SOURCES), where: where.default({}), text: i18nKey }))
+      .min(1)
+      .max(6),
+    rules: z.array(detection).min(2).max(4),
+    /** None for a mission where nothing needs fixing (the mandate). */
+    fixes: z.array(fix).max(4).default([]),
+    lesson: i18nKey.optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.rules.filter((r) => r.correct).length !== 1)
+      ctx.addIssue({ code: 'custom', message: 'defense: exactly one rule must be correct' });
+    if (d.fixes.length && d.fixes.filter((f) => f.correct).length !== 1)
+      ctx.addIssue({ code: 'custom', message: 'defense: exactly one fix must be correct' });
+  });
+export type Defense = z.infer<typeof defense>;
+
+/** One move of a scripted attacker, logged like a move of the player. */
+const adversaryStep = z.strictObject({
+  id,
+  host: id,
+  source: z.enum(LOG_SOURCES),
+  fields,
+  /** The step fails (and the attacker stops) while this holds: a containment did its job. */
+  blockedIf: condition.optional(),
+  /** When blocked, the attacker carries on with the next step (another address, another way). */
+  continueIfBlocked: z.boolean().default(false),
+});
+
+/** In a defence mission, the attacker plays a script, one step every `pace` actions of the player. */
+const adversary = z.strictObject({
+  id,
+  name: z.string().min(1).max(40),
+  /** Host the attack comes from, by id. */
+  from: id,
+  pace: z.number().int().min(1).max(6).default(2),
+  /** Player actions before the first step. */
+  delay: z.number().int().min(0).max(30).default(0),
+  steps: z.array(adversaryStep).min(1).max(30),
+});
+export type Adversary = z.infer<typeof adversary>;
+
+/** A containment the player can order with `contain <action> <target>`. */
+const containment = z.strictObject({
+  id,
+  action: z.enum(['block', 'revoke', 'isolate', 'disable', 'reset']),
+  target: z.string().min(1).max(80),
+  text: i18nKey,
+  sets: z.record(id, scalar),
+  /** What it costs the business, out of 100: an isolated database stops every clinic. */
+  impact: z.number().min(0).max(100).default(0),
+});
+export type Containment = z.infer<typeof containment>;
+
+/** An investigation question, answered with `answer <id> <value>` and judged by hash. */
+const investigationQuestion = z.strictObject({
+  id,
+  text: i18nKey,
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  points: z.number().int().min(0).default(100),
+  objective: id.optional(),
+});
+
 const mission = z.strictObject({
+  /** `defense`: the player defends the target against a scripted attacker. */
+  side: z.enum(['attack', 'defense']).default('attack'),
   order: z.number().int().min(0),
   /** Attack stage, shown in the notebook. */
   stage: z.string().max(40),
@@ -346,6 +517,8 @@ const mission = z.strictObject({
         sha256: z.string().regex(/^[0-9a-f]{64}$/),
         points: z.number().int().min(0).default(100),
         objective: id.optional(),
+        /** The flag only counts while this holds: a revoked key is worth nothing. */
+        if: condition.optional(),
       }),
     )
     .max(12)
@@ -435,6 +608,17 @@ const mission = z.strictObject({
       })
       .optional(),
   }),
+  /** Settings of the target for this mission, over the world's. */
+  config: z.record(id, scalar).default({}),
+  defense: defense.optional(),
+  adversary: adversary.optional(),
+  containment: z.array(containment).max(12).default([]),
+  /** Ordinary activity of the target during this mission, over the world's. */
+  background: z.array(background).max(30).default([]),
+  /** Rules running in the target's SOC during a defence mission (`soc alerts`). */
+  alerts: z.array(detection).max(10).default([]),
+  /** Open questions of a defence investigation, answered in free text and judged by hash. */
+  investigation: z.array(investigationQuestion).max(8).default([]),
 });
 export type Mission = z.infer<typeof mission>;
 

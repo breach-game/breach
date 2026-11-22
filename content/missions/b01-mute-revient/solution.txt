@@ -1,0 +1,8 @@
+# Blue Team 1: Mute returns
+soc sources
+soc alerts
+soc alerts
+soc logs git auth
+contain block 10.13.0.99
+answer entry nm-deploy
+answer source 10.13.0.99

@@ -1,3 +1,4 @@
+import { defenseCommands } from './defense.ts';
 import { fileCommands } from './files.ts';
 import { gameCommands } from './gamecmds.ts';
 import { gitCommands } from './git.ts';
@@ -14,5 +15,6 @@ for (const c of [
   ...networkCommands,
   ...gitCommands,
   ...systemCommands,
+  ...defenseCommands,
 ])
   commands.set(c.name, c);

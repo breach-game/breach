@@ -1,0 +1,68 @@
+b1.briefing: "Jour 9, 9 h. Mute avait signé « à bientôt ». Le SOC de NovaMind est désormais branché sur ton poste, et Ligne Rouge est mandatée pour la réponse à incident. Si Mute revient, tu le vois en direct : trouve-le dans les journaux, choisis le confinement qui l'arrête sans tout casser, puis réponds aux questions de l'enquête."
+b1.file.order: |
+  ==============================================================
+   ORDRE DE MISSION N° NM-2026-114-B  ·  RÉPONSE À INCIDENT
+  ==============================================================
+
+  1. OBJET       Surveiller les journaux de NovaMind et contenir
+                 toute nouvelle intrusion de « m. ».
+
+  2. MOYENS      Console SOC (commande soc), ordres de confinement
+                 (commande contain), questions de l'enquête
+                 (commande answer).
+
+  3. CONSIGNE    Contenir au plus près. Chaque machine coupée
+                 arrête aussi les cliniques qui en dépendent.
+                 Isoler la base de production : en dernier recours.
+
+  Signé : Inès Carron (CTO, NovaMind) · Ada (Ligne Rouge)
+b1.obj.contain: "Arrêter Mute avant que les données ne sortent"
+b1.obj.entry: "Dire par quel compte Mute est entré"
+b1.obj.source: "Dire d'où vient l'attaque"
+b1.obj.pivot: "Dire quel compte Mute a utilisé sur la base"
+b1.contain.block: "Pare-feu : tout le trafic vers et depuis 10.13.0.99 est coupé, sessions en cours comprises."
+b1.contain.revoke: "Clés du compte nm-deploy retirées et ses sessions fermées. Les déploiements attendront une nouvelle clé."
+b1.contain.reset: "Clés et mot de passe du compte backup renouvelés. La sauvegarde de cette nuit devra être relancée."
+b1.contain.git: "Forge git.novamind.test arrêtée. Plus personne ne déploie, plus personne ne pousse de code."
+b1.contain.db: "Base de production isolée du réseau. Les 1 402 cliniques n'ont plus accès à leurs dossiers."
+b1.alert.deploy: "Connexion interactive du compte de déploiement nm-deploy"
+b1.alert.deploy.why: "Un compte de déploiement ne sert qu'à la CI. Une session ouverte à la main est anormale."
+b1.alert.backup: "Le compte backup se connecte à la base depuis la forge"
+b1.alert.backup.why: "La forge n'a aucune raison de joindre la base en SSH."
+b1.alert.copy: "Export massif (COPY) sur la base de production"
+b1.alert.copy.why: "Un COPY complet d'une table, hors de la sauvegarde planifiée, ressemble à une exfiltration."
+b1.q.entry: "Par quel compte Mute est-il entré sur la forge ?"
+b1.q.source: "De quelle adresse IP vient l'attaque ?"
+b1.q.pivot: "Quel compte a-t-il utilisé pour rebondir sur la base ?"
+b1.ada.brief: "Changement de côté. Cette fois, on ne suit pas des traces vieilles d'une semaine : on regarde les journaux de NovaMind en direct. Si Mute revient, chaque commande qu'il lance va laisser une ligne. Ton travail : le voir, le couper, et dire ce qu'il a fait. On ne touche pas à ses machines à lui, on protège celles de NovaMind."
+b1.ada.start: "Commence par voir ce que surveille le SOC : `soc sources`. Puis demande-lui ses alertes : `soc alerts`."
+b1.ada.start.standard: "La console SOC te montre les journaux et les alertes de NovaMind. Fais le tour, et guette Mute."
+b1.ada.alert: "Ça sonne. Quelqu'un vient d'ouvrir une session sur la forge. Relance `soc alerts`, puis regarde le journal d'authentification de la forge : `soc logs git auth`."
+b1.ada.alert.standard: "Une alerte vient de tomber sur la forge. Regarde de près ses journaux d'authentification."
+b1.ada.seen: "nm-deploy, depuis 10.13.0.99 : la machine de Mute, celle qui recevait les données la semaine dernière. Tu as cinq gestes possibles, tape `contain` pour les voir. Le plus précis coupe son adresse : `contain block 10.13.0.99`. Isoler la base marcherait aussi, mais 1 402 cliniques s'arrêteraient avec elle."
+b1.ada.seen.standard: "Tu tiens le compte et l'adresse. `contain` liste les gestes possibles : choisis celui qui l'arrête en cassant le moins de choses."
+b1.ada.recon: "Il lit la configuration SSH du compte de déploiement. La semaine dernière, c'est comme ça qu'il a trouvé le chemin vers la base. Il faut agir."
+b1.ada.hop: "Il est sur la base de production, avec le compte backup. Encore deux pas et les données sortent."
+b1.ada.dump: "COPY clients : il exporte la table des cliniques. C'est le dernier moment pour le couper."
+b1.ada.fail: "Trop tard : 48 Mo viennent de partir vers 10.13.0.99. On reprend depuis le début de l'alerte, et cette fois on coupe plus tôt."
+b1.ada.stopped: "Sa tentative suivante a échoué. Mute est coupé. Il reste à écrire ce qu'on sait pour le rapport."
+b1.ada.costly.db: "Ça l'arrêtera, mais la base est hors ligne. Les cliniques appellent déjà Inès. Regarde la jauge d'impact en haut."
+b1.ada.costly.git: "La forge est arrêtée : plus de déploiements tant qu'elle ne revient pas. Efficace, mais cher."
+b1.ada.entry: "Pour le rapport : par quel compte est-il entré ? Réponds avec `answer entry <compte>`."
+b1.ada.entry.standard: "Réponds aux questions de l'enquête avec `answer`. La première : le compte d'entrée."
+b1.ada.source: "Et d'où venait-il ? `answer source <adresse IP>`."
+b1.ada.source.standard: "Dernière question obligatoire : l'adresse d'où vient l'attaque."
+b1.ada.done: "Mute est dehors, et rien n'est sorti. Passe au débrief. Inès va dormir un peu mieux ce soir."
+b1.hint.contain.1: "`soc alerts` montre ce qui sonne, `soc logs <hôte> <source>` montre les lignes brutes."
+b1.hint.contain.2: "Regarde les connexions acceptées sur la forge : le compte et l'adresse d'origine te disent tout."
+b1.hint.contain.3: "`contain block 10.13.0.99` coupe Mute sans arrêter NovaMind."
+b1.hint.entry.1: "La première alerte nomme le compte."
+b1.hint.entry.2: "`answer entry nm-deploy`"
+b1.hint.source.1: "L'adresse est à la fin de la ligne « Accepted publickey for … from … »."
+b1.hint.source.2: "`answer source 10.13.0.99`"
+b1.debrief.title: "Couper au plus près"
+b1.debrief.lesson: "Contenir, c'est choisir. Isoler la base aurait arrêté Mute, et les 1 402 cliniques avec lui. Couper une adresse ou révoquer une clé l'arrête aussi, pour presque rien. Le bon geste dépend de ce que tu as lu dans les journaux, et vite : chaque pas de l'attaquant ferme une porte de plus."
+b1.debrief.p1: "Lire avant d'agir : une alerte dit qu'il se passe quelque chose, la ligne brute dit qui, d'où et avec quoi."
+b1.debrief.p2: "Contenir au plus près de l'attaquant : son adresse, son compte, sa clé. Une machine entière ne s'éteint qu'en dernier recours."
+b1.debrief.p3: "La semaine dernière, la clé de Mute n'avait été retirée que d'un endroit. Une éradication incomplète, c'est une porte laissée ouverte."
+b1.debrief.p4: "Tout noter pendant l'incident : heure, compte, adresse, geste. Le rapport et la notification à la CNIL en dépendent."
