@@ -1,0 +1,13 @@
+id: breach.official.b03
+version: 0.1.0
+engine: ">=0.3 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: La clé du partenaire
+  en: The partner's key
+summary:
+  fr: "Blue Team. Une clé d'API d'un partenaire a fuité, et quelqu'un parcourt les fiches des cliniques une par une. Bloquer son adresse ? Il en a d'autres."
+  en: "Blue Team. A partner's API key has leaked, and someone is walking through the clinics' records one by one. Block their address? They have others."
+authors: [BREACH]
+locales: [fr, en]

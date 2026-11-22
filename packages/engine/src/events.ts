@@ -8,7 +8,16 @@ export type EventBody =
   | { type: 'MissionStarted'; mission: string }
   /** The most helpful guidance level used so far in the mission: it sets the score bonus. */
   | { type: 'GuidanceChanged'; level: Guidance }
-  | { type: 'CommandRun'; line: string; command: string; args: string[]; cwd: string; dt: number }
+  | {
+      type: 'CommandRun';
+      line: string;
+      command: string;
+      args: string[];
+      cwd: string;
+      dt: number;
+      /** First command of a line the player typed: the unit the defence replay plays again. */
+      input?: boolean;
+    }
   | { type: 'ClockAdvanced'; ms: number }
   | { type: 'CwdChanged'; path: string }
   | { type: 'FileRead'; host: string; path: string }
@@ -18,7 +27,20 @@ export type EventBody =
   | { type: 'Scan'; target: string; intensity: number }
   | { type: 'HostDiscovered'; host: string }
   | { type: 'ServiceDiscovered'; host: string; port: number }
-  | { type: 'HttpRequest'; host: string; path: string; method: string; status: number }
+  | {
+      type: 'HttpRequest';
+      host: string;
+      path: string;
+      method: string;
+      status: number;
+      /** User agent, for the target's access log. */
+      ua?: string;
+      bytes?: number;
+    }
+  /** An AI agent ran one of its tools (in the simulated world). */
+  | { type: 'ToolCall'; agent: string; tool: string; args: string; admin: boolean }
+  /** A setting of the target changed: a defender's fix or a containment. */
+  | { type: 'ConfigPatched'; key: string; value: string | number | boolean; by: string }
   | { type: 'AppOpened'; app: 'browser' | 'editor'; url: string }
   | {
       type: 'ChatSent';
@@ -72,6 +94,28 @@ export type EventBody =
   /** `verify` ran: which of the mission's checks hold now. */
   | { type: 'Verified'; passed: string[]; failed: string[] }
   | { type: 'MissionCompleted'; mission: string; score: number }
+  /* Defence replay at the end of an attack mission. */
+  | { type: 'DefenseStarted'; mission: string }
+  /** The player marked log lines as theirs. `missing` lists the kinds of lines not found yet. */
+  | { type: 'DefenseFound'; marked: string[]; wrong: string[]; missing: number[] }
+  | { type: 'DefenseRuleChosen'; rule: string; correct: boolean }
+  /** A fix was tried: the engine replayed the attack against the fixed target. */
+  | { type: 'DefenseFixApplied'; fix: string; correct: boolean; blocked: boolean }
+  | { type: 'DefenseCompleted'; mission: string; points: number }
+  /* Defence missions. */
+  | {
+      type: 'AdversaryStep';
+      actor: string;
+      step: string;
+      host: string;
+      blocked: boolean;
+      /** A blocked step stops the attacker, unless the step says it tries another way. */
+      stop?: boolean;
+    }
+  | { type: 'Contained'; containment: string; impact: number }
+  | { type: 'AnswerSubmitted'; question: string | null; correct: boolean }
+  /** The attacker reached its goal in a defence mission. */
+  | { type: 'MissionFailed'; key: string }
   /**
    * Missions finished in an earlier save, kept with their scores: the save could not be replayed
    * after an update changed its packs, or the player imported a progress file. Always the first event.

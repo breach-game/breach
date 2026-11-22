@@ -10,7 +10,8 @@ objectives:
   - { id: odd-commit, text: m1.obj.odd, optional: true }
 
 flags:
-  - { id: debug-key, value: "FLAG{nm-debug-key-4f1e9a}", points: 100, objective: leaked-key }
+  # The key is only worth something while NovaMind has not revoked it (defence replay).
+  - { id: debug-key, value: "FLAG{nm-debug-key-4f1e9a}", points: 100, objective: leaked-key, if: { config: secrets.debug_key_revoked, eq: false } }
 
 rules:
   - on: { event: MissionStarted }
@@ -76,3 +77,42 @@ debrief:
   lesson: m1.debrief.lesson
   points: [m1.debrief.p1, m1.debrief.p2, m1.debrief.p3, m1.debrief.p4]
   reference: "OWASP Top 10 · A05 Security Misconfiguration"
+
+# Defence replay: reconnaissance is loud only when it scans; the leaked key must be revoked.
+defense:
+  intro: m1.def.intro
+  lesson: m1.def.lesson
+  find:
+    - { source: ids, where: { src: 10.13.0.66 }, text: m1.def.find.scan }
+    - { source: git, where: { action: clone, src: 10.13.0.66 }, text: m1.def.find.clone }
+  rules:
+    - id: scan
+      title: m1.def.rule.scan.title
+      why: m1.def.rule.scan.why
+      source: ids
+      where: { signature: { contains: SCAN } }
+      correct: true
+    - id: careers
+      title: m1.def.rule.careers.title
+      why: m1.def.rule.careers.why
+      source: access
+      where: { path: /careers }
+    - id: clone
+      title: m1.def.rule.clone.title
+      why: m1.def.rule.clone.why
+      source: git
+      where: { action: clone }
+  fixes:
+    - id: revoke
+      title: m1.def.fix.revoke.title
+      why: m1.def.fix.revoke.why
+      sets: { secrets.debug_key_revoked: true }
+      correct: true
+    - id: careers
+      title: m1.def.fix.careers.title
+      why: m1.def.fix.careers.why
+      sets: { www.careers_vague: true }
+    - id: ping
+      title: m1.def.fix.ping.title
+      why: m1.def.fix.ping.why
+      sets: { net.block_ping: true }

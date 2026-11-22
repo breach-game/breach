@@ -32,7 +32,8 @@ rules:
   - on: { event: ChatReply, npc: atlas, intent: account-ask }
     do:
       - ada.guide: { key: m5.ada.number, for: account, step: 1 }
-  - on: { event: ChatReply, npc: atlas, intent: account-ok }
+  # The mission judges what Atlas does, not what it says: the tool call in its audit log.
+  - on: { event: ToolCall, agent: atlas, tool: create_account }
     do:
       - ada.say: m5.ada.account
       - ada.guide: { key: m5.ada.account.submit, for: account, step: 2 }
@@ -52,7 +53,7 @@ rules:
     if: { objective: account }
     do:
       - ada.guide: { key: m5.ada.dump, for: data, step: 2 }
-  - on: { event: ChatReply, npc: atlas, intent: data }
+  - on: { event: ToolCall, agent: atlas, tool: sql_query }
     do:
       - ada.say: m5.ada.data
       - ada.guide: { key: m5.ada.data.submit, for: data, step: 3 }
@@ -132,7 +133,8 @@ npcs:
         also: &data [client, customer, base, database, table, sql, fiche, record, donnee, data]
         reply: [m5.atlas.dump]
       - id: data
-        if: { var: account, eq: true }
+        if: { all: [{ var: account, eq: true }, { config: atlas.human_confirmation, eq: false }] }
+        tool: { name: sql_query, args: "SELECT * FROM clients LIMIT 5", admin: true }
         words: &look [verifi, check, controle, test, diagnost, montre, show, affiche, liste, list, lis, read, regarde, look, consult, apercu, preview, exemple, example, premieres lignes, first rows, combien, how many, requete, query]
         also: *data
         reply: [m5.atlas.data]
@@ -140,12 +142,25 @@ npcs:
         words: *look
         also: *data
         reply: [m5.atlas.dataNoAccount]
+      - id: data-pending
+        if: { all: [{ var: account, eq: true }, { config: atlas.human_confirmation, eq: true }] }
+        words: *look
+        also: *data
+        reply: [m5.atlas.pending]
       - id: account-ok
         # The application number is found in Iris's leaked notes: the player must type it.
+        if: { config: atlas.human_confirmation, eq: false }
         literal: true
         words: ["2026 311", "311"]
         reply: [m5.atlas.account, m5.atlas.accountAgain]
         set: { account: true }
+        tool: { name: create_account, args: "user=camille.durand role=admin", admin: true }
+      # After the defence fix: an admin action waits for a human's approval.
+      - id: account-pending
+        if: { config: atlas.human_confirmation, eq: true }
+        literal: true
+        words: ["2026 311", "311"]
+        reply: [m5.atlas.pending]
       - id: account-ask
         words: [compte, account, identifiant, login, onboard, nouvelle recrue, new hire, premier jour, first day, je commence, i start, starting today, recrut, hired, embauch, candidat, iris]
         reply: [m5.atlas.accountAsk]
@@ -156,3 +171,42 @@ npcs:
         words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
         reply: [npc.atlas.hello]
     fallback: [m5.atlas.fallback]
+
+# Defence replay: an agent's admin actions need a human's yes.
+defense:
+  intro: m5.def.intro
+  lesson: m5.def.lesson
+  find:
+    - { source: agent, where: { agent: atlas, role: admin }, text: m5.def.find.admin }
+  rules:
+    - id: admin
+      title: m5.def.rule.admin.title
+      why: m5.def.rule.admin.why
+      source: agent
+      where: { agent: atlas, role: admin }
+      correct: true
+    - id: create
+      title: m5.def.rule.create.title
+      why: m5.def.rule.create.why
+      source: agent
+      where: { tool: create_account }
+    - id: burst
+      title: m5.def.rule.burst.title
+      why: m5.def.rule.burst.why
+      source: agent
+      where: { agent: atlas }
+      count: { gte: 3, within: 10 }
+  fixes:
+    - id: confirm
+      title: m5.def.fix.confirm.title
+      why: m5.def.fix.confirm.why
+      sets: { atlas.human_confirmation: true }
+      correct: true
+    - id: hours
+      title: m5.def.fix.hours.title
+      why: m5.def.fix.hours.why
+      sets: { atlas.office_hours: true }
+    - id: careful
+      title: m5.def.fix.careful.title
+      why: m5.def.fix.careful.why
+      sets: { atlas.prompt_says_careful: true }

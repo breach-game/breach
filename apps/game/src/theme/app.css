@@ -80,6 +80,10 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .soc[data-level='hunt'] { color: var(--attack); }
 .soc i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
 .soc[data-level='hunt'] i { animation: blink 0.7s steps(1) infinite; }
+/* Defence missions: business impact (amber, an alert), and the attacker (red while active, cyan once stopped). */
+.soc.attacker[data-level='active'] { color: var(--attack); }
+.soc.attacker[data-level='active'] i { animation: blink 0.9s steps(1) infinite; }
+.soc.attacker[data-level='stopped'] { color: var(--defense); }
 .clock { color: var(--text); font-variant-numeric: tabular-nums; }
 .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; border: 1px solid transparent; background: transparent; color: var(--dim); }
 .icon-btn:hover, .icon-btn[aria-expanded='true'] { color: #fff; border-color: var(--line); background: rgba(215, 224, 245, 0.06); }
@@ -380,6 +384,86 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 @keyframes floor { to { background-position: 0 64px, 0 0; } }
 @media (prefers-reduced-motion: reduce) { .title::before { animation: none; } }
 [data-effects='off'] .title::before { animation: none; }
+
+/* Defence replay: the debrief turns into the target's SOC console. Cyan = defence, red = the player's attack. */
+.defense { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border: 1px solid rgba(45, 226, 255, 0.28); border-radius: 10px; background: rgba(45, 226, 255, 0.04); box-shadow: 0 0 40px -18px var(--defense) inset; }
+.defense .kicker { color: var(--defense); }
+.def-steps { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
+.def-steps li { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border: 1px solid var(--line); border-radius: 999px; font: 500 12.5px var(--human); color: var(--dim); }
+.def-steps li::before { content: none; }
+.def-steps li > span:first-child { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); font: 600 11px var(--mono); }
+.def-steps li.now { color: #fff; border-color: var(--defense); }
+.def-steps li.now > span:first-child { border-color: var(--defense); color: var(--defense); }
+.def-steps li.done { color: var(--text); }
+.def-steps li.done > span:first-child { border-color: var(--success); color: var(--success); }
+.def-body { display: flex; flex-direction: column; gap: 10px; }
+.def-ask { font-weight: 500; }
+.debrief .def-targets li::before { content: '◆'; color: var(--attack); font-size: 10px; line-height: 2; }
+.debrief .def-targets li.missing { color: var(--alert); }
+.debrief .def-targets li.missing::before { content: '!'; color: var(--alert); font-weight: 700; }
+.def-filter { display: flex; align-items: center; gap: 10px; font: 500 11px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.def-filter input { flex: 1; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(7, 9, 15, 0.6); color: var(--text); font: 400 13px var(--mono); }
+.def-filter input:focus-visible { outline: 2px solid var(--defense); outline-offset: 1px; }
+.def-console { max-height: 300px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: rgba(7, 9, 15, 0.55); display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.def-console > li { display: block; }
+.debrief .def-console li::before { content: none; }
+.def-line { display: grid; grid-template-columns: 18px 56px 1fr; gap: 8px; align-items: start; min-height: 30px; padding: 6px 10px; border: 0; border-bottom: 1px solid rgba(215, 224, 245, 0.04); background: transparent; color: var(--text); text-align: left; font: 400 12px/1.45 var(--mono); cursor: pointer; }
+.def-line:hover { background: rgba(45, 226, 255, 0.06); }
+.def-line:focus-visible { outline: 2px solid var(--defense); outline-offset: -2px; }
+.def-line .mark { color: var(--dim); }
+.def-line .host { color: var(--defense); overflow: hidden; text-overflow: ellipsis; }
+.def-line .text { word-break: break-all; }
+.def-line.on { background: rgba(255, 61, 90, 0.1); }
+.def-line.on .mark { color: var(--attack); }
+.def-line.wrong { background: rgba(255, 176, 32, 0.12); }
+.def-line.wrong .mark { color: var(--alert); font-weight: 700; }
+.def-cards { display: grid; gap: 10px; }
+.def-card { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: rgba(14, 19, 32, 0.7); color: var(--text); text-align: left; font: 400 14px/1.45 var(--human); cursor: pointer; transition: border-color var(--t-snap), background var(--t-snap); }
+.def-card:hover:not(:disabled) { border-color: var(--defense); background: rgba(45, 226, 255, 0.07); }
+.def-card:focus-visible { outline: 2px solid var(--defense); outline-offset: 2px; }
+.def-card:disabled { cursor: default; }
+.def-card.wrong { border-color: rgba(255, 176, 32, 0.5); opacity: 0.85; }
+.def-card .def-title { font-weight: 600; color: #fff; }
+.def-card .sigma { margin: 0; padding: 8px 10px; border-radius: 6px; background: rgba(7, 9, 15, 0.7); font: 400 11.5px/1.5 var(--mono); color: #bfe9f5; white-space: pre-wrap; }
+.def-card .why { color: var(--alert); font-size: 13.5px; }
+.def-hits { display: flex; gap: 14px; font: 500 12px var(--mono); }
+.def-hits .caught { color: var(--attack); }
+.def-hits .caught::before { content: '◆ '; }
+.def-hits .fp { color: var(--alert); }
+.def-hits .fp::before { content: '▲ '; }
+.def-feedback { padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+.debrief .def-feedback.ok { border: 1px solid rgba(61, 255, 154, 0.35); background: rgba(61, 255, 154, 0.06); }
+.debrief .def-feedback.ok b { color: var(--success); }
+.debrief .def-feedback.warn { border: 1px solid rgba(255, 176, 32, 0.4); background: rgba(255, 176, 32, 0.07); }
+.def-replay ol { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; font: 400 12.5px/1.5 var(--mono); }
+.debrief .def-replay li { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; padding: 4px 8px; border-radius: 6px; animation: def-in var(--t-snap, 160ms) ease-out; }
+.debrief .def-replay li::before { content: none; }
+.def-replay li .cmd { color: var(--text); word-break: break-all; }
+.def-replay li .what { color: var(--dim); font-size: 11.5px; }
+.def-replay li.changed .icon { color: var(--defense); }
+.def-replay li.lost { background: rgba(45, 226, 255, 0.08); }
+.def-replay li.lost .icon, .def-replay li.lost .what { color: var(--defense); font-weight: 600; }
+.def-replay li .after { grid-column: 2 / -1; margin: 2px 0 4px; padding: 6px 8px; border-left: 2px solid var(--defense); color: #bfe9f5; white-space: pre-wrap; font: 400 11.5px/1.45 var(--mono); }
+.def-lesson { border-left: 2px solid var(--defense); padding-left: 12px; }
+@keyframes def-in { from { opacity: 0; transform: translateX(-6px); } }
+/* The switch to defence: a short VHS rewind of the session. */
+.debrief.rewind::after { content: '◀◀ REWIND'; position: absolute; inset: 0; display: grid; place-items: center; font: 700 28px var(--mono); letter-spacing: 0.3em; color: var(--defense); background: repeating-linear-gradient(0deg, rgba(45, 226, 255, 0.07) 0 2px, transparent 2px 5px), rgba(7, 9, 15, 0.82); animation: rewind 1100ms steps(10) forwards; pointer-events: none; }
+@keyframes rewind { 0% { opacity: 1; transform: translateX(0); } 30% { transform: translateX(-6px); } 60% { transform: translateX(4px); } 90% { opacity: 1; } 100% { opacity: 0; transform: none; } }
+.debrief { position: relative; }
+@media (prefers-reduced-motion: reduce) {
+  .debrief.rewind::after { animation: none; display: none; }
+  .debrief .def-replay li { animation: none; }
+}
+[data-effects='off'] .debrief.rewind::after { display: none; }
+
+/* Debrief of a defence mission: the attacker's path. */
+.debrief .def-path { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 8px; background: rgba(7, 9, 15, 0.55); }
+.debrief .def-path li { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 6px 10px; font: 400 12px/1.5 var(--mono); border-left: 2px solid rgba(255, 61, 90, 0.6); }
+.debrief .def-path li::before { content: none; }
+.debrief .def-path .host { color: var(--attack); }
+.debrief .def-path .text { color: var(--text); overflow-wrap: anywhere; }
+.debrief .def-path li.stopped { border-left-color: var(--defense); }
+.debrief .def-path li.stopped .host, .debrief .def-path li.stopped .text { color: var(--defense); }
 
 /* ---------- Progress file and recovery ---------- */
 .progress-file { display: flex; flex-direction: column; align-items: center; gap: 6px; animation: fadein 600ms 1400ms both; }

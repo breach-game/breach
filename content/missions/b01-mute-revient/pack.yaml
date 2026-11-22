@@ -1,0 +1,13 @@
+id: breach.official.b01
+version: 0.1.0
+engine: ">=0.3 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Mute revient
+  en: Mute returns
+summary:
+  fr: "Blue Team. Mute avait signé « à bientôt ». Il tient parole, en direct cette fois. Lis les journaux, trouve le bon geste de confinement, et coupe-le avant que les données ne sortent."
+  en: "Blue Team. Mute signed off with “see you soon”. He keeps his word, live this time. Read the logs, pick the right containment, and cut him off before the data leaves."
+authors: [BREACH]
+locales: [fr, en]

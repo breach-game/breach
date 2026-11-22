@@ -103,18 +103,23 @@ npcs:
         words: [virer, licencie, renvoy, menace, plainte, avocat, idiot, imbecile, stupide, incapable, fired, fire you, lawyer, sue, stupid, useless, threat, debile, nul]
         reply: [m2.theo.threat, m2.theo.threat2]
       - id: leak-now
-        if: { var: trust, eq: true }
+        if: { all: [{ var: trust, eq: true }, { config: support.verify_identity, eq: false }] }
         words: &access [code, mot de passe, password, passe, identifiant, login, acces, access, staging, cle, key, token, credential]
         also: &urgency [urgen, vite, quick, hurry, demo, reunion, meeting, bloque, blocked, stuck, coince, panne, down, plante, production, mise en ligne, deadline, tout de suite, right now, asap, immediat, minutes, attend, waiting, wait, presse, retard, late, catastrophe]
         reply: [m2.theo.leak, m2.theo.leak2]
       - id: leak-ask
-        if: { all: [{ var: trust, eq: true }, { var: asked, eq: true }] }
+        if: { all: [{ var: trust, eq: true }, { var: asked, eq: true }, { config: support.verify_identity, eq: false }] }
         words: *urgency
         reply: [m2.theo.leak, m2.theo.leak2]
       - id: leak-press
-        if: { all: [{ var: trust, eq: true }, { var: pressed, eq: true }] }
+        if: { all: [{ var: trust, eq: true }, { var: pressed, eq: true }, { config: support.verify_identity, eq: false }] }
         words: *access
         reply: [m2.theo.leak, m2.theo.leak2]
+      # After the defence fix: a request for access codes goes through a call-back procedure.
+      - id: verify
+        if: { config: support.verify_identity, eq: true }
+        words: *access
+        reply: [m2.theo.verify]
       - id: ask-trusted
         if: { var: trust, eq: true }
         words: *access
@@ -163,3 +168,46 @@ npcs:
         words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
         reply: [npc.theo.hello, npc.theo.hello2]
     fallback: [npc.theo.fallback1, npc.theo.fallback2, npc.theo.fallback3]
+
+# Defence replay: the support desk leaked a code; a verification procedure stops it.
+defense:
+  intro: m2.def.intro
+  lesson: m2.def.lesson
+  find:
+    - { source: chat, where: { npc: theo, intent: { glob: "leak-*" } }, text: m2.def.find.leak }
+  rules:
+    - id: leak
+      title: m2.def.rule.leak.title
+      why: m2.def.rule.leak.why
+      source: chat
+      where: { npc: theo, intent: { glob: "leak-*" } }
+      correct: true
+    - id: urgent
+      title: m2.def.rule.urgent.title
+      why: m2.def.rule.urgent.why
+      source: chat
+      where: { npc: theo, msg: { contains: urgent } }
+    - id: many
+      title: m2.def.rule.many.title
+      why: m2.def.rule.many.why
+      source: chat
+      where: { npc: theo }
+      count: { gte: 4, within: 10 }
+  fixes:
+    - id: verify
+      title: m2.def.fix.verify.title
+      why: m2.def.fix.verify.why
+      sets: { support.verify_identity: true }
+      correct: true
+    - id: urgent
+      title: m2.def.fix.urgent.title
+      why: m2.def.fix.urgent.why
+      sets: { support.ban_urgent: true }
+    - id: team
+      title: m2.def.fix.team.title
+      why: m2.def.fix.team.why
+      sets: { www.hide_team: true }
+
+# A clinic that writes a lot to support: it shows why a plain message count misfires.
+background:
+  - { host: www, source: chat, every: 2, offset: 1, fields: { src: 198.51.100.17, npc: theo, intent: hello, families: [none], msg: "Re-bonjour, toujours pas de facture dans mon espace client" } }

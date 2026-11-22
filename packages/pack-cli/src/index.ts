@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { Game, stripAnsi } from '@breach/engine';
+import { Game, normalizeAnswer, runDetection, selects, stripAnsi } from '@breach/engine';
 import {
   type Catalog,
   isOfficialId,
@@ -56,11 +56,20 @@ export function loadPack(dir: string): LoadedPack {
     raw.i18n = i18n;
   }
   raw.format ??= PACK_FORMAT;
-  const compiled = include(raw, dir) as { mission?: { flags?: Record<string, unknown>[] } };
+  const compiled = include(raw, dir) as {
+    mission?: { flags?: Record<string, unknown>[]; investigation?: Record<string, unknown>[] };
+  };
   for (const flag of compiled.mission?.flags ?? []) {
     if (typeof flag.value === 'string') {
       flag.sha256 = sha256(flag.value.trim());
       delete flag.value;
+    }
+  }
+  // Answers are compared the way the game normalises them: trimmed, lower case.
+  for (const question of compiled.mission?.investigation ?? []) {
+    if (typeof question.value === 'string') {
+      question.sha256 = sha256(normalizeAnswer(question.value));
+      delete question.value;
     }
   }
   let pack: Pack;
@@ -115,6 +124,40 @@ export async function replaySolution(
       if (chunk.k === 'out' || chunk.k === 'err') transcript += stripAnsi(chunk.text);
   }
   return { done: game.state.missionDone, transcript, game };
+}
+
+/**
+ * The defence replay must teach the right thing on the solution's own logs: the correct rule
+ * catches the attack without false alarm, every wrong rule visibly misfires or misses, the correct
+ * fix stops the replayed attack and no wrong fix does.
+ */
+export async function defenseProblems(game: Game): Promise<string[]> {
+  const d = game.mission?.defense;
+  if (!d) return [];
+  const problems: string[] = [];
+  game.startDefense();
+  const lines = game.socLines();
+  const mine = lines.filter((l) => l.actor !== 'background');
+  d.find.forEach((f, i) => {
+    if (!mine.some((l) => selects(l, f.source, f.where)))
+      problems.push(`defense: find[${i}] matches none of the solution's log lines`);
+  });
+  for (const rule of d.rules) {
+    const r = runDetection(rule, lines);
+    if (rule.correct && (r.caught === 0 || r.falsePositives > 0))
+      problems.push(
+        `defense: correct rule ${rule.id} should catch the solution without false positive (caught ${r.caught}, false positives ${r.falsePositives})`,
+      );
+    if (!rule.correct && r.caught > 0 && r.falsePositives === 0)
+      problems.push(`defense: wrong rule ${rule.id} catches the solution without any false positive`);
+  }
+  for (const fix of d.fixes) {
+    const report = await game.replayWith(fix);
+    if (fix.correct && !report.blocked)
+      problems.push(`defense: correct fix ${fix.id} does not stop the solution`);
+    if (!fix.correct && report.blocked) problems.push(`defense: wrong fix ${fix.id} stops the solution`);
+  }
+  return problems;
 }
 
 /** A text that names a translation, as opposed to a short literal such as a product name. */
@@ -255,12 +298,36 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       ...Object.values(m.guide),
       ...m.npcs.flatMap(npcTexts).filter(looksLikeKey),
       ...Object.values(m.files).filter(looksLikeKey),
+      ...(m.defense
+        ? [
+            m.defense.intro,
+            ...(m.defense.lesson ? [m.defense.lesson] : []),
+            ...m.defense.find.map((f) => f.text),
+            ...m.defense.rules.flatMap((r) => [r.title, r.why]),
+            ...m.defense.fixes.flatMap((f) => [f.title, f.why]),
+          ]
+        : []),
+      ...m.containment.map((c) => c.text),
+      ...m.investigation.map((q) => q.text),
+      ...m.alerts.flatMap((a) => [a.title, a.why]),
       ...m.checks.map((c) => c.text),
       ...m.questions.flatMap((q) => [
         q.text,
         ...q.options.flatMap((o) => (o.why ? [o.text, o.why] : [o.text])),
       ]),
     ];
+    const settings = { ...world.world.config, ...m.config };
+    for (const fix of [...(m.defense?.fixes ?? []), ...m.containment])
+      for (const key of Object.keys(fix.sets))
+        if (!(key in settings)) problems.push(`${pack.id}: ${fix.id} sets ${key}, which no config declares`);
+    const hostIds = new Set([...world.world.hosts.map((h) => h.id), 'dns', 'ids', 'fw']);
+    for (const step of m.adversary?.steps ?? [])
+      if (!hostIds.has(step.host))
+        problems.push(`${pack.id}: adversary step ${step.id} names unknown host ${step.host}`);
+    if (m.adversary && !hostIds.has(m.adversary.from))
+      problems.push(`${pack.id}: the adversary comes from unknown host ${m.adversary.from}`);
+    if (m.side === 'defense' && !m.adversary)
+      problems.push(`${pack.id}: a defence mission needs an adversary`);
     for (const npc of m.npcs) problems.push(...npcProblems(npc).map((p) => `${pack.id}: ${p}`));
     const objectiveIds = new Set(m.objectives.map((o) => o.id));
     for (const o of m.objectives)
@@ -319,7 +386,8 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
         problems.push(
           `${pack.id}: solution.txt does not finish the mission in ${locale} (open: ${open.join(', ')})`,
         );
-      }
+      } else if (m.defense && locale === pack.locales[0])
+        problems.push(...(await defenseProblems(result.game)).map((p) => `${pack.id}: ${p}`));
     }
   }
   return problems;

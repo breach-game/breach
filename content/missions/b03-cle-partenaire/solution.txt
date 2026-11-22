@@ -1,0 +1,8 @@
+# Blue Team 3: the partner's key
+soc alerts
+soc alerts
+soc alerts
+soc logs api access
+contain revoke nm-partner-7f3a
+answer key nm-partner-7f3a
+answer path /v1/clinics

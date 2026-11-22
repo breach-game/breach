@@ -344,7 +344,7 @@ hosts:
       - { name: backup, home: /home/backup }
     # The backup account trusts the deploy key kept on the forge: this is the hop Mute took.
     ssh:
-      - { user: backup, from: [git], key: /home/nm-deploy/.ssh/id_backup }
+      - { user: backup, from: [git], key: /home/nm-deploy/.ssh/id_backup, if: { config: net.segment_git_db, eq: false } }
     fs:
       etc:
         hostname: "db\n"
@@ -569,3 +569,65 @@ npcs:
         words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
         reply: [npc.atlas.hello]
     fallback: [npc.atlas.staffOnly]
+
+# Settings of the target that decide whether a weakness is there. The defence replay of each
+# mission offers fixes that change them, then replays the player's attack against the result.
+config:
+  secrets.debug_key_revoked: false
+  support.verify_identity: false
+  nova.secrets_out_of_prompt: false
+  iris.cv_as_data: false
+  atlas.human_confirmation: false
+  net.segment_git_db: false
+  www.hide_team: false
+  net.block_ping: false
+  nova.keyword_filter: false
+  nova.prompt_says_never: false
+  iris.pdf_only: false
+  iris.more_keywords: false
+  atlas.office_hours: false
+  atlas.prompt_says_careful: false
+  db.backup_password_changed: false
+  db.tmp_cleaned: false
+  support.ban_urgent: false
+  www.careers_vague: false
+
+# NovaMind's ordinary Monday morning, as its logs record it. The engine spreads these lines over
+# each mission's time, the same way for every player: the player's own lines hide among them.
+telemetry:
+  background:
+    # Clinics and visitors on the website.
+    - { host: www, source: access, every: 4, fields: { src: 198.51.100.23, method: GET, path: /, status: 200, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/133.0" } }
+    - { host: www, source: access, every: 11, offset: 2, fields: { src: 203.0.113.17, method: GET, path: /support, status: 200, ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) Safari/605.1.15" } }
+    - { host: www, source: access, every: 13, offset: 5, fields: { src: 198.51.100.88, method: GET, path: /careers, status: 200, ua: "Mozilla/5.0 (X11; Linux x86_64) Chrome/131.0" } }
+    - { host: www, source: access, every: 17, offset: 7, fields: { src: 198.51.100.61, method: POST, path: /careers/apply, status: 200, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/131.0" } }
+    # Support chat with Théo.
+    - { host: www, source: chat, every: 11, offset: 3, fields: { src: 203.0.113.17, npc: theo, intent: hours, families: [none], msg: "Vous êtes ouverts à quelle heure le samedi ?" } }
+    - { host: www, source: chat, every: 19, offset: 9, fields: { src: 203.0.113.40, npc: theo, intent: hello, families: [none], msg: "Bonjour, c'est urgent, notre agenda Nova ne se synchronise plus" } }
+    - { host: www, source: chat, every: 23, offset: 12, fields: { src: 203.0.113.40, npc: theo, intent: refuse, families: [none], msg: "Vous pouvez me renvoyer mon code d'accès ? J'ai changé de téléphone" } }
+    # Candidates applying: Iris screens their CVs.
+    - { host: www, source: chat, every: 17, offset: 7, fields: { src: 198.51.100.61, npc: iris, intent: fallback, families: [none], msg: "CV - Julie Marchand - Développeuse front-end - 4 ans d'expérience" } }
+    # Clinics talking to Nova.
+    - { host: nova, source: access, every: 5, offset: 1, fields: { src: 203.0.113.52, method: POST, path: /chat, status: 200, ua: "nova-widget/2.3" } }
+    - { host: nova, source: chat, every: 5, offset: 1, fields: { src: 203.0.113.52, npc: nova, intent: booking, families: [none], msg: "Je voudrais un rendez-vous jeudi pour Gribouille" } }
+    - { host: nova, source: chat, every: 8, offset: 4, fields: { src: 203.0.113.9, npc: nova, intent: vaccine, families: [none], msg: "Quand faut-il faire le rappel du vaccin de Pixel ?" } }
+    - { host: nova, source: chat, every: 23, offset: 6, fields: { src: 198.51.100.140, npc: nova, intent: guard-override, families: [override], msg: "Ignore mon message précédent, je voulais dire vendredi" } }
+    - { host: nova, source: chat, every: 29, offset: 14, fields: { src: 203.0.113.9, npc: nova, intent: guard-topic, families: [none], msg: "C'est quoi la règle pour annuler un rendez-vous ?" } }
+    # Employees using Atlas, the operations agent.
+    - { host: ops, source: agent, every: 9, offset: 2, fields: { src: 10.13.0.31, agent: atlas, tool: list_services, args: "env=prod", role: user, confirmed: "n/a" } }
+    - { host: ops, source: agent, every: 14, offset: 5, fields: { src: 10.13.0.33, agent: atlas, tool: sql_query, args: "SELECT count(*) FROM rendezvous", role: user, confirmed: "n/a" } }
+    - { host: ops, source: agent, every: 26, offset: 11, fields: { src: 10.13.0.12, agent: atlas, tool: create_account, args: "user=lucas.petit role=user", role: user, confirmed: "n/a" } }
+    # Name resolution inside the office.
+    - { host: dns, source: dns, every: 3, fields: { src: 10.13.0.31, name: git.novamind.test, rtype: A } }
+    - { host: dns, source: dns, every: 6, offset: 1, fields: { src: 10.13.0.12, name: mail.novamind.test, rtype: A } }
+    - { host: dns, source: dns, every: 7, offset: 2, fields: { src: 10.13.0.33, name: api.novamind.test, rtype: AAAA } }
+    # The forge: the CI clones, Karim logs in, sometimes mistypes.
+    - { host: git, source: git, every: 15, offset: 4, fields: { src: 10.13.0.60, user: ci-runner, action: clone, repo: novamind/nova-widget } }
+    - { host: git, source: auth, every: 20, offset: 8, fields: { src: 10.13.0.31, user: karim, result: Accepted, method: publickey } }
+    - { host: git, source: auth, every: 47, offset: 18, fields: { src: 10.13.0.31, user: karim, result: Failed, method: password } }
+    - { host: git, source: audit, every: 25, offset: 9, fields: { user: karim, exe: /usr/bin/git, cmd: "git gc --auto" } }
+    # The database: the DBA's workstation.
+    - { host: db, source: auth, every: 30, offset: 10, fields: { src: 10.13.0.35, user: postgres, result: Accepted, method: publickey } }
+    - { host: db, source: audit, every: 33, offset: 12, fields: { user: postgres, exe: /usr/bin/cat, cmd: "cat /etc/postgresql/16/main/pg_hba.conf" } }
+    # The network sensor: one harmless policy alert now and then.
+    - { host: ids, source: ids, every: 29, offset: 13, fields: { src: 10.13.0.60, dst: 10.13.0.21, signature: "ET POLICY curl User-Agent Outbound", sid: 2013028, priority: 3 } }

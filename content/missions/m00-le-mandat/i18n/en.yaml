@@ -34,3 +34,14 @@ m0.debrief.p1: "No written authorisation, no test. \"I only wanted to check\" is
 m0.debrief.p2: "The scope also protects third parties: the hosting provider, the client's customers and employees signed nothing."
 m0.debrief.p3: "On the company side: a clear mandate says who to call if the tester finds a real intrusion."
 m0.debrief.p4: "To practise legally: platforms such as Root-Me or TryHackMe, and CTF competitions."
+
+# Defence replay
+m0.def.intro: "Even an authorised test leaves traces. Here is NovaMind's DNS server log during your first morning: the employees' machines, and you among them."
+m0.def.lesson: "The mandate does not only protect the pentester. It also tells the SOC where the test will come from: the declared address, the dates, the scope. Without it, a real attacker could hide behind 'it must be the contractor'."
+m0.def.find.dns: "Your DNS query for novamind.test"
+m0.def.rule.declared.title: "Tag everything from the address declared in the mandate (10.13.0.66) as 'authorised test NM-2026-114', and keep alerting on the rest"
+m0.def.rule.declared.why: "This is the one: the SOC sees the test, knows it is authorised, and stays alert to anything that does not come from that address. That is also what the mandate is for."
+m0.def.rule.every-query.title: "Alert on every DNS query for novamind.test"
+m0.def.rule.every-query.why: "Every employee resolves internal names all day long. This rule buries the SOC under hundreds of alerts, and an alert nobody reads protects nobody."
+m0.def.rule.any-type.title: "Alert only on queries of type ANY"
+m0.def.rule.any-type.why: "An ANY query is a good sign of reconnaissance, but yours was a plain A query: this rule would not have seen you. Useful, not enough."

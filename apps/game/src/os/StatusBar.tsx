@@ -24,6 +24,10 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
   const pack = game.state.mission ? game.missions.get(game.state.mission) : undefined;
   const title = pack?.title[settings.locale] ?? pack?.title.fr ?? pack?.title.en ?? '';
   const level = socLevel(noise);
+  // Defence missions: the gauge shows what the containment costs the business, not the noise.
+  const defending = pack?.mission?.side === 'defense';
+  const impact = game.state.impact ?? 0;
+  const stopped = game.state.adversary?.stopped || game.state.missionDone;
   return (
     <>
       <header className="bar">
@@ -35,24 +39,49 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
           {t(pack?.track === 'training' ? 'bar.training' : 'bar.mission')}{' '}
           {String(pack?.mission?.order ?? 0).padStart(2, '0')} <b>/</b> {title}
         </div>
-        <div
-          className="gauge"
-          role="meter"
-          aria-label={t('bar.noise')}
-          aria-valuenow={Math.round(noise)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <span>{t('bar.noise')}</span>
-          <div className="track">
-            <div className="fill" style={{ width: `${noise}%` }} />
-          </div>
-          <span className="val">{Math.round(noise)} %</span>
-        </div>
-        <div className="soc" data-level={level}>
-          <i />
-          <span>{t(`bar.soc.${level}` as UiKey)}</span>
-        </div>
+        {defending ? (
+          <>
+            <div
+              className="gauge impact"
+              role="meter"
+              aria-label={t('bar.impact')}
+              aria-valuenow={Math.round(impact)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <span>{t('bar.impact')}</span>
+              <div className="track">
+                <div className="fill" style={{ width: `${impact}%` }} />
+              </div>
+              <span className="val">{Math.round(impact)} %</span>
+            </div>
+            <div className="soc attacker" data-level={stopped ? 'stopped' : 'active'}>
+              <i />
+              <span>{t(stopped ? 'bar.attacker.stopped' : 'bar.attacker.active')}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              className="gauge"
+              role="meter"
+              aria-label={t('bar.noise')}
+              aria-valuenow={Math.round(noise)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <span>{t('bar.noise')}</span>
+              <div className="track">
+                <div className="fill" style={{ width: `${noise}%` }} />
+              </div>
+              <span className="val">{Math.round(noise)} %</span>
+            </div>
+            <div className="soc" data-level={level}>
+              <i />
+              <span>{t(`bar.soc.${level}` as UiKey)}</span>
+            </div>
+          </>
+        )}
         <div className="clock">{gameDate(game.world.startTime, liveClock(game)).time}</div>
         <button
           type="button"
