@@ -21,7 +21,7 @@ export interface LoadedPack {
 }
 
 const sha256 = (data: string | Uint8Array) => createHash('sha256').update(data).digest('hex');
-const readYaml = (file: string): unknown => parseYaml(readFileSync(file, 'utf8'), { maxAliasCount: 0 });
+const readYaml = (file: string): unknown => parseYaml(readFileSync(file, 'utf8'), { maxAliasCount: 100 });
 
 /** Replace `{ $file: "relative/path" }` by the content of that file. Paths cannot leave the pack. */
 function include(value: unknown, dir: string): unknown {
@@ -230,6 +230,8 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
             problems.push(`${pack.id}: ada.guide names unknown objective ${g.for}`);
           continue;
         }
+        const noise = (effect as Record<string, unknown>)['noise.add'];
+        if (noise && typeof noise === 'object') keysUsed.push((noise as { as: string }).as);
         const key =
           (effect as Record<string, unknown>)['ada.say'] ??
           guide ??

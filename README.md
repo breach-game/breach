@@ -16,9 +16,9 @@
 
 ## État / Status
 
-Lot 0 : les missions 0 (« Le mandat ») et 1 (« Empreinte ») sont jouables de bout en bout, en français et en anglais. La v1 visée couvre les missions 0 à 3.
+Les quatre missions de la v1 sont jouables de bout en bout, en français et en anglais : 0 « Le mandat », 1 « Empreinte » (reconnaissance), 2 « Le stagiaire bavard » (ingénierie sociale) et 3 « Nova en sait trop » (injection de prompt).
 
-Lot 0: missions 0 ("The Mandate") and 1 ("Footprint") are playable end to end, in French and English. The v1 target is missions 0 to 3.
+The four v1 missions are playable end to end, in French and English: 0 "The Mandate", 1 "Footprint" (reconnaissance), 2 "The Talkative Intern" (social engineering) and 3 "Nova Knows Too Much" (prompt injection).
 
 ![Bureau LR-OS](docs/screens/lot0-03-carte-nmap.png)
 

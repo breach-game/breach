@@ -453,8 +453,11 @@ export class Game {
     } else if ('ada.warn' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.warn'], tone: 'warn' });
     else if ('objective.complete' in effect) this.completeObjective(effect['objective.complete']);
-    else if ('noise.add' in effect) this.addNoise(effect['noise.add'], 'rule');
-    else if ('host.reveal' in effect) this.emit({ type: 'HostRevealed', host: effect['host.reveal'] });
+    else if ('noise.add' in effect) {
+      const n = effect['noise.add'];
+      if (typeof n === 'number') this.addNoise(n, 'rule');
+      else this.addNoise(n.points, `soc:${n.as}`);
+    } else if ('host.reveal' in effect) this.emit({ type: 'HostRevealed', host: effect['host.reveal'] });
     else if ('checkpoint.save' in effect)
       this.emit({ type: 'CheckpointSaved', name: effect['checkpoint.save'] });
     else if ('var.set' in effect) this.emit({ type: 'VarSet', ...effect['var.set'] });
@@ -596,7 +599,9 @@ export class Game {
     const text = message.trim().slice(0, 600);
     if (!npc || !text || this.detectionPending) return { ok: false, reply: '' };
     if (dt > 0) this.emit({ type: 'ClockAdvanced', ms: Math.min(dt, MAX_DT) });
-    this.addNoise(this.noiseCost('chat', [npcId]), `chat ${npcId}`);
+    // Through the API, `curl` has already paid for the request.
+    if (via === 'browser')
+      this.addNoise(this.noiseCost('chat', [npcId]), `browser POST ${this.chatUrl(npcId)}`);
     const done = this.settle(() => {
       this.emit({ type: 'ChatSent', npc: npcId, text, via });
       const d = decide(npc, text, this.state);
@@ -612,6 +617,14 @@ export class Game {
       return this.detectionPending ? null : this.t(d.key);
     });
     return done === null ? { ok: false, reply: '' } : { ok: true, reply: done };
+  }
+
+  /** Address of the endpoint a character answers on, for the logs. */
+  private chatUrl(npcId: string): string {
+    for (const host of this.world.hosts)
+      for (const [path, route] of Object.entries(host.web ?? {}))
+        if (route.chat === npcId) return `https://${host.hostname}${path}`;
+    return npcId;
   }
 
   /**

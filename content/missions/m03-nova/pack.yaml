@@ -1,0 +1,13 @@
+id: breach.official.m03
+version: 0.1.0
+engine: ">=0.2 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Nova en sait trop
+  en: Nova knows too much
+summary:
+  fr: Injection de prompt. L'assistante de NovaMind garde ses consignes secrètes, tant qu'on les lui demande poliment.
+  en: Prompt injection. NovaMind's assistant keeps its instructions secret, as long as you ask politely.
+authors: [BREACH]
+locales: [fr, en]

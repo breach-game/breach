@@ -106,11 +106,11 @@ const fr = {
   'debrief.soc.action': 'action',
   'debrief.soc.noise': 'bruit',
   'debrief.soc.note':
-    "Chaque ligne est une de tes commandes, telle qu'elle apparaît dans les journaux de la cible.",
+    "Chaque ligne est une de tes actions, ou une réaction qu'elle a provoquée, telle qu'elle apparaît dans les journaux de la cible.",
   'debrief.next': 'Mission suivante',
   'debrief.end.title': 'Fin des missions disponibles',
   'debrief.end.body':
-    'Tu as terminé tout ce que contient cette version. Les prochaines missions (ingénierie sociale, puis Nova, le chatbot qui en sait trop) arrivent.',
+    "Tu as terminé tout ce que contient cette version. La suite de l'enquête (l'injection indirecte, l'agent trop puissant, puis la piste du groupe Mute) arrive.",
   'debrief.close': 'Rester sur le bureau',
   'debrief.reference': 'Référence',
   'card.mission': 'MISSION',
@@ -220,11 +220,12 @@ const en: typeof fr = {
   'debrief.soc.source': 'source',
   'debrief.soc.action': 'action',
   'debrief.soc.noise': 'noise',
-  'debrief.soc.note': "Each line is one of your commands, as it shows up in the target's logs.",
+  'debrief.soc.note':
+    "Each line is one of your actions, or a reaction it caused, as it shows up in the target's logs.",
   'debrief.next': 'Next mission',
   'debrief.end.title': 'End of the available missions',
   'debrief.end.body':
-    'You finished everything this version contains. The next missions (social engineering, then Nova, the chatbot that knows too much) are on their way.',
+    'You finished everything this version contains. The rest of the investigation (indirect injection, the over-powered agent, then the trail of the Mute group) is on its way.',
   'debrief.close': 'Stay on the desktop',
   'debrief.reference': 'Reference',
   'card.mission': 'MISSION',

@@ -1,4 +1,5 @@
 import { socView } from '@breach/engine';
+import { useEffect, useRef } from 'react';
 import { useGame } from '../session.ts';
 import { type UiKey, useT } from '../ui.ts';
 
@@ -10,6 +11,9 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
   const game = useGame();
   const t = useT();
   const mission = game.mission;
+  const nextButton = useRef<HTMLButtonElement>(null);
+  // Ready for Enter, without scrolling past the lesson.
+  useEffect(() => nextButton.current?.focus({ preventScroll: true }), []);
   if (!mission || !game.state.mission) return null;
   const entries = socView(game);
   const next = game.nextMission();
@@ -80,7 +84,7 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
       )}
       <div className="actions">
         {next && (
-          <button type="button" className="btn defense" autoFocus onClick={onNext}>
+          <button type="button" className="btn defense" ref={nextButton} onClick={onNext}>
             {t('debrief.next')} →
           </button>
         )}

@@ -5,6 +5,8 @@ export const en: Record<string, string> = {
     '[NovaMind SOC] Suspicious activity detected. Session cut, back to the last checkpoint.',
   'stage.cadrage': 'scoping',
   'stage.recon': 'reconnaissance',
+  'stage.social': 'social engineering',
+  'stage.injection': 'prompt injection',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',

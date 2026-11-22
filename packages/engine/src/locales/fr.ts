@@ -5,6 +5,8 @@ export const fr: Record<string, string> = {
     '[SOC NovaMind] Activité suspecte détectée. Session coupée, retour au dernier point de sauvegarde.',
   'stage.cadrage': 'cadrage',
   'stage.recon': 'reconnaissance',
+  'stage.social': 'ingénierie sociale',
+  'stage.injection': 'injection de prompt',
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
