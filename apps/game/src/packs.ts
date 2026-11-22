@@ -97,7 +97,9 @@ export async function loadPack(entry: CatalogEntry, onProgress?: (p: PackProgres
   if (bytes) onProgress?.({ entry, state: 'cached' });
   else {
     onProgress?.({ entry, state: 'downloading' });
-    const response = await fetch(`${CATALOG_URL}${entry.file}`);
+    // Revalidate with the host: GitHub Pages lets browsers reuse a file for ten minutes, and a pack
+    // rebuilt under the same name would otherwise fail its pinned checksum after a redeploy.
+    const response = await fetch(`${CATALOG_URL}${entry.file}`, { cache: 'no-cache' });
     if (!response.ok) throw new Error(`${entry.file}: HTTP ${response.status}`);
     bytes = await response.arrayBuffer();
   }

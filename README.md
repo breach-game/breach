@@ -11,6 +11,8 @@ A cybersecurity thriller in your browser. You are a junior pentester at Ligne Ro
 
 The game is available in English and French.
 
+**Play it online: https://breach-game.github.io/breach/** (nothing to install, no account; your progress stays in your browser).
+
 > **Nothing here is real.** The commands are simulated, the targets are fictional, and the game never sends a single packet to anyone. See [Everything is simulated](#everything-is-simulated).
 
 ## Status
