@@ -4,6 +4,7 @@ import { playSfx } from '../audio.ts';
 import { resumeSeq, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
+import { reveal, textOf } from './typewriter.tsx';
 
 /** Render `code` spans. Anything else is plain text: content never becomes HTML. */
 function rich(text: string): ReactNode[] {
@@ -24,6 +25,8 @@ export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typi
   if (settled > messages.length) setSettled(messages.length);
   const current = messages[settled];
   const text = current ? game.t(current.key) : '';
+  // Typing counts the characters shown on screen, so a `code` span never shows its backticks.
+  const plain = textOf(rich(text));
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: restart only when the message changes
   useEffect(() => {
@@ -37,10 +40,10 @@ export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typi
     let n = 0;
     let timer: ReturnType<typeof setTimeout>;
     const step = () => {
-      n = Math.min(text.length, n + 2);
+      n = Math.min(plain.length, n + 2);
       setTyped(n);
-      if (n >= text.length) timer = setTimeout(() => setSettled((c) => c + 1), 450);
-      else timer = setTimeout(step, '.!?:'.includes(text[n - 1] ?? '') ? 170 : 16);
+      if (n >= plain.length) timer = setTimeout(() => setSettled((c) => c + 1), 450);
+      else timer = setTimeout(step, '.!?:'.includes(plain[n - 1] ?? '') ? 170 : 16);
     };
     timer = setTimeout(step, 300);
     return () => clearTimeout(timer);
@@ -69,10 +72,7 @@ export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typi
             </div>
             <div>
               <div className="t">ADA · {time(m.t)}</div>
-              <p>
-                {rich(isCurrent ? text.slice(0, typed) : game.t(m.key))}
-                {isCurrent && <span className="caret" />}
-              </p>
+              <p>{isCurrent ? reveal(rich(text), typed) : rich(game.t(m.key))}</p>
             </div>
           </div>
         );

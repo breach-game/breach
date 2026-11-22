@@ -4,6 +4,7 @@ import { activeBrain, BRAIN_CALL_LIMIT, BRAIN_USES, reportBrain, useBrain } from
 import { elapsed, resumeSeq, touch, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { reveal, textOf } from './typewriter.tsx';
 
 /** Show flags in the success colour and `code` spans. Anything else is plain text. */
 function rich(text: string): ReactNode[] {
@@ -59,7 +60,10 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
   if (settled > lines.length) setSettled(lines.length);
   const current = lines[settled];
   const text = (line: (typeof lines)[number]) => line.text ?? (line.key ? game.t(line.key) : '');
-  const currentText = current ? text(current) : '';
+  // Typing counts the characters shown on screen, markup aside.
+  const shown = (line: (typeof lines)[number]) =>
+    line.from === 'npc' ? reply(text(line)) : rich(text(line));
+  const plain = current ? textOf(shown(current)) : '';
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: restart only when the line changes
   useEffect(() => {
@@ -72,10 +76,10 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
     let n = 0;
     let timer: ReturnType<typeof setTimeout>;
     const step = () => {
-      n = Math.min(currentText.length, n + 2);
+      n = Math.min(plain.length, n + 2);
       setTyped(n);
-      if (n >= currentText.length) timer = setTimeout(() => setSettled((c) => c + 1), 250);
-      else timer = setTimeout(step, '.!?:'.includes(currentText[n - 1] ?? '') ? 150 : 14);
+      if (n >= plain.length) timer = setTimeout(() => setSettled((c) => c + 1), 250);
+      else timer = setTimeout(step, '.!?:'.includes(plain[n - 1] ?? '') ? 150 : 14);
     };
     // People take longer to start typing than machines.
     timer = setTimeout(step, npc?.kind === 'ai' ? 500 : 1100);
@@ -171,12 +175,7 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
                   <i />
                 </p>
               ) : (
-                <p>
-                  {line.from === 'npc'
-                    ? reply(isCurrent ? currentText.slice(0, typed) : text(line))
-                    : rich(isCurrent ? currentText.slice(0, typed) : text(line))}
-                  {isCurrent && <span className="caret" />}
-                </p>
+                <p>{isCurrent ? reveal(shown(line), typed) : shown(line)}</p>
               )}
             </div>
           );
