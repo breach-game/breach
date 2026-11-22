@@ -246,6 +246,31 @@ describe('content safety', () => {
     expect(isReservedIp('8.8.8.8')).toBe(false);
   });
 
+  it('refuses a scope network wider than its reserved block', () => {
+    expect(isReservedIp('10.13.0.0/16')).toBe(true);
+    expect(isReservedIp('10.0.0.0/8')).toBe(true);
+    expect(isReservedIp('172.16.0.0/12')).toBe(true);
+    expect(isReservedIp('192.0.2.0/24')).toBe(true);
+    expect(isReservedIp('10.0.0.0/0')).toBe(false);
+    expect(isReservedIp('10.0.0.0/7')).toBe(false);
+    expect(isReservedIp('192.168.0.0/8')).toBe(false);
+    expect(isReservedIp('172.16.0.0/11')).toBe(false);
+    expect(isReservedIp('172.32.0.0/16')).toBe(false);
+    expect(isReservedIp('10.0.0.0/33')).toBe(false);
+    const wide = structuredClone(world) as typeof world;
+    wide.world!.scope.networks = ['10.0.0.0/0'];
+    expect(checkPackSafety(wide).join('\n')).toMatch(/scope network 10\.0\.0\.0\/0 is not reserved/);
+  });
+
+  it('refuses terminal escape sequences and other control characters', () => {
+    const bad = structuredClone(world) as typeof world;
+    bad.i18n.en!['web.www.index'] = 'click \x1b]8;;https://evil.example/\x07here\x1b]8;;\x07';
+    expect(checkPackSafety(bad).join('\n')).toMatch(/control characters are not allowed/);
+    const ok = structuredClone(world) as typeof world;
+    ok.i18n.en!['web.www.index'] = 'line one\n\tline two';
+    expect(checkPackSafety(ok).join('\n')).not.toMatch(/control characters/);
+  });
+
   it('rejects a pack that points at a real target or carries a script', () => {
     const bad = structuredClone(world) as typeof world;
     bad.world!.hosts[1]!.hostname = 'www.real-company.com';

@@ -17,8 +17,22 @@ for (const type of ['pointerdown', 'keydown'] as const)
   window.addEventListener(type, unlockAudio, { capture: true });
 if (import.meta.env.DEV) Object.assign(window, { __audio: { audioProbe, setTension } });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+/**
+ * Refuse to run inside another site's frame: a page could lay invisible buttons over the game
+ * (clickjacking). Hosts that read `_headers` already forbid it; GitHub Pages cannot.
+ */
+function framedByAnotherSite(): boolean {
+  if (window.top === window.self) return false;
+  try {
+    return window.top?.location.origin !== window.location.origin;
+  } catch {
+    return true;
+  }
+}
+
+if (!framedByAnotherSite())
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );

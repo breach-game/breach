@@ -1,4 +1,4 @@
-import { stripAnsi } from '@breach/engine';
+import { sanitizeTerminal, stripAnsi } from '@breach/engine';
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { useEffect, useRef } from 'react';
@@ -118,8 +118,8 @@ class Shell {
     this.skip = false;
     try {
       for await (const chunk of this.game.exec(line, elapsed())) {
-        if (chunk.k === 'out') this.term.write(crlf(chunk.text));
-        else if (chunk.k === 'err') this.term.write(crlf(chunk.text));
+        // The engine already cleans its output; cleaning again here keeps the terminal safe on its own.
+        if (chunk.k === 'out' || chunk.k === 'err') this.term.write(crlf(sanitizeTerminal(chunk.text)));
         else if (chunk.k === 'clear') this.term.write('\x1b[2J\x1b[3J\x1b[H');
         else if (!this.skip)
           await new Promise((r) => setTimeout(r, getSettings().effects ? chunk.ms : Math.min(chunk.ms, 40)));
@@ -295,6 +295,8 @@ export function Terminal({ active }: { active: boolean }) {
         scrollback: 2000,
         theme: THEME,
         screenReaderMode: true,
+        // Never open a real page from the terminal, whatever a text tries to turn into a link.
+        linkHandler: { activate: () => {}, allowNonHttpProtocols: false },
       });
       const fit = new FitAddon();
       term.loadAddon(fit);

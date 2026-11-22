@@ -11,13 +11,33 @@ A cybersecurity thriller in your browser. You are a junior pentester at Ligne Ro
 
 The game is available in English and French.
 
-> All targets are fictional. The game never makes real network requests.
+> **Nothing here is real.** The commands are simulated, the targets are fictional, and the game never sends a single packet to anyone. See [Everything is simulated](#everything-is-simulated).
 
 ## Status
 
 The four v1 missions are playable end to end, in English and French: 0 "The Mandate", 1 "Footprint" (reconnaissance), 2 "The Talkative Intern" (social engineering) and 3 "Nova Knows Too Much" (prompt injection).
 
 ![LR-OS desktop](docs/screens/lot0-03-carte-nmap.png)
+
+## Everything is simulated
+
+The terminal looks and answers like the real tools, but it is a game engine written in TypeScript that runs entirely in your browser tab. There is no server behind it and no real shell.
+
+- **The commands are imitations.** `nmap`, `curl`, `ssh`, `ping`, `dig`, `whois`, `git` and the others have no network code at all. Each one reads the fictional NovaMind world, loaded in memory from a data pack, and prints what the real tool would print. A "port scan" is a lookup in a table; its delay is a timer.
+- **The targets do not exist.** Every host lives under `*.novamind.test` (a top-level domain reserved for testing, RFC 2606) or in the private range `10.13.0.0/16`. A pack that names a real-looking domain or a public address (apart from a few learning sites such as owasp.org, given as reading links) is refused when it is built and again when the game loads it.
+- **The scope check is a game rule, not a safety net.** Aiming at an address outside the mandate (say `nmap 8.8.8.8`) gets a reminder from Ada about the law. Even if that check had a hole, the command would still only reach the simulated world: there is nothing that could send a real request.
+- **The in-game browser draws pages itself.** It renders the world's pages from data. It loads no URL, follows no real link and has no iframe.
+- **The vulnerabilities are classes, not exploits.** They illustrate OWASP Top 10 and OWASP LLM Top 10 categories. Nothing in the game works against a real system.
+
+The only real requests the page ever makes:
+
+| Request | Destination | When |
+| --- | --- | --- |
+| The game itself (HTML, scripts, fonts) | the site's own origin | on load |
+| The mission packs (`packs/index.json`, `*.breachpack`) | the site's own origin | on load, then cached |
+| Character voices | `api.anthropic.com` | only if you set your own API key |
+
+The production Content Security Policy only allows those two destinations, so the browser would block anything else.
 
 ## Character voices (optional)
 
@@ -35,7 +55,7 @@ pnpm packs:check  # validates the content
 pnpm build        # static site in apps/game/dist
 ```
 
-Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically.
+Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically. Security model and how to report a problem: [SECURITY.md](SECURITY.md).
 
 | Folder | Role |
 | --- | --- |

@@ -11,6 +11,32 @@ export const style = {
 };
 export const stripAnsi = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '');
 
+const SGR = /\x1b\[[0-9;]*m/y;
+
+/**
+ * Make text safe to write to a terminal. Only colour codes (SGR) survive: every other escape
+ * sequence (cursor moves, screen clears, OSC 8 links, window titles) and every other control
+ * character, C1 included, is dropped. Tabs and line breaks are kept.
+ */
+export function sanitizeTerminal(text: string): string {
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 0x1b) {
+      SGR.lastIndex = i;
+      const m = SGR.exec(text);
+      if (m) {
+        out += m[0];
+        i += m[0].length - 1;
+      }
+      continue;
+    }
+    if ((c < 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0d) || (c >= 0x7f && c <= 0x9f)) continue;
+    out += text[i];
+  }
+  return out;
+}
+
 export async function sha256(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
   const digest = await globalThis.crypto.subtle.digest('SHA-256', data);

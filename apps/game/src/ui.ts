@@ -119,7 +119,7 @@ const fr = {
   'brain.fact.sent':
     'Ce qui part : la conversation avec le personnage et sa fiche de style. Elle va directement de ton navigateur à api.anthropic.com, sans passer par un serveur de BREACH.',
   'brain.fact.key':
-    "Ta clé reste dans ce navigateur. Par défaut elle disparaît quand tu fermes l'onglet. Elle n'est jamais écrite dans la sauvegarde.",
+    "Ta clé reste dans ce navigateur. Par défaut elle disparaît quand tu fermes l'onglet. Elle n'est jamais écrite dans la sauvegarde. Si tu la gardes sur cet appareil, supprime-la ici quand tu as fini de jouer.",
   'brain.fact.cost':
     'Les appels sont facturés sur ton compte Anthropic. Utilise une clé créée pour le jeu, avec un plafond de dépense.',
   'brain.key': "Clé d'API Anthropic",
@@ -142,6 +142,9 @@ const fr = {
   'brain.issue.refusal': 'Le modèle a décliné cette réplique. Le script a répondu à sa place.',
   'brain.issue.rejected': "Le modèle s'est écarté de la réplique prévue. Le script a répondu à sa place.",
   'brain.issue.error': "L'appel au modèle a échoué. Les personnages suivent le script.",
+  'brain.issue.limit':
+    'Plafond de {limit} répliques atteint pour cet onglet, pour protéger ta facture. Les personnages suivent le script. Recharge la page pour repartir.',
+  'brain.usage': '{calls} / {limit} répliques du modèle dans cet onglet',
   'debrief.level': 'Niveau',
   'debrief.score': 'Score',
   'debrief.detections': 'Détections',
@@ -283,7 +286,7 @@ const en: typeof fr = {
   'brain.fact.sent':
     "What is sent: the conversation with the character and the character's style sheet. It goes straight from your browser to api.anthropic.com, with no BREACH server in between.",
   'brain.fact.key':
-    'Your key stays in this browser. By default it is gone when you close the tab. It is never written to the save.',
+    'Your key stays in this browser. By default it is gone when you close the tab. It is never written to the save. If you keep it on this device, remove it here when you are done playing.',
   'brain.fact.cost':
     'Calls are billed to your Anthropic account. Use a key made for the game, with a spending limit.',
   'brain.key': 'Anthropic API key',
@@ -306,6 +309,9 @@ const en: typeof fr = {
   'brain.issue.refusal': 'The model declined this line. The script answered instead.',
   'brain.issue.rejected': 'The model strayed from the planned line. The script answered instead.',
   'brain.issue.error': 'The call to the model failed. The characters follow the script.',
+  'brain.issue.limit':
+    'Limit of {limit} replies reached for this tab, to protect your bill. The characters follow the script. Reload the page to start again.',
+  'brain.usage': '{calls} / {limit} model replies in this tab',
   'debrief.level': 'Level',
   'debrief.score': 'Score',
   'debrief.detections': 'Detections',

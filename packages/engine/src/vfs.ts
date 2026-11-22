@@ -14,7 +14,15 @@ export interface FsFile {
 }
 export type FsNode = FsDir | FsFile;
 
-export const mkdir = (owner = 'root', mode = 0o755): FsDir => ({ t: 'd', c: {}, owner, mode });
+/**
+ * Directory entries live in an object without a prototype, and are only read as own properties, so
+ * that names such as `__proto__` or `constructor` are ordinary file names.
+ */
+export const entries = (): Record<string, FsNode> => Object.create(null) as Record<string, FsNode>;
+const own = (dir: FsDir, name: string): FsNode | undefined =>
+  Object.hasOwn(dir.c, name) ? dir.c[name] : undefined;
+
+export const mkdir = (owner = 'root', mode = 0o755): FsDir => ({ t: 'd', c: entries(), owner, mode });
 export const mkfile = (content: string, owner = 'root', mode = 0o644): FsFile => ({
   t: 'f',
   content,
@@ -73,7 +81,7 @@ export function lookup(root: FsDir, abs: string): FsNode | undefined {
   for (const part of abs.split('/')) {
     if (!part) continue;
     if (node.t !== 'd') return undefined;
-    const next: FsNode | undefined = node.c[part];
+    const next: FsNode | undefined = own(node, part);
     if (!next) return undefined;
     node = next;
   }
@@ -96,7 +104,7 @@ export function writeFile(root: FsDir, abs: string, content: string, owner: stri
   const parent = lookup(root, abs.slice(0, idx) || '/');
   const name = abs.slice(idx + 1);
   if (!parent || parent.t !== 'd' || !name) return false;
-  const existing = parent.c[name];
+  const existing = own(parent, name);
   if (existing?.t === 'd') return false;
   if (existing && append) existing.content += content;
   else if (existing) existing.content = content;
@@ -108,7 +116,7 @@ export function mkdirp(root: FsDir, abs: string, owner: string): FsDir | undefin
   let node: FsDir = root;
   for (const part of abs.split('/')) {
     if (!part) continue;
-    const next = node.c[part];
+    const next = own(node, part);
     if (!next) {
       const created = mkdir(owner);
       node.c[part] = created;

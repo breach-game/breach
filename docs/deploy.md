@@ -17,13 +17,14 @@ Le build écrit un fichier `_headers` que Cloudflare Pages applique : politique 
 1. Dans les réglages du dépôt, Pages, choisir la source « GitHub Actions ». Sur un dépôt privé, cela demande une offre GitHub payante, ou de rendre le dépôt public.
 2. Dans l'onglet Actions, lancer à la main « Deploy to GitHub Pages ».
 
-GitHub Pages ignore le fichier `_headers`. La politique de sécurité du contenu reste appliquée par la balise meta de `index.html`, mais sans `frame-ancestors`.
+GitHub Pages ignore le fichier `_headers`. La politique de sécurité du contenu reste appliquée par la balise meta de `index.html`, mais sans `frame-ancestors`. Pour compenser, le jeu refuse de démarrer quand un autre site l'affiche dans un cadre.
 
 ## À vérifier après la mise en ligne
 
 - L'écran titre s'affiche, une nouvelle partie démarre, la mission 0 se termine.
 - Dans l'onglet réseau du navigateur, aucune requête ne sort du domaine tant qu'aucune clé d'API n'est réglée.
-- La console n'affiche aucune erreur de politique de sécurité du contenu.
+- La console n'affiche aucune erreur de politique de sécurité du contenu ni de Trusted Types.
+- Les packs officiels sont épinglés au build : déposer le catalogue et les packs du même build que le code, sinon le jeu les refuse.
 - La sauvegarde survit à un rechargement de la page.
 
 ## Ce qui reste à décider

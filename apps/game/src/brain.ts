@@ -24,6 +24,16 @@ export interface BrainStatus {
 }
 
 const STORE_KEY = 'breach.byok';
+
+/**
+ * Most model replies one tab may ask for. A whole campaign needs a few dozen: the cap only stops a
+ * runaway bill (a stuck key, a script hammering the chat). Past it, the script answers alone.
+ */
+export const BRAIN_CALL_LIMIT = 150;
+let calls = 0;
+
+/** Model replies asked for in this tab so far. */
+export const brainCalls = () => calls;
 const listeners = new Set<() => void>();
 
 function read(store: Storage | undefined): Partial<BrainConfig> | null {
@@ -135,6 +145,8 @@ const brain: NpcBrain = {
   id: 'byok',
   isAvailable: async () => status.config.key !== '',
   async reply(input) {
+    if (calls >= BRAIN_CALL_LIMIT) throw new BrainError('limit');
+    calls++;
     const { Anthropic, api } = await client();
     try {
       const { system, user } = brainPrompt(input);
