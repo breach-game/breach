@@ -1,0 +1,45 @@
+name: Deploy to GitHub Pages
+
+# Runs only when someone starts it by hand (Actions > Deploy to GitHub Pages > Run workflow).
+# Nothing is published on a push. GitHub Pages must first be enabled for this repository with
+# "GitHub Actions" as the source. See docs/deploy.md.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm packs:check
+      - run: pnpm build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/game/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

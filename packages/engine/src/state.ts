@@ -1,4 +1,4 @@
-import type { Locale } from '@breach/pack-schema';
+import type { Guidance, Locale } from '@breach/pack-schema';
 import type { FsDir } from './vfs.ts';
 
 export type Scalar = string | number | boolean;
@@ -43,6 +43,8 @@ export interface GameState {
   hints: Record<string, number>;
   hintsUsed: number;
   detections: number;
+  /** Most helpful guidance level used in this mission. Null on saves made before levels were scored. */
+  level: Guidance | null;
   notes: string[];
   messages: Message[];
   /** Conversations of the current mission, by character. */

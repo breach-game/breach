@@ -16,7 +16,9 @@ export {
   ENGINE_VERSION,
   Game,
   type GameOptions,
+  LEVEL_BONUS,
   type SaveData,
+  type ScoreDetail,
 } from './game.ts';
 export { formatUrl, pageHtml, parseUrl } from './http.ts';
 export { engineStrings, interpolate } from './i18n.ts';

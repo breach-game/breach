@@ -1,3 +1,4 @@
+import type { Guidance } from '@breach/pack-schema';
 /**
  * Everything that happens in the game is an event appended to the log.
  * State is rebuilt by applying the log, so the log is also the save file, the SOC's view of the
@@ -5,6 +6,8 @@
  */
 export type EventBody =
   | { type: 'MissionStarted'; mission: string }
+  /** The most helpful guidance level used so far in the mission: it sets the score bonus. */
+  | { type: 'GuidanceChanged'; level: Guidance }
   | { type: 'CommandRun'; line: string; command: string; args: string[]; cwd: string; dt: number }
   | { type: 'ClockAdvanced'; ms: number }
   | { type: 'CwdChanged'; path: string }

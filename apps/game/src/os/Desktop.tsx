@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { playSfx, setScene, setTension } from '../audio.ts';
 import { liveNoise, onGameEvent, terminalBridge, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
@@ -115,6 +116,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
     if (!el) return;
     const k = noise / 100;
     el.style.setProperty('--tension', k.toFixed(2));
+    setTension(k);
     if (debrief) return;
     const amb =
       k < 0.4
@@ -131,14 +133,24 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
     const timers: ReturnType<typeof setTimeout>[] = [];
     const later = (fn: () => void, ms: number) => timers.push(setTimeout(fn, ms));
     const off = onGameEvent((e) => {
-      if (e.type === 'FlagSubmitted' && e.correct) setStamp((s) => s + 1);
-      else if (e.type === 'NpcMessage') setUnread(true);
-      else if (e.type === 'AppOpened') openBrowser(e.url);
+      if (e.type === 'FlagSubmitted') {
+        if (e.correct) setStamp((s) => s + 1);
+        playSfx(e.correct ? 'flag' : 'wrong');
+      } else if (e.type === 'NpcMessage') {
+        setUnread(true);
+        playSfx('message');
+      } else if (e.type === 'AppOpened') {
+        openBrowser(e.url);
+        playSfx('open');
+      } else if (e.type === 'ChatReply') playSfx('reply');
+      else if (e.type === 'ObjectiveCompleted') playSfx('objective');
+      else if (e.type === 'OutOfScope') playSfx('wrong');
       else if (e.type === 'MissionStarted') {
         setDebrief(false);
         setCard(e.mission);
       } else if (e.type === 'Detected') {
         setDetect(true);
+        playSfx('detect');
         for (const el of document.querySelectorAll('.win')) {
           el.classList.remove('glitch');
           void (el as HTMLElement).offsetWidth;
@@ -152,6 +164,12 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       timers.forEach(clearTimeout);
     };
   }, [openBrowser]);
+
+  // Music: the desk loop during a mission, a calmer one behind the debrief, silence on leaving.
+  useEffect(() => {
+    setScene(debrief ? 'debrief' : 'desk');
+    return () => setScene('off');
+  }, [debrief]);
 
   useEffect(() => {
     if (!card) return;

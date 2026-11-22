@@ -40,6 +40,8 @@ pnpm packs:check  # valide le contenu / validates the content
 pnpm build        # site statique dans apps/game/dist / static site
 ```
 
+Mise en ligne / Going live: [docs/deploy.md](docs/deploy.md).
+
 | Dossier / Folder | Rôle / Role |
 | --- | --- |
 | `packages/engine` | moteur déterministe, sans DOM / deterministic engine, no DOM |

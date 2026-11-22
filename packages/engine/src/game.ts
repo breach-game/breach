@@ -75,6 +75,22 @@ export interface ChatResult {
   issue?: BrainIssue;
 }
 
+/** Playing with less help multiplies the points earned. */
+export const LEVEL_BONUS: Record<Guidance, number> = { guided: 1, standard: 1.25, expert: 1.5 };
+const LEVEL_RANK: Record<Guidance, number> = { guided: 0, standard: 1, expert: 2 };
+
+export interface ScoreDetail {
+  level: Guidance;
+  flags: number;
+  objectives: number;
+  /** Points added by the level. */
+  bonus: number;
+  /** Points lost to hints and to detections. */
+  hints: number;
+  detections: number;
+  total: number;
+}
+
 /** How long a language model may take before the script answers alone. */
 const BRAIN_TIMEOUT_MS = 20_000;
 
@@ -114,7 +130,11 @@ export class Game {
     this.missions = new Map(options.missions.map((m) => [m.id, m]));
     this.guidance = options.guidance ?? 'guided';
     this.state = this.initialState(options.locale);
-    if (options.log?.length) this.replay(options.log);
+    if (options.log?.length) {
+      this.replay(options.log);
+      // A save resumed at a more helpful level counts at that level.
+      if (this.state.level !== null) this.syncLevel();
+    }
   }
 
   /* ---------- accessors ---------- */
@@ -181,7 +201,19 @@ export class Game {
   /** Change how much Ada helps. A player who asks for more help gets the pending instruction at once. */
   setGuidance(guidance: Guidance) {
     this.guidance = guidance;
+    this.syncLevel();
     this.nextStep();
+  }
+
+  /**
+   * The score bonus goes to the most helpful level used during the mission, so asking for more
+   * help lowers it for good and asking for less never raises it.
+   */
+  private syncLevel() {
+    const s = this.state;
+    if (!s.mission || s.missionDone) return;
+    if (s.level === null || LEVEL_RANK[this.guidance] < LEVEL_RANK[s.level])
+      this.emit({ type: 'GuidanceChanged', level: this.guidance });
   }
 
   /** Display name of the mission's attack stage. */
@@ -252,6 +284,7 @@ export class Game {
       hints: {},
       hintsUsed: 0,
       detections: 0,
+      level: null,
       notes: [],
       messages: [],
       chats: {},
@@ -303,6 +336,7 @@ export class Game {
         s.hints = {};
         s.hintsUsed = 0;
         s.detections = 0;
+        s.level = null;
         s.fired = {};
         s.guided = {};
         s.chats = {};
@@ -394,6 +428,9 @@ export class Game {
         break;
       case 'RuleFired':
         s.fired[e.rule] = true;
+        break;
+      case 'GuidanceChanged':
+        s.level = e.level;
         break;
       case 'MissionCompleted':
         s.missionDone = true;
@@ -491,11 +528,22 @@ export class Game {
   }
 
   score(): number {
+    return this.scoreDetail().total;
+  }
+
+  /** How the score of the current mission adds up. */
+  scoreDetail(): ScoreDetail {
     const mission = this.mission;
-    if (!mission) return 0;
-    const flags = mission.flags.filter((f) => this.state.flags[f.id]).reduce((sum, f) => sum + f.points, 0);
+    const level = this.state.level ?? 'guided';
+    const flags = (mission?.flags ?? [])
+      .filter((f) => this.state.flags[f.id])
+      .reduce((sum, f) => sum + f.points, 0);
     const objectives = Object.values(this.state.objectives).filter(Boolean).length * 50;
-    return Math.max(0, flags + objectives - this.state.hintsUsed * 10 - this.state.detections * 25);
+    const bonus = Math.round((flags + objectives) * (LEVEL_BONUS[level] - 1));
+    const hints = this.state.hintsUsed * 10;
+    const detections = this.state.detections * 25;
+    const total = Math.max(0, flags + objectives + bonus - hints - detections);
+    return { level, flags, objectives, bonus, hints, detections, total };
   }
 
   /* ---------- noise and detection ---------- */
@@ -537,6 +585,7 @@ export class Game {
     this.state.clock = Math.max(this.state.clock, clock);
     if (!s.checkpoint) this.reactToMissionStart();
     this.emit({ type: 'Restored', checkpoint: name, detections });
+    this.syncLevel();
   }
 
   private reactToMissionStart() {
@@ -738,6 +787,7 @@ export class Game {
   startMission(id: string) {
     if (!this.missions.has(id)) throw new Error(`Unknown mission ${id}`);
     this.emit({ type: 'MissionStarted', mission: id });
+    this.syncLevel();
   }
 
   /* ---------- shell ---------- */

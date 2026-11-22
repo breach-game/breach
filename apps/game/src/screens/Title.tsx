@@ -1,3 +1,4 @@
+import { LEVEL_BONUS } from '@breach/engine';
 import { useEffect, useState } from 'react';
 import { Wordmark } from '../brand.tsx';
 import { eraseSave, hasSave } from '../session.ts';
@@ -46,6 +47,7 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
               >
                 <b>{t(`guidance.${g}` as UiKey)}</b>
                 <span>{t(`guidance.${g}.desc` as UiKey)}</span>
+                <i>{t('title.level.bonus', { factor: LEVEL_BONUS[g].toLocaleString(settings.locale) })}</i>
               </button>
             ))}
             <div className="levels-note">{t('title.level.note')}</div>
@@ -113,6 +115,25 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
                 onClick={() => updateSettings({ effects: false })}
               >
                 {t('off')}
+              </button>
+            </span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {t('settings.sound')}
+            <span className="seg">
+              <button
+                type="button"
+                aria-pressed={settings.sound}
+                onClick={() => updateSettings({ sound: true })}
+              >
+                {t('sound.on')}
+              </button>
+              <button
+                type="button"
+                aria-pressed={!settings.sound}
+                onClick={() => updateSettings({ sound: false })}
+              >
+                {t('sound.off')}
               </button>
             </span>
           </label>

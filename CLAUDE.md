@@ -22,8 +22,9 @@ BREACH est un thriller de cybersécurité jouable dans le navigateur. Le joueur,
 - Polices auto-hébergées (@fontsource), aucune ressource tierce au runtime
 - IndexedDB (idb-keyval) pour la sauvegarde et le cache des packs
 - PNJ BYOK optionnel (`@anthropic-ai/sdk`, chargé à la demande)
-- Plus tard : son (Tone.js), passerelle LLM (Cloudflare Workers, après la v1)
-- Déploiement statique : Cloudflare Pages ou GitHub Pages. Aucun backend pour le jeu.
+- Son généré en direct avec l'API Web Audio (`apps/game/src/audio.ts`), sans fichier audio ni bibliothèque
+- Plus tard : passerelle LLM (Cloudflare Workers, après la v1)
+- Déploiement statique : Cloudflare Pages ou GitHub Pages (`docs/deploy.md`), jamais automatique. Aucun backend pour le jeu.
 
 ## Structure
 
@@ -50,6 +51,7 @@ Architecture détaillée et décisions : dépôt `breach-game/docs` (`architectu
 - **Ajouter une mission** : créer `content/missions/<id>/` (`pack.yaml`, `mission.yaml`, `i18n/fr.yaml`, `i18n/en.yaml`, `solution.txt`), puis `pnpm packs:check`. La solution est rejouée par les tests : une mission qui ne se termine pas avec sa solution casse la CI.
 - **Les flags** se valident par `submit FLAG{...}`, comparés par empreinte sha256. Jamais par un LLM.
 - **Trois niveaux de guidage** choisis par le joueur : Guidé (Ada donne chaque commande), Autonome (Ada donne la direction), Expert (briefing et objectifs seulement). Dans un pack, `ada.say` est du récit, toujours affiché. L'aide passe par deux canaux : la table `guide` de la mission (une phrase d'ouverture par objectif obligatoire, que le moteur donne dès que le premier objectif ouvert n'a pas encore eu d'instruction) et l'effet `ada.guide: { key, for, step }` pour les étapes plus fines à l'intérieur d'un objectif. Une aide n'est jamais donnée pour un objectif déjà atteint ni pour une étape déjà dépassée, donc le joueur peut jouer dans le désordre. En Autonome, le moteur utilise la clé `<clé>.standard` si elle existe.
+- **Le score** d'une mission : points des flags, plus 50 par objectif, multipliés par le niveau (Guidé ×1, Autonome ×1,25, Expert ×1,5), moins 10 par indice et 25 par détection. Le niveau compté est le plus aidé utilisé pendant la mission (`GuidanceChanged`, `state.level`) : demander plus d'aide le baisse pour de bon. `game.scoreDetail()` donne le détail affiché au débrief.
 - **Valider une mission à la main** : `pnpm --filter @breach/pack-cli exec tsx scripts/qa.ts guided <id> none "cmd ;; cmd"` affiche ce que dit Ada après chaque commande. À faire aux trois niveaux, dans l'ordre prévu et dans le désordre.
 - **Les pages web sont des blocs déclaratifs** (`page: { title, blocks }` sur une route : `h1`, `h2`, `p`, `list`, `code`, `nav`, `link`, `comment`, `chat`, `footer`). Le navigateur du poste les dessine lui-même, et `curl` comme « Voir la source » affichent le HTML que le moteur en déduit (`pageHtml`). Un pack ne fournit jamais de balisage. Un bloc `comment` n'existe que dans la source.
 - **Les personnages sont scriptés** (`npcs` du monde, qu'une mission peut redéfinir par `id`). Un personnage est une liste ordonnée d'intentions : groupes de mots (`words`, sans tenir compte des accents ; un mot de quatre lettres ou plus vaut aussi comme préfixe ; `also` ajoute une seconde liste dont un groupe doit correspondre aussi), familles de techniques reconnues par le moteur (`families` : `override`, `reveal`, `roleplay`, `translation`, `encoding`, `authority`, `completion`, `hypothetical`) et condition `if`. La première intention qui correspond répond, ses réponses s'enchaînent, et `set` mémorise une variable. Ce cerveau scripté (`decide` dans `engine/src/npc.ts`) décide seul de ce qu'un personnage lâche : un futur cerveau LLM ne fera que reformuler.
@@ -81,6 +83,8 @@ Typographies (auto-hébergées) : JetBrains Mono pour tout ce que dit la machine
 La carte réseau est le fond d'écran du bureau. Une seule fenêtre active à la fois. La lumière d'ambiance suit la jauge de bruit (`--tension`). Le glitch n'existe que comme événement du moteur (150 à 400 ms), jamais en permanence. Le prompt du joueur est `kestrel@lignerouge`.
 
 Fenêtres : fond `--panel`, bordure 1 px teintée selon le rôle, rayon 10 px, en-tête 32 px en mono 12 px, ombre portée profonde plus un halo léger de la couleur du rôle.
+
+Son : boucle dark-synth lente dont le filtre s'ouvre et l'arpège se densifie avec la jauge de bruit (`setTension`), plus calme derrière le débrief, et courtes signatures sur les événements du moteur (message, objectif, flag, erreur, détection). Rien ne joue avant le premier clic. Interrupteur et volumes séparés dans les réglages.
 
 Effets : scanlines et bloom légers (désactivables), glitch par aberration chromatique sur les événements forts, texte des PNJ qui s'écrit au fil, curseur clignotant. Tout respecte `prefers-reduced-motion` et un interrupteur « effets » dans les réglages.
 

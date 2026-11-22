@@ -7,6 +7,11 @@ export interface Settings {
   effects: boolean;
   /** How much Ada helps: every command, the direction only, or nothing after the briefing. */
   guidance: Guidance;
+  /** Master switch for music and sound effects. */
+  sound: boolean;
+  /** Volumes, 0 to 1. */
+  music: number;
+  sfx: number;
 }
 
 const KEY = 'breach.settings';
@@ -17,6 +22,9 @@ function initial(): Settings {
     locale: navigator.language.toLowerCase().startsWith('fr') ? 'fr' : 'en',
     effects: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     guidance: 'guided',
+    sound: true,
+    music: 0.6,
+    sfx: 0.7,
   };
   try {
     return { ...fallback, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
@@ -39,6 +47,12 @@ export function updateSettings(patch: Partial<Settings>) {
   document.documentElement.lang = current.locale;
   document.documentElement.dataset.effects = current.effects ? 'on' : 'off';
   for (const l of listeners) l();
+}
+
+/** Be told of every change, outside React. */
+export function onSettings(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 export function useSettings(): Settings {
