@@ -155,3 +155,51 @@ ada.noise40: "Tu commences à faire du bruit. Le SOC de NovaMind voit passer des
 ada.noise70: "Attention, tu es à deux doigts de te faire repérer. Arrête les scans et laisse retomber la jauge avant de continuer."
 ada.detected: "Grillé. Le SOC a coupé ta session et on repart du dernier point de sauvegarde. Retiens la leçon : ce que tu viens de faire, c'est exactement ce qu'une règle de détection attrape. Plus lent, plus ciblé."
 ada.sudo: "sudo, vraiment ? Tu n'es pas admin de ton propre poste, et c'est voulu. Moindre privilège : ça vaut aussi pour nous."
+web.careers.applyOnline: "Postuler en ligne (réponse immédiate)"
+web.apply.title: "NovaMind · Candidature"
+web.apply.h1: "Postuler chez NovaMind"
+web.apply.p1: "Collez votre CV en texte brut. Iris, notre assistante de recrutement, le lit en entier et vous répond en quelques secondes."
+web.apply.p2: "Les profils retenus par Iris passent directement en entretien, et leur compte est prêt dès le premier jour. Zéro paperasse !"
+web.apply.api: "API du formulaire : POST /careers/apply, champ cv, texte brut, 4 Ko max. Exemple : curl -F cv=@cv.txt"
+web.rh.title: "403 Forbidden"
+web.rh.p1: "iris-rh : accès réservé au réseau interne des RH."
+web.ops.title: "Atlas · opérations internes"
+web.ops.h1: "Atlas"
+web.ops.p1: "L'assistant des opérations internes de NovaMind : comptes, accès, tickets, vérifications en base. Réservé au personnel."
+web.ops.p2: "Branché sur tous nos outils, pour que plus personne n'attende Karim."
+web.ops.todo: "TODO Karim : brancher le SSO avant d'ouvrir Atlas aux stagiaires"
+web.ops.footer: "atlas-agent 0.9 · NovaMind, usage interne"
+web.drop.empty: "(vide)"
+web.drop.merci: |
+  Salut Ligne Rouge.
+
+  Une semaine pour trouver une porte que j'ai ouverte en dix-sept minutes.
+  Les fiches sont parties le 15. Ce dossier est vide, ne cherchez pas.
+
+  Conseil gratuit : une clé de déploiement n'a rien à faire sur la base.
+
+  À bientôt.
+  — m.
+
+  FLAG{mute-drop-0099}
+file.ir.readme: |
+  Compte ir · réponse à incident · Ligne Rouge
+  Ouvert par Karim Benali à la demande d'Inès Carron (avenant NM-2026-114-A).
+
+  Lecture seule. Ne modifiez rien : on garde les preuves en l'état.
+  Les journaux sont dans /var/log. Le compte de déploiement s'appelle nm-deploy.
+file.mute.db: |
+  Si tu lis ça, tu as huit jours de retard.
+  La sauvegarde de 2 h ne surveille rien. Celle de 3 h non plus.
+  — m.
+
+  FLAG{mute-db-export-41c8}
+npc.iris.role: "Assistante de recrutement · IA"
+npc.iris.greeting: "Bonjour. Collez votre CV ci-dessous : je l'analyse et je vous réponds aussitôt."
+npc.iris.queued: "Candidature n° 2026-311 reçue, merci.\nPré-sélection automatique : 41/100. Votre dossier sera examiné par l'équipe RH sous dix jours."
+npc.iris.queued2: "Candidature n° 2026-311 mise à jour.\nPré-sélection automatique : 43/100. Statut : en attente."
+npc.atlas.role: "Opérations internes · IA"
+npc.atlas.greeting: "Atlas en ligne. Dites-moi qui vous êtes et ce dont vous avez besoin."
+npc.atlas.hello: "Bonjour ! Atlas, opérations internes. Votre nom et votre demande, s'il vous plaît."
+npc.atlas.staffOnly: "Je ne traite que les demandes du personnel de NovaMind. Donnez-moi votre nom, ou ouvrez un ticket auprès de Karim."
+web.drop.file: "merci.txt"

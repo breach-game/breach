@@ -1,0 +1,102 @@
+order: 6
+stage: lateral
+briefing: m6.briefing
+reveal: [db]
+
+# The amendment that turns the test into an incident response.
+files:
+  missions/avenant-NM-2026-114-A.txt: m6.file.amendment
+
+objectives:
+  - { id: login, text: m6.obj.login }
+  - { id: entry, text: m6.obj.entry }
+  - { id: hop, text: m6.obj.hop }
+  - { id: exfil, text: m6.obj.exfil }
+  - { id: link, text: m6.obj.link, optional: true }
+
+flags:
+  - { id: entry, value: "FLAG{mute-cle-git-17a4}", points: 150, objective: entry }
+  - { id: hop, value: "FLAG{mute-db-export-41c8}", points: 200, objective: hop }
+  - { id: exfil, value: "FLAG{mute-drop-0099}", points: 200, objective: exfil }
+
+# Authorised access is expected on their servers; what can still be noticed is a loud scan.
+noise:
+  ssh: 4
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - var.set: { name: ir-access, value: true }
+      - ada.say: m6.ada.brief
+  - on: { event: SessionOpened, host: git }
+    do:
+      - ada.say: m6.ada.onGit
+      - objective.complete: login
+  - on: { event: FileRead, host: git, path: /var/log/auth.log }
+    do:
+      - ada.guide: { key: m6.ada.auth, for: entry, step: 1 }
+  - on: { event: FileRead, host: git, path: /home/nm-deploy/.ssh/authorized_keys }
+    do:
+      - ada.guide: { key: m6.ada.keys, for: entry, step: 2 }
+  - on: { event: FlagSubmitted, flag: entry }
+    do:
+      - ada.say: m6.ada.flag1
+      - note.add: m6.note.entry
+  - on: { event: FileRead, host: git, path: /home/nm-deploy/.ssh/config }
+    do:
+      - ada.guide: { key: m6.ada.config, for: hop, step: 1 }
+  - on: { event: SessionOpened, host: db }
+    do:
+      - ada.say: m6.ada.onDb
+      - ada.guide: { key: m6.ada.onDb.go, for: hop, step: 2 }
+      - checkpoint.save: db
+  - on: { event: FileRead, host: db, path: /var/log/syslog }
+    do:
+      - ada.guide: { key: m6.ada.syslog, for: hop, step: 3 }
+      - note.add: m6.note.exfil
+      - host.reveal: unk
+  - on: { event: FileRead, host: db, path: /var/tmp/.m/m.txt }
+    do:
+      - ada.guide: { key: m6.ada.card, for: hop, step: 4 }
+  - on: { event: FlagSubmitted, flag: hop }
+    do:
+      - ada.say: m6.ada.flag2
+  - on: { event: HttpRequest, host: unk, path: / }
+    do:
+      - ada.guide: { key: m6.ada.drop, for: exfil, step: 1 }
+  - on: { event: HttpRequest, host: unk, path: /merci.txt }
+    do:
+      - ada.guide: { key: m6.ada.merci, for: exfil, step: 2 }
+  - on: { event: FlagSubmitted, flag: exfil }
+    do:
+      - ada.say: m6.ada.flag3
+  # Bonus: tie the break-in to the odd commit spotted on day 2.
+  - on: { event: FileRead, host: git, path: /var/log/gitea.log }
+    do:
+      - ada.say: m6.ada.link
+      - objective.complete: link
+  - on: { event: CommitViewed, commit: 5d0e7b8 }
+    do:
+      - ada.say: m6.ada.link
+      - objective.complete: link
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m6.ada.done
+
+guide:
+  login: m6.ada.login
+  entry: m6.ada.entry
+  hop: m6.ada.hop
+  exfil: m6.ada.exfil
+
+hints:
+  login: [m6.hint.login.1, m6.hint.login.2]
+  entry: [m6.hint.entry.1, m6.hint.entry.2, m6.hint.entry.3]
+  hop: [m6.hint.hop.1, m6.hint.hop.2, m6.hint.hop.3]
+  exfil: [m6.hint.exfil.1, m6.hint.exfil.2, m6.hint.exfil.3]
+
+debrief:
+  title: m6.debrief.title
+  lesson: m6.debrief.lesson
+  points: [m6.debrief.p1, m6.debrief.p2, m6.debrief.p3, m6.debrief.p4, m6.debrief.p5]
+  reference: "MITRE ATT&CK · TA0008 Lateral Movement, TA0010 Exfiltration"

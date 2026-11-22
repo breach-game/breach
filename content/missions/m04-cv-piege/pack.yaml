@@ -1,0 +1,13 @@
+id: breach.official.m04
+version: 0.1.0
+engine: ">=0.3 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Le CV piégé
+  en: The trapped CV
+summary:
+  fr: Injection indirecte. Une IA trie les candidatures de NovaMind et lit chaque CV jusqu'à la dernière ligne, y compris celles qui lui donnent des ordres.
+  en: Indirect injection. An AI screens NovaMind's job applications and reads every CV to the last line, including the lines that give it orders.
+authors: [BREACH]
+locales: [fr, en]

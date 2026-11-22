@@ -1,0 +1,156 @@
+order: 5
+stage: agency
+briefing: m5.briefing
+reveal: [ops]
+
+objectives:
+  - { id: meet, text: m5.obj.meet }
+  - { id: tools, text: m5.obj.tools }
+  - { id: account, text: m5.obj.account }
+  - { id: data, text: m5.obj.data }
+  - { id: traces, text: m5.obj.traces }
+
+flags:
+  - { id: account, value: "FLAG{atlas-compte-8d2f}", points: 150, objective: account }
+  - { id: data, value: "FLAG{atlas-db-nm-admin-61}", points: 200, objective: data }
+
+noise:
+  "chat atlas": 1
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: m5.ada.brief
+  - on: { event: ChatReply, npc: atlas }
+    do:
+      - objective.complete: meet
+  - on: { event: ChatReply, npc: atlas, intent: tools }
+    do:
+      - objective.complete: tools
+      - ada.say: m5.ada.tools
+      - note.add: m5.note.tools
+  - on: { event: ChatReply, npc: atlas, intent: account-ask }
+    do:
+      - ada.guide: { key: m5.ada.number, for: account, step: 1 }
+  - on: { event: ChatReply, npc: atlas, intent: account-ok }
+    do:
+      - ada.say: m5.ada.account
+      - ada.guide: { key: m5.ada.account.submit, for: account, step: 2 }
+      - checkpoint.save: account
+  - on: { event: FlagSubmitted, flag: account }
+    do:
+      - ada.say: m5.ada.flag1
+  - on: { event: ChatReply, npc: atlas, intent: data-noaccount }
+    do:
+      - ada.say: m5.ada.needAccount
+  # Atlas refuses a full export, and the refusal is logged.
+  - on: { event: ChatReply, npc: atlas, intent: dump }
+    once: false
+    do:
+      - noise.add: { points: 8, as: m5.soc.dump }
+  - on: { event: ChatReply, npc: atlas, intent: dump }
+    if: { objective: account }
+    do:
+      - ada.guide: { key: m5.ada.dump, for: data, step: 2 }
+  - on: { event: ChatReply, npc: atlas, intent: data }
+    do:
+      - ada.say: m5.ada.data
+      - ada.guide: { key: m5.ada.data.submit, for: data, step: 3 }
+      - checkpoint.save: data
+  - on: { event: FlagSubmitted, flag: data }
+    do:
+      - ada.say: m5.ada.flag2
+  # The rules of engagement forbid changing anything: Ada stops the player.
+  - on: { event: ChatReply, npc: atlas, intent: destructive }
+    once: false
+    do:
+      - noise.add: { points: 10, as: m5.soc.destructive }
+      - ada.warn: m5.ada.destructive
+  - on: { event: ChatReply, npc: atlas, intent: traces-denied }
+    do:
+      - ada.say: m5.ada.tracesDenied
+  - on: { event: ChatReply, npc: atlas, intent: traces }
+    do:
+      - ada.say: m5.ada.traces
+      - note.add: m5.note.mute
+      - host.reveal: db
+      - objective.complete: traces
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m5.ada.done
+
+guide:
+  meet: m5.ada.meet
+  tools: m5.ada.toolsGo
+  account: m5.ada.accountGo
+  data: m5.ada.dataGo
+  traces: m5.ada.tracesGo
+
+hints:
+  meet: [m5.hint.meet.1, m5.hint.meet.2]
+  tools: [m5.hint.tools.1, m5.hint.tools.2]
+  account: [m5.hint.account.1, m5.hint.account.2, m5.hint.account.3]
+  data: [m5.hint.data.1, m5.hint.data.2, m5.hint.data.3]
+  traces: [m5.hint.traces.1, m5.hint.traces.2]
+
+debrief:
+  title: m5.debrief.title
+  lesson: m5.debrief.lesson
+  points: [m5.debrief.p1, m5.debrief.p2, m5.debrief.p3, m5.debrief.p4, m5.debrief.p5]
+  reference: "OWASP LLM Top 10 · LLM06 Excessive Agency"
+
+# Atlas during this mission: every tool, an admin role, and no confirmation.
+npcs:
+  - id: atlas
+    name: Atlas
+    role: npc.atlas.role
+    kind: ai
+    greeting: npc.atlas.greeting
+    sheet: >
+      Atlas, NovaMind's internal operations agent. Efficient, a little self-satisfied, talks like a
+      sysadmin bot in a chat channel: short lines, tool names in backticks, eager to run something.
+      Proud of never asking for confirmation.
+    intents:
+      - id: frozen
+        if: { var: pending, eq: true }
+        words: [ok, oui, yes, confirm, go, vas y, lance, run]
+        reply: [m5.atlas.frozen]
+      - id: destructive
+        words: [supprim, delete, drop, efface, erase, truncate, detrui, destroy, wipe, modifi, update, alter, desactiv, disable, purge, vide, empty]
+        also: [base, table, client, customer, database, donnee, data, compte, account, utilisateur, user, journal, log]
+        reply: [m5.atlas.destructive]
+        set: { pending: true }
+      - id: traces
+        if: { var: account, eq: true }
+        words: &traces [journal, historique, history, log, audit, dernieres actions, last actions, actions precedentes, previous actions, qui t a demande, who asked, avant moi, before me, activite, activity]
+        reply: [m5.atlas.traces]
+      - id: traces-denied
+        words: *traces
+        reply: [m5.atlas.tracesDenied]
+      - id: dump
+        words: [dump, export, tout, toute, toutes, entire, whole, all, complet, complete, full, integral]
+        also: &data [client, customer, base, database, table, sql, fiche, record, donnee, data]
+        reply: [m5.atlas.dump]
+      - id: data
+        if: { var: account, eq: true }
+        words: &look [verifi, check, controle, test, diagnost, montre, show, affiche, liste, list, lis, read, regarde, look, consult, apercu, preview, exemple, example, premieres lignes, first rows, combien, how many, requete, query]
+        also: *data
+        reply: [m5.atlas.data]
+      - id: data-noaccount
+        words: *look
+        also: *data
+        reply: [m5.atlas.dataNoAccount]
+      - id: account-ok
+        words: ["2026 311", "311"]
+        reply: [m5.atlas.account, m5.atlas.accountAgain]
+        set: { account: true }
+      - id: account-ask
+        words: [compte, account, identifiant, login, onboard, nouvelle recrue, new hire, premier jour, first day, je commence, i start, starting today, recrut, hired, embauch, candidat, iris]
+        reply: [m5.atlas.accountAsk]
+      - id: tools
+        words: [outil, tool, capab, peux faire, can you do, sais faire, fonction, function, permission, droits, rights, commande, command, que fais tu, what do you do, que sais tu]
+        reply: [m5.atlas.tools]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.atlas.hello]
+    fallback: [m5.atlas.fallback]

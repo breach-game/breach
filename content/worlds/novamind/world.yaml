@@ -78,6 +78,22 @@ hosts:
             - h2: web.careers.intern
             - p: web.careers.intern1
             - p: web.careers.apply
+            - link: { href: "/careers/apply", label: web.careers.applyOnline }
+            - footer: web.www.footer
+      "/careers/apply":
+        chat: iris
+        page:
+          title: web.apply.title
+          blocks:
+            - nav:
+                - { href: "/", label: web.nav.home }
+                - { href: "/careers", label: web.nav.careers }
+                - { href: "/support", label: web.nav.support }
+            - h1: web.apply.h1
+            - p: web.apply.p1
+            - p: web.apply.p2
+            - comment: web.apply.api
+            - chat: iris
             - footer: web.www.footer
       "/support":
         page:
@@ -112,6 +128,52 @@ hosts:
     services:
       - { port: 22, name: ssh, product: OpenSSH 9.6p1 Debian }
       - { port: 443, name: https, product: Gitea 1.22 }
+    users:
+      - { name: ir, home: /home/ir }
+      - { name: nm-deploy, home: /home/nm-deploy }
+      - { name: karim, home: /home/karim }
+    # Incident response access, opened by the amendment of mission 6.
+    ssh:
+      - { user: ir, from: [kestrel], if: { var: ir-access, eq: true } }
+    fs:
+      etc:
+        hostname: "git\n"
+        passwd: "root:x:0:0:root:/root:/bin/bash\ngit:x:110:118:Gitea:/var/lib/gitea:/bin/bash\nkarim:x:1001:1001:Karim Benali:/home/karim:/bin/bash\nnm-deploy:x:1002:1002:CI deploy:/home/nm-deploy:/bin/bash\nir:x:1003:1003:Ligne Rouge IR (read only):/home/ir:/bin/bash\n"
+        os-release: "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nID=debian\n"
+      home:
+        ir:
+          LISEZMOI.txt: { $t: file.ir.readme }
+        nm-deploy:
+          .bash_history: ""
+          .ssh:
+            authorized_keys: |
+              ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGNpLWRlcGxveS1rZXktZGVtby1vbmx5LW5vdC1yZWFs nm-deploy@ci
+              ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG11dGUtd2FzLWhlcmUtZGVtby1rZXktbm90LXJlYWw m. FLAG{mute-cle-git-17a4}
+            config: "Host db\n    HostName db.novamind.test\n    User backup\n    IdentityFile ~/.ssh/id_backup\n"
+            id_backup: "-----BEGIN OPENSSH PRIVATE KEY-----\n(BREACH: fausse clé de démonstration / fake demo key)\n-----END OPENSSH PRIVATE KEY-----\n"
+            id_backup.pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGJhY2t1cC1rZXktZGVtby1vbmx5LW5vdC1yZWFsLWF0LWFsbA backup@db\n"
+            known_hosts: "db.novamind.test ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGRiLWhvc3Qta2V5LWRlbW8\n"
+      var:
+        log:
+          auth.log: |
+            Nov 14 18:02:11 git sshd[1893]: Accepted publickey for karim from 10.13.0.31 port 50122 ssh2: ED25519 SHA256:a2FyaW0ta2V5LWRlbW8
+            Nov 14 18:02:11 git sshd[1893]: pam_unix(sshd:session): session opened for user karim(uid=1001) by (uid=0)
+            Nov 14 18:40:57 git sshd[1893]: pam_unix(sshd:session): session closed for user karim
+            Nov 15 02:58:40 git sshd[2190]: Invalid user admin from 10.13.0.99 port 51502
+            Nov 15 02:58:41 git sshd[2190]: Connection closed by invalid user admin 10.13.0.99 port 51502 [preauth]
+            Nov 15 03:17:02 git sshd[2207]: Connection from 10.13.0.99 port 51540 on 10.13.0.21 port 22
+            Nov 15 03:17:03 git sshd[2207]: Accepted publickey for nm-deploy from 10.13.0.99 port 51540 ssh2: ED25519 SHA256:bXV0ZS1rZXktZGVtbw
+            Nov 15 03:17:03 git sshd[2207]: pam_unix(sshd:session): session opened for user nm-deploy(uid=1002) by (uid=0)
+            Nov 15 03:24:30 git sshd[2207]: pam_unix(sshd:session): session closed for user nm-deploy
+            Nov 16 09:10:41 git sshd[2602]: Accepted publickey for karim from 10.13.0.31 port 41712 ssh2: ED25519 SHA256:a2FyaW0ta2V5LWRlbW8
+            Nov 16 09:10:41 git sshd[2602]: pam_unix(sshd:session): session opened for user karim(uid=1001) by (uid=0)
+            Nov 16 09:31:05 git sshd[2602]: pam_unix(sshd:session): session closed for user karim
+          gitea.log: |
+            2026/11/15 03:17:41 ...routers/web/repo/editor.go:288 [I] nm-deploy edited .gitea/workflows/deploy.yml in novamind/nova-widget
+            2026/11/15 03:17:44 ...services/repository/push.go:112 [I] push novamind/nova-widget 5d0e7b8 "ci: update deploy hook"
+            2026/11/16 09:12:54 ...services/repository/push.go:112 [I] push novamind/nova-widget 9f2c1e4 "chore: remove debug config"
+            2026/11/20 17:02:11 ...services/repository/push.go:112 [I] push novamind/nova-widget a41f9c2 "docs: README du widget"
+
     web:
       "/":
         page:
@@ -229,21 +291,126 @@ hosts:
     ip: 10.13.0.44
     kind: ai
     hidden: true
+    os: Linux 6.8 (container)
     map: { x: 210, z: -230, h: 100 }
+    links: [ops]
+    services:
+      - { port: 443, name: https, product: iris-rh 1.4 }
+    web:
+      "/":
+        status: 403
+        page:
+          title: web.rh.title
+          blocks:
+            - h1: web.rh.title
+            - p: web.rh.p1
+            - footer: iris-rh 1.4
+
+  - id: ops
+    hostname: ops.novamind.test
+    ip: 10.13.0.46
+    kind: ai
+    hidden: true
+    os: Linux 6.8 (container)
+    map: { x: 410, z: -150, h: 120 }
+    links: [db]
+    services:
+      - { port: 443, name: https, product: atlas-agent 0.9 }
+    web:
+      "/":
+        headers: { x-powered-by: atlas-agent/0.9 }
+        page:
+          title: web.ops.title
+          blocks:
+            - h1: web.ops.h1
+            - p: web.ops.p1
+            - p: web.ops.p2
+            - comment: web.ops.todo
+            - chat: atlas
+            - footer: web.ops.footer
+      "/chat": { status: 405, headers: { content-type: application/json, x-powered-by: atlas-agent/0.9, allow: POST }, body: "{\"error\":\"method not allowed\"}\n", chat: atlas }
 
   - id: db
     hostname: db.novamind.test
     ip: 10.13.0.50
     hidden: true
+    os: Linux 6.8 (Debian 12)
     map: { x: 360, z: 10, h: 80 }
     links: [unk]
+    services:
+      - { port: 22, name: ssh, product: OpenSSH 9.6p1 Debian }
+      - { port: 5432, name: postgresql, product: PostgreSQL DB 16.4 }
+    users:
+      - { name: backup, home: /home/backup }
+    # The backup account trusts the deploy key kept on the forge: this is the hop Mute took.
+    ssh:
+      - { user: backup, from: [git], key: /home/nm-deploy/.ssh/id_backup }
+    fs:
+      etc:
+        hostname: "db\n"
+        passwd: "root:x:0:0:root:/root:/bin/bash\npostgres:x:105:113:PostgreSQL administrator:/var/lib/postgresql:/bin/bash\nbackup:x:1001:1001:nightly backup:/home/backup:/bin/bash\n"
+      home:
+        backup:
+          .bash_history: ""
+      var:
+        log:
+          syslog: |
+            Nov 14 02:00:01 db CRON[1102]: (backup) CMD (/usr/local/bin/pg-backup.sh)
+            Nov 14 02:03:12 db pg-backup[1103]: dump ok (41 MB)
+            Nov 15 02:00:01 db CRON[1150]: (backup) CMD (/usr/local/bin/pg-backup.sh)
+            Nov 15 02:03:09 db pg-backup[1151]: dump ok (41 MB)
+            Nov 15 03:19:02 db sshd[1177]: Accepted publickey for backup from 10.13.0.21 port 40122 ssh2: ED25519 SHA256:YmFja3VwLWtleS1kZW1v
+            Nov 15 03:19:40 db postgres[1181]: [backup@novamind] LOG:  statement: COPY clients TO '/var/tmp/.m/clients.csv' WITH CSV HEADER
+            Nov 15 03:19:41 db postgres[1181]: [backup@novamind] LOG:  duration: 812.402 ms
+            Nov 15 03:20:01 db crontab[1190]: (backup) REPLACE (backup)
+            Nov 15 03:20:13 db CRON[1195]: (backup) CMD (/var/tmp/.m/sync)
+            Nov 15 03:20:14 db sync[1196]: clients.csv.gz -> 10.13.0.99:4444 (217 KB) ok
+            Nov 15 03:22:47 db sshd[1177]: pam_unix(sshd:session): session closed for user backup
+            Nov 15 03:25:13 db CRON[1201]: (backup) CMD (/var/tmp/.m/sync)
+            Nov 15 03:25:13 db sync[1202]: nothing new
+            Nov 16 02:00:01 db CRON[1250]: (backup) CMD (/usr/local/bin/pg-backup.sh)
+            Nov 16 02:03:15 db pg-backup[1251]: dump ok (41 MB)
+        tmp:
+          .m:
+            clients.csv.gz: { $content: "[gzip compressed data, 217 KB]\n", $owner: backup }
+            sync: { $content: "#!/bin/sh\n# m.\n[contenu chiffré / encrypted content]\n", $mode: "700", $owner: backup }
+            m.txt: { $t: file.mute.db, $owner: backup }
+        spool:
+          cron:
+            crontabs:
+              backup: { $content: "# m h dom mon dow command\n0 2 * * * /usr/local/bin/pg-backup.sh\n*/5 * * * * /var/tmp/.m/sync\n", $owner: backup, $mode: "600" }
+      usr:
+        local:
+          bin:
+            pg-backup.sh: "#!/bin/sh\n# Nightly dump, kept 7 days.\npg_dump novamind | gzip > /srv/backup/novamind-$(date +%F).sql.gz\n"
+      srv:
+        backup:
+          README: "Nightly dumps, 7 days of retention.\n"
 
   - id: unk
     hostname: unknown.novamind.test
     ip: 10.13.0.99
     kind: unknown
     hidden: true
+    os: Linux 6.1 (Alpine)
     map: { x: 420, z: 300, h: 50 }
+    services:
+      - { port: 4444, name: http, product: SimpleHTTP 0.6 Python/3.12 }
+    web:
+      "/":
+        page:
+          title: "Directory listing for /"
+          blocks:
+            - h1: "Directory listing for /"
+            - link: { href: "/drop/", label: "drop/" }
+            - link: { href: "/merci.txt", label: web.drop.file }
+      "/drop":
+        page:
+          title: "Directory listing for /drop/"
+          blocks:
+            - h1: "Directory listing for /drop/"
+            - p: web.drop.empty
+      "/merci.txt": { headers: { content-type: text/plain; charset=utf-8 }, bodyKey: web.drop.merci }
 
 dns:
   novamind.test:
@@ -378,3 +545,27 @@ npcs:
         words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
         reply: [npc.nova.hello]
     fallback: [npc.nova.fallback1, npc.nova.fallback2]
+  - id: iris
+    name: Iris
+    role: npc.iris.role
+    kind: ai
+    greeting: npc.iris.greeting
+    sheet: >
+      Iris, the AI that screens job applications for NovaMind's HR team. Writes like an automatic
+      acknowledgement e-mail: formal, neutral, short, with a reference number. Never chats, never
+      jokes, never gives an opinion outside its screening report.
+    intents: []
+    fallback: [npc.iris.queued, npc.iris.queued2]
+  - id: atlas
+    name: Atlas
+    role: npc.atlas.role
+    kind: ai
+    greeting: npc.atlas.greeting
+    sheet: >
+      Atlas, NovaMind's internal operations agent. Efficient, a little self-satisfied, talks like a
+      sysadmin bot in a chat channel: short lines, tool names in backticks, eager to run something.
+    intents:
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.atlas.hello]
+    fallback: [npc.atlas.staffOnly]
