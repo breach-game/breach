@@ -2,9 +2,21 @@
  * The running game: packs, engine instance, save file. React components read the engine's state
  * through `useGame()`, which re-renders them whenever an event is appended to the log.
  */
-import { Game, type GameEvent, NOISE_DECAY_PER_MIN, type SaveData } from '@breach/engine';
-import type { Catalog, CatalogEntry } from '@breach/pack-schema';
-import { del, get, set } from 'idb-keyval';
+import {
+  completedIn,
+  ENGINE_VERSION,
+  Game,
+  type GameEvent,
+  NOISE_DECAY_PER_MIN,
+  type ProgressFile,
+  parseProgressFile,
+  planResume,
+  progressFile,
+  type ResumePlan,
+  type SaveData,
+} from '@breach/engine';
+import { type Catalog, type CatalogEntry, isOfficialId } from '@breach/pack-schema';
+import { del, get, keys, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
 import { type Campaign, loadCampaign, loadCommunityMission, type PackProgress } from './packs.ts';
 import { getSettings } from './settings.ts';
@@ -41,6 +53,12 @@ function persist() {
   }, 300);
 }
 
+/** Write the running game now, before the page goes away. */
+export async function flushSave() {
+  clearTimeout(saveTimer);
+  if (game) await set(saveKey, game.save()).catch(() => {});
+}
+
 export async function hasSave(): Promise<boolean> {
   const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
   return Boolean(save?.log?.length);
@@ -51,9 +69,27 @@ export async function prepare(onProgress?: (p: PackProgress) => void): Promise<C
   return campaign;
 }
 
+/** A community save recorded on another version of the same mission, which can no longer resume. */
+async function outdatedCommunitySave(entry: CatalogEntry, current: string): Promise<boolean> {
+  const prefix = `save:community:${entry.id}@`;
+  const all = await keys().catch(() => []);
+  return all.some((k) => typeof k === 'string' && k.startsWith(prefix) && k !== current);
+}
+
+/** The first event of a save whose finished missions were kept, but whose log could not replay. */
+const carried = (missions: Record<string, { score: number }>, source: 'update' | 'import'): GameEvent => ({
+  type: 'ProgressCarried',
+  missions,
+  source,
+  seq: 1,
+  t: 0,
+});
+
 /**
- * Start a new campaign, or resume the saved one. A community mission resumes where the player left
- * it, unless it was finished: then it starts over.
+ * Start a new campaign, or resume the saved one. A save resumes as it was when the update since it
+ * was made left its world and its mission in progress alone. Otherwise the finished missions are
+ * kept with their scores, the unfinished one starts again, and Ada says so. A community mission
+ * resumes where the player left it, unless it was finished or updated since: then it starts over.
  */
 export async function start(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Game> {
   community = typeof mode === 'object';
@@ -64,29 +100,93 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
   saveKey =
     typeof mode === 'object' ? `save:community:${mode.community.id}@${mode.community.version}` : SAVE_KEY;
   const locale = getSettings().locale;
-  let log: GameEvent[] | undefined;
+  const options = { world: c.world, missions: c.missions, locale, guidance: getSettings().guidance };
+  let plan: ResumePlan = { kind: 'fresh' };
+  let notice: string | null = null;
   if (mode !== 'new') {
     const save = await get<SaveData>(saveKey).catch(() => undefined);
-    // A save only replays on the world version it was recorded with.
-    if (save && save.world.id === c.world.id && save.world.version === c.world.version) log = save.log;
-    if (community && log?.some((e) => e.type === 'MissionCompleted')) log = undefined;
+    plan = planResume(save, c.world, c.missions);
+    if (typeof mode === 'object') {
+      const finished = plan.kind === 'replay' && plan.log.some((e) => e.type === 'MissionCompleted');
+      const outdated =
+        plan.kind === 'carry' ||
+        (plan.kind === 'fresh' && (await outdatedCommunitySave(mode.community, saveKey)));
+      if (outdated) notice = 'save.community.restart';
+      if (finished || plan.kind === 'carry') plan = { kind: 'fresh' };
+    }
   }
-  game = new Game({ world: c.world, missions: c.missions, locale, guidance: getSettings().guidance, log });
-  resumedAt = game.log.at(-1)?.seq ?? 0;
-  game.subscribe((event) => {
+  game = null;
+  if (plan.kind === 'replay') {
+    try {
+      game = new Game({ ...options, log: plan.log });
+      const first = plan.log[0];
+      if (plan.log.length === 1 && first?.type === 'ProgressCarried' && first.source === 'import')
+        notice = 'save.import';
+    } catch {
+      // A log the engine cannot replay: keep what it proves was finished, as after an update.
+      const ids = new Set(c.missions.map((m) => m.id));
+      const done = Object.entries(completedIn(plan.log)).filter(([id]) => ids.has(id));
+      plan = community
+        ? { kind: 'fresh' }
+        : { kind: 'carry', completed: Object.fromEntries(done), restarted: null };
+      if (community) notice = 'save.community.restart';
+    }
+  }
+  if (plan.kind === 'carry') {
+    game = new Game({ ...options, log: [carried(plan.completed, 'update')] });
+    notice = plan.restarted ? 'save.update.restart' : 'save.update.kept';
+  }
+  game ??= new Game(options);
+  const g = game;
+  resumedAt = g.log.at(-1)?.seq ?? 0;
+  g.subscribe((event) => {
     for (const l of eventListeners) l(event);
     notify();
     persist();
   });
-  if (!game.state.mission) {
-    const first = game.nextMission();
-    if (first) game.startMission(first.id);
+  if (notice) g.emit({ type: 'NpcMessage', npc: 'ada', key: notice, tone: 'info' });
+  if (!g.state.mission) {
+    const first = g.nextMission();
+    if (first) g.startMission(first.id);
     // Ask the browser not to evict the save (Safari clears site data after seven idle days).
     void navigator.storage?.persist?.().catch(() => {});
   }
+  // A carried save is written at once, so the notice is not repeated on the next start.
+  if (notice) persist();
   lastActivity = performance.now();
   notify();
-  return game;
+  return g;
+}
+
+/* ---------- progress file ---------- */
+
+/** The campaign's finished missions and their scores, ready to download. Null without a save. */
+export async function exportProgress(): Promise<ProgressFile | null> {
+  const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
+  if (!Array.isArray(save?.log)) return null;
+  const done = Object.entries(completedIn(save.log)).filter(([id]) => isOfficialId(id));
+  return progressFile(Object.fromEntries(done));
+}
+
+/**
+ * Replace the campaign save by the missions of a progress file. The file is untrusted: it is read
+ * strictly, and only its list of finished missions and scores is kept. Throws on a bad file.
+ */
+export async function importProgress(text: string): Promise<{ missions: number; score: number }> {
+  const file = parseProgressFile(text);
+  clearTimeout(saveTimer);
+  game = null;
+  const save: SaveData = {
+    engine: ENGINE_VERSION,
+    // A log with no mission in it replays on any world: nothing in it depends on a version.
+    world: { id: '', version: '' },
+    locale: getSettings().locale,
+    log: [carried(file.missions, 'import')],
+  };
+  await set(SAVE_KEY, save);
+  notify();
+  const scores = Object.values(file.missions);
+  return { missions: scores.length, score: scores.reduce((sum, m) => sum + m.score, 0) };
 }
 
 /** Is the running game a community mission, played outside the campaign? */

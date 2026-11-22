@@ -380,3 +380,15 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 @keyframes floor { to { background-position: 0 64px, 0 0; } }
 @media (prefers-reduced-motion: reduce) { .title::before { animation: none; } }
 [data-effects='off'] .title::before { animation: none; }
+
+/* ---------- Progress file and recovery ---------- */
+.progress-file { display: flex; flex-direction: column; align-items: center; gap: 6px; animation: fadein 600ms 1400ms both; }
+.progress-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.progress-actions .btn.ghost { height: 44px; }
+.progress-status { max-width: 80ch; min-height: 20px; text-align: center; font: 400 12px/1.5 var(--human); color: var(--dim); }
+.progress-status .ok { color: var(--success); }
+.progress-status .title-error { font: inherit; }
+.progress-confirm { display: inline-flex; align-items: center; gap: 10px; justify-content: center; color: var(--text); }
+.progress-confirm .btn { height: 44px; width: auto; min-width: 0; padding: 0 18px; }
+.recover-title { font: 700 28px var(--human); color: #fff; text-align: center; margin: 0; }
+.recover-body { max-width: 52ch; text-align: center; font: 400 16px/1.5 var(--human); color: var(--text); margin: 0; }

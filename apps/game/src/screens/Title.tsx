@@ -4,6 +4,7 @@ import { Wordmark } from '../brand.tsx';
 import { eraseSave, hasSave } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { ProgressFile } from './ProgressFile.tsx';
 
 const LEVELS = ['guided', 'standard', 'expert'] as const;
 
@@ -94,6 +95,9 @@ export function Title({
           </div>
         ) : (
           <p className="small-screen">{t('title.desktop')}</p>
+        )}
+        {wide && !picking && save !== null && (
+          <ProgressFile hasSave={save} onImported={() => setSave(true)} />
         )}
         <div className="title-options">
           <div className="seg" role="group" aria-label="Language">
