@@ -2,9 +2,9 @@
   "name": "breach",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@12.21.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "packs": "pnpm --filter @breach/pack-cli run cli build ../../content --out ../../apps/game/public/packs",
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.8",
-    "typescript": "^5.9.0",
-    "vitest": "^4.0.0"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
   }
 }

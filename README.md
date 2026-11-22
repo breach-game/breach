@@ -49,11 +49,11 @@ The whole game plays without any key: the characters follow a script. In the set
 - **Understand my messages**: a model recognises what you ask even when worded freely, in another language or with typos. It can only point at words the character already listens for, never a name or code word you have to find yourself.
 - **Reword the replies**: a model says the line the script chose in its own words.
 
-The script always decides what a character gives away, and flags are checked by the engine, so a mission plays out the same with or without a key. The key stays in your browser and calls go straight to `api.anthropic.com`. It is the game's only outside connection, and it does not exist until a key is set. Details in [SECURITY.md](SECURITY.md).
+The script always decides what a character gives away, and flags are checked by the engine, so a mission plays out the same with or without a key. The key stays in your browser and calls go straight to `api.anthropic.com`. Apart from community missions you choose to open, it is the game's only outside connection, and it does not exist until a key is set. Details in [SECURITY.md](SECURITY.md).
 
 ## Development
 
-Node 22+, pnpm 10.
+Node 24+ (26 LTS recommended), pnpm 12.
 
 ```bash
 pnpm install
