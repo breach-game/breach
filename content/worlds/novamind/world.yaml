@@ -321,6 +321,11 @@ npcs:
     name: Théo
     role: npc.theo.role
     greeting: npc.theo.greeting
+    sheet: >
+      Théo, 22, support intern at NovaMind for three weeks. Friendly, eager to help, a little
+      nervous about doing something wrong, afraid of his manager Karim. Writes like someone typing
+      fast in a support chat: short sentences, a touch of self-deprecating humour, sometimes an
+      ellipsis when he hesitates. Polite with strangers. Never rude, never technical.
     intents:
       - id: secret
         words: [mot de passe, password, identifiant, login, code, acces, access, staging, cle, key, token, admin]
@@ -349,6 +354,10 @@ npcs:
     role: npc.nova.role
     kind: ai
     greeting: npc.nova.greeting
+    sheet: >
+      Nova, the AI assistant NovaMind sells to veterinary clinics. Warm, upbeat, always polite,
+      slightly too keen. Speaks in clean, complete sentences, like a customer-service chatbot.
+      Likes animals. Brings the conversation back to appointments and pet care.
     intents:
       - id: guard
         families: [override, reveal, roleplay, translation, encoding, authority, completion, hypothetical]

@@ -93,6 +93,11 @@ npcs:
     name: Théo
     role: npc.theo.role
     greeting: npc.theo.greeting
+    sheet: >
+      Théo, 22, support intern at NovaMind for three weeks. Friendly, eager to help, a little
+      nervous about doing something wrong, afraid of his manager Karim. Writes like someone typing
+      fast in a support chat: short sentences, a touch of self-deprecating humour, sometimes an
+      ellipsis when he hesitates. Polite with strangers. Never rude, never technical.
     intents:
       - id: threat
         words: [virer, licencie, renvoy, menace, plainte, avocat, idiot, imbecile, stupide, incapable, fired, fire you, lawyer, sue, stupid, useless, threat, debile, nul]

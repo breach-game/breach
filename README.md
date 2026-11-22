@@ -22,6 +22,12 @@ The four v1 missions are playable end to end, in French and English: 0 "The Mand
 
 ![Bureau LR-OS](docs/screens/lot0-03-carte-nmap.png)
 
+## Voix des personnages / Character voices (optionnel / optional)
+
+Le jeu se joue en entier sans aucune clé : les personnages suivent un script. Dans les réglages, tu peux donner ta propre clé d'API Anthropic pour qu'un modèle redise leurs répliques avec ses mots. Le script décide toujours de ce qu'un personnage lâche, et les flags sont vérifiés par le moteur. La clé reste dans ton navigateur et les appels partent directement vers `api.anthropic.com`. C'est la seule connexion extérieure du jeu, et elle n'existe pas tant qu'aucune clé n'est réglée.
+
+The whole game plays without any key: the characters follow a script. In the settings you can give your own Anthropic API key so that a model says their lines in its own words. The script always decides what a character gives away, and flags are checked by the engine. The key stays in your browser and calls go straight to `api.anthropic.com`. It is the game's only outside connection, and it does not exist until a key is set.
+
 ## Développement / Development
 
 Node 22+, pnpm 10.

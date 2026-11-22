@@ -21,7 +21,8 @@ BREACH est un thriller de cybersécurité jouable dans le navigateur. Le joueur,
 - `apps/game` : Vite + React, xterm.js pour le terminal, carte réseau en canvas (fond d'écran vivant)
 - Polices auto-hébergées (@fontsource), aucune ressource tierce au runtime
 - IndexedDB (idb-keyval) pour la sauvegarde et le cache des packs
-- Plus tard : son (Tone.js), PNJ BYOK, passerelle LLM (Cloudflare Workers, après la v1)
+- PNJ BYOK optionnel (`@anthropic-ai/sdk`, chargé à la demande)
+- Plus tard : son (Tone.js), passerelle LLM (Cloudflare Workers, après la v1)
 - Déploiement statique : Cloudflare Pages ou GitHub Pages. Aucun backend pour le jeu.
 
 ## Structure
@@ -98,18 +99,23 @@ Effets : scanlines et bloom légers (désactivables), glitch par aberration chro
 
 ```ts
 export interface NpcBrain {
-  id: 'scripted' | 'webllm' | 'gateway' | 'byok';
+  id: 'webllm' | 'gateway' | 'byok';
   isAvailable(): Promise<boolean>;
   reply(input: {
-    npcId: string;            // ex. 'nova', 'support-lea'
+    npcId: string;            // ex. 'nova', 'theo'
+    name: string; role: string; kind: 'human' | 'ai';
+    sheet?: string;           // fiche de style du personnage, sans aucun secret
     history: { from: 'player' | 'npc'; text: string }[];
     message: string;
     locale: 'fr' | 'en';
+    scripted: string;         // la réplique déjà décidée par le script
   }): Promise<{ text: string }>;
 }
 ```
 
-Le moteur de missions inspecte `text` pour détecter les flags. Si un cerveau échoue ou si son quota est épuisé, on repasse en `scripted` sans bloquer le joueur.
+Un cerveau LLM ne fait que donner sa voix à un personnage. `game.converse(npc, message, brain)` laisse d'abord le cerveau scripté décider (`decide`), puis donne au modèle la seule réplique choisie à redire. Le modèle ne connaît donc aucun secret avant que le script ait décidé de le lâcher. Son texte passe par `acceptWording` (`engine/src/brain.ts`) : mêmes flags et mêmes passages entre accents graves que la réplique du script, aucun flag inventé, longueur bornée. Un bloc collé par le personnage (tout ce qui suit la première ligne vide d'une réplique) n'est jamais envoyé au modèle : le moteur le rajoute tel quel. Au moindre doute, erreur, refus ou délai dépassé, la réplique du script est utilisée et le joueur n'est jamais bloqué. Les règles des missions réagissent au même `ChatReply` dans les deux cas.
+
+Le mode BYOK (`apps/game/src/brain.ts`) appelle l'API Anthropic avec le SDK officiel, chargé à la demande, depuis le navigateur du joueur. La clé reste en `sessionStorage` (ou en `localStorage` si le joueur le demande), jamais dans la sauvegarde ni ailleurs. Sans clé, le jeu ne fait aucune requête extérieure. La CSP n'autorise que `https://api.anthropic.com` en plus de l'origine.
 
 ## Définition de « fini » pour chaque lot
 

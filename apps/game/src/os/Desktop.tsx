@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { liveNoise, onGameEvent, terminalBridge, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
+import { BrainSettings } from './BrainSettings.tsx';
 import { Browser } from './Browser.tsx';
 import { Debrief } from './Debrief.tsx';
 import { Messenger } from './Messenger.tsx';
@@ -11,7 +12,7 @@ import { StatusBar } from './StatusBar.tsx';
 import { Terminal } from './Terminal.tsx';
 import { type Rect, Window } from './Window.tsx';
 
-type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'debrief';
+type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'debrief' | 'brain';
 
 function defaultLayout(): Record<WinId, Rect> {
   const W = window.innerWidth;
@@ -29,6 +30,12 @@ function defaultLayout(): Record<WinId, Rect> {
     ada: { x: W - side - 28, y: 68, w: side, h: adaH },
     notes: { x: W - side - 28, y: 68 + adaH + 16, w: side, h: H - 68 - adaH - 16 - 28 },
     debrief: { x: (W - dw) / 2, y: Math.max(56, (H - dh) / 2 + 10), w: dw, h: dh },
+    brain: {
+      x: (W - Math.min(620, W - 80)) / 2,
+      y: Math.max(56, (H - Math.min(800, H - 76)) / 2 + 10),
+      w: Math.min(620, W - 80),
+      h: Math.min(800, H - 76),
+    },
   };
 }
 
@@ -53,6 +60,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
   const [noise, setNoise] = useState(() => liveNoise(game));
   const [card, setCard] = useState<string | null>(game.state.missionDone ? null : game.state.mission);
   const [debrief, setDebrief] = useState(false);
+  const [brain, setBrain] = useState(false);
   const [stamp, setStamp] = useState(0);
   const [detect, setDetect] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -170,7 +178,12 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
     <div className={`stage${debrief ? ' blue' : ''}${detect ? ' detect' : ''}`} ref={stage}>
       <NetworkMap blue={debrief} />
       <div className="ambient" />
-      <StatusBar noise={noise} onResetLayout={() => setLayout(defaultLayout())} onQuit={onQuit} />
+      <StatusBar
+        noise={noise}
+        onResetLayout={() => setLayout(defaultLayout())}
+        onQuit={onQuit}
+        onBrain={() => setBrain(true)}
+      />
 
       <Window
         id="terminal"
@@ -300,6 +313,28 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
                 if (next) game.startMission(next.id);
               }}
             />
+          </Window>
+        </>
+      )}
+
+      {brain && (
+        <>
+          <div className="veil" />
+          <Window
+            id="brain"
+            className="pop"
+            name={t('win.brain')}
+            subtitle="BYOK"
+            tint="ai"
+            rect={rect('brain')}
+            z={46}
+            active
+            onFocus={() => {}}
+            onChange={change('brain')}
+            onClose={() => setBrain(false)}
+            closeLabel={t('win.close')}
+          >
+            <BrainSettings onClose={() => setBrain(false)} />
           </Window>
         </>
       )}
