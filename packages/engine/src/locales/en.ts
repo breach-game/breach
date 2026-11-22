@@ -10,6 +10,13 @@ export const en: Record<string, string> = {
   'stage.indirect': 'indirect prompt injection',
   'stage.agency': 'excessive agency',
   'stage.lateral': 'lateral movement',
+  'stage.analysis': 'analysis',
+  'stage.defense': 'defence',
+  'stage.response': 'incident response',
+  'stage.access': 'initial access',
+  'stage.escalation': 'privilege escalation',
+  'stage.supply': 'supply chain',
+  'stage.cloud': 'cloud',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',

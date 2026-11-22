@@ -10,6 +10,13 @@ export const fr: Record<string, string> = {
   'stage.indirect': 'injection indirecte',
   'stage.agency': 'agent trop puissant',
   'stage.lateral': 'mouvement latéral',
+  'stage.analysis': 'analyse',
+  'stage.defense': 'défense',
+  'stage.response': 'réponse à incident',
+  'stage.access': 'accès initial',
+  'stage.escalation': 'élévation de privilèges',
+  'stage.supply': 'chaîne logicielle',
+  'stage.cloud': 'cloud',
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
