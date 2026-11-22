@@ -382,6 +382,7 @@ export const catalogSchema = z.strictObject({
       requires: z.array(id),
       title: i18nText,
       summary: i18nText.optional(),
+      authors: z.array(z.string().max(80)).max(10).optional(),
       order: z.number().optional(),
       locales: z.array(z.enum(LOCALES)),
       file: z.string().regex(/^[a-z0-9._-]+\.breachpack$/),
@@ -406,3 +407,4 @@ export function parsePack(data: unknown): Pack {
 }
 
 export { checkPackSafety, isReservedDomain, isReservedIp } from './safety.ts';
+export { isOfficialId, OFFICIAL_PREFIX, SIGNATURE_ALGORITHM, verifySignature } from './signature.ts';

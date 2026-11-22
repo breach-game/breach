@@ -1,6 +1,6 @@
 import { LEVEL_BONUS, socView } from '@breach/engine';
 import { useEffect, useRef } from 'react';
-import { useGame } from '../session.ts';
+import { isCommunity, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 
@@ -79,7 +79,7 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           {t('debrief.reference')} : {mission.debrief.reference}
         </div>
       )}
-      <h3>{t('debrief.soc')}</h3>
+      <h3>{t(isCommunity() ? 'debrief.soc.community' : 'debrief.soc')}</h3>
       {entries.length ? (
         <>
           <div className="soclog">
@@ -103,7 +103,13 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
       ) : (
         <p className="fine">{t('debrief.soc.none')}</p>
       )}
-      {!next && (
+      {!next && isCommunity() && (
+        <>
+          <h3>{t('debrief.community.title')}</h3>
+          <p>{t('debrief.community.body')}</p>
+        </>
+      )}
+      {!next && !isCommunity() && (
         <>
           <h3>{t('debrief.end.title')}</h3>
           <p>{t('debrief.end.body')}</p>

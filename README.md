@@ -37,9 +37,10 @@ The only real requests the page ever makes:
 | --- | --- | --- |
 | The game itself (HTML, scripts, fonts) | the site's own origin | on load |
 | The mission packs (`packs/index.json`, `*.breachpack`) | the site's own origin | on load, then cached |
+| Community missions (`index.json`, its signature, `*.breachpack`) | `breach-game.github.io/packs/` | only when you open *Community missions* |
 | Model help for the characters | `api.anthropic.com` | only if you set your own API key and switch on a use |
 
-The production Content Security Policy only allows those two destinations, so the browser would block anything else.
+The production Content Security Policy only allows those destinations, so the browser would block anything else.
 
 ## Model help for the characters (optional)
 
@@ -73,7 +74,7 @@ Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically
 | `content/` | NovaMind world and missions |
 | `gateway/` | optional LLM gateway for free-form NPC dialogue (after v1) |
 
-A mission is a declarative pack with no code. To add one, see `CLAUDE.md`.
+A mission is a declarative pack with no code. Official missions live in `content/` (see `CLAUDE.md`). Missions written by players live in [breach-game/packs](https://github.com/breach-game/packs), which has the guide for writing one; the game lists them under *Community missions*.
 
 Design documents (game design, architecture, reviews, mockups) live in [breach-game/docs](https://github.com/breach-game/docs).
 

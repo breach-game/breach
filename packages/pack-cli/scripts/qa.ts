@@ -1,15 +1,25 @@
 /**
  * Play a list of commands at a given guidance level and print what Ada says after each one.
  * Usage: pnpm --filter @breach/pack-cli exec tsx scripts/qa.ts <guided|standard|expert> <mission id> <none|head|full> "cmd ;; cmd ;; ..."
+ * BREACH_CONTENT lists other content folders, separated by ":" (community packs, for instance), and
+ * BREACH_LOCALE picks the language (fr by default).
  */
 import { Game, stripAnsi } from '@breach/engine';
 import { loadAll } from '../src/index.ts';
 
-const packs = loadAll(new URL('../../../content', import.meta.url).pathname);
-const world = packs.find((p) => p.pack.kind === 'world')!.pack;
-const missions = packs.filter((p) => p.pack.kind === 'mission').map((p) => p.pack);
+const roots = [
+  new URL('../../../content', import.meta.url).pathname,
+  ...(process.env.BREACH_CONTENT ?? '').split(':'),
+];
+const packs = roots.filter(Boolean).flatMap((root) => loadAll(root));
 const [, , level, missionId, showOut, ...lines] = process.argv;
-const game = new Game({ world, missions, locale: 'fr', guidance: level as never });
+const mission = packs.find((p) => p.pack.id === missionId)!.pack;
+const world = packs.find((p) => p.pack.id === mission.requires[0])!.pack;
+const missions = packs
+  .filter((p) => p.pack.kind === 'mission' && p.pack.requires[0] === world.id)
+  .map((p) => p.pack);
+const locale = process.env.BREACH_LOCALE === 'en' ? 'en' : 'fr';
+const game = new Game({ world, missions, locale, guidance: level as never });
 let seen = 0;
 const flush = () => {
   for (const m of game.state.messages.slice(seen))
