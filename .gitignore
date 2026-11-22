@@ -6,3 +6,5 @@ apps/game/public/community
 .DS_Store
 coverage
 test-results
+# Game content may ship log files (training files)
+!content/**/*.log
