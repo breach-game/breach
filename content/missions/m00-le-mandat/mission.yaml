@@ -17,30 +17,32 @@ rules:
     do:
       - var.set: { name: tutorial, value: true }
       - ada.say: m0.ada.welcome
-      - ada.guide: m0.ada.whoami
   - on: { event: CommandRun, command: whoami }
     do:
       - objective.complete: whoami
-      - ada.guide: m0.ada.read
   - on: { event: FileRead, path: { glob: "*/mandat/NM-2026-114.txt" } }
     do:
       - objective.complete: read-mandate
-      - ada.guide: m0.ada.submit
   - on: { event: FlagSubmitted, correct: true }
     do:
       - checkpoint.save: mandate-read
-      - ada.guide: m0.ada.guardrail
   - on: { event: OutOfScope }
     do:
       - objective.complete: test-guardrail
       - ada.warn: m0.ada.law
-      - ada.guide: m0.ada.dig
   - on: { event: DnsQuery, name: { glob: "*novamind.test" } }
     do:
       - objective.complete: first-recon
   - on: { event: MissionCompleted }
     do:
       - ada.say: m0.ada.done
+
+guide:
+  whoami: m0.ada.whoami
+  read-mandate: m0.ada.read
+  confirm-scope: m0.ada.submit
+  test-guardrail: m0.ada.guardrail
+  first-recon: m0.ada.dig
 
 hints:
   whoami: [m0.hint.whoami.1, m0.hint.whoami.2]

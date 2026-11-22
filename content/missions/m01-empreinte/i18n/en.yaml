@@ -22,6 +22,7 @@ m1.ada.dns.standard: "DNS first: collect everything their domain declares. None 
 m1.ada.nmap.standard: "Good. You have names, now you need the map of their network, 10.13.0.0/24. Careful, a scan shows: keep an eye on the noise gauge and read `explain nmap` before you pick your options."
 m1.ada.web.standard: "That is their exposed surface. Start with the shop window. Company sites often say too much, careers pages most of all."
 m1.ada.careers.standard: "\"Self-hosted Gitea forge\", \"some of our repositories are public\". Job listings are a gold mine. You know where to look now."
+m1.ada.clone.standard: "A public repository. Fetch it to your workstation and dig through it."
 m1.ada.history.standard: "You have the code, and above all its whole past. A deleted file is never deleted from history. Look for a commit that \"cleans up\" something."
 m1.note.odd: "Commit 5d0e7b8, Sunday 3:17 am, account nm-deploy: adds a webhook to 10.13.0.99, an address unknown to the DNS. Keep watching."
 m1.hint.dns.1: "Start by querying the DNS for their domain."

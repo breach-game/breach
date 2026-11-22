@@ -22,6 +22,7 @@ m1.ada.dns.standard: "Le DNS d'abord : relève tout ce que leur domaine déclare
 m1.ada.nmap.standard: "Bien. Tu as des noms, il te faut maintenant la carte de leur réseau, 10.13.0.0/24. Attention, un scan se voit : garde un œil sur la jauge de bruit et lis `explain nmap` avant de choisir tes options."
 m1.ada.web.standard: "Voilà leur surface exposée. Commence par la vitrine. Les sites d'entreprise en disent souvent trop, surtout les pages de recrutement."
 m1.ada.careers.standard: "« Forge Gitea auto-hébergée », « une partie de nos dépôts est publique ». Les offres d'emploi sont une mine d'or. Tu sais où regarder maintenant."
+m1.ada.clone.standard: "Un dépôt public. Récupère-le sur ton poste et fouille-le."
 m1.ada.history.standard: "Tu as le code, mais surtout tout son passé. Un fichier supprimé n'est jamais supprimé de l'historique. Cherche un commit qui « nettoie » quelque chose."
 m1.note.odd: "Commit 5d0e7b8, dimanche 3 h 17, compte nm-deploy : ajoute un webhook vers 10.13.0.99, adresse inconnue du DNS. À surveiller."
 m1.hint.dns.1: "On commence par interroger le DNS de leur domaine."
