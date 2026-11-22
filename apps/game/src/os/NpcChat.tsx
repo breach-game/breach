@@ -20,6 +20,21 @@ function rich(text: string): ReactNode[] {
 }
 
 /**
+ * A reply, with what the character pastes after its first blank line (a tool's output, a log, a
+ * configuration) set in the machine's typeface, as the terminal would show it.
+ */
+function reply(text: string): ReactNode[] {
+  const cut = text.indexOf('\n\n');
+  if (cut < 0) return rich(text);
+  return [
+    ...rich(text.slice(0, cut)),
+    <span className="paste" key="paste">
+      {rich(text.slice(cut + 2))}
+    </span>,
+  ];
+}
+
+/**
  * A conversation with a character, embedded in a page. The engine's scripted brain decides the
  * answer at once; this component stages it (a pause, then the text typed out). When the player has
  * set their own API key, a model words that answer first, and the wait shows as the same pause.
@@ -151,7 +166,9 @@ export function NpcChat({ npcId, active }: { npcId: string; active: boolean }) {
                 </p>
               ) : (
                 <p>
-                  {rich(isCurrent ? currentText.slice(0, typed) : text(line))}
+                  {line.from === 'npc'
+                    ? reply(isCurrent ? currentText.slice(0, typed) : text(line))
+                    : rich(isCurrent ? currentText.slice(0, typed) : text(line))}
                   {isCurrent && <span className="caret" />}
                 </p>
               )}
