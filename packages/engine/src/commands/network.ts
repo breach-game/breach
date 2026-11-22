@@ -7,7 +7,10 @@ import { type Chunk, type Command, type CommandCtx, err, getopt, out, type Run, 
  * The scope gate. Every network command calls it before doing anything, so no simulated packet
  * ever leaves for a target outside the mandate.
  */
-function* gate(ctx: CommandCtx, raw: string): Generator<Chunk, Exclude<Target, { kind: 'out-of-scope' }> | null> {
+function* gate(
+  ctx: CommandCtx,
+  raw: string,
+): Generator<Chunk, Exclude<Target, { kind: 'out-of-scope' }> | null> {
   const target = resolveTarget(ctx.world, raw);
   if (target.kind !== 'out-of-scope') return target;
   ctx.emit({ type: 'OutOfScope', target: raw, command: ctx.name });
@@ -48,12 +51,18 @@ const dig: Command = {
       ctx.noise();
       ctx.emit({ type: 'DnsQuery', name, rtype, found: false });
       yield wait(600);
-      yield out(`\n; <<>> DiG 9.20.4 <<>> ${ctx.args.join(' ')}\n;; global options: +cmd\n; Transfer failed.`);
+      yield out(
+        `\n; <<>> DiG 9.20.4 <<>> ${ctx.args.join(' ')}\n;; global options: +cmd\n; Transfer failed.`,
+      );
       return 0;
     }
     for (const [type, values] of Object.entries(records) as [string, string[]][]) {
       if (rtype !== 'ANY' && rtype !== type) continue;
-      for (const v of values) answers.push([type, type === 'TXT' ? `"${v}"` : type === 'MX' ? `10 ${v}.` : type === 'A' ? v : `${v}.`]);
+      for (const v of values)
+        answers.push([
+          type,
+          type === 'TXT' ? `"${v}"` : type === 'MX' ? `10 ${v}.` : type === 'A' ? v : `${v}.`,
+        ]);
     }
     ctx.noise();
     ctx.emit({ type: 'DnsQuery', name, rtype, found: answers.length > 0 });
@@ -108,7 +117,9 @@ const whois: Command = {
     if (!target) return 9;
     ctx.emit({ type: 'WhoisQuery', domain });
     yield wait(400);
-    const key = Object.keys(ctx.world.whois).find((d) => domain.toLowerCase() === d || domain.toLowerCase().endsWith(`.${d}`));
+    const key = Object.keys(ctx.world.whois).find(
+      (d) => domain.toLowerCase() === d || domain.toLowerCase().endsWith(`.${d}`),
+    );
     yield out(key ? ctx.world.whois[key]! : `No match for domain "${domain.toUpperCase()}".`);
     return key ? 0 : 1;
   },
@@ -129,7 +140,9 @@ const nmap: Command = {
       NMAP_OPTIONS_WITH_VALUE,
     );
     if (!rest.length) {
-      yield out('Nmap 7.95 ( https://nmap.org )\nUsage: nmap [Scan Type(s)] [Options] {target specification}\n  -sn: Ping Scan - disable port scan\n  -sV: Probe open ports to determine service/version info\n  -p <port ranges>: Only scan specified ports\n  -T<0-5>: Set timing template (higher is faster)\n  -A: Enable OS detection, version detection');
+      yield out(
+        'Nmap 7.95 ( https://nmap.org )\nUsage: nmap [Scan Type(s)] [Options] {target specification}\n  -sn: Ping Scan - disable port scan\n  -sV: Probe open ports to determine service/version info\n  -p <port ranges>: Only scan specified ports\n  -T<0-5>: Set timing template (higher is faster)\n  -A: Enable OS detection, version detection',
+      );
       return 1;
     }
     const targets: Exclude<Target, { kind: 'out-of-scope' }>[] = [];
@@ -171,31 +184,45 @@ const nmap: Command = {
         ctx.emit({ type: 'HostDiscovered', host: host.id });
         const latency = (0.004 + rand() * 0.02).toFixed(4);
         const title = style.bold(`Nmap scan report for ${host.hostname} (${host.ip})`);
-        yield out(`${ctx.tty ? title : `Nmap scan report for ${host.hostname} (${host.ip})`}\nHost is up (${latency}s latency).`);
+        yield out(
+          `${ctx.tty ? title : `Nmap scan report for ${host.hostname} (${host.ip})`}\nHost is up (${latency}s latency).`,
+        );
         if (pingOnly) continue;
         const open = host.services.filter((s) => !wanted || wanted.has(s.port));
         const scanned = wanted ? wanted.size : 1000;
         if (!open.length) {
-          yield out(`All ${scanned} scanned ports on ${host.hostname} (${host.ip}) are in ignored states.\nNot shown: ${scanned} closed tcp ports (conn-refused)\n`);
+          yield out(
+            `All ${scanned} scanned ports on ${host.hostname} (${host.ip}) are in ignored states.\nNot shown: ${scanned} closed tcp ports (conn-refused)\n`,
+          );
           continue;
         }
-        if (scanned > open.length) yield out(`Not shown: ${scanned - open.length} closed tcp ports (conn-refused)`);
+        if (scanned > open.length)
+          yield out(`Not shown: ${scanned - open.length} closed tcp ports (conn-refused)`);
         const portCol = Math.max(...open.map((s) => `${s.port}/${s.proto}`.length), 4);
         const svcCol = Math.max(...open.map((s) => s.name.length), 7);
-        yield out(`${'PORT'.padEnd(portCol)} STATE SERVICE${versions ? `${' '.repeat(svcCol - 7)} VERSION` : ''}`);
+        yield out(
+          `${'PORT'.padEnd(portCol)} STATE SERVICE${versions ? `${' '.repeat(svcCol - 7)} VERSION` : ''}`,
+        );
         for (const s of open) {
           yield wait(180 * speed);
           elapsed += 0.18 * speed;
           ctx.emit({ type: 'ServiceDiscovered', host: host.id, port: s.port });
           const state = ctx.tty ? style.green('open ') : 'open ';
-          yield out(`${`${s.port}/${s.proto}`.padEnd(portCol)} ${state} ${versions ? `${s.name.padEnd(svcCol)} ${s.product ?? ''}`.trimEnd() : s.name}`);
+          yield out(
+            `${`${s.port}/${s.proto}`.padEnd(portCol)} ${state} ${versions ? `${s.name.padEnd(svcCol)} ${s.product ?? ''}`.trimEnd() : s.name}`,
+          );
         }
         if (flags.has('A') && host.os) yield out(`OS details: ${host.os}`);
         yield out('');
       }
     }
-    if (versions) yield out('Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .');
-    yield out(`Nmap done: ${addresses} IP address${addresses > 1 ? 'es' : ''} (${up} host${up === 1 ? '' : 's'} up) scanned in ${elapsed.toFixed(2)} seconds`);
+    if (versions)
+      yield out(
+        'Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .',
+      );
+    yield out(
+      `Nmap done: ${addresses} IP address${addresses > 1 ? 'es' : ''} (${up} host${up === 1 ? '' : 's'} up) scanned in ${elapsed.toFixed(2)} seconds`,
+    );
     return 0;
   },
 };
@@ -203,8 +230,14 @@ const nmap: Command = {
 /* ---------- curl ---------- */
 
 const STATUS_TEXT: Record<number, string> = {
-  200: 'OK', 301: 'Moved Permanently', 302: 'Found', 401: 'Unauthorized', 403: 'Forbidden',
-  404: 'Not Found', 405: 'Method Not Allowed', 500: 'Internal Server Error',
+  200: 'OK',
+  301: 'Moved Permanently',
+  302: 'Found',
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  404: 'Not Found',
+  405: 'Method Not Allowed',
+  500: 'Internal Server Error',
 };
 
 const curl: Command = {
@@ -238,7 +271,9 @@ const curl: Command = {
     ctx.noise();
     yield wait(300);
     if (!host.services.some((s) => s.port === port) || !host.web) {
-      yield err(`curl: (7) Failed to connect to ${hostname} port ${port} after 12 ms: Could not connect to server`);
+      yield err(
+        `curl: (7) Failed to connect to ${hostname} port ${port} after 12 ms: Could not connect to server`,
+      );
       return 7;
     }
     const method = values.X ?? (values.d !== undefined ? 'POST' : flags.has('I') ? 'HEAD' : 'GET');
@@ -246,7 +281,11 @@ const curl: Command = {
     const status = route?.status ?? 404;
     ctx.emit({ type: 'HttpRequest', host: host.id, path, method, status });
     const product = host.services.find((s) => s.port === port)?.product ?? 'nginx';
-    const body = route ? (route.bodyKey ? ctx.t(route.bodyKey) : (route.body ?? '')) : `<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>${product.split(' ')[0]}</center>\n</body>\n</html>\n`;
+    const body = route
+      ? route.bodyKey
+        ? ctx.t(route.bodyKey)
+        : (route.body ?? '')
+      : `<html>\n<head><title>404 Not Found</title></head>\n<body>\n<center><h1>404 Not Found</h1></center>\n<hr><center>${product.split(' ')[0]}</center>\n</body>\n</html>\n`;
     if (flags.has('I') || flags.has('i')) {
       const headers = {
         server: product.replace(' ', '/'),
@@ -255,7 +294,11 @@ const curl: Command = {
         'content-length': String(new TextEncoder().encode(body).length),
         ...(route?.headers ?? {}),
       };
-      yield out(`HTTP/1.1 ${status} ${STATUS_TEXT[status] ?? ''}\n${Object.entries(headers).map(([k, v]) => `${k}: ${v}`).join('\n')}\n`);
+      yield out(
+        `HTTP/1.1 ${status} ${STATUS_TEXT[status] ?? ''}\n${Object.entries(headers)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('\n')}\n`,
+      );
       if (flags.has('I')) return 0;
     }
     if (body) yield out(body);
@@ -296,7 +339,9 @@ const ping: Command = {
       yield out(`64 bytes from ${ip}: icmp_seq=${i} ttl=63 time=${time.toFixed(1)} ms`);
     }
     const avg = times.reduce((a, b) => a + b, 0) / times.length;
-    yield out(`\n--- ${name} ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2003ms\nrtt min/avg/max/mdev = ${Math.min(...times).toFixed(3)}/${avg.toFixed(3)}/${Math.max(...times).toFixed(3)}/2.114 ms`);
+    yield out(
+      `\n--- ${name} ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2003ms\nrtt min/avg/max/mdev = ${Math.min(...times).toFixed(3)}/${avg.toFixed(3)}/${Math.max(...times).toFixed(3)}/2.114 ms`,
+    );
     return 0;
   },
 };
@@ -313,7 +358,9 @@ const ssh: Command = {
       yield err('usage: ssh [-p port] [user@]hostname');
       return 255;
     }
-    const [user, hostname] = dest.includes('@') ? (dest.split('@') as [string, string]) : [ctx.game.user, dest];
+    const [user, hostname] = dest.includes('@')
+      ? (dest.split('@') as [string, string])
+      : [ctx.game.user, dest];
     const target = yield* gate(ctx, hostname);
     if (!target) return 9;
     if (target.kind !== 'host') {

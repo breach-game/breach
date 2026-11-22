@@ -1,8 +1,10 @@
 export const fr: Record<string, string> = {
   'engine.outOfScope': "cible « {target} » hors du périmètre du mandat {mandate}. Rien n'a été envoyé.",
   'engine.detected.line1': 'Connection reset by peer',
-  'engine.detected.line2': '[SOC NovaMind] Activité suspecte détectée. Session coupée, retour au dernier point de sauvegarde.',
-  'engine.restricted': "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
+  'engine.detected.line2':
+    '[SOC NovaMind] Activité suspecte détectée. Session coupée, retour au dernier point de sauvegarde.',
+  'engine.restricted':
+    "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
   'engine.gitUnavailable': "n'est pas disponible sur ce poste. Essaie clone, log, show, status ou remote.",
   'engine.sudo': 'Cet incident sera signalé à Ada.',
   'engine.exit': 'Tu es sur ton propre poste. Rien à quitter.',
@@ -11,13 +13,14 @@ export const fr: Record<string, string> = {
   'help.group.files': 'Fichiers',
   'help.group.network': 'Réseau',
   'help.group.system': 'Système',
-  'help.footer': 'explain <commande> : à quoi sert un outil, et comment un défenseur le repère. Tab complète, les flèches rappellent.',
+  'help.footer':
+    'explain <commande> : à quoi sert un outil, et comment un défenseur le repère. Tab complète, les flèches rappellent.',
 
   'cmd.help': 'Liste les commandes disponibles',
-  'cmd.explain': "Explique un outil et sa détection côté défense",
+  'cmd.explain': 'Explique un outil et sa détection côté défense',
   'cmd.man': 'Alias de explain',
   'cmd.mission': 'Rappelle le briefing et les objectifs',
-  'cmd.hint': "Demande un indice à Ada (trois niveaux)",
+  'cmd.hint': 'Demande un indice à Ada (trois niveaux)',
   'cmd.notes': 'Carnet : `notes add <texte>` ou `notes`',
   'cmd.submit': 'Soumet un flag trouvé : `submit FLAG{...}`',
   'cmd.pwd': 'Affiche le dossier courant',

@@ -6,4 +6,5 @@ import { systemCommands } from './system.ts';
 import type { Command } from './types.ts';
 
 export const commands = new Map<string, Command>();
-for (const c of [...gameCommands, ...fileCommands, ...networkCommands, ...gitCommands, ...systemCommands]) commands.set(c.name, c);
+for (const c of [...gameCommands, ...fileCommands, ...networkCommands, ...gitCommands, ...systemCommands])
+  commands.set(c.name, c);

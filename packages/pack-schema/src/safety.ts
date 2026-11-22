@@ -52,7 +52,9 @@ const IP_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
 const HOST_RE = /\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi;
 /** Top-level domains that make a name look like a real Internet host. */
 const REAL_TLDS = new Set(
-  'com net org io fr de uk co dev app ai gov edu ru cn info biz eu us ca ch be es nl xyz tech cloud online site store shop tv cc jp br in au pl se no fi dk pt gr cz at ie lu'.split(' '),
+  'com net org io fr de uk co dev app ai gov edu ru cn info biz eu us ca ch be es nl xyz tech cloud online site store shop tv cc jp br in au pl se no fi dk pt gr cz at ie lu'.split(
+    ' ',
+  ),
 );
 
 function allowedHostname(h: string): boolean {
@@ -67,7 +69,8 @@ function scanText(text: string, where: string, problems: string[]) {
     const parts = ip.split('.').map(Number);
     // Version strings such as "1.27.0.1" are not addresses.
     if (parts.some((p) => p > 255)) continue;
-    if (!isReservedIp(ip) && !/^0\.|^255\./.test(ip)) problems.push(`${where}: IP address ${ip} is not in a reserved range`);
+    if (!isReservedIp(ip) && !/^0\.|^255\./.test(ip))
+      problems.push(`${where}: IP address ${ip} is not in a reserved range`);
   }
   for (const h of text.match(HOST_RE) ?? []) {
     if (!allowedHostname(h)) problems.push(`${where}: host name ${h} is not a reserved domain`);
@@ -91,7 +94,11 @@ function walk(value: unknown, where: string, problems: string[], depth = 0) {
 }
 
 type PackLike = {
-  world?: { scope: { domains: string[]; networks: string[] }; hosts: { hostname: string; ip: string }[]; dns: Record<string, unknown> };
+  world?: {
+    scope: { domains: string[]; networks: string[] };
+    hosts: { hostname: string; ip: string }[];
+    dns: Record<string, unknown>;
+  };
   mission?: unknown;
   i18n?: unknown;
   authors?: unknown;
@@ -101,13 +108,16 @@ export function checkPackSafety(pack: PackLike): string[] {
   const problems: string[] = [];
   const w = pack.world;
   if (w) {
-    for (const d of w.scope.domains) if (!isReservedDomain(d)) problems.push(`scope domain ${d} is not reserved`);
-    for (const n of w.scope.networks) if (!isReservedIp(n)) problems.push(`scope network ${n} is not reserved`);
+    for (const d of w.scope.domains)
+      if (!isReservedDomain(d)) problems.push(`scope domain ${d} is not reserved`);
+    for (const n of w.scope.networks)
+      if (!isReservedIp(n)) problems.push(`scope network ${n} is not reserved`);
     for (const h of w.hosts) {
       if (!isReservedDomain(h.hostname)) problems.push(`host ${h.hostname} is not a reserved domain`);
       if (!isReservedIp(h.ip)) problems.push(`host IP ${h.ip} is not in a reserved range`);
     }
-    for (const name of Object.keys(w.dns)) if (!isReservedDomain(name)) problems.push(`DNS name ${name} is not reserved`);
+    for (const name of Object.keys(w.dns))
+      if (!isReservedDomain(name)) problems.push(`DNS name ${name} is not reserved`);
   }
   walk(pack.world, 'world', problems);
   walk(pack.mission, 'mission', problems);

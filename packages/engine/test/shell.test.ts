@@ -84,7 +84,15 @@ describe('shell', () => {
 describe('network commands', () => {
   it('never reaches an out-of-scope target', async () => {
     const g = await newGame();
-    for (const line of ['nmap example.com', 'curl https://example.com/', 'ping 8.8.8.8', 'dig example.com', 'whois example.org', 'ssh root@example.com', 'git clone https://example.com/a/b.git']) {
+    for (const line of [
+      'nmap example.com',
+      'curl https://example.com/',
+      'ping 8.8.8.8',
+      'dig example.com',
+      'whois example.org',
+      'ssh root@example.com',
+      'git clone https://example.com/a/b.git',
+    ]) {
       const before = g.state.noise;
       const r = await run(g, line);
       expect(r.err, line).toContain('outside the scope');
@@ -113,7 +121,9 @@ describe('network commands', () => {
     expect((await run(g, 'dig corp.test MX')).out).toContain('corp.test.\t\t300\tIN\tMX\t10 mail.corp.test.');
     expect((await run(g, 'dig nope.corp.test')).out).toContain('status: NXDOMAIN');
     expect((await run(g, 'curl http://www.corp.test/')).out).toBe('<h1>hello</h1>\n');
-    expect((await run(g, 'curl -I https://www.corp.test/nope')).out).toMatch(/^HTTP\/1\.1 404 Not Found\nserver: nginx\/1\.27/);
+    expect((await run(g, 'curl -I https://www.corp.test/nope')).out).toMatch(
+      /^HTTP\/1\.1 404 Not Found\nserver: nginx\/1\.27/,
+    );
     expect((await run(g, 'curl http://db.corp.test/')).err).toContain('curl: (7) Failed to connect');
   });
 

@@ -1,6 +1,6 @@
 import { sha256, style } from '../util.ts';
-import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
 import { commands } from './index.ts';
+import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
 
 const paint = (ctx: CommandCtx, fn: (s: string) => string, s: string) => (ctx.tty ? fn(s) : s);
 
@@ -14,7 +14,9 @@ const help: Command = {
     const lines: string[] = [];
     for (const group of groups) {
       lines.push(paint(ctx, style.bold, ctx.t(`help.group.${group}`)));
-      for (const c of [...commands.values()].filter((c) => c.group === group).sort((a, b) => a.name.localeCompare(b.name)))
+      for (const c of [...commands.values()]
+        .filter((c) => c.group === group)
+        .sort((a, b) => a.name.localeCompare(b.name)))
         lines.push(`  ${paint(ctx, style.cyan, c.name.padEnd(9))} ${ctx.t(c.summary)}`);
       lines.push('');
     }
@@ -61,11 +63,18 @@ const mission: Command = {
       return 0;
     }
     const title = pack.title[ctx.state.locale] ?? pack.title.fr ?? pack.title.en ?? pack.id;
-    const lines = [paint(ctx, style.bold, `${ctx.t('mission.label')} ${String(m.order).padStart(2, '0')} / ${title}`), '', ctx.t(m.briefing), ''];
+    const lines = [
+      paint(ctx, style.bold, `${ctx.t('mission.label')} ${String(m.order).padStart(2, '0')} / ${title}`),
+      '',
+      ctx.t(m.briefing),
+      '',
+    ];
     for (const o of m.objectives) {
       const done = ctx.state.objectives[o.id];
       const mark = done ? paint(ctx, style.green, '[x]') : '[ ]';
-      lines.push(`  ${mark} ${ctx.t(o.text)}${o.optional ? ` ${paint(ctx, style.dim, ctx.t('mission.optional'))}` : ''}`);
+      lines.push(
+        `  ${mark} ${ctx.t(o.text)}${o.optional ? ` ${paint(ctx, style.dim, ctx.t('mission.optional'))}` : ''}`,
+      );
     }
     yield out(lines.join('\n'));
     return 0;
@@ -144,4 +153,12 @@ const submit: Command = {
   },
 };
 
-export const gameCommands: Command[] = [help, explain, { ...explain, name: 'man', summary: 'cmd.man' }, mission, hint, notes, submit];
+export const gameCommands: Command[] = [
+  help,
+  explain,
+  { ...explain, name: 'man', summary: 'cmd.man' },
+  mission,
+  hint,
+  notes,
+  submit,
+];

@@ -23,7 +23,7 @@ export function inCidr(ip: string, cidr: string): boolean {
   const c = parseCidr(cidr);
   if (n === null || !c) return false;
   const mask = c.bits === 0 ? 0 : (0xffffffff << (32 - c.bits)) >>> 0;
-  return ((n & mask) >>> 0) === c.base;
+  return (n & mask) >>> 0 === c.base;
 }
 
 export type Target =
@@ -66,9 +66,17 @@ export function resolveTarget(world: World, raw: string): Target {
     const cidr = parseCidr(name);
     if (!cidr) return { kind: 'unknown', name };
     const first = name.split('/')[0]!;
-    if (!ipInScope(world, first) || !world.scope.networks.some((n) => (parseCidr(n)?.bits ?? 33) <= cidr.bits))
+    if (
+      !ipInScope(world, first) ||
+      !world.scope.networks.some((n) => (parseCidr(n)?.bits ?? 33) <= cidr.bits)
+    )
       return { kind: 'out-of-scope', name };
-    return { kind: 'range', cidr: name, hosts: world.hosts.filter((h) => inCidr(h.ip, name)), size: cidr.size };
+    return {
+      kind: 'range',
+      cidr: name,
+      hosts: world.hosts.filter((h) => inCidr(h.ip, name)),
+      size: cidr.size,
+    };
   }
   if (parseIp(name) !== null) {
     if (!ipInScope(world, name)) return { kind: 'out-of-scope', name };

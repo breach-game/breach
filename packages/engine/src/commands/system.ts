@@ -47,7 +47,11 @@ const uname: Command = {
   summary: 'cmd.uname',
   group: 'system',
   async *run(ctx) {
-    yield out(ctx.args.includes('-a') ? `Linux ${ctx.game.playerHost.hostname.split('.')[0]} 6.12.0-lr-os #1 SMP x86_64 GNU/Linux` : 'Linux');
+    yield out(
+      ctx.args.includes('-a')
+        ? `Linux ${ctx.game.playerHost.hostname.split('.')[0]} 6.12.0-lr-os #1 SMP x86_64 GNU/Linux`
+        : 'Linux',
+    );
     return 0;
   },
 };

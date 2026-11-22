@@ -1,6 +1,12 @@
 import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
-import { catalogSchema, checkPackSafety, isReservedDomain, isReservedIp, parsePack } from '@breach/pack-schema';
+import {
+  catalogSchema,
+  checkPackSafety,
+  isReservedDomain,
+  isReservedIp,
+  parsePack,
+} from '@breach/pack-schema';
 import { describe, expect, it } from 'vitest';
 import { buildAll, checkAll, loadAll, replaySolution } from '../src/index.ts';
 
@@ -13,14 +19,17 @@ describe('official content', () => {
     expect(await checkAll(packs)).toEqual([]);
   });
 
-  it.each(missions.map((m) => [m.pack.id, m] as const))('%s is finished by its solution without being detected', async (_id, m) => {
-    for (const locale of m.pack.locales) {
-      const result = await replaySolution(world, m.pack, m.solution!, locale);
-      expect(result.done).toBe(true);
-      expect(result.game.state.detections).toBe(0);
-      expect(result.transcript).not.toContain('command not found');
-    }
-  });
+  it.each(missions.map((m) => [m.pack.id, m] as const))(
+    '%s is finished by its solution without being detected',
+    async (_id, m) => {
+      for (const locale of m.pack.locales) {
+        const result = await replaySolution(world, m.pack, m.solution!, locale);
+        expect(result.done).toBe(true);
+        expect(result.game.state.detections).toBe(0);
+        expect(result.transcript).not.toContain('command not found');
+      }
+    },
+  );
 
   it('compiles to gzipped packs and a valid catalogue', () => {
     const { catalog, files } = buildAll(packs, new Date(0));

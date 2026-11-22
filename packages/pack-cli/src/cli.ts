@@ -25,7 +25,12 @@ if (command === 'play') {
   const mission = packs.find((p) => p.pack.id === rest[0]);
   const world = packs.find((p) => p.pack.id === mission?.pack.requires[0]);
   if (!mission?.solution || !world) usage();
-  const result = await replaySolution(world.pack, mission.pack, mission.solution, (rest[1] as 'fr' | 'en') ?? 'fr');
+  const result = await replaySolution(
+    world.pack,
+    mission.pack,
+    mission.solution,
+    (rest[1] as 'fr' | 'en') ?? 'fr',
+  );
   console.log(result.transcript);
   console.log(result.done ? 'MISSION COMPLETE' : 'MISSION NOT COMPLETE');
   process.exit(result.done ? 0 : 1);

@@ -9,11 +9,18 @@ describe('shell parser', () => {
     expect(argv(`grep -i "hello world" 'a b'.txt`)).toEqual([[['grep', '-i', 'hello world', 'a b.txt']]]);
   });
   it('handles escapes and variables', () => {
-    expect(argv('echo a\\ b $HOME "$USER!" \'$USER\' ${PWD}')).toEqual([[['echo', 'a b', '/home/k', 'k!', '$USER', '/tmp']]]);
+    expect(argv('echo a\\ b $HOME "$USER!" \'$USER\' ${PWD}')).toEqual([
+      [['echo', 'a b', '/home/k', 'k!', '$USER', '/tmp']],
+    ]);
   });
   it('parses pipes, sequences and conditions', () => {
     const p = parse('cat a | grep b | wc -l && echo ok ; ls || pwd', env);
-    expect(p.map((x) => [x.op, x.stages.length])).toEqual([[';', 3], ['&&', 1], [';', 1], ['||', 1]]);
+    expect(p.map((x) => [x.op, x.stages.length])).toEqual([
+      [';', 3],
+      ['&&', 1],
+      [';', 1],
+      ['||', 1],
+    ]);
   });
   it('parses redirections', () => {
     const [p] = parse('echo hi >> out.txt', env);
@@ -24,9 +31,16 @@ describe('shell parser', () => {
     expect(argv('')).toEqual([]);
   });
   it('marks quoted words so they are not expanded', () => {
-    expect(parse('ls "*.txt" *.txt', env)[0]!.stages[0]!.argv.map((w) => w.quoted)).toEqual([false, true, false]);
+    expect(parse('ls "*.txt" *.txt', env)[0]!.stages[0]!.argv.map((w) => w.quoted)).toEqual([
+      false,
+      true,
+      false,
+    ]);
   });
-  it.each(['echo "abc', "echo 'abc", '| ls', 'ls |', 'ls &&', 'ls >', 'cat < x', 'echo $(id)', 'ls &'])('rejects %s', (line) => {
-    expect(() => parse(line, env)).toThrow(ShellSyntaxError);
-  });
+  it.each(['echo "abc', "echo 'abc", '| ls', 'ls |', 'ls &&', 'ls >', 'cat < x', 'echo $(id)', 'ls &'])(
+    'rejects %s',
+    (line) => {
+      expect(() => parse(line, env)).toThrow(ShellSyntaxError);
+    },
+  );
 });

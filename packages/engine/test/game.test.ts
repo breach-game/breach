@@ -38,7 +38,10 @@ describe('missions and rules', () => {
     expect(g.state.noise).toBeGreaterThan(11);
     await run(g, 'pwd', 5 * 60_000);
     expect(g.state.noise).toBe(0);
-    expect(socView(g).map((e) => [e.action, e.noise])).toEqual([['nmap -sn www.corp.test', 10], ['curl http://www.corp.test/', 2]]);
+    expect(socView(g).map((e) => [e.action, e.noise])).toEqual([
+      ['nmap -sn www.corp.test', 10],
+      ['curl http://www.corp.test/', 2],
+    ]);
   });
 
   it('detects a noisy player and restores the last checkpoint', async () => {

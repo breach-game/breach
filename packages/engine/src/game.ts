@@ -98,7 +98,8 @@ export class Game {
     const mission = this.state.mission ? this.missions.get(this.state.mission) : undefined;
     for (const loc of [locale, other]) {
       const text = mission?.i18n[loc]?.[key] ?? this.worldPack.i18n[loc]?.[key] ?? engineStrings[loc][key];
-      if (text !== undefined) return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
+      if (text !== undefined)
+        return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
     }
     return key;
   }
@@ -124,7 +125,11 @@ export class Game {
   /* ---------- event log ---------- */
 
   emit(body: EventBody): GameEvent {
-    const event = { ...body, seq: this.log.length ? this.log[this.log.length - 1]!.seq + 1 : 1, t: this.state.clock } as GameEvent;
+    const event = {
+      ...body,
+      seq: this.log.length ? this.log[this.log.length - 1]!.seq + 1 : 1,
+      t: this.state.clock,
+    } as GameEvent;
     this.log.push(event);
     this.apply(event);
     for (const listener of this.listeners) listener(event, this);
@@ -173,7 +178,10 @@ export class Game {
     const host = this.world.hosts.find((h) => h.id === this.world.player.host)!;
     const user = this.world.player.user;
     const translate = (key: string) => {
-      const text = this.worldPack.i18n[locale]?.[key] ?? this.worldPack.i18n[locale === 'fr' ? 'en' : 'fr']?.[key] ?? key;
+      const text =
+        this.worldPack.i18n[locale]?.[key] ??
+        this.worldPack.i18n[locale === 'fr' ? 'en' : 'fr']?.[key] ??
+        key;
       return interpolate(text, { user, mandate: this.world.mandate });
     };
     state.fs = buildFs(host.fs, translate);
@@ -226,7 +234,8 @@ export class Game {
         s.cwd = e.path;
         break;
       case 'FileWritten':
-        if (e.host === this.world.player.host) writeFile(s.fs, e.path, e.content, this.world.player.user, e.append);
+        if (e.host === this.world.player.host)
+          writeFile(s.fs, e.path, e.content, this.world.player.user, e.append);
         break;
       case 'HostDiscovered':
         s.discovered[e.host] ??= [];
@@ -319,12 +328,15 @@ export class Game {
   }
 
   private perform(effect: Effect) {
-    if ('ada.say' in effect) this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.say'], tone: 'info' });
-    else if ('ada.warn' in effect) this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.warn'], tone: 'warn' });
+    if ('ada.say' in effect)
+      this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.say'], tone: 'info' });
+    else if ('ada.warn' in effect)
+      this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.warn'], tone: 'warn' });
     else if ('objective.complete' in effect) this.completeObjective(effect['objective.complete']);
     else if ('noise.add' in effect) this.addNoise(effect['noise.add'], 'rule');
     else if ('host.reveal' in effect) this.emit({ type: 'HostRevealed', host: effect['host.reveal'] });
-    else if ('checkpoint.save' in effect) this.emit({ type: 'CheckpointSaved', name: effect['checkpoint.save'] });
+    else if ('checkpoint.save' in effect)
+      this.emit({ type: 'CheckpointSaved', name: effect['checkpoint.save'] });
     else if ('var.set' in effect) this.emit({ type: 'VarSet', ...effect['var.set'] });
     else if ('note.add' in effect) this.emit({ type: 'NoteAdded', text: this.t(effect['note.add']) });
   }
@@ -443,7 +455,14 @@ export class Game {
       pipelines = parse(cleaned, env);
     } catch (error) {
       if (!(error instanceof ShellSyntaxError)) throw error;
-      this.emit({ type: 'CommandRun', line, command: '', args: [], cwd: this.state.cwd, dt: Math.min(dt, MAX_DT) });
+      this.emit({
+        type: 'CommandRun',
+        line,
+        command: '',
+        args: [],
+        cwd: this.state.cwd,
+        dt: Math.min(dt, MAX_DT),
+      });
       yield { k: 'err', text: `lrsh: ${error.message}\n` };
       return 2;
     }
@@ -478,7 +497,13 @@ export class Game {
           const path = this.resolvePath(this.expand([stage.redirect.path])[0]!);
           const ok = lookup(this.state.fs, path.slice(0, path.lastIndexOf('/')) || '/')?.t === 'd';
           if (ok)
-            this.emit({ type: 'FileWritten', host: this.world.player.host, path, content: captured, append: stage.redirect.append });
+            this.emit({
+              type: 'FileWritten',
+              host: this.world.player.host,
+              path,
+              content: captured,
+              append: stage.redirect.append,
+            });
           else yield { k: 'err', text: `lrsh: ${stage.redirect.path.text}: No such file or directory\n` };
           captured = '';
         }
@@ -487,20 +512,32 @@ export class Game {
     }
     if (waited > 0) this.emit({ type: 'ClockAdvanced', ms: waited });
     if (this.detectionPending) {
-      yield { k: 'err', text: `\n${style.red(this.t('engine.detected.line1'))}\n${style.yellow(this.t('engine.detected.line2'))}\n` };
+      yield {
+        k: 'err',
+        text: `\n${style.red(this.t('engine.detected.line1'))}\n${style.yellow(this.t('engine.detected.line2'))}\n`,
+      };
       this.restore();
       return 130;
     }
     return status;
   }
 
-  private async *runStage(stage: Stage, stdin: string | null, tty: boolean, line: string, dt: number): AsyncGenerator<Chunk, number> {
+  private async *runStage(
+    stage: Stage,
+    stdin: string | null,
+    tty: boolean,
+    line: string,
+    dt: number,
+  ): AsyncGenerator<Chunk, number> {
     const [name, ...args] = this.expand(stage.argv) as [string, ...string[]];
     this.emit({ type: 'CommandRun', line, command: name, args, cwd: this.state.cwd, dt });
     const command: Command | undefined = commands.get(name);
     if (!command) {
       const known = RESTRICTED.includes(name);
-      yield { k: 'err', text: known ? `${name}: ${this.t('engine.restricted')}\n` : `lrsh: ${name}: command not found\n` };
+      yield {
+        k: 'err',
+        text: known ? `${name}: ${this.t('engine.restricted')}\n` : `lrsh: ${name}: command not found\n`,
+      };
       return 127;
     }
     const ctx: CommandCtx = {
@@ -549,9 +586,71 @@ export class Game {
 
 /** Real tools the player may try, which the training workstation does not provide. */
 const RESTRICTED = [
-  'rm', 'mv', 'cp', 'mkdir', 'touch', 'chmod', 'chown', 'vi', 'vim', 'nano', 'emacs', 'python', 'python3', 'perl',
-  'ruby', 'node', 'bash', 'sh', 'zsh', 'apt', 'apt-get', 'pip', 'wget', 'nc', 'ncat', 'netcat', 'telnet', 'ftp',
-  'scp', 'john', 'hydra', 'sqlmap', 'msfconsole', 'nikto', 'gobuster', 'ffuf', 'hashcat', 'tcpdump', 'wireshark',
-  'traceroute', 'ps', 'top', 'kill', 'ifconfig', 'ip', 'netstat', 'ss', 'less', 'more', 'awk', 'sed', 'sort', 'uniq',
-  'cut', 'tr', 'base64', 'xxd', 'strings', 'file', 'env', 'export', 'alias', 'which', 'su', 'docker', 'make', 'gcc',
+  'rm',
+  'mv',
+  'cp',
+  'mkdir',
+  'touch',
+  'chmod',
+  'chown',
+  'vi',
+  'vim',
+  'nano',
+  'emacs',
+  'python',
+  'python3',
+  'perl',
+  'ruby',
+  'node',
+  'bash',
+  'sh',
+  'zsh',
+  'apt',
+  'apt-get',
+  'pip',
+  'wget',
+  'nc',
+  'ncat',
+  'netcat',
+  'telnet',
+  'ftp',
+  'scp',
+  'john',
+  'hydra',
+  'sqlmap',
+  'msfconsole',
+  'nikto',
+  'gobuster',
+  'ffuf',
+  'hashcat',
+  'tcpdump',
+  'wireshark',
+  'traceroute',
+  'ps',
+  'top',
+  'kill',
+  'ifconfig',
+  'ip',
+  'netstat',
+  'ss',
+  'less',
+  'more',
+  'awk',
+  'sed',
+  'sort',
+  'uniq',
+  'cut',
+  'tr',
+  'base64',
+  'xxd',
+  'strings',
+  'file',
+  'env',
+  'export',
+  'alias',
+  'which',
+  'su',
+  'docker',
+  'make',
+  'gcc',
 ];

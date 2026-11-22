@@ -1,8 +1,10 @@
 export const en: Record<string, string> = {
   'engine.outOfScope': 'target "{target}" is outside the scope of mandate {mandate}. Nothing was sent.',
   'engine.detected.line1': 'Connection reset by peer',
-  'engine.detected.line2': '[NovaMind SOC] Suspicious activity detected. Session cut, back to the last checkpoint.',
-  'engine.restricted': 'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',
+  'engine.detected.line2':
+    '[NovaMind SOC] Suspicious activity detected. Session cut, back to the last checkpoint.',
+  'engine.restricted':
+    'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',
   'engine.gitUnavailable': 'is not available on this workstation. Try clone, log, show, status or remote.',
   'engine.sudo': 'This incident will be reported to Ada.',
   'engine.exit': 'You are on your own workstation. Nothing to leave.',
@@ -11,7 +13,8 @@ export const en: Record<string, string> = {
   'help.group.files': 'Files',
   'help.group.network': 'Network',
   'help.group.system': 'System',
-  'help.footer': 'explain <command>: what a tool does, and how a defender spots it. Tab completes, arrows recall.',
+  'help.footer':
+    'explain <command>: what a tool does, and how a defender spots it. Tab completes, arrows recall.',
 
   'cmd.help': 'List available commands',
   'cmd.explain': 'Explain a tool and how defenders detect it',
@@ -51,7 +54,7 @@ export const en: Record<string, string> = {
   'explain.unknown': 'explain: unknown "{name}". Type `help` for the list.',
   'explain.defense': 'Defender side',
   'explain.grep':
-    'grep filters lines that match a pattern. In an audit it is used to dig through configuration files, repositories or logs for words such as password, key or token.\n---\ngrep is also the defender\'s tool: it (or its SIEM equivalent) is how you search logs for an attacker\'s traces.',
+    "grep filters lines that match a pattern. In an audit it is used to dig through configuration files, repositories or logs for words such as password, key or token.\n---\ngrep is also the defender's tool: it (or its SIEM equivalent) is how you search logs for an attacker's traces.",
   'explain.dig':
     'dig queries the DNS: addresses (A), mail servers (MX), name servers (NS), text records (TXT). It is passive reconnaissance: the query goes to a resolver, not to the target.\n---\nA regular DNS query is invisible to the target. A zone transfer (AXFR) or hundreds of subdomains tried in a row do show up in the DNS server logs.',
   'explain.whois':
@@ -63,7 +66,7 @@ export const en: Record<string, string> = {
   'explain.ping':
     'ping sends a small ICMP packet and measures the response time. It checks that a machine is reachable.\n---\nA single ping goes unnoticed. Sweeping a whole range shows up in the firewall logs.',
   'explain.ssh':
-    'ssh opens an encrypted terminal on another machine, with a password or a key. It is the main tool for moving from one machine to the next.\n---\nEvery attempt, successful or not, is written to the machine\'s authentication log (auth.log). Repeated failures raise an alert and an automatic ban.',
+    "ssh opens an encrypted terminal on another machine, with a password or a key. It is the main tool for moving from one machine to the next.\n---\nEvery attempt, successful or not, is written to the machine's authentication log (auth.log). Repeated failures raise an alert and an automatic ban.",
   'explain.git':
     'git clone copies a repository with its whole history. git log lists commits, git show prints what a commit changed. A secret removed from a file is still readable in older commits.\n---\nCloning a public repository is a normal, barely visible action. The defence comes earlier: scan for secrets before every push, and revoke at once any key that was published, even briefly.',
 

@@ -3,7 +3,14 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { Game, stripAnsi } from '@breach/engine';
-import { type Catalog, type Locale, MAX_PACK_BYTES, PACK_FORMAT, type Pack, parsePack } from '@breach/pack-schema';
+import {
+  type Catalog,
+  type Locale,
+  MAX_PACK_BYTES,
+  PACK_FORMAT,
+  type Pack,
+  parsePack,
+} from '@breach/pack-schema';
 import { parse as parseYaml } from 'yaml';
 
 export interface LoadedPack {
@@ -62,7 +69,10 @@ export function loadPack(dir: string): LoadedPack {
   }
   const solutionFile = join(dir, 'solution.txt');
   const solution = existsSync(solutionFile)
-    ? readFileSync(solutionFile, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'))
+    ? readFileSync(solutionFile, 'utf8')
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith('#'))
     : null;
   return { dir, pack, solution };
 }
@@ -88,13 +98,19 @@ export interface ReplayResult {
 }
 
 /** Play a mission from its solution file. This is the proof that a pack can be finished. */
-export async function replaySolution(world: Pack, mission: Pack, lines: string[], locale: Locale): Promise<ReplayResult> {
+export async function replaySolution(
+  world: Pack,
+  mission: Pack,
+  lines: string[],
+  locale: Locale,
+): Promise<ReplayResult> {
   const game = new Game({ world, missions: [mission], locale });
   game.startMission(mission.id);
   let transcript = '';
   for (const line of lines) {
     transcript += `$ ${line}\n`;
-    for await (const chunk of game.exec(line, 20_000)) if (chunk.k === 'out' || chunk.k === 'err') transcript += stripAnsi(chunk.text);
+    for await (const chunk of game.exec(line, 20_000))
+      if (chunk.k === 'out' || chunk.k === 'err') transcript += stripAnsi(chunk.text);
   }
   return { done: game.state.missionDone, transcript, game };
 }
@@ -104,13 +120,16 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
   const problems: string[] = [];
   const byId = new Map(packs.map((p) => [p.pack.id, p]));
   for (const { pack, solution } of packs) {
-    for (const dep of pack.requires) if (!byId.has(dep)) problems.push(`${pack.id}: missing required pack ${dep}`);
+    for (const dep of pack.requires)
+      if (!byId.has(dep)) problems.push(`${pack.id}: missing required pack ${dep}`);
     const [first, ...others] = pack.locales;
     const keys = Object.keys(pack.i18n[first!] ?? {});
     for (const locale of others) {
       const have = new Set(Object.keys(pack.i18n[locale] ?? {}));
-      for (const key of keys) if (!have.has(key)) problems.push(`${pack.id}: i18n key ${key} is missing in ${locale}`);
-      for (const key of have) if (!keys.includes(key)) problems.push(`${pack.id}: i18n key ${key} is missing in ${first}`);
+      for (const key of keys)
+        if (!have.has(key)) problems.push(`${pack.id}: i18n key ${key} is missing in ${locale}`);
+      for (const key of have)
+        if (!keys.includes(key)) problems.push(`${pack.id}: i18n key ${key} is missing in ${first}`);
     }
     if (pack.kind !== 'mission') continue;
     const world = byId.get(pack.requires[0] ?? '')?.pack;
@@ -118,16 +137,30 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
       problems.push(`${pack.id}: its first requirement must be a world pack`);
       continue;
     }
-    const known = (key: string) => pack.locales.every((l) => (pack.i18n[l]?.[key] ?? world.i18n[l]?.[key]) !== undefined);
+    const known = (key: string) =>
+      pack.locales.every((l) => (pack.i18n[l]?.[key] ?? world.i18n[l]?.[key]) !== undefined);
     const m = pack.mission!;
-    const keysUsed = [m.briefing, m.debrief.title, m.debrief.lesson, ...m.debrief.points, ...m.objectives.map((o) => o.text), ...Object.values(m.hints).flat()];
+    const keysUsed = [
+      m.briefing,
+      m.debrief.title,
+      m.debrief.lesson,
+      ...m.debrief.points,
+      ...m.objectives.map((o) => o.text),
+      ...Object.values(m.hints).flat(),
+    ];
     for (const rule of [...m.rules, ...world.world.rules])
       for (const effect of rule.do) {
-        const key = (effect as Record<string, unknown>)['ada.say'] ?? (effect as Record<string, unknown>)['ada.warn'] ?? (effect as Record<string, unknown>)['note.add'];
+        const key =
+          (effect as Record<string, unknown>)['ada.say'] ??
+          (effect as Record<string, unknown>)['ada.warn'] ??
+          (effect as Record<string, unknown>)['note.add'];
         if (typeof key === 'string') keysUsed.push(key);
       }
-    for (const key of keysUsed) if (!known(key)) problems.push(`${pack.id}: text key ${key} has no translation`);
-    for (const flag of m.flags) if (flag.objective && !m.objectives.some((o) => o.id === flag.objective)) problems.push(`${pack.id}: flag ${flag.id} points to unknown objective ${flag.objective}`);
+    for (const key of keysUsed)
+      if (!known(key)) problems.push(`${pack.id}: text key ${key} has no translation`);
+    for (const flag of m.flags)
+      if (flag.objective && !m.objectives.some((o) => o.id === flag.objective))
+        problems.push(`${pack.id}: flag ${flag.id} points to unknown objective ${flag.objective}`);
     if (!solution) {
       problems.push(`${pack.id}: solution.txt is missing`);
       continue;
@@ -135,8 +168,12 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
     for (const locale of pack.locales) {
       const result = await replaySolution(world, pack, solution, locale);
       if (!result.done) {
-        const open = m.objectives.filter((o) => !o.optional && !result.game.state.objectives[o.id]).map((o) => o.id);
-        problems.push(`${pack.id}: solution.txt does not finish the mission in ${locale} (open: ${open.join(', ')})`);
+        const open = m.objectives
+          .filter((o) => !o.optional && !result.game.state.objectives[o.id])
+          .map((o) => o.id);
+        problems.push(
+          `${pack.id}: solution.txt does not finish the mission in ${locale} (open: ${open.join(', ')})`,
+        );
       }
     }
   }
@@ -154,7 +191,8 @@ export function buildAll(packs: LoadedPack[], now = new Date()): { catalog: Cata
   const entries: Catalog['packs'] = [];
   for (const { pack } of packs) {
     const bytes = gzipSync(Buffer.from(JSON.stringify(pack)), { level: 9 });
-    if (bytes.length > MAX_PACK_BYTES) throw new Error(`${pack.id}: pack is larger than ${MAX_PACK_BYTES} bytes`);
+    if (bytes.length > MAX_PACK_BYTES)
+      throw new Error(`${pack.id}: pack is larger than ${MAX_PACK_BYTES} bytes`);
     const file = `${pack.id}-${pack.version}.breachpack`;
     files.push({ file, bytes });
     entries.push({
@@ -177,5 +215,8 @@ export function buildAll(packs: LoadedPack[], now = new Date()): { catalog: Cata
     .filter((p) => p.pack.kind === 'mission')
     .sort((a, b) => a.pack.mission!.order - b.pack.mission!.order)
     .map((p) => p.pack.id);
-  return { catalog: { format: PACK_FORMAT, generatedAt: now.toISOString(), campaign, packs: entries }, files };
+  return {
+    catalog: { format: PACK_FORMAT, generatedAt: now.toISOString(), campaign, packs: entries },
+    files,
+  };
 }

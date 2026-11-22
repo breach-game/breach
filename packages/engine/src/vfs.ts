@@ -15,13 +15,23 @@ export interface FsFile {
 export type FsNode = FsDir | FsFile;
 
 export const mkdir = (owner = 'root', mode = 0o755): FsDir => ({ t: 'd', c: {}, owner, mode });
-export const mkfile = (content: string, owner = 'root', mode = 0o644): FsFile => ({ t: 'f', content, owner, mode });
+export const mkfile = (content: string, owner = 'root', mode = 0o644): FsFile => ({
+  t: 'f',
+  content,
+  owner,
+  mode,
+});
 
 /** Build a tree from the pack's source form. `translate` resolves `$t` keys. */
-export function buildFs(source: FsSource | undefined, translate: (key: string) => string, owner = 'root'): FsDir {
+export function buildFs(
+  source: FsSource | undefined,
+  translate: (key: string) => string,
+  owner = 'root',
+): FsDir {
   const root = mkdir(owner);
   if (source && typeof source === 'object' && !('$t' in source) && !('$content' in source)) {
-    for (const [name, child] of Object.entries(source)) root.c[name] = buildNode(child as FsSource, translate, owner);
+    for (const [name, child] of Object.entries(source))
+      root.c[name] = buildNode(child as FsSource, translate, owner);
   }
   return root;
 }
@@ -34,7 +44,8 @@ function buildNode(source: FsSource, translate: (key: string) => string, owner: 
     return mkfile(content, meta.$owner ?? owner, meta.$mode ? Number.parseInt(meta.$mode, 8) : 0o644);
   }
   const dir = mkdir(owner);
-  for (const [name, child] of Object.entries(source)) dir.c[name] = buildNode(child as FsSource, translate, owner);
+  for (const [name, child] of Object.entries(source))
+    dir.c[name] = buildNode(child as FsSource, translate, owner);
   return dir;
 }
 

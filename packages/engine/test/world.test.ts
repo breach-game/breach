@@ -30,7 +30,15 @@ describe('scope gate', () => {
     expect(resolveTarget(w, '10.13.0.50').kind).toBe('host');
     expect(resolveTarget(w, '10.13.0.0/24').kind).toBe('range');
     expect(resolveTarget(w, 'nope.corp.test').kind).toBe('unknown');
-    for (const target of ['example.com', 'corp.test.evil.example', '8.8.8.8', '10.14.0.1', '10.0.0.0/8', '0.0.0.0/0', 'google.com'])
+    for (const target of [
+      'example.com',
+      'corp.test.evil.example',
+      '8.8.8.8',
+      '10.14.0.1',
+      '10.0.0.0/8',
+      '0.0.0.0/0',
+      'google.com',
+    ])
       expect(resolveTarget(w, target).kind, target).toBe('out-of-scope');
   });
 });

@@ -13,9 +13,12 @@ export type Locale = (typeof LOCALES)[number];
 
 const id = z.string().regex(/^[a-z0-9][a-z0-9._-]*$/, 'lowercase id expected');
 const i18nKey = z.string().min(1).max(120);
-const i18nText = z.object({ fr: z.string(), en: z.string() }).partial().refine((v) => v.fr || v.en, {
-  message: 'at least one locale is required',
-});
+const i18nText = z
+  .object({ fr: z.string(), en: z.string() })
+  .partial()
+  .refine((v) => v.fr || v.en, {
+    message: 'at least one locale is required',
+  });
 
 /* ---------- virtual file system (source form) ---------- */
 
@@ -25,7 +28,13 @@ export type FsSource =
   | { $content: string; $mode?: string; $owner?: string }
   | { [name: string]: FsSource };
 
-const fsMeta = { $mode: z.string().regex(/^[0-7]{3,4}$/).optional(), $owner: z.string().optional() };
+const fsMeta = {
+  $mode: z
+    .string()
+    .regex(/^[0-7]{3,4}$/)
+    .optional(),
+  $owner: z.string().optional(),
+};
 const fsSource: z.ZodType<FsSource> = z.lazy(() =>
   z.union([
     z.string().max(64_000),
@@ -225,7 +234,8 @@ const packBase = z.strictObject({
 });
 
 export const packSchema = packBase.superRefine((pack, ctx) => {
-  if (pack.kind === 'world' && !pack.world) ctx.addIssue({ code: 'custom', message: 'a world pack needs `world`' });
+  if (pack.kind === 'world' && !pack.world)
+    ctx.addIssue({ code: 'custom', message: 'a world pack needs `world`' });
   if (pack.kind === 'mission' && !pack.mission)
     ctx.addIssue({ code: 'custom', message: 'a mission pack needs `mission`' });
   if (pack.kind === 'mission' && pack.requires.length === 0)

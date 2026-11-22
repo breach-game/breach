@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "packs": "pnpm --filter @breach/pack-cli run cli build ../../content --out ../../apps/game/public/packs",
     "packs:check": "pnpm --filter @breach/pack-cli run cli check ../../content",

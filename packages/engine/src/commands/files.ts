@@ -121,7 +121,11 @@ const cat: Command = {
       const content = yield* readFile(ctx, arg);
       if (content === null) status = 1;
       else if (flags.has('n'))
-        yield out(lines(content).map((l, i) => `${String(i + 1).padStart(6)}\t${l}`).join('\n'));
+        yield out(
+          lines(content)
+            .map((l, i) => `${String(i + 1).padStart(6)}\t${l}`)
+            .join('\n'),
+        );
       else if (content) yield { k: 'out', text: content.endsWith('\n') ? content : `${content}\n` };
     }
     return status;
@@ -140,7 +144,10 @@ const echo: Command = {
 };
 
 /** Collect the text inputs of a filter: files given as arguments, or the pipe. */
-async function* inputs(ctx: CommandCtx, files: string[]): AsyncGenerator<ReturnType<typeof err>, { name: string; text: string }[]> {
+async function* inputs(
+  ctx: CommandCtx,
+  files: string[],
+): AsyncGenerator<ReturnType<typeof err>, { name: string; text: string }[]> {
   if (!files.length) return [{ name: '(standard input)', text: ctx.stdin ?? '' }];
   const result: { name: string; text: string }[] = [];
   for (const file of files) {
@@ -205,8 +212,10 @@ const grep: Command = {
         matched = true;
         if (flags.has('c') || flags.has('l') || flags.has('q')) continue;
         let shown = line;
-        if (ctx.tty && m && m[0]) shown = line.slice(0, m.index) + style.red(m[0]) + line.slice(m.index + m[0].length);
-        const prefix = (showName ? `${ctx.tty ? style.magenta(name) : name}:` : '') + (flags.has('n') ? `${i + 1}:` : '');
+        if (ctx.tty && m && m[0])
+          shown = line.slice(0, m.index) + style.red(m[0]) + line.slice(m.index + m[0].length);
+        const prefix =
+          (showName ? `${ctx.tty ? style.magenta(name) : name}:` : '') + (flags.has('n') ? `${i + 1}:` : '');
         yield out(prefix + shown);
       }
       if (flags.has('c')) yield out(showName ? `${name}:${count}` : String(count));
@@ -250,7 +259,9 @@ const wc: Command = {
       const cols = [flags.has('l') && l, flags.has('w') && w, flags.has('c') && c].filter((v) => v !== false);
       const shown = cols.length ? cols : [l, w, c];
       const label = rest.length ? ` ${name}` : '';
-      yield out(shown.length === 1 ? `${shown[0]}${label}` : shown.map((v) => String(v).padStart(7)).join('') + label);
+      yield out(
+        shown.length === 1 ? `${shown[0]}${label}` : shown.map((v) => String(v).padStart(7)).join('') + label,
+      );
     }
     return 0;
   },
@@ -296,4 +307,15 @@ const find: Command = {
   },
 };
 
-export const fileCommands: Command[] = [pwd, cd, ls, cat, echo, grep, headTail('head'), headTail('tail'), wc, find];
+export const fileCommands: Command[] = [
+  pwd,
+  cd,
+  ls,
+  cat,
+  echo,
+  grep,
+  headTail('head'),
+  headTail('tail'),
+  wc,
+  find,
+];
