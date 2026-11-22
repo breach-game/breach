@@ -15,8 +15,7 @@ const packs = loadAll(resolve(import.meta.dirname, '../../../content'));
 const worlds = packs.filter((p) => p.pack.kind === 'world');
 const world = worlds.find((p) => p.pack.id === 'breach.world.novamind')!.pack;
 const missions = packs.filter((p) => p.pack.kind === 'mission');
-const worldFor = (m: (typeof missions)[number]) =>
-  worlds.find((w) => w.pack.id === m.pack.requires[0])!.pack;
+const worldFor = (m: (typeof missions)[number]) => worlds.find((w) => w.pack.id === m.pack.requires[0])!.pack;
 
 describe('official content', () => {
   it('is valid, translated and solvable', async () => {
