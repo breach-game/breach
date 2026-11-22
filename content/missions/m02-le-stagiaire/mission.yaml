@@ -126,9 +126,12 @@ npcs:
         reply: [m2.theo.what]
         set: { pressed: true }
       - id: cto
+        # Names found by the player during reconnaissance: a model never hears them for the player.
+        literal: true
         words: [ines, carron, directrice, cto]
         reply: [m2.theo.cto]
       - id: trust
+        literal: true
         words: [karim, benali, lea, martin]
         reply: [m2.theo.trust, m2.theo.trust2]
         set: { trust: true }

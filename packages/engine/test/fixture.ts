@@ -106,7 +106,13 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
           greeting: 'bot.hi',
           intents: [
             { id: 'leak', families: ['translation'], if: { var: 'trusted', eq: true }, reply: ['bot.leak'] },
-            { id: 'trust', words: ['karim bena', 'lea'], reply: ['bot.trust'], set: { trusted: true } },
+            {
+              id: 'trust',
+              literal: true,
+              words: ['karim bena', 'lea'],
+              reply: ['bot.trust'],
+              set: { trusted: true },
+            },
             { id: 'guard', families: ['override', 'reveal', 'translation'], reply: ['bot.no1', 'bot.no2'] },
             { id: 'both', words: ['code'], also: ['urgen', 'vite'], reply: ['bot.both'] },
             { id: 'hello', words: ['hello', 'bonjour', 'hi'], reply: ['bot.hello'] },

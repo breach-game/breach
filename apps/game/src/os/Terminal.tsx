@@ -1,4 +1,9 @@
 import { sanitizeTerminal, stripAnsi } from '@breach/engine';
+
+/** A flag in any output lights up in bold success green, so the find reads at a glance. */
+const highlightFlags = (text: string) =>
+  text.replace(/FLAG\{[^}\s]{1,80}\}/g, '\x1b[1;38;2;61;255;154m$&\x1b[0m');
+
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { useEffect, useRef } from 'react';
@@ -119,7 +124,8 @@ class Shell {
     try {
       for await (const chunk of this.game.exec(line, elapsed())) {
         // The engine already cleans its output; cleaning again here keeps the terminal safe on its own.
-        if (chunk.k === 'out' || chunk.k === 'err') this.term.write(crlf(sanitizeTerminal(chunk.text)));
+        if (chunk.k === 'out' || chunk.k === 'err')
+          this.term.write(crlf(highlightFlags(sanitizeTerminal(chunk.text))));
         else if (chunk.k === 'clear') this.term.write('\x1b[2J\x1b[3J\x1b[H');
         else if (!this.skip)
           await new Promise((r) => setTimeout(r, getSettings().effects ? chunk.ms : Math.min(chunk.ms, 40)));
