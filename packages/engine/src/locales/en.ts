@@ -22,7 +22,7 @@ export const en: Record<string, string> = {
     'BREACH was updated while you were away. Your finished missions and their scores are kept, let us carry on.',
   'save.import':
     'Progress imported. Your finished missions and their scores are here, we pick up at the next one.',
-  'save.community.restart':
+  'save.mission.restart':
     'This mission was updated since you last played it. Your save no longer applies: it starts again from the beginning.',
 
   'help.group.game': 'Game',

@@ -23,12 +23,25 @@ import { getSettings } from './settings.ts';
 
 const SAVE_KEY = 'save:campaign';
 
-/** How a game starts: the official campaign, new or resumed, or one community mission. */
-export type StartMode = 'new' | 'continue' | { community: CatalogEntry; catalog: Catalog };
+/**
+ * How a game starts: the official campaign, new or resumed; one official mission the player has
+ * already reached, replayed on its own; or one community mission.
+ */
+export type StartMode =
+  | 'new'
+  | 'continue'
+  | { replay: string }
+  | { community: CatalogEntry; catalog: Catalog };
 
-/** Where the running game is saved. Each community mission has its own save, apart from the campaign. */
+/** What is being played: the campaign, or a single mission outside it. */
+export type PlayKind = 'campaign' | 'replay' | 'community';
+
+/**
+ * Where the running game is saved. A replayed or community mission has its own save, apart from
+ * the campaign, so playing it never changes the campaign's progress or score.
+ */
 let saveKey = SAVE_KEY;
-let community = false;
+let kind: PlayKind = 'campaign';
 
 let game: Game | null = null;
 let campaign: Campaign | null = null;
@@ -69,9 +82,39 @@ export async function prepare(onProgress?: (p: PackProgress) => void): Promise<C
   return campaign;
 }
 
-/** A community save recorded on another version of the same mission, which can no longer resume. */
-async function outdatedCommunitySave(entry: CatalogEntry, current: string): Promise<boolean> {
-  const prefix = `save:community:${entry.id}@`;
+export interface CampaignProgress {
+  /** Score of each finished mission, by id. */
+  completed: Record<string, number>;
+  /** The mission the campaign is on, if one was started and not finished. */
+  current: string | null;
+}
+
+/** Progress of the saved campaign, read from its event log without starting a game. */
+export async function campaignProgress(): Promise<CampaignProgress> {
+  const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
+  const log = Array.isArray(save?.log) ? save.log : [];
+  // Missions carried over from an earlier save (after an update, or imported) count as finished.
+  const completed = Object.fromEntries(Object.entries(completedIn(log)).map(([id, m]) => [id, m.score]));
+  let current: string | null = null;
+  for (const e of log) {
+    if (e.type === 'MissionStarted') current = e.mission;
+    if (e.type === 'MissionCompleted' && current === e.mission) current = null;
+  }
+  return { completed, current };
+}
+
+/** The missions a mode plays: the whole campaign, or just one mission. */
+async function missionsFor(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Campaign> {
+  if (typeof mode !== 'object') return prepare(onProgress);
+  if ('community' in mode) return loadCommunityMission(mode.community, mode.catalog, onProgress);
+  const c = await prepare(onProgress);
+  const mission = c.missions.find((m) => m.id === mode.replay);
+  if (!mission) throw new Error(`${mode.replay}: not a mission of this campaign`);
+  return { ...c, missions: [mission] };
+}
+
+/** A save of the same single mission recorded on another version of it, which can no longer resume. */
+async function outdatedSingleSave(prefix: string, current: string): Promise<boolean> {
   const all = await keys().catch(() => []);
   return all.some((k) => typeof k === 'string' && k.startsWith(prefix) && k !== current);
 }
@@ -88,30 +131,33 @@ const carried = (missions: Record<string, { score: number }>, source: 'update' |
 /**
  * Start a new campaign, or resume the saved one. A save resumes as it was when the update since it
  * was made left its world and its mission in progress alone. Otherwise the finished missions are
- * kept with their scores, the unfinished one starts again, and Ada says so. A community mission
- * resumes where the player left it, unless it was finished or updated since: then it starts over.
+ * kept with their scores, the unfinished one starts again, and Ada says so. A single mission
+ * (replayed or from the community) resumes where the player left it, unless it was finished or
+ * updated since: then it starts over.
  */
 export async function start(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Game> {
-  community = typeof mode === 'object';
-  const c =
-    typeof mode === 'object'
-      ? await loadCommunityMission(mode.community, mode.catalog, onProgress)
-      : await prepare(onProgress);
-  saveKey =
-    typeof mode === 'object' ? `save:community:${mode.community.id}@${mode.community.version}` : SAVE_KEY;
-  const locale = getSettings().locale;
-  const options = { world: c.world, missions: c.missions, locale, guidance: getSettings().guidance };
+  kind = typeof mode !== 'object' ? 'campaign' : 'community' in mode ? 'community' : 'replay';
+  const c = await missionsFor(mode, onProgress);
+  const single = c.missions[0];
+  saveKey = kind === 'campaign' || !single ? SAVE_KEY : `save:${kind}:${single.id}@${single.version}`;
+  const alone = kind !== 'campaign';
+  const options = {
+    world: c.world,
+    missions: c.missions,
+    locale: getSettings().locale,
+    guidance: getSettings().guidance,
+  };
   let plan: ResumePlan = { kind: 'fresh' };
   let notice: string | null = null;
   if (mode !== 'new') {
     const save = await get<SaveData>(saveKey).catch(() => undefined);
     plan = planResume(save, c.world, c.missions);
-    if (typeof mode === 'object') {
+    if (alone && single) {
       const finished = plan.kind === 'replay' && plan.log.some((e) => e.type === 'MissionCompleted');
       const outdated =
         plan.kind === 'carry' ||
-        (plan.kind === 'fresh' && (await outdatedCommunitySave(mode.community, saveKey)));
-      if (outdated) notice = 'save.community.restart';
+        (plan.kind === 'fresh' && (await outdatedSingleSave(`save:${kind}:${single.id}@`, saveKey)));
+      if (outdated) notice = 'save.mission.restart';
       if (finished || plan.kind === 'carry') plan = { kind: 'fresh' };
     }
   }
@@ -126,10 +172,10 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
       // A log the engine cannot replay: keep what it proves was finished, as after an update.
       const ids = new Set(c.missions.map((m) => m.id));
       const done = Object.entries(completedIn(plan.log)).filter(([id]) => ids.has(id));
-      plan = community
+      plan = alone
         ? { kind: 'fresh' }
         : { kind: 'carry', completed: Object.fromEntries(done), restarted: null };
-      if (community) notice = 'save.community.restart';
+      if (alone) notice = 'save.mission.restart';
     }
   }
   if (plan.kind === 'carry') {
@@ -189,8 +235,8 @@ export async function importProgress(text: string): Promise<{ missions: number; 
   return { missions: scores.length, score: scores.reduce((sum, m) => sum + m.score, 0) };
 }
 
-/** Is the running game a community mission, played outside the campaign? */
-export const isCommunity = () => community;
+/** What the running game is: the campaign, a replayed mission or a community mission. */
+export const playKind = (): PlayKind => kind;
 
 export async function eraseSave() {
   clearTimeout(saveTimer);
