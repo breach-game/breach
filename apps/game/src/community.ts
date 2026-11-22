@@ -18,7 +18,7 @@ export const COMMUNITY_CATALOG_URL: string =
 
 /** ECDSA P-256 public key (SPKI, base64) of the community catalogue. */
 export const COMMUNITY_PUBLIC_KEY =
-  'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4V4S/zuL6sGE10tMfjJga5flDmQ+0ASfmEDIMmMh8ruXQDHhk7IYECykwvD/qeSg+KbyI3rWQWL08FD5pnPgpw==';
+  'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEa+xv3ttVDxLoIjU6frfE/e8NQBP66GwqbxdCOFxM0QHF9emJGcf32vNb148hH2XJNNDO15TCer8tagYbB2dGwA==';
 
 /** Development server with a local catalogue: the signature is not required. Always false in a build. */
 export const UNSIGNED_COMMUNITY_CATALOG: boolean =
