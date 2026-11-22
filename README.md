@@ -37,13 +37,19 @@ The only real requests the page ever makes:
 | --- | --- | --- |
 | The game itself (HTML, scripts, fonts) | the site's own origin | on load |
 | The mission packs (`packs/index.json`, `*.breachpack`) | the site's own origin | on load, then cached |
-| Character voices | `api.anthropic.com` | only if you set your own API key |
+| Community missions (`index.json`, its signature, `*.breachpack`) | `breach-game.github.io/packs/` | only when you open *Community missions* |
+| Model help for the characters | `api.anthropic.com` | only if you set your own API key and switch on a use |
 
-The production Content Security Policy only allows those two destinations, so the browser would block anything else.
+The production Content Security Policy only allows those destinations, so the browser would block anything else.
 
-## Character voices (optional)
+## Model help for the characters (optional)
 
-The whole game plays without any key: the characters follow a script. In the settings you can give your own Anthropic API key so that a model says their lines in its own words. The script always decides what a character gives away, and flags are checked by the engine. The key stays in your browser and calls go straight to `api.anthropic.com`. It is the game's only outside connection, and it does not exist until a key is set.
+The whole game plays without any key: the characters follow a script. In the settings you can give your own Anthropic API key and choose what it is used for, each use with its own model and an estimate of what it costs:
+
+- **Understand my messages**: a model recognises what you ask even when worded freely, in another language or with typos. It can only point at words the character already listens for, never a name or code word you have to find yourself.
+- **Reword the replies**: a model says the line the script chose in its own words.
+
+The script always decides what a character gives away, and flags are checked by the engine, so a mission plays out the same with or without a key. The key stays in your browser and calls go straight to `api.anthropic.com`. It is the game's only outside connection, and it does not exist until a key is set. Details in [SECURITY.md](SECURITY.md).
 
 ## Development
 
@@ -68,7 +74,7 @@ Going live: [docs/deploy.md](docs/deploy.md). Nothing is published automatically
 | `content/` | NovaMind world and missions |
 | `gateway/` | optional LLM gateway for free-form NPC dialogue (after v1) |
 
-A mission is a declarative pack with no code. To add one, see `CLAUDE.md`.
+A mission is a declarative pack with no code. Official missions live in `content/` (see `CLAUDE.md`). Missions written by players live in [breach-game/packs](https://github.com/breach-game/packs), which has the guide for writing one; the game lists them under *Community missions*.
 
 Design documents (game design, architecture, reviews, mockups) live in [breach-game/docs](https://github.com/breach-game/docs).
 

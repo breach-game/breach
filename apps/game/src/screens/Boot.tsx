@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PackProgress } from '../packs.ts';
-import { start } from '../session.ts';
+import { type StartMode, start } from '../session.ts';
 import { getSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 
@@ -19,7 +19,7 @@ export function Boot({
   onReady,
   onFail,
 }: {
-  mode: 'new' | 'continue';
+  mode: StartMode;
   onReady: () => void;
   onFail: () => void;
 }) {

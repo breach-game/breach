@@ -5,6 +5,7 @@ import { gzipSync } from 'node:zlib';
 import { Game, stripAnsi } from '@breach/engine';
 import {
   type Catalog,
+  isOfficialId,
   type Locale,
   MAX_PACK_BYTES,
   type Npc,
@@ -184,10 +185,44 @@ function worldProblems(pack: Pack): string[] {
   return problems.map((p) => `${pack.id}: ${p}`);
 }
 
-/** Every problem found in a set of packs: schema, dependencies, translations, solutions. */
-export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
+export interface CheckOptions {
+  /**
+   * Packs that are only there to resolve dependencies (the official world, for a community mission).
+   * They are not checked again and cannot be overridden.
+   */
+  dependencies?: LoadedPack[];
+  /** Community rules: no `breach.` id, no pack that takes the id of a dependency. */
+  community?: boolean;
+}
+
+/** Problems specific to packs submitted to the community catalogue. */
+function communityProblems(packs: LoadedPack[], dependencies: LoadedPack[]): string[] {
   const problems: string[] = [];
-  const byId = new Map(packs.map((p) => [p.pack.id, p]));
+  const deps = new Set(dependencies.map((d) => d.pack.id));
+  const seen = new Set<string>();
+  for (const { pack } of packs) {
+    if (isOfficialId(pack.id))
+      problems.push(`${pack.id}: ids starting with "breach." are reserved for the official packs`);
+    else if (!/^[a-z0-9-]+\.[a-z0-9.-]+$/.test(pack.id))
+      problems.push(
+        `${pack.id}: a community id is "<your-name>.<pack-name>", for example "jdoe.lost-backup"`,
+      );
+    if (deps.has(pack.id)) problems.push(`${pack.id}: this id is already taken by another pack`);
+    if (seen.has(pack.id)) problems.push(`${pack.id}: two packs use this id`);
+    seen.add(pack.id);
+    for (const dep of pack.requires)
+      if (isOfficialId(dep) && !deps.has(dep))
+        problems.push(`${pack.id}: requires ${dep}, which is not an official pack`);
+  }
+  return problems;
+}
+
+/** Every problem found in a set of packs: schema, dependencies, translations, solutions. */
+export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}): Promise<string[]> {
+  const dependencies = options.dependencies ?? [];
+  const problems: string[] = options.community ? communityProblems(packs, dependencies) : [];
+  // Packs under review come last, so a dependency can never be replaced by a submitted pack.
+  const byId = new Map([...packs, ...dependencies].map((p) => [p.pack.id, p]));
   for (const { pack, solution } of packs) {
     for (const dep of pack.requires)
       if (!byId.has(dep)) problems.push(`${pack.id}: missing required pack ${dep}`);
@@ -275,8 +310,15 @@ export interface BuiltPack {
   bytes: Uint8Array;
 }
 
-/** Compile packs to `.breachpack` files (gzipped JSON) and their catalogue. */
-export function buildAll(packs: LoadedPack[], now = new Date()): { catalog: Catalog; files: BuiltPack[] } {
+/**
+ * Compile packs to `.breachpack` files (gzipped JSON) and their catalogue. A community catalogue has
+ * no campaign: its missions are played one at a time.
+ */
+export function buildAll(
+  packs: LoadedPack[],
+  now = new Date(),
+  options: { community?: boolean } = {},
+): { catalog: Catalog; files: BuiltPack[] } {
   const files: BuiltPack[] = [];
   const entries: Catalog['packs'] = [];
   for (const { pack } of packs) {
@@ -293,6 +335,7 @@ export function buildAll(packs: LoadedPack[], now = new Date()): { catalog: Cata
       requires: pack.requires,
       title: pack.title,
       summary: pack.summary,
+      authors: pack.authors,
       order: pack.mission?.order,
       locales: pack.locales,
       file,
@@ -301,12 +344,16 @@ export function buildAll(packs: LoadedPack[], now = new Date()): { catalog: Cata
       reviewed: true,
     });
   }
-  const campaign = packs
-    .filter((p) => p.pack.kind === 'mission')
-    .sort((a, b) => a.pack.mission!.order - b.pack.mission!.order)
-    .map((p) => p.pack.id);
+  const campaign = options.community
+    ? []
+    : packs
+        .filter((p) => p.pack.kind === 'mission')
+        .sort((a, b) => a.pack.mission!.order - b.pack.mission!.order)
+        .map((p) => p.pack.id);
   return {
     catalog: { format: PACK_FORMAT, generatedAt: now.toISOString(), campaign, packs: entries },
     files,
   };
 }
+
+export { generateKeys, type KeyPair, signBytes } from './sign.ts';

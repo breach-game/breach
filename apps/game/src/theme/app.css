@@ -190,10 +190,10 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 [data-effects='off'] .card h1 { animation-duration: 1ms; }
 
 /* Mission complete: the debrief waits for the player instead of covering Ada's last message. */
-.ready { position: absolute; left: 50%; bottom: 28px; z-index: 40; translate: -50% 0; display: flex; align-items: center; gap: 20px; padding: 12px 14px 12px 20px; border: 1px solid color-mix(in srgb, var(--defense) 55%, transparent); border-radius: 10px; background: rgba(8, 16, 26, 0.92); backdrop-filter: blur(14px); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--defense) 22%, transparent); font: 400 14px/1.4 var(--human); color: var(--text); animation: ready-in 500ms cubic-bezier(0.16, 1, 0.3, 1) 1800ms both; max-width: calc(100vw - 56px); }
+.ready { position: absolute; left: 28px; bottom: 76px; z-index: 40; display: flex; align-items: center; gap: 20px; padding: 12px 14px 12px 20px; border: 1px solid color-mix(in srgb, var(--defense) 55%, transparent); border-radius: 10px; background: rgba(8, 16, 26, 0.92); backdrop-filter: blur(14px); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--defense) 22%, transparent); font: 400 14px/1.4 var(--human); color: var(--text); animation: ready-in 500ms cubic-bezier(0.16, 1, 0.3, 1) 1800ms both; max-width: calc(100vw - 440px); }
 .ready b { display: block; font: 500 11px var(--mono); letter-spacing: 0.3em; color: var(--success); margin-bottom: 3px; }
 .ready .btn { white-space: nowrap; }
-@keyframes ready-in { from { opacity: 0; translate: -50% 16px; } to { opacity: 1; translate: -50% 0; } }
+@keyframes ready-in { from { opacity: 0; translate: 0 16px; } to { opacity: 1; translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .ready { animation: none; } }
 
 /* Level picker on the title screen */
@@ -297,6 +297,21 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .brain label input:focus-visible, .brain select:focus-visible { outline: none; border-color: var(--ai); }
 .brain label.check { flex-direction: row; align-items: center; gap: 10px; min-height: 44px; font: 400 13.5px/1.4 var(--human); letter-spacing: 0; text-transform: none; color: var(--text); cursor: pointer; }
 .brain label.check input { width: 18px; height: 18px; accent-color: var(--ai); }
+.brain .uses { margin: 0; padding: 12px 14px 14px; border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.brain .uses legend { padding: 0 6px; font: 500 11px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.brain .use { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; border-bottom: 1px dashed var(--line); }
+.brain .use label.check { align-items: flex-start; }
+.brain .use label.check input { margin-top: 3px; flex: none; }
+.brain .use label.check span { display: flex; flex-direction: column; gap: 3px; }
+.brain .use label.check b { font: 600 14.5px var(--human); color: #fff; }
+.brain .use label.check small { font: 400 13px/1.45 var(--human); color: var(--text-2); }
+.brain .use[data-on='true'] label.check b::before { content: '◆ '; color: var(--ai); }
+.brain .use-model { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-left: 28px; }
+.brain .use-model select { flex: 1 1 360px; max-width: 420px; min-width: 0; }
+.brain .use-model select:disabled { opacity: 0.45; }
+.brain .use-model .cost { font: 400 12.5px var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
+.brain .use[data-on='false'] .cost { color: var(--text-2); }
+.brain .uses .total { font: 400 13px/1.45 var(--human); color: var(--text); }
 .brain .state { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line); font: 400 13px/1.4 var(--human); }
 .brain .state i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
 .brain .usage { font: 400 12px/1.4 var(--mono); color: var(--text-2); }
@@ -318,3 +333,50 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .menu label.row { cursor: pointer; }
 .menu input[type='range'] { width: 130px; height: 32px; accent-color: var(--text); }
 .menu input[type='range']:disabled { opacity: 0.35; }
+
+/* ---------- Community missions ---------- */
+.community .title-inner { gap: 14px; }
+.community h1.levels-title { margin: 0; font-size: 13px; }
+.community-intro { max-width: 62ch; margin: 0; text-align: center; font: 400 15px/1.5 var(--human); color: var(--text); }
+.community-state { display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 18px 0; font: 400 13px var(--mono); color: var(--dim); }
+.community-list { max-height: min(52vh, 560px); overflow-y: auto; padding: 4px; }
+.community-list .level b { font-size: 17px; line-height: 1.2; text-transform: none; letter-spacing: 0.02em; }
+.level:disabled { cursor: not-allowed; opacity: 0.55; translate: none; border-color: var(--line); }
+.community-actions { flex-direction: row; justify-content: center; width: auto; animation: none; }
+.btn.link { display: inline-grid; place-items: center; color: var(--text); text-decoration: none; }
+.community-note { max-width: 70ch; }
+/* ---------- Map view ---------- */
+/* The windows step aside, the map recentres and grows (NetworkMap eases between the two framings). */
+.stage .win, .stage .ready { transition: opacity var(--t-glide), border-color 500ms, box-shadow 500ms, transform var(--t-scene), filter var(--t-scene); }
+.stage.mapview .ready { display: none; }
+.stage.mapview .win { opacity: 0; transform: scale(0.97) translateY(10px); filter: blur(6px); pointer-events: none; }
+.stage.mapview .ambient { background: radial-gradient(55% 50% at 50% 62%, color-mix(in srgb, var(--amb) 42%, transparent), transparent 72%); }
+.map-legend { position: absolute; left: 28px; top: calc(var(--bar-h) + 16px); max-width: calc(100vw - 56px); flex-wrap: wrap; z-index: 30; display: flex; align-items: center; gap: 22px; padding: 8px 8px 8px 18px; border-radius: 12px; background: rgba(7, 9, 15, 0.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line); font: 500 11.5px/1 var(--mono); color: var(--dim); letter-spacing: 0.04em; animation: fadein 300ms both; }
+.map-legend b { color: #fff; font-weight: 500; }
+.map-legend ul { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; padding: 0; list-style: none; }
+.map-legend li { display: flex; align-items: center; gap: 7px; }
+.map-legend li i { width: 12px; height: 12px; box-sizing: border-box; border-radius: 50%; border: 2px solid; }
+.map-legend .k-player { border-color: var(--player); }
+.map-legend .k-host { border-color: #8fa0c4; }
+.map-legend .k-ai { border-color: var(--ai); box-shadow: 0 0 8px var(--ai); }
+.map-legend .k-hit { border-color: var(--attack); box-shadow: 0 0 0 2px var(--night), 0 0 0 3px var(--attack); }
+.map-legend .btn { height: 34px; padding: 0 14px; font-size: 12px; }
+/* New hosts on the map while it sits under the windows: the dock button calls for a look. */
+.dock button[data-new='true'] { color: #fff; }
+.dock button[data-new='true'] i { background: rgba(238, 242, 255, 0.16); animation: mapcall 1.6s ease-in-out infinite; }
+@keyframes mapcall { 50% { box-shadow: 0 0 0 4px rgba(238, 242, 255, 0.12), 0 0 14px rgba(238, 242, 255, 0.5); } }
+@media (prefers-reduced-motion: reduce) {
+  .stage .win, .stage .ready { transition: opacity 120ms; }
+  .stage.mapview .win { transform: none; filter: none; }
+  .dock button[data-new='true'] i { animation: none; box-shadow: 0 0 0 2px rgba(238, 242, 255, 0.35); }
+}
+[data-effects='off'] .stage .win, [data-effects='off'] .stage .ready { transition: opacity 120ms; }
+[data-effects='off'] .dock button[data-new='true'] i { animation: none; box-shadow: 0 0 0 2px rgba(238, 242, 255, 0.35); }
+
+/* ---------- Title backdrop ---------- */
+/* A dim perspective floor with a slow red horizon: the title screen sits in the same world as the desktop. */
+.title::before { content: ''; position: absolute; left: -50%; right: -50%; bottom: 0; height: 75%; background-image: linear-gradient(rgba(45, 226, 255, 0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 226, 255, 0.13) 1px, transparent 1px); background-size: 64px 64px; transform: perspective(700px) rotateX(58deg); transform-origin: 50% 100%; mask-image: linear-gradient(to top, #000 0%, transparent 75%); -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 75%); animation: floor 6s linear infinite; pointer-events: none; }
+.title::after { content: ''; position: absolute; left: 0; right: 0; top: 30%; height: 70%; background: radial-gradient(45% 30% at 50% 52%, rgba(255, 61, 90, 0.14), transparent 70%); pointer-events: none; }
+@keyframes floor { to { background-position: 0 64px, 0 0; } }
+@media (prefers-reduced-motion: reduce) { .title::before { animation: none; } }
+[data-effects='off'] .title::before { animation: none; }

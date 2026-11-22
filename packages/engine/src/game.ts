@@ -12,6 +12,7 @@ import type {
   Rule,
   World,
 } from '@breach/pack-schema';
+import { FAMILIES } from '@breach/pack-schema';
 import { acceptWording, BrainError, type BrainIssue, type NpcBrain, splitReply } from './brain.ts';
 import { commands } from './commands/index.ts';
 import type { Chunk, Command, CommandCtx } from './commands/types.ts';
@@ -19,7 +20,7 @@ import type { EventBody, GameEvent } from './events.ts';
 import { errorHtml, findRoute, formatUrl, pageHtml, parseUrl, type Url } from './http.ts';
 import { engineStrings, interpolate } from './i18n.ts';
 import { resolveTarget } from './net.ts';
-import { type Decision, decide } from './npc.ts';
+import { acceptHearing, type Decision, decide, type Heard, vocabulary } from './npc.ts';
 import { evaluate, triggerMatches } from './rules.ts';
 import { parse, ShellSyntaxError, type Stage, type Word } from './shell/parse.ts';
 import { type GameState, NOISE_AFTER_RESTORE, NOISE_DECAY_PER_MIN, NOISE_MAX } from './state.ts';
@@ -73,6 +74,17 @@ export interface ChatResult {
   brain?: string;
   /** Why the model's wording was not used, when the script had to answer alone. */
   issue?: BrainIssue;
+  /** What a model understood in the message, once checked, when it interpreted it. */
+  heard?: Heard;
+}
+
+/** Wait for a model, but not forever. */
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new BrainError('timeout')), ms);
+  });
+  return Promise.race([work, late]).finally(() => clearTimeout(timer));
 }
 
 /** Playing with less help multiplies the points earned. */
@@ -748,10 +760,11 @@ export class Game {
   }
 
   /**
-   * Same as `chat`, with a language model for the wording. The scripted brain has already decided
-   * what the character says before the model is called, and the model only gets that reply to say
-   * in its own words. Its text is checked (`acceptWording`): on any doubt, error or delay, the
-   * scripted reply is used as it is.
+   * Same as `chat`, with a language model in up to two roles the player chose (see `NpcBrain`).
+   * First the model may interpret the message (`hear`): what it understood is checked against the
+   * character's vocabulary and the engine's families (`acceptHearing`) and only then given to the
+   * scripted brain, which decides as usual. Then the model may word the decided reply (`reply`):
+   * its text is checked (`acceptWording`). On any doubt, error or delay, the script works alone.
    */
   async converse(
     npcId: string,
@@ -760,44 +773,64 @@ export class Game {
     dt = 0,
     timeoutMs = BRAIN_TIMEOUT_MS,
   ): Promise<ChatResult> {
-    const turn = this.openChat(npcId, message, 'browser', dt);
-    if (!turn) return { ok: false, reply: '' };
-    let text: string | undefined;
+    const npc = this.npc(npcId);
+    const said = message.trim().slice(0, 600);
+    let heard: Heard | undefined;
     let issue: BrainIssue | undefined;
-    if (brain) {
-      const { npc } = turn;
-      const scripted = this.t(turn.decision.key);
-      const { spoken, block } = splitReply(scripted);
-      const history = (this.state.chats[npcId] ?? [])
-        .filter((l) => l.seq < turn.seq)
-        .slice(-12)
-        .map((l) => ({ from: l.from, text: l.text ?? (l.key ? this.t(l.key) : '') }));
-      let timer: ReturnType<typeof setTimeout> | undefined;
+    if (brain?.hear && npc && said && !this.detectionPending) {
+      const mission = this.state.mission;
+      const mark = this.log.length;
+      const last = this.log[mark - 1];
       try {
-        const late = new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new BrainError('timeout')), timeoutMs);
-        });
-        const answer = await Promise.race([
-          brain.reply({
+        const answer = await withTimeout(
+          brain.hear({
             npcId,
             name: npc.name,
             role: this.t(npc.role),
             kind: npc.kind,
-            sheet: npc.sheet,
-            history,
+            history: this.chatHistory(npcId, Number.POSITIVE_INFINITY, 6),
+            message: said,
+            locale: this.state.locale,
+            vocabulary: vocabulary(npc),
+            families: FAMILIES,
+          }),
+          timeoutMs,
+        );
+        heard = acceptHearing(npc, answer) ?? undefined;
+      } catch (error) {
+        issue = error instanceof BrainError ? error.issue : 'error';
+      }
+      // The player may have been caught, or have left the mission, while the model was reading.
+      const rewound = this.log[mark - 1] !== last;
+      const restarted = this.log.slice(mark).some((e) => e.type === 'MissionStarted');
+      if (this.state.mission !== mission || rewound || restarted) return { ok: false, reply: '' };
+    }
+    const turn = this.openChat(npcId, message, 'browser', dt, heard);
+    if (!turn) return { ok: false, reply: '' };
+    let text: string | undefined;
+    if (brain?.reply) {
+      const scripted = this.t(turn.decision.key);
+      const { spoken, block } = splitReply(scripted);
+      try {
+        const answer = await withTimeout(
+          brain.reply({
+            npcId,
+            name: turn.npc.name,
+            role: this.t(turn.npc.role),
+            kind: turn.npc.kind,
+            sheet: turn.npc.sheet,
+            history: this.chatHistory(npcId, turn.seq, 12),
             message: turn.text,
             locale: this.state.locale,
             scripted: spoken,
           }),
-          late,
-        ]);
+          timeoutMs,
+        );
         const wording = acceptWording(spoken, answer.text);
         if (wording === null) issue = 'rejected';
         else text = wording + block;
       } catch (error) {
         issue = error instanceof BrainError ? error.issue : 'error';
-      } finally {
-        clearTimeout(timer);
       }
       // The player may have been caught, or have left the mission, while the model was writing.
       const line = this.state.chats[npcId]?.find((l) => l.seq === turn.seq);
@@ -806,11 +839,31 @@ export class Game {
     }
     const reply = this.closeChat(turn, text, brain?.id);
     if (reply === null) return { ok: false, reply: '' };
-    return { ok: true, reply, brain: text === undefined ? 'scripted' : brain?.id, issue };
+    return {
+      ok: true,
+      reply,
+      brain: text === undefined ? 'scripted' : brain?.id,
+      issue,
+      ...(heard ? { heard } : {}),
+    };
+  }
+
+  /** The last lines said to and by a character before `seq`, oldest first. */
+  private chatHistory(npcId: string, before: number, count: number) {
+    return (this.state.chats[npcId] ?? [])
+      .filter((l) => l.seq < before)
+      .slice(-count)
+      .map((l) => ({ from: l.from, text: l.text ?? (l.key ? this.t(l.key) : '') }));
   }
 
   /** The player's half of an exchange: pay for the request, log the message, let the script decide. */
-  private openChat(npcId: string, message: string, via: 'browser' | 'api', dt: number): ChatTurn | null {
+  private openChat(
+    npcId: string,
+    message: string,
+    via: 'browser' | 'api',
+    dt: number,
+    heard?: Heard,
+  ): ChatTurn | null {
     const npc = this.npc(npcId);
     // A file posted through the API (a CV, a document) may be longer than a chat message.
     const text = message.trim().slice(0, via === 'api' ? 4000 : 600);
@@ -820,9 +873,10 @@ export class Game {
     if (via === 'browser')
       this.addNoise(this.noiseCost('chat', [npcId]), `browser POST ${this.chatUrl(npcId)}`);
     return this.settle(() => {
-      this.emit({ type: 'ChatSent', npc: npcId, text, via });
+      this.emit({ type: 'ChatSent', npc: npcId, text, via, ...(heard ? { heard } : {}) });
       const seq = this.log[this.log.length - 1]!.seq;
-      return { npc, text, seq, mission: this.state.mission, decision: decide(npc, text, this.state) };
+      const decision = decide(npc, text, this.state, heard);
+      return { npc, text, seq, mission: this.state.mission, decision };
     });
   }
 

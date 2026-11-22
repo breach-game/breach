@@ -261,6 +261,11 @@ const intent = z.strictObject({
   also: z.array(z.string().min(1).max(80)).max(80).default([]),
   /** Technique families: one of them must be detected, or none if the list is empty. */
   families: z.array(z.enum(FAMILIES)).default([]),
+  /**
+   * The player must type these words themselves: a name, a code word, a fact found elsewhere.
+   * A language model that interprets the player's message never counts for this intent's words.
+   */
+  literal: z.boolean().default(false),
   if: condition.optional(),
   /** Replies, used in turn when the intent comes back. The last one repeats. */
   reply: z.array(text).min(1).max(5),
@@ -407,6 +412,7 @@ export const catalogSchema = z.strictObject({
       requires: z.array(id),
       title: i18nText,
       summary: i18nText.optional(),
+      authors: z.array(z.string().max(80)).max(10).optional(),
       order: z.number().optional(),
       locales: z.array(z.enum(LOCALES)),
       file: z.string().regex(/^[a-z0-9._-]+\.breachpack$/),
@@ -431,3 +437,4 @@ export function parsePack(data: unknown): Pack {
 }
 
 export { checkPackSafety, isReservedDomain, isReservedIp } from './safety.ts';
+export { isOfficialId, OFFICIAL_PREFIX, SIGNATURE_ALGORITHM, verifySignature } from './signature.ts';
