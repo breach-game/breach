@@ -1,5 +1,13 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react';
-import { BRAIN_MODELS, type BrainModel, setBrainConfig, testBrain, useBrain } from '../brain.ts';
+import {
+  BRAIN_CALL_LIMIT,
+  BRAIN_MODELS,
+  type BrainModel,
+  brainCalls,
+  setBrainConfig,
+  testBrain,
+  useBrain,
+} from '../brain.ts';
 import { type UiKey, useT } from '../ui.ts';
 
 /**
@@ -79,8 +87,11 @@ export function BrainSettings({ onClose }: { onClose(): void }) {
       </label>
       <div className="state" data-tone={tone} role="status">
         <i aria-hidden="true" />
-        {t(state)}
+        {t(state, { limit: BRAIN_CALL_LIMIT })}
       </div>
+      {config.key && (
+        <p className="usage">{t('brain.usage', { calls: brainCalls(), limit: BRAIN_CALL_LIMIT })}</p>
+      )}
       <div className="actions">
         <button type="submit" className="btn ai" disabled={testing || (!dirty && !config.key)}>
           {t(dirty || !config.key ? 'brain.save' : 'brain.test')}

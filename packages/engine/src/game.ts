@@ -23,8 +23,8 @@ import { type Decision, decide } from './npc.ts';
 import { evaluate, triggerMatches } from './rules.ts';
 import { parse, ShellSyntaxError, type Stage, type Word } from './shell/parse.ts';
 import { type GameState, NOISE_AFTER_RESTORE, NOISE_DECAY_PER_MIN, NOISE_MAX } from './state.ts';
-import { gameDate, style } from './util.ts';
-import { buildFs, chown, globMatch, lookup, mkdirp, normalize, writeFile } from './vfs.ts';
+import { gameDate, sanitizeTerminal, style } from './util.ts';
+import { buildFs, chown, globMatch, lookup, mkdir, mkdirp, normalize, writeFile } from './vfs.ts';
 
 export const ENGINE_VERSION = '0.2.0';
 
@@ -274,7 +274,7 @@ export class Game {
       clock: 0,
       cwd: '/',
       prevCwd: '/',
-      fs: { t: 'd', c: {}, owner: 'root', mode: 0o755 },
+      fs: mkdir('root'),
       repos: {},
       discovered: {},
       revealed: {},
@@ -829,7 +829,22 @@ export class Game {
   async *exec(line: string, dt = 0): AsyncGenerator<Chunk, number> {
     this.busy = true;
     try {
-      return yield* this.run(line, dt);
+      // Pack text reaches the terminal through many commands: clean every chunk at the one exit.
+      const run = this.run(line, dt);
+      let step = await run.next();
+      try {
+        while (!step.done) {
+          const chunk = step.value;
+          yield chunk.k === 'out' || chunk.k === 'err'
+            ? { ...chunk, text: sanitizeTerminal(chunk.text) }
+            : chunk;
+          step = await run.next();
+        }
+      } finally {
+        // The caller stopped early: let the command finish its own cleanup.
+        if (!step.done) await run.return(130);
+      }
+      return step.value;
     } finally {
       this.busy = false;
     }

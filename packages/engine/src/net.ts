@@ -66,11 +66,12 @@ export function resolveTarget(world: World, raw: string): Target {
     const cidr = parseCidr(name);
     if (!cidr) return { kind: 'unknown', name };
     const first = name.split('/')[0]!;
-    if (
-      !ipInScope(world, first) ||
-      !world.scope.networks.some((n) => (parseCidr(n)?.bits ?? 33) <= cidr.bits)
-    )
-      return { kind: 'out-of-scope', name };
+    // The whole range must fit inside one network of the mandate, not only its first address.
+    const fits = world.scope.networks.some((n) => {
+      const net = parseCidr(n);
+      return !!net && net.bits <= cidr.bits && inCidr(first, n);
+    });
+    if (!fits) return { kind: 'out-of-scope', name };
     return {
       kind: 'range',
       cidr: name,

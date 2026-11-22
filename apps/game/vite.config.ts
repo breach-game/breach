@@ -1,11 +1,31 @@
+import { readFileSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+
+/**
+ * The official packs' checksums, read from the catalogue that `pnpm packs` has just written, and
+ * compiled into the game's code. The game then refuses an official pack whose bytes differ, even
+ * if the catalogue next to it says otherwise: a tampered catalogue cannot swap the campaign.
+ */
+function officialPacks(): Record<string, string> {
+  try {
+    const catalog = JSON.parse(
+      readFileSync(new URL('./public/packs/index.json', import.meta.url), 'utf8'),
+    ) as {
+      packs: { id: string; version: string; sha256: string }[];
+    };
+    return Object.fromEntries(catalog.packs.map((p) => [`${p.id}@${p.version}`, p.sha256]));
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Strict Content Security Policy, added to the production build only (the dev server needs inline
  * scripts for hot reload). No third-party origin is allowed: no CDN, no analytics, no remote fonts.
  * The one outside address is api.anthropic.com, reached only when the player sets their own API key.
  * `style-src 'unsafe-inline'` is required by xterm.js, which positions its rows with inline styles.
+ * Trusted Types are required with no policy at all: the game never builds HTML from a string.
  */
 const CSP = [
   "default-src 'self'",
@@ -17,6 +37,9 @@ const CSP = [
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'none'",
+  // No script may reach an HTML sink (innerHTML, document.write…) with a plain string.
+  "require-trusted-types-for 'script'",
+  "trusted-types 'none'",
 ].join('; ');
 
 /**
@@ -49,8 +72,10 @@ const csp = (): Plugin => ({
   },
 });
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: './',
+  // In development the packs are rebuilt while the server runs: nothing is pinned there.
+  define: { __OFFICIAL_PACKS__: JSON.stringify(command === 'build' ? officialPacks() : {}) },
   plugins: [react(), csp()],
   build: { target: 'es2022' },
-});
+}));

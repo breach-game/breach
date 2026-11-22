@@ -15,6 +15,17 @@ import { get, set } from 'idb-keyval';
 
 export const CATALOG_URL = `${import.meta.env.BASE_URL}packs/`;
 
+/** Checksums of the official packs this build was made with. Empty in development. */
+const PINNED: Readonly<Record<string, string>> = __OFFICIAL_PACKS__;
+const pinning = Object.keys(PINNED).length > 0;
+
+/** The checksum the game itself expects for a catalogue entry, if this build pinned it. */
+export function pinnedSha(entry: Pick<CatalogEntry, 'id' | 'version'>): string | undefined {
+  return Object.hasOwn(PINNED, `${entry.id}@${entry.version}`)
+    ? PINNED[`${entry.id}@${entry.version}`]
+    : undefined;
+}
+
 export interface PackProgress {
   entry: CatalogEntry;
   state: 'cached' | 'downloading' | 'verified';
@@ -77,6 +88,10 @@ export async function loadCatalog(): Promise<Catalog> {
 export async function loadPack(entry: CatalogEntry, onProgress?: (p: PackProgress) => void): Promise<Pack> {
   if (!engineSatisfies(entry.engine))
     throw new Error(`${entry.id} needs engine ${entry.engine}, this is ${ENGINE_VERSION}`);
+  // An official pack must be the very one this build was made with, whatever the catalogue says.
+  const pinned = pinnedSha(entry);
+  if (pinning && entry.id.startsWith('breach.') && pinned !== entry.sha256)
+    throw new Error(`${entry.id}: not the official pack this game was built with, refused`);
   const key = `pack:${entry.sha256}`;
   let bytes = await get<ArrayBuffer>(key).catch(() => undefined);
   if (bytes) onProgress?.({ entry, state: 'cached' });
@@ -113,6 +128,10 @@ export async function loadCampaign(onProgress?: (p: PackProgress) => void): Prom
   const worldId = entries[0]?.requires[0];
   const worldEntry = catalog.packs.find((p) => p.id === worldId && p.kind === 'world');
   if (!worldEntry) throw new Error('catalogue has no world pack for the campaign');
+  // The campaign is made of official packs only: a catalogue cannot slip another pack into it.
+  for (const entry of [worldEntry, ...entries])
+    if (pinning && pinnedSha(entry) === undefined)
+      throw new Error(`${entry.id}: not an official pack of this build, refused in the campaign`);
   const world = await loadPack(worldEntry, onProgress);
   const missions: Pack[] = [];
   for (const entry of entries) missions.push(await loadPack(entry, onProgress));

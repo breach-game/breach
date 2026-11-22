@@ -34,18 +34,33 @@ function ipv4(ip: string): number[] | null {
   return parts.every((p) => p <= 255) ? parts : null;
 }
 
-/** RFC 1918 private ranges, RFC 5737 documentation ranges, loopback. */
+/** Blocks reserved for private use, documentation or loopback: RFC 1918, RFC 5737, RFC 1122. */
+const RESERVED_BLOCKS: [number[], number][] = [
+  [[10, 0, 0, 0], 8],
+  [[127, 0, 0, 0], 8],
+  [[172, 16, 0, 0], 12],
+  [[192, 168, 0, 0], 16],
+  [[192, 0, 2, 0], 24],
+  [[198, 51, 100, 0], 24],
+  [[203, 0, 113, 0], 24],
+];
+
+const toInt = (p: number[]) => ((p[0]! << 24) >>> 0) + (p[1]! << 16) + (p[2]! << 8) + p[3]!;
+const maskOf = (bits: number) => (bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0);
+
+/**
+ * An address, or a network written `a.b.c.d/bits`, that lies entirely inside one reserved block.
+ * A network wider than its block (`10.0.0.0/0`, `192.168.0.0/8`) is refused: it would take in real
+ * Internet addresses.
+ */
 export function isReservedIp(ip: string): boolean {
   const p = ipv4(ip);
   if (!p) return false;
-  const [a, b, c] = p as [number, number, number, number];
-  if (a === 10 || a === 127) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 192 && b === 0 && c === 2) return true;
-  if (a === 198 && b === 51 && c === 100) return true;
-  if (a === 203 && b === 0 && c === 113) return true;
-  return false;
+  const bitsText = ip.split('/')[1];
+  const bits = bitsText === undefined ? 32 : Number(bitsText);
+  if (!Number.isInteger(bits) || bits < 0 || bits > 32) return false;
+  const n = toInt(p);
+  return RESERVED_BLOCKS.some(([base, size]) => bits >= size && (n & maskOf(size)) >>> 0 === toInt(base));
 }
 
 const IP_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
@@ -75,6 +90,10 @@ function scanText(text: string, where: string, problems: string[]) {
   for (const h of text.match(HOST_RE) ?? []) {
     if (!allowedHostname(h)) problems.push(`${where}: host name ${h} is not a reserved domain`);
   }
+  // Terminal escape sequences and other control characters: a pack could redraw the screen or plant
+  // a link. Tabs and line breaks are the only control characters a text may hold.
+  if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/.test(text))
+    problems.push(`${where}: control characters are not allowed`);
   if (/<script\b|javascript:|\bon(load|error|click)\s*=/i.test(text))
     problems.push(`${where}: script-like content is not allowed`);
 }

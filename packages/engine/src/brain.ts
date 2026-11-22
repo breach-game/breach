@@ -26,7 +26,15 @@ export interface BrainInput {
   scripted: string;
 }
 
-export type BrainIssue = 'auth' | 'quota' | 'network' | 'refusal' | 'timeout' | 'rejected' | 'error';
+export type BrainIssue =
+  | 'auth'
+  | 'quota'
+  | 'limit'
+  | 'network'
+  | 'refusal'
+  | 'timeout'
+  | 'rejected'
+  | 'error';
 
 /** Why a model could not answer. The game then uses the scripted reply as it is. */
 export class BrainError extends Error {

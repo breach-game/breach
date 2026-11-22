@@ -7,6 +7,10 @@
 import { z } from 'zod';
 import { checkPackSafety } from './safety.ts';
 
+// Validate without generating code: zod would otherwise probe `new Function`, which the game's
+// Content Security Policy and Trusted Types forbid (and report as a violation).
+z.config({ jitless: true });
+
 export const PACK_FORMAT = 0;
 export const LOCALES = ['fr', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];

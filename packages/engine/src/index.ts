@@ -32,4 +32,4 @@ export {
   NOISE_MAX,
   socLevel,
 } from './state.ts';
-export { gameDate, sha256, stripAnsi } from './util.ts';
+export { gameDate, sanitizeTerminal, sha256, stripAnsi } from './util.ts';
