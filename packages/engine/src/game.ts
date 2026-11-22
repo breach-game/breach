@@ -1,4 +1,14 @@
-import type { Effect, Host, Locale, Mission, NoiseTable, Pack, Rule, World } from '@breach/pack-schema';
+import type {
+  Effect,
+  Guidance,
+  Host,
+  Locale,
+  Mission,
+  NoiseTable,
+  Pack,
+  Rule,
+  World,
+} from '@breach/pack-schema';
 import { commands } from './commands/index.ts';
 import type { Chunk, Command, CommandCtx } from './commands/types.ts';
 import type { EventBody, GameEvent } from './events.ts';
@@ -15,6 +25,8 @@ export interface GameOptions {
   world: Pack;
   missions: Pack[];
   locale: Locale;
+  /** How much Ada helps. Defaults to `guided`. */
+  guidance?: Guidance;
   /** A saved log to resume from. */
   log?: GameEvent[];
 }
@@ -36,6 +48,8 @@ export class Game {
   readonly worldPack: Pack;
   readonly missions: Map<string, Pack>;
   state: GameState;
+  /** A player setting, not game state: it only decides which messages get emitted from now on. */
+  guidance: Guidance;
   log: GameEvent[] = [];
   private listeners = new Set<Listener>();
   private replaying = false;
@@ -47,6 +61,7 @@ export class Game {
     this.worldPack = options.world;
     this.world = options.world.world;
     this.missions = new Map(options.missions.map((m) => [m.id, m]));
+    this.guidance = options.guidance ?? 'guided';
     this.state = this.initialState(options.locale);
     if (options.log?.length) this.replay(options.log);
   }
@@ -102,6 +117,14 @@ export class Game {
         return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
     }
     return key;
+  }
+
+  /** True when a mission or world pack defines this text in the current locale or the other one. */
+  private hasText(key: string): boolean {
+    const mission = this.state.mission ? this.missions.get(this.state.mission) : undefined;
+    return (['fr', 'en'] as const).some(
+      (loc) => (mission?.i18n[loc]?.[key] ?? this.worldPack.i18n[loc]?.[key]) !== undefined,
+    );
   }
 
   setLocale(locale: Locale) {
@@ -330,7 +353,13 @@ export class Game {
   private perform(effect: Effect) {
     if ('ada.say' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.say'], tone: 'info' });
-    else if ('ada.warn' in effect)
+    else if ('ada.guide' in effect) {
+      const key = effect['ada.guide'];
+      const variant = `${key}.standard`;
+      if (this.guidance === 'guided') this.emit({ type: 'NpcMessage', npc: 'ada', key, tone: 'info' });
+      else if (this.guidance === 'standard' && this.hasText(variant))
+        this.emit({ type: 'NpcMessage', npc: 'ada', key: variant, tone: 'info' });
+    } else if ('ada.warn' in effect)
       this.emit({ type: 'NpcMessage', npc: 'ada', key: effect['ada.warn'], tone: 'warn' });
     else if ('objective.complete' in effect) this.completeObjective(effect['objective.complete']);
     else if ('noise.add' in effect) this.addNoise(effect['noise.add'], 'rule');

@@ -135,8 +135,17 @@ const condition: z.ZodType<Condition> = z.lazy(() =>
   ]),
 );
 
+/**
+ * How much Ada helps. `guided` spells out the commands, `standard` only gives the direction,
+ * `expert` gets the briefing and nothing more.
+ */
+export const GUIDANCE_LEVELS = ['guided', 'standard', 'expert'] as const;
+export type Guidance = (typeof GUIDANCE_LEVELS)[number];
+
 const effect = z.union([
   z.strictObject({ 'ada.say': i18nKey }),
+  /** Guidance, as opposed to story. Shown in `guided`; in `standard` only if `<key>.standard` exists. */
+  z.strictObject({ 'ada.guide': i18nKey }),
   z.strictObject({ 'ada.warn': i18nKey }),
   z.strictObject({ 'objective.complete': id }),
   z.strictObject({ 'noise.add': z.number().min(-100).max(100) }),

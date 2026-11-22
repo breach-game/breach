@@ -1,10 +1,12 @@
-import type { Locale } from '@breach/pack-schema';
+import type { Guidance, Locale } from '@breach/pack-schema';
 import { useSyncExternalStore } from 'react';
 
 export interface Settings {
   locale: Locale;
   /** Scanlines, grain, glitch and typewriter effects. */
   effects: boolean;
+  /** How much Ada helps: every command, the direction only, or nothing after the briefing. */
+  guidance: Guidance;
 }
 
 const KEY = 'breach.settings';
@@ -14,6 +16,7 @@ function initial(): Settings {
   const fallback: Settings = {
     locale: navigator.language.toLowerCase().startsWith('fr') ? 'fr' : 'en',
     effects: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    guidance: 'guided',
   };
   try {
     return { ...fallback, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };

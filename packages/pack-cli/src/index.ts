@@ -152,6 +152,7 @@ export async function checkAll(packs: LoadedPack[]): Promise<string[]> {
       for (const effect of rule.do) {
         const key =
           (effect as Record<string, unknown>)['ada.say'] ??
+          (effect as Record<string, unknown>)['ada.guide'] ??
           (effect as Record<string, unknown>)['ada.warn'] ??
           (effect as Record<string, unknown>)['note.add'];
         if (typeof key === 'string') keysUsed.push(key);

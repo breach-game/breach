@@ -1,3 +1,4 @@
+export { GUIDANCE_LEVELS, type Guidance } from '@breach/pack-schema';
 export { commands } from './commands/index.ts';
 export type { Chunk, Command } from './commands/types.ts';
 export type { EventBody, EventType, GameEvent } from './events.ts';

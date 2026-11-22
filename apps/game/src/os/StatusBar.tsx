@@ -5,6 +5,8 @@ import { liveClock, useGame } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 
+const LEVELS = ['guided', 'standard', 'expert'] as const;
+
 interface Props {
   noise: number;
   onResetLayout(): void;
@@ -87,6 +89,21 @@ export function StatusBar({ noise, onResetLayout, onQuit }: Props) {
                   }}
                 >
                   {l.toUpperCase()}
+                </button>
+              ))}
+            </span>
+          </div>
+          <div className="row">
+            {t('settings.guidance')}
+            <span className="seg">
+              {LEVELS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  aria-pressed={settings.guidance === g}
+                  onClick={() => updateSettings({ guidance: g })}
+                >
+                  {t(`guidance.${g}` as UiKey)}
                 </button>
               ))}
             </span>

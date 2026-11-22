@@ -17,24 +17,24 @@ rules:
     do:
       - var.set: { name: tutorial, value: true }
       - ada.say: m0.ada.welcome
-      - ada.say: m0.ada.whoami
+      - ada.guide: m0.ada.whoami
   - on: { event: CommandRun, command: whoami }
     do:
       - objective.complete: whoami
-      - ada.say: m0.ada.read
+      - ada.guide: m0.ada.read
   - on: { event: FileRead, path: { glob: "*/mandat/NM-2026-114.txt" } }
     do:
       - objective.complete: read-mandate
-      - ada.say: m0.ada.submit
+      - ada.guide: m0.ada.submit
   - on: { event: FlagSubmitted, correct: true }
     do:
       - checkpoint.save: mandate-read
-      - ada.say: m0.ada.guardrail
+      - ada.guide: m0.ada.guardrail
   - on: { event: OutOfScope }
     do:
       - objective.complete: test-guardrail
       - ada.warn: m0.ada.law
-      - ada.say: m0.ada.dig
+      - ada.guide: m0.ada.dig
   - on: { event: DnsQuery, name: { glob: "*novamind.test" } }
     do:
       - objective.complete: first-recon
