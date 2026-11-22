@@ -2,6 +2,7 @@ import { gameDate } from '@breach/engine';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { resumeSeq, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
+import { useT } from '../ui.ts';
 
 /** Render `code` spans. Anything else is plain text: content never becomes HTML. */
 function rich(text: string): ReactNode[] {
@@ -11,6 +12,7 @@ function rich(text: string): ReactNode[] {
 /** Messages from Ada. New ones are typed out one after the other. */
 export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typing: boolean): void }) {
   const game = useGame();
+  const t = useT();
   const { effects } = useSettings();
   const messages = game.state.messages;
   // Number of messages fully shown. A resumed save shows its history at once.
@@ -74,6 +76,7 @@ export function Messenger({ paused, onTyping }: { paused: boolean; onTyping(typi
           </div>
         );
       })}
+      <p className="chat-hint">{t('win.ada.reply')}</p>
       <div ref={end} />
     </div>
   );

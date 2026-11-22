@@ -121,6 +121,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .ada .t { font: 500 10.5px/1 var(--mono); color: var(--dim); letter-spacing: 0.1em; margin-bottom: 5px; display: flex; gap: 8px; align-items: center; }
 .ada.warn .t { color: var(--alert); }
 .ada p { margin: 0; font: 400 14.5px/1.48 var(--human); color: var(--text); text-wrap: pretty; }
+.chat-hint { margin: auto 0 0; padding-top: 10px; border-top: 1px solid rgba(215, 224, 245, 0.08); font: 400 12px/1.4 var(--mono); color: var(--dim); }
 .caret { display: inline-block; width: 7px; height: 15px; background: currentColor; vertical-align: -2px; margin-left: 2px; animation: blink 1s steps(1) infinite; }
 
 /* Notebook */
