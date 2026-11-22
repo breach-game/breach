@@ -32,7 +32,8 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
           LR-OS <span>{t('bar.os')}</span>
         </div>
         <div className="mission">
-          {t('bar.mission')} {String(pack?.mission?.order ?? 0).padStart(2, '0')} <b>/</b> {title}
+          {t(pack?.track === 'training' ? 'bar.training' : 'bar.mission')}{' '}
+          {String(pack?.mission?.order ?? 0).padStart(2, '0')} <b>/</b> {title}
         </div>
         <div
           className="gauge"

@@ -18,7 +18,7 @@ import {
 import { type Catalog, type CatalogEntry, isOfficialId } from '@breach/pack-schema';
 import { del, get, keys, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
-import { type Campaign, loadCampaign, loadCommunityMission, type PackProgress } from './packs.ts';
+import { type Campaign, loadCampaign, loadCommunityMission, loadPack, type PackProgress } from './packs.ts';
 import { getSettings } from './settings.ts';
 
 const SAVE_KEY = 'save:campaign';
@@ -103,14 +103,31 @@ export async function campaignProgress(): Promise<CampaignProgress> {
   return { completed, current };
 }
 
+/** Best known result of each mission played on its own (trainings, replays), by id: its last score. */
+export async function singleScores(entries: CatalogEntry[]): Promise<Record<string, number>> {
+  const scores: Record<string, number> = {};
+  for (const e of entries) {
+    const save = await get<SaveData>(`save:replay:${e.id}@${e.version}`).catch(() => undefined);
+    const done = Array.isArray(save?.log) ? save.log.findLast((x) => x.type === 'MissionCompleted') : null;
+    if (done?.type === 'MissionCompleted') scores[e.id] = done.score;
+  }
+  return scores;
+}
+
 /** The missions a mode plays: the whole campaign, or just one mission. */
 async function missionsFor(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Campaign> {
   if (typeof mode !== 'object') return prepare(onProgress);
   if ('community' in mode) return loadCommunityMission(mode.community, mode.catalog, onProgress);
   const c = await prepare(onProgress);
   const mission = c.missions.find((m) => m.id === mode.replay);
-  if (!mission) throw new Error(`${mode.replay}: not a mission of this campaign`);
-  return { ...c, missions: [mission] };
+  if (mission) return { ...c, missions: [mission] };
+  // A training: an official mission outside the campaign, loaded when the player picks it.
+  const entry = c.catalog.training.includes(mode.replay)
+    ? c.catalog.packs.find((p) => p.id === mode.replay && p.kind === 'mission')
+    : undefined;
+  if (!entry || entry.requires[0] !== c.world.id)
+    throw new Error(`${mode.replay}: not a mission of this campaign`);
+  return { ...c, missions: [await loadPack(entry, onProgress)] };
 }
 
 /** A save of the same single mission recorded on another version of it, which can no longer resume. */

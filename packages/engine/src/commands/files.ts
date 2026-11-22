@@ -22,7 +22,7 @@ export function* readFile(ctx: CommandCtx, arg: string): Generator<ReturnType<ty
   return node.content;
 }
 
-const lines = (text: string) => (text.endsWith('\n') ? text.slice(0, -1) : text).split('\n');
+export const lines = (text: string) => (text.endsWith('\n') ? text.slice(0, -1) : text).split('\n');
 
 const pwd: Command = {
   name: 'pwd',
@@ -144,7 +144,7 @@ const echo: Command = {
 };
 
 /** Collect the text inputs of a filter: files given as arguments, or the pipe. */
-async function* inputs(
+export async function* inputs(
   ctx: CommandCtx,
   files: string[],
 ): AsyncGenerator<ReturnType<typeof err>, { name: string; text: string }[]> {

@@ -19,7 +19,7 @@ export type EventBody =
   | { type: 'HostDiscovered'; host: string }
   | { type: 'ServiceDiscovered'; host: string; port: number }
   | { type: 'HttpRequest'; host: string; path: string; method: string; status: number }
-  | { type: 'AppOpened'; app: 'browser'; url: string }
+  | { type: 'AppOpened'; app: 'browser' | 'editor'; url: string }
   | {
       type: 'ChatSent';
       npc: string;
@@ -66,6 +66,11 @@ export type EventBody =
   | { type: 'RuleFired'; rule: string }
   | { type: 'VarSet'; name: string; value: string | number | boolean }
   | { type: 'HostRevealed'; host: string }
+  /** Ada put a question of the mission to the player. */
+  | { type: 'Asked'; question: string }
+  | { type: 'Answered'; question: string; option: string; correct: boolean }
+  /** `verify` ran: which of the mission's checks hold now. */
+  | { type: 'Verified'; passed: string[]; failed: string[] }
   | { type: 'MissionCompleted'; mission: string; score: number }
   /**
    * Missions finished in an earlier save, kept with their scores: the save could not be replayed

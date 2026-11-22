@@ -1,0 +1,16 @@
+id: breach.training.t04
+version: 0.1.0
+engine: ">=0.4 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [social, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Le mail suspect
+  en: The suspicious email
+summary:
+  fr: Hameçonnage, côté défense. Théo a reçu un mail urgent du « support ». Lis ses en-têtes, trouve d'où il vient vraiment et décide quoi lui répondre.
+  en: Phishing, from the defender's side. Théo got an urgent email from “IT support”. Read its headers, find where it really comes from and decide what to tell him.
+authors: [BREACH]
+locales: [fr, en]

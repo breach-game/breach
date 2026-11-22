@@ -1,0 +1,6 @@
+# Training 4: the suspicious email
+cat training/mail.eml
+grep -i -E "from|reply-to|spf|return-path" training/mail.eml
+submit novamind-support.example
+answer b
+answer d

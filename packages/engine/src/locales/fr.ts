@@ -102,4 +102,32 @@ export const fr: Record<string, string> = {
   'submit.wrong': "Ce n'est pas un flag de cette mission.",
   'submit.already': 'Flag déjà validé.',
   'submit.ok': 'FLAG VALIDÉ',
+  'cmd.sort': 'Trier des lignes (-n nombres, -r inverse, -u sans doublon, -k champ)',
+  'cmd.uniq': 'Fusionner les lignes identiques qui se suivent (-c les compte)',
+  'cmd.cut': 'Garder certaines colonnes de chaque ligne (-d séparateur, -f champs)',
+  'cmd.tr': 'Remplacer ou supprimer des caractères dans un flux (-d)',
+  'cmd.diff': 'Montrer les lignes qui diffèrent entre deux fichiers',
+  'cmd.base64': 'Encoder en Base64, ou décoder avec -d',
+  'cmd.sha256sum': "Afficher l'empreinte SHA-256 d'un fichier",
+  'cmd.sed': "Réécrire des lignes : `sed 's/ancien/nouveau/' fichier`, -i modifie le fichier",
+  'cmd.verify': 'Vérifier que ta correction tient',
+  'cmd.answer': "Répondre à la question d'Ada : `answer a`",
+  'cmd.edit': "Ouvrir un fichier dans l'éditeur",
+  'cmd.nano': "Ouvrir un fichier dans l'éditeur (comme edit)",
+  'engine.edit': "Ouverture de {path} dans l'éditeur…",
+  'verify.none': "Rien à vérifier pour l'instant.",
+  'verify.ok': 'Tous les contrôles passent.',
+  'verify.failed': '{n} contrôle(s) en échec. Corrige le fichier, puis relance verify.',
+  'answer.none': "Ada n'a pas de question en attente.",
+  'answer.usage': 'Réponds avec sa lettre, par exemple : answer a',
+  'answer.right': 'Exact.',
+  'answer.wrong': 'Pas tout à fait. Essaie encore.',
+  'explain.diff':
+    "diff compare deux fichiers ligne à ligne : les lignes `<` ne sont que dans le premier, les lignes `>` que dans le second. C'est ainsi qu'on repère ce qui a changé entre deux versions d'un script ou d'une configuration.\n---\nComparer ce qui est déployé avec ce qui est dans le dépôt est un contrôle d'intégrité de base. Plusieurs attaques de la chaîne logicielle ont été découvertes exactement comme ça : le fichier publié n'était pas celui des sources.",
+  'explain.base64':
+    "base64 transforme n'importe quels octets en lettres et chiffres, et l'inverse avec -d. C'est un encodage, pas un chiffrement : tout le monde peut le décoder, sans clé.\n---\nUn secret « caché » en Base64 dans une configuration ou un jeton est un secret en clair. Les secrets vont dans un coffre, et les outils de détection décodent le Base64 avant de chercher.",
+  'explain.sha256sum':
+    "sha256sum affiche l'empreinte d'un fichier. Un seul caractère changé, et l'empreinte change du tout au tout.\n---\nPublier l'empreinte d'une version et la vérifier avant de lancer le fichier détecte un téléchargement modifié, à condition que l'empreinte arrive par un autre canal que le fichier.",
+  'explain.sed':
+    "sed réécrit du texte ligne à ligne. `sed 's/ancien/nouveau/' fichier` affiche le résultat, `sed -i` modifie le fichier lui-même, et `sed '/mot/d'` supprime les lignes qui correspondent.\n---\nUne correction faite à la main sur un serveur est perdue au prochain déploiement. La correction durable va dans le dépôt et dans la chaîne de déploiement.",
 };

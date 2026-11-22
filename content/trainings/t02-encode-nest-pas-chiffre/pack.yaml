@@ -1,0 +1,16 @@
+id: breach.training.t02
+version: 0.1.0
+engine: ">=0.4 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [crypto, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Encodé n'est pas chiffré
+  en: Encoded is not encrypted
+summary:
+  fr: Un jeton « protégé » dans un fichier de configuration. Décode-le en une commande, sors-le du fichier, puis décide quoi faire d'un secret qui a fuité.
+  en: A “protected” token in a configuration file. Decode it with one command, take it out of the file, then decide what to do with a leaked secret.
+authors: [BREACH]
+locales: [fr, en]
