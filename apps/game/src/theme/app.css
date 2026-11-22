@@ -401,7 +401,8 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .def-filter input { flex: 1; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(7, 9, 15, 0.6); color: var(--text); font: 400 13px var(--mono); }
 .def-filter input:focus-visible { outline: 2px solid var(--defense); outline-offset: 1px; }
 .def-console { max-height: 300px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: rgba(7, 9, 15, 0.55); display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
-.def-console > li { display: contents; }
+.def-console > li { display: block; }
+.debrief .def-console li::before { content: none; }
 .def-line { display: grid; grid-template-columns: 18px 56px 1fr; gap: 8px; align-items: start; min-height: 30px; padding: 6px 10px; border: 0; border-bottom: 1px solid rgba(215, 224, 245, 0.04); background: transparent; color: var(--text); text-align: left; font: 400 12px/1.45 var(--mono); cursor: pointer; }
 .def-line:hover { background: rgba(45, 226, 255, 0.06); }
 .def-line:focus-visible { outline: 2px solid var(--defense); outline-offset: -2px; }
@@ -418,7 +419,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .def-card:focus-visible { outline: 2px solid var(--defense); outline-offset: 2px; }
 .def-card:disabled { cursor: default; }
 .def-card.wrong { border-color: rgba(255, 176, 32, 0.5); opacity: 0.85; }
-.def-card .title { font-weight: 600; color: #fff; }
+.def-card .def-title { font-weight: 600; color: #fff; }
 .def-card .sigma { margin: 0; padding: 8px 10px; border-radius: 6px; background: rgba(7, 9, 15, 0.7); font: 400 11.5px/1.5 var(--mono); color: #bfe9f5; white-space: pre-wrap; }
 .def-card .why { color: var(--alert); font-size: 13.5px; }
 .def-hits { display: flex; gap: 14px; font: 500 12px var(--mono); }

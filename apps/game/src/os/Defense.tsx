@@ -6,6 +6,16 @@ import { useT } from '../ui.ts';
 
 type Step = 'find' | 'detect' | 'fix';
 
+/** Cards in a stable order that does not depend on the pack: the right answer is not always first. */
+function shuffled<T extends { id: string }>(items: T[], seed: string): T[] {
+  const hash = (s: string) => {
+    let h = 2166136261;
+    for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+    return h >>> 0;
+  };
+  return [...items].sort((a, b) => hash(`${seed}:${a.id}`) - hash(`${seed}:${b.id}`));
+}
+
 /**
  * The defence replay that ends an attack mission, in three steps: find your own lines in the
  * target's logs, pick the rule that catches them, then fix the target and watch your own attack
@@ -160,7 +170,7 @@ function Detect({ lines, preview }: { lines: LogLine[]; preview: boolean }) {
     <div className="def-body">
       <p className="def-ask">{t(preview ? 'defense.detect.ask' : 'defense.detect.askExpert')}</p>
       <div className="def-cards">
-        {defense.rules.map((r) => {
+        {shuffled(defense.rules, game.state.mission ?? '').map((r) => {
           const result = preview || tried.includes(r.id) ? game.previewRule(r.id) : null;
           const wrong = tried.includes(r.id) && !r.correct;
           return (
@@ -174,7 +184,7 @@ function Detect({ lines, preview }: { lines: LogLine[]; preview: boolean }) {
                 game.chooseRule(r.id);
               }}
             >
-              <span className="title">{game.t(r.title)}</span>
+              <span className="def-title">{game.t(r.title)}</span>
               <pre className="sigma">{sigmaText(r, game.t(r.title))}</pre>
               {result && (
                 <span className="def-hits">
@@ -208,7 +218,7 @@ function FixStep() {
     <div className="def-body">
       <p className="def-ask">{t('defense.fix.ask')}</p>
       <div className="def-cards fixes">
-        {defense.fixes.map((f) => {
+        {shuffled(defense.fixes, game.state.mission ?? '').map((f) => {
           const wrong = tried.includes(f.id) && !f.correct;
           return (
             <button
@@ -225,7 +235,7 @@ function FixStep() {
                 setBusy(null);
               }}
             >
-              <span className="title">{game.t(f.title)}</span>
+              <span className="def-title">{game.t(f.title)}</span>
               {busy === f.id && <span className="fine">{t('defense.fix.running')}</span>}
               {wrong && <span className="why">✗ {game.t(f.why)}</span>}
             </button>
