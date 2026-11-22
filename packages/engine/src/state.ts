@@ -11,6 +11,17 @@ export interface Message {
   tone: 'info' | 'warn';
 }
 
+export interface ChatLine {
+  seq: number;
+  t: number;
+  from: 'player' | 'npc';
+  /** What the player typed, or what a language model answered. */
+  text?: string;
+  /** Translation key of a scripted reply. */
+  key?: string;
+  intent?: string;
+}
+
 export interface GameState {
   locale: Locale;
   mission: string | null;
@@ -34,6 +45,8 @@ export interface GameState {
   detections: number;
   notes: string[];
   messages: Message[];
+  /** Conversations of the current mission, by character. */
+  chats: Record<string, ChatLine[]>;
   vars: Record<string, Scalar>;
   fired: Record<string, true>;
   /** Furthest guidance step already given for each objective. */

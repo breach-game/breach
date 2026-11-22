@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { liveNoise, onGameEvent, terminalBridge, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
+import { Browser } from './Browser.tsx';
 import { Debrief } from './Debrief.tsx';
 import { Messenger } from './Messenger.tsx';
 import { NetworkMap } from './NetworkMap.tsx';
@@ -10,7 +11,7 @@ import { StatusBar } from './StatusBar.tsx';
 import { Terminal } from './Terminal.tsx';
 import { type Rect, Window } from './Window.tsx';
 
-type WinId = 'terminal' | 'ada' | 'notes' | 'debrief';
+type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'debrief';
 
 function defaultLayout(): Record<WinId, Rect> {
   const W = window.innerWidth;
@@ -21,7 +22,9 @@ function defaultLayout(): Record<WinId, Rect> {
   const adaH = Math.max(220, (H - 68 - 28 - 16) * 0.56);
   const dw = Math.min(820, W - 80);
   const dh = Math.min(760, H - 100);
+  const bw = Math.min(900, W - side - 28 * 3 - 40);
   return {
+    browser: { x: 68, y: 104, w: Math.max(420, bw), h: Math.max(360, H - 104 - 72) },
     terminal: { x: 28, y: 68, w: termW, h: termH },
     ada: { x: W - side - 28, y: 68, w: side, h: adaH },
     notes: { x: W - side - 28, y: 68 + adaH + 16, w: side, h: H - 68 - adaH - 16 - 28 },
@@ -54,11 +57,34 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
   const [detect, setDetect] = useState(false);
   const [typing, setTyping] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [browser, setBrowser] = useState<{
+    url: string;
+    nonce: number;
+    kind: 'ai' | 'web';
+    open: boolean;
+  } | null>(null);
   const stage = useRef<HTMLDivElement>(null);
   const active = debrief ? 'debrief' : order[order.length - 1]!;
 
   const focus = useCallback(
     (id: WinId) => setOrder((o) => (o[o.length - 1] === id ? o : [...o.filter((x) => x !== id), id])),
+    [],
+  );
+
+  const openBrowser = useCallback(
+    (url?: string) => {
+      setBrowser((b) => ({
+        url: url ?? b?.url ?? '',
+        nonce: url === undefined ? (b?.nonce ?? 0) : (b?.nonce ?? 0) + 1,
+        kind: b?.kind ?? 'web',
+        open: true,
+      }));
+      focus('browser');
+    },
+    [focus],
+  );
+  const onNavigate = useCallback(
+    (url: string, kind: 'ai' | 'web') => setBrowser((b) => (b ? { ...b, url, kind } : b)),
     [],
   );
 
@@ -99,6 +125,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
     const off = onGameEvent((e) => {
       if (e.type === 'FlagSubmitted' && e.correct) setStamp((s) => s + 1);
       else if (e.type === 'NpcMessage') setUnread(true);
+      else if (e.type === 'AppOpened') openBrowser(e.url);
       else if (e.type === 'MissionStarted') {
         setDebrief(false);
         setCard(e.mission);
@@ -116,7 +143,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       off();
       timers.forEach(clearTimeout);
     };
-  }, []);
+  }, [openBrowser]);
 
   useEffect(() => {
     if (!card) return;
@@ -196,6 +223,60 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       >
         <Notebook onDebrief={() => setDebrief(true)} />
       </Window>
+
+      {browser && (
+        <Window
+          id="browser"
+          name={t('win.browser')}
+          subtitle={/^https?:\/\/([^/]+)/.exec(browser.url)?.[1]}
+          tint={browser.kind === 'ai' ? 'ai' : 'attack'}
+          rect={rect('browser')}
+          z={z('browser')}
+          active={active === 'browser'}
+          onFocus={() => focus('browser')}
+          onChange={change('browser')}
+          onClose={() => {
+            setBrowser((b) => (b ? { ...b, open: false } : b));
+            setOrder((o) => (o.length > 1 ? o.filter((x) => x !== 'browser') : o));
+            terminalBridge.focus?.();
+          }}
+          closeLabel={t('win.close')}
+          hidden={!browser.open}
+        >
+          <Browser
+            url={browser.url}
+            nonce={browser.nonce}
+            active={active === 'browser' && browser.open && !card}
+            onNavigate={onNavigate}
+          />
+        </Window>
+      )}
+
+      <nav className="dock" aria-label={t('dock.label')}>
+        {(
+          [
+            ['terminal', '>_'],
+            ['browser', '◎'],
+            ['ada', 'A'],
+            ['notes', '☰'],
+          ] as const
+        ).map(([id, glyph]) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={active === id}
+            data-open={id !== 'browser' || browser?.open === true}
+            onClick={() => {
+              if (id === 'browser') openBrowser();
+              else focus(id);
+              if (id === 'terminal') terminalBridge.focus?.();
+            }}
+          >
+            <i aria-hidden="true">{glyph}</i>
+            {t(`win.${id}`)}
+          </button>
+        ))}
+      </nav>
 
       {debrief && (
         <>

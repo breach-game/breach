@@ -39,7 +39,11 @@ export const fr: Record<string, string> = {
   'cmd.dig': 'Interroge le DNS',
   'cmd.whois': "Fiche d'enregistrement d'un domaine",
   'cmd.nmap': 'Découvre hôtes et services',
-  'cmd.curl': 'Envoie une requête HTTP (-I pour les en-têtes)',
+  'cmd.curl': 'Envoie une requête HTTP (-I en-têtes, -d envoie des données)',
+  'cmd.open': 'Ouvre une adresse dans le navigateur',
+  'engine.open': 'Ouverture de {url} dans le navigateur…',
+  'explain.open':
+    "open affiche une adresse dans le navigateur du poste. Le navigateur montre la page comme la verrait un visiteur, et « Voir la source » montre ce que le serveur a vraiment envoyé, commentaires compris.\n---\nPour le serveur, une visite au navigateur ou une requête curl, c'est la même ligne dans le journal d'accès. Naviguer comme un visiteur normal se fond dans le trafic habituel.",
   'cmd.ping': 'Teste si un hôte répond',
   'cmd.ssh': 'Ouvre une session distante',
   'cmd.git': 'clone, log, show : lire un dépôt et son historique',
@@ -65,7 +69,7 @@ export const fr: Record<string, string> = {
   'explain.nmap':
     "nmap envoie des paquets vers une machine ou une plage d'adresses pour savoir ce qui répond et quels services écoutent. -sn se limite à repérer les hôtes, -sV interroge chaque service pour connaître sa version, -T règle la vitesse.\n---\nUn scan laisse des dizaines de connexions refusées dans les logs du pare-feu en quelques secondes. Plus il est rapide (-T4, -A), plus la règle de détection est simple à écrire. C'est l'action la plus bruyante de la reconnaissance.",
   'explain.curl':
-    "curl envoie une requête HTTP et affiche la réponse brute. -I ne montre que les en-têtes, qui trahissent souvent le serveur et sa version.\n---\nChaque requête est enregistrée dans le journal d'accès du serveur web, avec ton adresse IP, l'heure, la page demandée et ton User-Agent. Beaucoup de pages 404 à la suite signalent quelqu'un qui cherche à l'aveugle.",
+    "curl envoie une requête HTTP et affiche la réponse brute. -I ne montre que les en-têtes, qui trahissent souvent le serveur et sa version. -d envoie des données (requête POST), par exemple un message à l'API d'un assistant.\n---\nChaque requête est enregistrée dans le journal d'accès du serveur web, avec ton adresse IP, l'heure, la page demandée et ton User-Agent. Beaucoup de pages 404 à la suite signalent quelqu'un qui cherche à l'aveugle.",
   'explain.ping':
     "ping envoie un petit paquet ICMP et mesure le temps de réponse. Il sert à vérifier qu'une machine est joignable.\n---\nUn ping isolé passe inaperçu. Un balayage de toute une plage, lui, apparaît dans les logs du pare-feu.",
   'explain.ssh':

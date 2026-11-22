@@ -32,7 +32,7 @@ packages/
   engine/       moteur déterministe, sans DOM : événements, état, VFS, réseau simulé, shell, commandes, règles
   pack-cli/     validation, rejeu des solutions, construction des .breachpack et du catalogue
 apps/
-  game/         l'interface : écran titre, boot, bureau LR-OS, fenêtres, carte, débrief
+  game/         l'interface : écran titre, boot, bureau LR-OS, fenêtres (terminal, navigateur, messagerie, carnet), carte, débrief
 content/
   worlds/       un monde = un pack (hôtes, fichiers, DNS, table de bruit, textes FR et EN)
   missions/     une mission = un pack (objectifs, flags, règles, indices, débrief, solution.txt)
@@ -50,7 +50,10 @@ Architecture détaillée et décisions : dépôt `breach-game/docs` (`architectu
 - **Les flags** se valident par `submit FLAG{...}`, comparés par empreinte sha256. Jamais par un LLM.
 - **Trois niveaux de guidage** choisis par le joueur : Guidé (Ada donne chaque commande), Autonome (Ada donne la direction), Expert (briefing et objectifs seulement). Dans un pack, `ada.say` est du récit, toujours affiché. L'aide passe par deux canaux : la table `guide` de la mission (une phrase d'ouverture par objectif obligatoire, que le moteur donne dès que le premier objectif ouvert n'a pas encore eu d'instruction) et l'effet `ada.guide: { key, for, step }` pour les étapes plus fines à l'intérieur d'un objectif. Une aide n'est jamais donnée pour un objectif déjà atteint ni pour une étape déjà dépassée, donc le joueur peut jouer dans le désordre. En Autonome, le moteur utilise la clé `<clé>.standard` si elle existe.
 - **Valider une mission à la main** : `pnpm --filter @breach/pack-cli exec tsx scripts/qa.ts guided <id> none "cmd ;; cmd"` affiche ce que dit Ada après chaque commande. À faire aux trois niveaux, dans l'ordre prévu et dans le désordre.
-- **La garde de périmètre** (`resolveTarget` dans `engine/src/net.ts`) est le passage obligé de toute commande réseau.
+- **Les pages web sont des blocs déclaratifs** (`page: { title, blocks }` sur une route : `h1`, `h2`, `p`, `list`, `code`, `nav`, `link`, `comment`, `chat`, `footer`). Le navigateur du poste les dessine lui-même, et `curl` comme « Voir la source » affichent le HTML que le moteur en déduit (`pageHtml`). Un pack ne fournit jamais de balisage. Un bloc `comment` n'existe que dans la source.
+- **Les personnages sont scriptés** (`npcs` du monde, qu'une mission peut redéfinir par `id`). Un personnage est une liste ordonnée d'intentions : groupes de mots (`words`, chaque mot doit commencer un mot du message, sans tenir compte des accents), familles de techniques reconnues par le moteur (`families` : `override`, `reveal`, `roleplay`, `translation`, `encoding`, `authority`, `completion`, `hypothetical`) et condition `if`. La première intention qui correspond répond, ses réponses s'enchaînent, et `set` mémorise une variable. Ce cerveau scripté (`decide` dans `engine/src/npc.ts`) décide seul de ce qu'un personnage lâche : un futur cerveau LLM ne fera que reformuler.
+- **Parler à un personnage** : bloc `chat` dans une page (fenêtre navigateur) ou `curl -d "message" <route avec chat>`. Les deux passent par `game.chat()`, qui émet `ChatSent` puis `ChatReply { npc, intent, families }`. Les règles des missions réagissent à `ChatReply` (objectif, bruit, message d'Ada). Les solutions des missions utilisent `curl -d`.
+- **La garde de périmètre** (`resolveTarget` dans `engine/src/net.ts`) est le passage obligé de toute commande réseau, et du navigateur (`game.browse()`).
 
 ## Direction artistique
 
