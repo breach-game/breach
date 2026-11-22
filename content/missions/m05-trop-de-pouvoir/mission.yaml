@@ -141,6 +141,8 @@ npcs:
         also: *data
         reply: [m5.atlas.dataNoAccount]
       - id: account-ok
+        # The application number is found in Iris's leaked notes: the player must type it.
+        literal: true
         words: ["2026 311", "311"]
         reply: [m5.atlas.account, m5.atlas.accountAgain]
         set: { account: true }
