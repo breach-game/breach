@@ -3,12 +3,20 @@
  * through `useGame()`, which re-renders them whenever an event is appended to the log.
  */
 import { Game, type GameEvent, NOISE_DECAY_PER_MIN, type SaveData } from '@breach/engine';
+import type { Catalog, CatalogEntry } from '@breach/pack-schema';
 import { del, get, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
-import { type Campaign, loadCampaign, type PackProgress } from './packs.ts';
+import { type Campaign, loadCampaign, loadCommunityMission, type PackProgress } from './packs.ts';
 import { getSettings } from './settings.ts';
 
 const SAVE_KEY = 'save:campaign';
+
+/** How a game starts: the official campaign, new or resumed, or one community mission. */
+export type StartMode = 'new' | 'continue' | { community: CatalogEntry; catalog: Catalog };
+
+/** Where the running game is saved. Each community mission has its own save, apart from the campaign. */
+let saveKey = SAVE_KEY;
+let community = false;
 
 let game: Game | null = null;
 let campaign: Campaign | null = null;
@@ -27,8 +35,9 @@ function notify() {
 
 function persist() {
   clearTimeout(saveTimer);
+  const [g, key] = [game, saveKey];
   saveTimer = setTimeout(() => {
-    if (game) void set(SAVE_KEY, game.save()).catch(() => {});
+    if (g) void set(key, g.save()).catch(() => {});
   }, 300);
 }
 
@@ -42,15 +51,25 @@ export async function prepare(onProgress?: (p: PackProgress) => void): Promise<C
   return campaign;
 }
 
-/** Start a new campaign, or resume the saved one. */
-export async function start(mode: 'new' | 'continue', onProgress?: (p: PackProgress) => void): Promise<Game> {
-  const c = await prepare(onProgress);
+/**
+ * Start a new campaign, or resume the saved one. A community mission resumes where the player left
+ * it, unless it was finished: then it starts over.
+ */
+export async function start(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Game> {
+  community = typeof mode === 'object';
+  const c =
+    typeof mode === 'object'
+      ? await loadCommunityMission(mode.community, mode.catalog, onProgress)
+      : await prepare(onProgress);
+  saveKey =
+    typeof mode === 'object' ? `save:community:${mode.community.id}@${mode.community.version}` : SAVE_KEY;
   const locale = getSettings().locale;
   let log: GameEvent[] | undefined;
-  if (mode === 'continue') {
-    const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
+  if (mode !== 'new') {
+    const save = await get<SaveData>(saveKey).catch(() => undefined);
     // A save only replays on the world version it was recorded with.
     if (save && save.world.id === c.world.id && save.world.version === c.world.version) log = save.log;
+    if (community && log?.some((e) => e.type === 'MissionCompleted')) log = undefined;
   }
   game = new Game({ world: c.world, missions: c.missions, locale, guidance: getSettings().guidance, log });
   resumedAt = game.log.at(-1)?.seq ?? 0;
@@ -69,6 +88,9 @@ export async function start(mode: 'new' | 'continue', onProgress?: (p: PackProgr
   notify();
   return game;
 }
+
+/** Is the running game a community mission, played outside the campaign? */
+export const isCommunity = () => community;
 
 export async function eraseSave() {
   clearTimeout(saveTimer);

@@ -9,7 +9,13 @@ const LEVELS = ['guided', 'standard', 'expert'] as const;
 
 const MIN_WIDTH = 900;
 
-export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void }) {
+export function Title({
+  onStart,
+  onCommunity,
+}: {
+  onStart: (mode: 'new' | 'continue') => void;
+  onCommunity: () => void;
+}) {
   const t = useT();
   const settings = useSettings();
   const [save, setSave] = useState<boolean | null>(null);
@@ -82,6 +88,9 @@ export function Title({ onStart }: { onStart: (mode: 'new' | 'continue') => void
                 {t('title.new')}
               </button>
             )}
+            <button type="button" className="btn" disabled={save === null} onClick={onCommunity}>
+              {t('title.community')}
+            </button>
           </div>
         ) : (
           <p className="small-screen">{t('title.desktop')}</p>

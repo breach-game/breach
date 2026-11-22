@@ -30,6 +30,7 @@ GitHub Pages ignore le fichier `_headers`. La politique de sécurité du contenu
 - La console n'affiche aucune erreur de politique de sécurité du contenu ni de Trusted Types.
 - Les packs officiels sont épinglés au build : déposer le catalogue et les packs du même build que le code, sinon le jeu les refuse.
 - La sauvegarde survit à un rechargement de la page.
+- « Missions de la communauté » affiche le catalogue de `breach-game/packs` (publié par le dépôt `packs` lui-même, avec sa signature). C'est la seule requête vers une autre adresse, et seulement à l'ouverture de cet écran.
 
 ## Ce qui reste à décider
 

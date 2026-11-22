@@ -1,6 +1,7 @@
 node_modules
 dist
 apps/game/public/packs
+apps/game/public/community
 *.log
 .DS_Store
 coverage
