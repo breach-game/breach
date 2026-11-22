@@ -1,17 +1,17 @@
-# Passerelle LLM BREACH
+# BREACH LLM gateway
 
-Service optionnel qui donne aux joueurs des dialogues libres avec les PNJ, gratuitement et avec un quota. Il tourne sur le VPS, jamais sur le serveur de la maison.
+Optional service that gives players free-form dialogue with NPCs, free of charge and with a quota. It runs on the VPS, never on the home server.
 
-## Principe
+## How it works
 
 ```
-navigateur ──► API BREACH (VPS) ──► FreeLLMAPI (VPS, réseau privé) ──► fournisseurs gratuits
+browser ──► BREACH API (VPS) ──► FreeLLMAPI (VPS, private network) ──► free providers
 ```
 
-- FreeLLMAPI n'est jamais exposé sur Internet : il écoute uniquement sur le réseau Docker interne. Le projet est conçu pour un seul utilisateur.
-- L'API BREACH est la seule porte d'entrée publique.
+- FreeLLMAPI is never exposed to the Internet: it only listens on the internal Docker network. The project is designed for a single user.
+- The BREACH API is the only public entry point.
 
-## Contrat
+## Contract
 
 `POST /v1/npc/reply`
 
@@ -19,22 +19,22 @@ navigateur ──► API BREACH (VPS) ──► FreeLLMAPI (VPS, réseau privé)
 { "npcId": "nova", "locale": "fr", "history": [...], "message": "..." }
 ```
 
-- Le client n'envoie jamais de prompt système. Le serveur charge la fiche du PNJ (`npcs/<npcId>.yaml`) et construit le prompt lui-même. La passerelle ne peut donc pas servir de chatbot généraliste.
-- Réponse : `{ "text": "...", "remaining": 37 }`. Quota épuisé : HTTP 429, et le jeu repasse en mode scripté.
+- The client never sends a system prompt. The server loads the NPC sheet (`npcs/<npcId>.yaml`) and builds the prompt itself, so the gateway cannot be used as a general-purpose chatbot.
+- Response: `{ "text": "...", "remaining": 37 }`. Quota exhausted: HTTP 429, and the game falls back to scripted mode.
 
 ## Protections
 
-- **Jeton anonyme** par navigateur, délivré par `POST /v1/session` après un captcha invisible Cloudflare Turnstile. Aucun compte, aucune donnée personnelle.
-- **Quotas** : messages par jeton et par jour (40 au départ), limite par IP, plafond global quotidien.
-- **Limites** : longueur du message entrant, historique tronqué, `max_tokens` bas en sortie.
-- **Filtre de sortie** adapté à un public de 16 ans et plus, et recentrage sur l'univers du jeu.
-- **Logs minimaux** : compteurs et erreurs, jamais le contenu des messages.
-- **CORS** limité au domaine du jeu.
+- **Anonymous token** per browser, issued by `POST /v1/session` after an invisible Cloudflare Turnstile captcha. No account, no personal data.
+- **Quotas**: messages per token per day (40 to start with), a per-IP limit, a global daily cap.
+- **Limits**: incoming message length, truncated history, low output `max_tokens`.
+- **Output filter** suited to a 16+ audience, and steering back to the game's universe.
+- **Minimal logs**: counters and errors, never message content.
+- **CORS** restricted to the game's domain.
 
-## Fournisseurs
+## Providers
 
-À vérifier avant ouverture au public : pour chaque fournisseur activé dans FreeLLMAPI, que ses conditions autorisent un usage par des tiers, et ce qu'il fait des données (certains quotas gratuits servent à l'entraînement). La page de confidentialité du jeu le dit clairement. OpenRouter : modèles `:free`, 1 000 requêtes par jour après un achat de 10 $ de crédits.
+To check before opening to the public: for each provider enabled in FreeLLMAPI, that its terms allow third-party use, and what it does with the data (some free tiers are used for training). The game's privacy page says so clearly. OpenRouter: `:free` models, 1,000 requests per day after buying $10 of credits.
 
-## Déploiement
+## Deployment
 
-Docker Compose sur le VPS : `breach-gateway` (petit service Node ou Hono) et `freellmapi` sur un réseau interne, derrière un reverse proxy HTTPS. À construire au lot 4.
+Docker Compose on the VPS: `breach-gateway` (small Node or Hono service) and `freellmapi` on an internal network, behind an HTTPS reverse proxy. To be built in lot 4.
