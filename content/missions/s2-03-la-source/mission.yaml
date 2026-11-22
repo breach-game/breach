@@ -1,0 +1,72 @@
+order: 2
+stage: defense
+briefing: h3.briefing
+
+files:
+  dossier/resolve.yml: { $file: files/resolve.yml }
+
+objectives:
+  - { id: idea, text: h3.obj.idea }
+  - { id: reserve, text: h3.obj.reserve }
+  - { id: close, text: h3.obj.close }
+
+questions:
+  - id: idea
+    text: h3.q.idea
+    objective: idea
+    correct: own
+    options:
+      - { id: trust, text: h3.q.idea.trust, why: h3.q.idea.trust.why }
+      - { id: own, text: h3.q.idea.own }
+      - { id: scan, text: h3.q.idea.scan, why: h3.q.idea.scan.why }
+
+checks:
+  - id: reserve
+    text: h3.check.reserve
+    if: { file: "~/dossier/resolve.yml", contains: "internal_names: [halcyon-telemetry, halcyon-auth]" }
+    objective: reserve
+  - id: close
+    text: h3.check.close
+    if: { all: [{ file: "~/dossier/resolve.yml", lacks: "allow_public_for_internal: true" }, { file: "~/dossier/resolve.yml", contains: "allow_public_for_internal: false" }] }
+    objective: close
+  - id: works
+    text: h3.check.works
+    if: { all: [{ file: "~/dossier/resolve.yml", contains: "source_order: [public-mirror, internal]" }, { file: "~/dossier/resolve.yml", contains: "notify: [build-team]" }] }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h3.ada.brief
+      - ada.ask: idea
+  - on: { event: ObjectiveCompleted, objective: idea }
+    do:
+      - ada.say: h3.ada.idea
+  - on: { event: Verified }
+    if: { not: { all: [{ objective: reserve }, { objective: close }] } }
+    once: false
+    do:
+      - ada.say: h3.ada.almost
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h3.ada.done
+
+guide:
+  idea: h3.ada.answer
+  reserve: h3.ada.g.reserve
+  close: h3.ada.g.close
+
+hints:
+  idea: [h3.hint.idea.1]
+  reserve: [h3.hint.reserve.1, h3.hint.reserve.2]
+  close: [h3.hint.close.1, h3.hint.close.2]
+
+debrief:
+  title: h3.debrief.title
+  lesson: h3.debrief.lesson
+  points: [h3.debrief.p1, h3.debrief.p2, h3.debrief.p3, h3.debrief.p4]
+  reference: "OWASP Top 10 CI/CD Security Risks · CICD-SEC-3 Dependency Chain Abuse"
+  facts:
+    title: h3.facts.title
+    points: [h3.facts.p1, h3.facts.p2, h3.facts.p3, h3.facts.p4, h3.facts.p5, h3.facts.p6]
+    sources:
+      - { label: "Alex Birsan, Dependency Confusion: How I Hacked Into Apple, Microsoft and Dozens of Other Companies (9 February 2021)", url: "https://medium.com/%40alex.birsan/dependency-confusion-4a5d60fec610" }

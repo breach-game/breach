@@ -635,7 +635,8 @@ const series = z.strictObject({
 });
 export type Series = z.infer<typeof series>;
 
-export const TRACKS = ['campaign', 'training'] as const;
+/** `season`: a mission of an official series played after the campaign, listed only through its series. */
+export const TRACKS = ['campaign', 'training', 'season'] as const;
 export const SKILLS = [
   'recon',
   'web',
@@ -697,6 +698,8 @@ export const catalogSchema = z.strictObject({
   campaign: z.array(id),
   /** Short standalone missions, easiest first. */
   training: z.array(id).default([]),
+  /** Official series played after the campaign, in order: each one is a season with its own world. */
+  seasons: z.array(id).default([]),
   packs: z.array(
     z.strictObject({
       id,

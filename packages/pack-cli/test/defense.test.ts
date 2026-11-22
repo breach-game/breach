@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { loadAll, replaySolution } from '../src/index.ts';
 
 const packs = loadAll(resolve(import.meta.dirname, '../../../content'));
-const world = packs.find((p) => p.pack.kind === 'world')!.pack;
+const world = packs.find((p) => p.pack.id === 'breach.world.novamind')!.pack;
 const attacks = packs.filter(
   (p) => p.pack.kind === 'mission' && p.pack.mission?.side !== 'defense' && p.pack.mission?.defense,
 );
@@ -64,7 +64,9 @@ describe('defence replay', () => {
       // The save is the journal: a reload gives the same defence state, without a new replay.
       const again = new Game({
         world,
-        missions: packs.filter((p) => p.pack.kind === 'mission').map((p) => p.pack),
+        missions: packs
+          .filter((p) => p.pack.kind === 'mission' && p.pack.requires[0] === world.id)
+          .map((p) => p.pack),
         locale: 'fr',
         log: game.log,
       });

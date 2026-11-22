@@ -15,11 +15,13 @@ export function Title({
   onCommunity,
   onMissions,
   onTraining,
+  onSeasons,
 }: {
   onStart: (mode: 'new' | 'continue') => void;
   onCommunity: () => void;
   onMissions: () => void;
   onTraining: () => void;
+  onSeasons: () => void;
 }) {
   const t = useT();
   const settings = useSettings();
@@ -98,6 +100,9 @@ export function Title({
             )}
             <button type="button" className="btn" disabled={save === null} onClick={onTraining}>
               {t('title.training')}
+            </button>
+            <button type="button" className="btn" disabled={save === null} onClick={onSeasons}>
+              {t('title.seasons')}
             </button>
             <button type="button" className="btn" disabled={save === null} onClick={onCommunity}>
               {t('title.community')}

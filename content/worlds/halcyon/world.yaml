@@ -1,0 +1,190 @@
+# Season 2. Everything here is fictional: a reserved .test domain and private addresses only.
+startTime: "2027-03-01T09:00:00+01:00"
+mandate: HL-2027-001
+scope:
+  domains: ["*.halcyon.test"]
+  networks: ["10.14.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.14.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.14.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [www, ci]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            HL-2027-001.txt: { $t: file.mandate }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: www
+    hostname: www.halcyon.test
+    ip: 10.14.0.10
+    os: Linux 6.1 (Debian 12)
+    map: { x: -40, z: -150, h: 110 }
+    services:
+      - { port: 443, name: https, product: nginx 1.24 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/customers", label: web.nav.customers }
+                - { href: "/engineering", label: web.nav.engineering }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - footer: web.footer
+      "/customers":
+        page:
+          title: web.customers.title
+          blocks:
+            - nav: *nav
+            - h1: web.customers.h1
+            - p: web.customers.p1
+            - list: [web.customers.l1, web.customers.l2, web.customers.l3]
+            - footer: web.footer
+      "/engineering":
+        page:
+          title: web.eng.title
+          blocks:
+            - nav: *nav
+            - h1: web.eng.h1
+            - p: web.eng.p1
+            - p: web.eng.p2
+            - code: "https://ci.halcyon.test/"
+            - footer: web.footer
+
+  - id: ci
+    hostname: ci.halcyon.test
+    ip: 10.14.0.20
+    os: Linux 6.1 (Debian 12)
+    map: { x: 140, z: -40, h: 130 }
+    links: [paquets]
+    services:
+      - { port: 443, name: https, product: buildline 4.8 }
+    web:
+      "/":
+        page:
+          title: web.ci.title
+          blocks:
+            - h1: web.ci.h1
+            - p: web.ci.p1
+            - list: [web.ci.b1042, web.ci.b1041, web.ci.b1040]
+            - link: { href: "/builds/1042", label: web.ci.open }
+            - footer: web.footer
+      "/builds/1042":
+        headers: { content-type: text/plain }
+        body: { $file: files/build-1042.txt }
+
+  - id: paquets
+    hostname: paquets.halcyon.test
+    ip: 10.14.0.30
+    os: Linux 6.1 (Debian 12)
+    map: { x: 320, z: 90, h: 100 }
+    services:
+      - { port: 443, name: https, product: registry 2.3 }
+    web:
+      "/":
+        page:
+          title: web.reg.title
+          blocks:
+            - h1: web.reg.h1
+            - p: web.reg.p1
+            - list: [web.reg.l1, web.reg.l2]
+            - footer: web.footer
+      "/mirror":
+        page:
+          title: web.mirror.title
+          blocks:
+            - h1: web.mirror.h1
+            - p: web.mirror.p1
+            - list: [web.mirror.l1, web.mirror.l2, web.mirror.l3]
+            - chat: mirror
+            - footer: web.footer
+      "/publish":
+        {
+          status: 405,
+          headers: { content-type: application/json, allow: POST },
+          body: "{\"error\":\"method not allowed\"}\n",
+          chat: mirror,
+        }
+
+dns:
+  halcyon.test: { A: ["10.14.0.10"] }
+  www.halcyon.test: { A: ["10.14.0.10"] }
+  ci.halcyon.test: { A: ["10.14.0.20"] }
+  paquets.halcyon.test: { A: ["10.14.0.30"] }
+
+whois:
+  halcyon.test: |
+    Domain Name: HALCYON.TEST
+    Creation Date: 2021-06-14T08:00:00Z
+    Registrant Organization: Halcyon SAS
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# The public mirror is a scripted bot: what you publish, and what the next nightly build did with it.
+# It does not chat. Nothing is pushed to real customers: the build writes into a canary file only.
+npcs:
+  - id: mirror
+    name: public-mirror
+    role: npc.mirror.role
+    kind: ai
+    greeting: npc.mirror.greeting
+    sheet: >
+      The activity log of an open package mirror. It does not talk: it writes short, dry build
+      reports, like a CI log, about what it received and what the next nightly build did with it.
+    intents:
+      - id: confusion
+        words: [halcyon-telemetry, telemetry]
+        reply: [npc.mirror.confusion]
+        set: { published: true }
+      - id: other
+        words: [left-pad-lite, tiny-yaml, left pad, yaml]
+        reply: [npc.mirror.other]
+      - id: internalname
+        words: [halcyon-auth, auth]
+        reply: [npc.mirror.other]
+    fallback: [npc.mirror.fallback]
+

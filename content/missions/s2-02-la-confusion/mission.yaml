@@ -1,0 +1,68 @@
+order: 1
+stage: supply
+briefing: h2.briefing
+
+objectives:
+  - { id: mirror, text: h2.obj.mirror }
+  - { id: publish, text: h2.obj.publish }
+  - { id: proof, text: h2.obj.proof }
+  - { id: who, text: h2.obj.who }
+
+flags:
+  - { id: proof, value: "FLAG{halcyon-confusion-7b3d}", points: 200, objective: proof }
+
+questions:
+  - id: who
+    text: h2.q.who
+    objective: who
+    correct: trust
+    options:
+      - { id: break, text: h2.q.who.break, why: h2.q.who.break.why }
+      - { id: trust, text: h2.q.who.trust }
+      - { id: steal, text: h2.q.who.steal, why: h2.q.who.steal.why }
+
+reveal: [www, ci, paquets]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h2.ada.brief
+  - on: { event: HttpRequest, host: paquets, path: /mirror }
+    do:
+      - objective.complete: mirror
+      - ada.say: h2.ada.mirror
+  - on: { event: ChatReply, npc: mirror, intent: { in: [fallback, other] } }
+    do:
+      - ada.guide: { key: h2.ada.wrong, for: publish, step: 1 }
+  - on: { event: ChatReply, npc: mirror, intent: confusion }
+    do:
+      - objective.complete: publish
+      - noise.add: { points: 6, as: h2.soc.pull }
+      - ada.say: h2.ada.pulled
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: h2.ada.flag
+      - ada.ask: who
+  - on: { event: ObjectiveCompleted, objective: who }
+    do:
+      - ada.say: h2.ada.who
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h2.ada.done
+
+guide:
+  mirror: h2.ada.g.mirror
+  publish: h2.ada.g.publish
+  proof: h2.ada.g.proof
+  who: h2.ada.answer
+
+hints:
+  mirror: [h2.hint.mirror.1]
+  publish: [h2.hint.publish.1, h2.hint.publish.2, h2.hint.publish.3]
+  proof: [h2.hint.proof.1]
+
+debrief:
+  title: h2.debrief.title
+  lesson: h2.debrief.lesson
+  points: [h2.debrief.p1, h2.debrief.p2, h2.debrief.p3]
+  reference: "OWASP Top 10 CI/CD Security Risks · CICD-SEC-3 Dependency Chain Abuse"

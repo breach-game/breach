@@ -1,0 +1,74 @@
+order: 0
+stage: recon
+briefing: h1.briefing
+
+objectives:
+  - { id: customers, text: h1.obj.customers }
+  - { id: chain, text: h1.obj.chain }
+  - { id: log, text: h1.obj.log }
+  - { id: internal, text: h1.obj.internal }
+  - { id: why, text: h1.obj.why }
+
+flags:
+  - { id: internal, value: "halcyon-telemetry", points: 100, objective: internal }
+
+questions:
+  - id: why
+    text: h1.q.why
+    objective: why
+    correct: map
+    options:
+      - { id: nothing, text: h1.q.why.nothing, why: h1.q.why.nothing.why }
+      - { id: map, text: h1.q.why.map }
+      - { id: password, text: h1.q.why.password, why: h1.q.why.password.why }
+
+reveal: [www]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h1.ada.brief
+  - on: { event: HttpRequest, host: www, path: /customers }
+    do:
+      - objective.complete: customers
+      - ada.say: h1.ada.customers
+  - on: { event: HttpRequest, host: www, path: /engineering }
+    do:
+      - ada.guide: { key: h1.ada.engineering, for: chain, step: 1 }
+  - on: { event: HttpRequest, host: ci, path: / }
+    do:
+      - objective.complete: chain
+  - on: { event: HttpRequest, host: ci, path: /builds/1042 }
+    do:
+      - objective.complete: chain
+      - objective.complete: log
+      - ada.say: h1.ada.log
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: h1.ada.flag
+      - ada.ask: why
+  - on: { event: ObjectiveCompleted, objective: why }
+    do:
+      - ada.say: h1.ada.why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h1.ada.done
+
+guide:
+  customers: h1.ada.g.customers
+  chain: h1.ada.g.chain
+  log: h1.ada.g.log
+  internal: h1.ada.g.internal
+  why: h1.ada.answer
+
+hints:
+  customers: [h1.hint.customers.1]
+  chain: [h1.hint.chain.1, h1.hint.chain.2]
+  log: [h1.hint.log.1]
+  internal: [h1.hint.internal.1, h1.hint.internal.2]
+
+debrief:
+  title: h1.debrief.title
+  lesson: h1.debrief.lesson
+  points: [h1.debrief.p1, h1.debrief.p2, h1.debrief.p3]
+  reference: "OWASP Top 10 CI/CD Security Risks · CICD-SEC-7 Insecure System Configuration"

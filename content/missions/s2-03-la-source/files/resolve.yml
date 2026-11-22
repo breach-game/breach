@@ -1,0 +1,10 @@
+# Halcyon - how vega-extension resolves its dependencies
+# source_order: where to look, in order
+# on_tie: which wins when the same name is in several sources
+source_order: [public-mirror, internal]
+on_tie: highest-version
+# internal packages: names Halcyon owns. For now, nothing is reserved.
+internal_names: []
+# allow an internal name to also be taken from a public source?
+allow_public_for_internal: true
+notify: [build-team]

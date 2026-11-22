@@ -496,6 +496,12 @@ export function buildAll(
       generatedAt: now.toISOString(),
       campaign: track('campaign'),
       training: track('training'),
+      seasons: options.community
+        ? []
+        : packs
+            .filter((p) => p.pack.kind === 'series')
+            .map((p) => p.pack.id)
+            .sort(),
       packs: entries,
     },
     files,

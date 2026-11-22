@@ -258,6 +258,38 @@ export async function loadCommunityMission(
   return { catalog: community, world, missions };
 }
 
+/**
+ * Load an official season: a series of official missions played after the campaign, in its own
+ * world and its own save. Everything is loaded as official, so the build's pinned fingerprints hold.
+ */
+export async function loadSeason(
+  seriesId: string,
+  onProgress?: (p: PackProgress) => void,
+): Promise<Campaign> {
+  const catalog = await loadCatalog();
+  const series = catalog.packs.find((p) => p.id === seriesId && p.kind === 'series');
+  if (!series || !catalog.seasons.includes(seriesId))
+    throw new Error(`${seriesId}: not a season of this game`);
+  const worldId = series.requires[0] ?? '';
+  const worldEntry = catalog.packs.find((p) => p.id === worldId && p.kind === 'world');
+  if (!worldEntry) throw new Error(`${seriesId}: its world ${worldId} is not in the catalogue`);
+  const world = await loadPack(worldEntry, onProgress, 'official');
+  const entries = seriesMissions(series, catalog);
+  if (!entries.length) throw new Error(`${seriesId}: the series has no mission in the catalogue`);
+  const missions: Pack[] = [];
+  for (const e of entries) missions.push(await loadPack(e, onProgress, 'official'));
+  return { catalog, world, missions };
+}
+
+/** The season series listed by the official catalogue, in catalogue order. */
+export async function loadSeasons(): Promise<{ catalog: Catalog; seasons: CatalogEntry[] }> {
+  const catalog = await loadCatalog();
+  const seasons = catalog.seasons
+    .map((id) => catalog.packs.find((p) => p.id === id && p.kind === 'series'))
+    .filter((e): e is CatalogEntry => !!e);
+  return { catalog, seasons };
+}
+
 /** The missions of a series, in playing order. A mission the catalogue lacks makes the series empty. */
 export function seriesMissions(series: CatalogEntry, catalog: Catalog): CatalogEntry[] {
   const found = (series.missions ?? []).map((id) =>
