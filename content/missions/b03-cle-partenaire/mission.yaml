@@ -22,7 +22,7 @@ config:
 
 adversary:
   id: scraper
-  name: scraper
+  name: Scraper
   from: unk
   pace: 1
   delay: 1
