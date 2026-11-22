@@ -3,7 +3,7 @@ import { canRead, type FsNode, globMatch, lookup, modeString } from '../vfs.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
 
 /** Read a file for a command, reporting errors the way coreutils do. */
-function* readFile(ctx: CommandCtx, arg: string): Generator<ReturnType<typeof err>, string | null> {
+export function* readFile(ctx: CommandCtx, arg: string): Generator<ReturnType<typeof err>, string | null> {
   const abs = ctx.path(arg);
   const node = lookup(ctx.state.fs, abs);
   if (!node) {
@@ -14,11 +14,11 @@ function* readFile(ctx: CommandCtx, arg: string): Generator<ReturnType<typeof er
     yield err(`${ctx.name}: ${arg}: Is a directory`);
     return null;
   }
-  if (!canRead(node, ctx.game.user)) {
+  if (!canRead(node, ctx.game.currentUser)) {
     yield err(`${ctx.name}: ${arg}: Permission denied`);
     return null;
   }
-  ctx.emit({ type: 'FileRead', host: ctx.world.player.host, path: abs });
+  ctx.emit({ type: 'FileRead', host: ctx.state.host, path: abs });
   return node.content;
 }
 
@@ -50,7 +50,7 @@ const cd: Command = {
       yield err(`lrsh: cd: ${arg}: Not a directory`);
       return 1;
     }
-    if (!canRead(node, ctx.game.user)) {
+    if (!canRead(node, ctx.game.currentUser)) {
       yield err(`lrsh: cd: ${arg}: Permission denied`);
       return 1;
     }
@@ -85,7 +85,7 @@ const ls: Command = {
         yield out(flags.has('l') ? long(target, node) : target);
         continue;
       }
-      if (!canRead(node, ctx.game.user)) {
+      if (!canRead(node, ctx.game.currentUser)) {
         yield err(`ls: cannot open directory '${target}': Permission denied`);
         status = 2;
         continue;
@@ -166,7 +166,7 @@ function collectFiles(ctx: CommandCtx, arg: string): string[] {
     for (const [name, child] of Object.entries(dir.c).sort(([a], [b]) => a.localeCompare(b))) {
       const path = `${prefix}/${name}`.replace(/^\.\//, '');
       if (child.t === 'd') walk(child, path);
-      else if (canRead(child, ctx.game.user)) found.push(path);
+      else if (canRead(child, ctx.game.currentUser)) found.push(path);
     }
   };
   walk(node, arg.replace(/\/$/, ''));
@@ -297,7 +297,7 @@ const find: Command = {
       const a = insensitive ? base.toLowerCase() : base;
       const p = insensitive && name ? name.toLowerCase() : name;
       if ((!p || globMatch(p, a)) && (!type || type === node.t)) results.push(path);
-      if (node.t === 'd' && canRead(node, ctx.game.user))
+      if (node.t === 'd' && canRead(node, ctx.game.currentUser))
         for (const [n, child] of Object.entries(node.c).sort(([x], [y]) => x.localeCompare(y)))
           visit(child, `${path.replace(/\/$/, '')}/${n}`, n);
     };

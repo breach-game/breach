@@ -7,6 +7,9 @@ export const fr: Record<string, string> = {
   'stage.recon': 'reconnaissance',
   'stage.social': 'ingénierie sociale',
   'stage.injection': 'injection de prompt',
+  'stage.indirect': 'injection indirecte',
+  'stage.agency': 'agent trop puissant',
+  'stage.lateral': 'mouvement latéral',
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
@@ -58,6 +61,7 @@ export const fr: Record<string, string> = {
   'cmd.history': 'Affiche les commandes déjà tapées',
   'cmd.sudo': 'Exécute en administrateur',
   'cmd.exit': 'Ferme la session',
+  'cmd.logout': 'Quitte la session SSH',
 
   'explain.usage': 'usage : explain <commande>',
   'explain.unknown': 'explain : « {name} » inconnu. Tape `help` pour la liste.',

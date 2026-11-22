@@ -27,7 +27,7 @@ import { type GameState, NOISE_AFTER_RESTORE, NOISE_DECAY_PER_MIN, NOISE_MAX } f
 import { gameDate, sanitizeTerminal, style } from './util.ts';
 import { buildFs, chown, globMatch, lookup, mkdir, mkdirp, normalize, writeFile } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.2.0';
+export const ENGINE_VERSION = '0.3.0';
 
 export interface GameOptions {
   world: Pack;
@@ -163,8 +163,24 @@ export class Game {
     return this.world.player.user;
   }
 
+  /** Home directory of the current session's user. */
   get home(): string {
-    return this.playerHost.users.find((u) => u.name === this.user)?.home ?? `/home/${this.user}`;
+    return this.homeOf(this.state.host, this.state.user);
+  }
+
+  /** Host the terminal runs on: the workstation, or a host reached by SSH. */
+  get currentHost(): Host {
+    return this.host(this.state.host) ?? this.playerHost;
+  }
+
+  /** User of the current session: the player on the workstation, the account logged into elsewhere. */
+  get currentUser(): string {
+    return this.state.user;
+  }
+
+  private homeOf(hostId: string, user: string): string {
+    const host = this.host(hostId);
+    return host?.users.find((u) => u.name === user)?.home ?? (user === 'root' ? '/root' : `/home/${user}`);
   }
 
   get campaign(): Pack[] {
@@ -185,8 +201,11 @@ export class Game {
 
   prompt(): string {
     const cwd = this.state.cwd === this.home ? '~' : this.state.cwd.replace(`${this.home}/`, '~/');
-    const short = this.playerHost.hostname.split('.')[0];
-    return `${style.bold(`${this.user}@${short}`)}${style.dim(':')}${style.cyan(cwd)}${style.dim('$')} `;
+    const short = this.currentHost.hostname.split('.')[0];
+    const who = `${this.state.user}@${short}`;
+    // On a target host, the prompt turns red: the player is on someone else's machine.
+    const remote = this.state.host !== this.world.player.host;
+    return `${remote ? style.red(style.bold(who)) : style.bold(who)}${style.dim(':')}${style.cyan(cwd)}${style.dim('$')} `;
   }
 
   /** Translate a key: mission pack, then world pack, then engine strings. */
@@ -286,7 +305,11 @@ export class Game {
       clock: 0,
       cwd: '/',
       prevCwd: '/',
+      host: this.world.player.host,
+      user: this.world.player.user,
+      sessions: [],
       fs: mkdir('root'),
+      filesystems: {},
       repos: {},
       discovered: {},
       revealed: {},
@@ -311,24 +334,48 @@ export class Game {
     };
     const host = this.world.hosts.find((h) => h.id === this.world.player.host)!;
     const user = this.world.player.user;
-    const translate = (key: string) => {
+    const translate = this.worldText(locale);
+    state.fs = this.hostFs(host, translate);
+    state.filesystems[host.id] = state.fs;
+    state.cwd = host.users.find((u) => u.name === user)?.home ?? '/';
+    state.prevCwd = state.cwd;
+    return state;
+  }
+
+  /** World text, for files: they are built before any mission's text applies. */
+  private worldText(locale: Locale) {
+    return (key: string) => {
       const text =
         this.worldPack.i18n[locale]?.[key] ??
         this.worldPack.i18n[locale === 'fr' ? 'en' : 'fr']?.[key] ??
         key;
-      return interpolate(text, { user, mandate: this.world.mandate });
+      return interpolate(text, { user: this.world.player.user, mandate: this.world.mandate });
     };
-    state.fs = buildFs(host.fs, translate);
+  }
+
+  /** A host's file system as the pack describes it, with a home directory for each of its users. */
+  private hostFs(host: Host, translate: (key: string) => string) {
+    const fs = buildFs(host.fs, translate);
     for (const u of host.users) {
-      const home = mkdirp(state.fs, u.home, u.name);
+      const home = mkdirp(fs, u.home, u.name);
       if (home) {
         home.owner = u.name;
         chown(home, u.name);
       }
     }
-    state.cwd = host.users.find((u) => u.name === user)?.home ?? '/';
-    state.prevCwd = state.cwd;
-    return state;
+    return fs;
+  }
+
+  /** Leave every SSH session and come back to the workstation. */
+  private leaveSessions(s: GameState) {
+    const base = s.sessions[0];
+    if (!base) return;
+    s.sessions = [];
+    s.host = base.host;
+    s.user = base.user;
+    s.cwd = base.cwd;
+    s.prevCwd = base.prevCwd;
+    s.fs = s.filesystems[base.host]!;
   }
 
   /** The reducer: the only place where state changes. */
@@ -357,6 +404,37 @@ export class Game {
         s.missionStartSeq = e.seq;
         s.missionDone = false;
         for (const id of mission?.reveal ?? []) s.revealed[id] = true;
+        // A mission starts on the workstation, with its documents in the player's home directory.
+        this.leaveSessions(s);
+        const home = this.homeOf(this.world.player.host, this.world.player.user);
+        for (const [rel, text] of Object.entries(mission?.files ?? {})) {
+          const path = `${home}/${rel}`;
+          mkdirp(s.fs, path.slice(0, path.lastIndexOf('/')), this.world.player.user);
+          writeFile(s.fs, path, this.t(text), this.world.player.user);
+        }
+        break;
+      }
+      case 'SessionOpened': {
+        const host = this.host(e.host);
+        if (!host) break;
+        s.sessions.push({ host: s.host, user: s.user, cwd: s.cwd, prevCwd: s.prevCwd });
+        s.fs = s.filesystems[host.id] ??= this.hostFs(host, this.worldText(s.locale));
+        s.host = host.id;
+        s.user = e.user;
+        s.cwd = lookup(s.fs, this.homeOf(host.id, e.user))?.t === 'd' ? this.homeOf(host.id, e.user) : '/';
+        s.prevCwd = s.cwd;
+        s.revealed[host.id] = true;
+        s.discovered[host.id] ??= [];
+        break;
+      }
+      case 'SessionClosed': {
+        const back = s.sessions.pop();
+        if (!back) break;
+        s.host = back.host;
+        s.user = back.user;
+        s.cwd = back.cwd;
+        s.prevCwd = back.prevCwd;
+        s.fs = s.filesystems[back.host]!;
         break;
       }
       case 'CommandRun':
@@ -370,10 +448,12 @@ export class Game {
         s.prevCwd = s.cwd;
         s.cwd = e.path;
         break;
-      case 'FileWritten':
-        if (e.host === this.world.player.host)
-          writeFile(s.fs, e.path, e.content, this.world.player.user, e.append);
+      case 'FileWritten': {
+        const fs = s.filesystems[e.host];
+        if (fs)
+          writeFile(fs, e.path, e.content, e.host === s.host ? s.user : this.world.player.user, e.append);
         break;
+      }
       case 'HostDiscovered':
         s.discovered[e.host] ??= [];
         break;
@@ -387,8 +467,8 @@ export class Game {
         break;
       case 'RepoCloned': {
         const repo = this.host(e.host)?.repos?.[e.repo];
-        const tree = buildFs(repo?.tree, (k) => k, this.world.player.user);
-        const dir = mkdirp(s.fs, e.path, this.world.player.user);
+        const tree = buildFs(repo?.tree, (k) => k, s.user);
+        const dir = mkdirp(s.fs, e.path, s.user);
         if (dir) {
           dir.c = tree.c;
           s.repos[e.path] = { host: e.host, repo: e.repo };
@@ -785,7 +865,8 @@ export class Game {
     heard?: Heard,
   ): ChatTurn | null {
     const npc = this.npc(npcId);
-    const text = message.trim().slice(0, 600);
+    // A file posted through the API (a CV, a document) may be longer than a chat message.
+    const text = message.trim().slice(0, via === 'api' ? 4000 : 600);
     if (!npc || !text || this.detectionPending) return null;
     if (dt > 0) this.emit({ type: 'ClockAdvanced', ms: Math.min(dt, MAX_DT) });
     // Through the API, `curl` has already paid for the request.
@@ -905,7 +986,7 @@ export class Game {
   }
 
   private async *run(line: string, dt: number): AsyncGenerator<Chunk, number> {
-    const env = { HOME: this.home, USER: this.user, PWD: this.state.cwd };
+    const env = { HOME: this.home, USER: this.state.user, PWD: this.state.cwd };
     const cleaned = line.replace(/\s2>\s*(&1|\/dev\/null)/g, '');
     let pipelines: ReturnType<typeof parse>;
     try {
@@ -956,7 +1037,7 @@ export class Game {
           if (ok)
             this.emit({
               type: 'FileWritten',
-              host: this.world.player.host,
+              host: this.state.host,
               path,
               content: captured,
               append: stage.redirect.append,

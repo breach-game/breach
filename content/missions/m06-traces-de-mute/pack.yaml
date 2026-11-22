@@ -1,0 +1,13 @@
+id: breach.official.m06
+version: 0.1.0
+engine: ">=0.3 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Sur les traces de Mute
+  en: On Mute's trail
+summary:
+  fr: Mouvement latéral et exfiltration. Quelqu'un est entré chez NovaMind avant nous. Suis son chemin de machine en machine, dans ses propres traces.
+  en: Lateral movement and exfiltration. Someone got into NovaMind before us. Follow their path from host to host, in their own footprints.
+authors: [BREACH]
+locales: [fr, en]

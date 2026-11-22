@@ -147,6 +147,12 @@ function worldProblems(pack: Pack): string[] {
   const w = pack.world!;
   const npcs = new Set(w.npcs.map((n) => n.id));
   const texts: string[] = [];
+  const hostIds = new Set(w.hosts.map((h) => h.id));
+  for (const host of w.hosts)
+    for (const login of host.ssh)
+      for (const from of login.from)
+        if (!hostIds.has(from))
+          problems.push(`${host.hostname}: ssh login ${login.user} comes from unknown host ${from}`);
   for (const host of w.hosts)
     for (const [path, route] of Object.entries(host.web ?? {})) {
       const where = `${host.hostname}${path}`;
@@ -248,6 +254,7 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       ...Object.values(m.hints).flat(),
       ...Object.values(m.guide),
       ...m.npcs.flatMap(npcTexts).filter(looksLikeKey),
+      ...Object.values(m.files).filter(looksLikeKey),
     ];
     for (const npc of m.npcs) problems.push(...npcProblems(npc).map((p) => `${pack.id}: ${p}`));
     const objectiveIds = new Set(m.objectives.map((o) => o.id));

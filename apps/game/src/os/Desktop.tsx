@@ -233,7 +233,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       <Window
         id="terminal"
         name={t('win.terminal')}
-        subtitle={`${game.user}@${game.playerHost.hostname.split('.')[0]}`}
+        subtitle={`${game.currentUser}@${game.currentHost.hostname.split('.')[0]}`}
         meta="lrsh"
         tint="attack"
         rect={rect('terminal')}

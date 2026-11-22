@@ -1,7 +1,9 @@
 import type { Host } from '@breach/pack-schema';
 import { chatMessage, formatUrl, parseUrl, STATUS_TEXT } from '../http.ts';
 import { resolveName, resolveTarget, type Target } from '../net.ts';
+import { evaluate } from '../rules.ts';
 import { rng, style } from '../util.ts';
+import { canRead, lookup } from '../vfs.ts';
 import { type Chunk, type Command, type CommandCtx, err, getopt, out, type Run, wait } from './types.ts';
 
 /**
@@ -230,13 +232,57 @@ const nmap: Command = {
 
 /* ---------- curl ---------- */
 
+/** A local file named by `@path` in `-d` or `-F`, read from the host the terminal runs on. */
+function* localFile(ctx: CommandCtx, raw: string): Generator<Chunk, string | null> {
+  const path = raw.slice(1).split(';')[0]!;
+  const node = path ? lookup(ctx.state.fs, ctx.path(path)) : undefined;
+  if (!node || node.t !== 'f' || !canRead(node, ctx.game.currentUser)) {
+    yield err(`Warning: Couldn't read data from file "${path}", this makes an empty POST.`);
+    yield err('curl: (26) Failed to open/read local data from file/application');
+    return null;
+  }
+  ctx.emit({ type: 'FileRead', host: ctx.state.host, path: ctx.path(path) });
+  return node.content;
+}
+
+/**
+ * What the request sends: `-d text`, `-d @file`, `--data-binary @file`, or a form field
+ * `-F name=value` / `-F name=@file`. Undefined when there is no body, null when a file is missing.
+ */
+function* requestBody(
+  ctx: CommandCtx,
+  values: Record<string, string>,
+): Generator<Chunk, string | null | undefined> {
+  const raw = values['data-raw'];
+  if (raw !== undefined) return raw;
+  const data = values.d ?? values.data ?? values['data-binary'];
+  if (data !== undefined) return data.startsWith('@') ? yield* localFile(ctx, data) : data;
+  const form = values.F ?? values.form;
+  if (form === undefined) return undefined;
+  const value = form.slice(form.indexOf('=') + 1);
+  return value.startsWith('@') ? yield* localFile(ctx, value) : value;
+}
+
 const curl: Command = {
   name: 'curl',
   summary: 'cmd.curl',
   explain: 'explain.curl',
   group: 'network',
   async *run(ctx): Run {
-    const { flags, values, rest } = getopt(ctx.args, ['X', 'd', 'H', 'o', 'A', 'u', 'data', 'request']);
+    const { flags, values, rest } = getopt(ctx.args, [
+      'X',
+      'd',
+      'F',
+      'H',
+      'o',
+      'A',
+      'u',
+      'data',
+      'data-binary',
+      'data-raw',
+      'form',
+      'request',
+    ]);
     const raw = rest[0];
     if (!raw) {
       yield err("curl: try 'curl --help' for more information");
@@ -262,7 +308,8 @@ const curl: Command = {
       );
       return 7;
     }
-    const data = values.d ?? values.data;
+    const data = yield* requestBody(ctx, values);
+    if (data === null) return 26;
     const method = (
       values.X ??
       values.request ??
@@ -366,29 +413,60 @@ const ssh: Command = {
   explain: 'explain.ssh',
   group: 'network',
   async *run(ctx): Run {
-    const { rest } = getopt(ctx.args, ['p', 'i', 'l', 'o']);
+    const { values, rest } = getopt(ctx.args, ['p', 'i', 'l', 'o']);
     const dest = rest[0];
     if (!dest) {
-      yield err('usage: ssh [-p port] [user@]hostname');
+      yield err('usage: ssh [-i identity_file] [-l login_name] [-p port] [user@]hostname');
       return 255;
     }
-    const [user, hostname] = dest.includes('@')
-      ? (dest.split('@') as [string, string])
-      : [ctx.game.user, dest];
+    const at = dest.lastIndexOf('@');
+    const hostname = at === -1 ? dest : dest.slice(at + 1);
+    const user = at === -1 ? (values.l ?? ctx.game.currentUser) : dest.slice(0, at);
     const target = yield* gate(ctx, hostname);
     if (!target) return 9;
     if (target.kind !== 'host') {
       yield err(`ssh: Could not resolve hostname ${hostname}: Name or service not known`);
       return 255;
     }
+    const host = target.host;
+    if (host.id === ctx.state.host) {
+      yield err(`${user}@${hostname}: Permission denied (publickey).`);
+      return 255;
+    }
     ctx.noise();
     yield wait(900);
-    if (!target.host.services.some((s) => s.name === 'ssh')) {
+    if (!host.services.some((s) => s.name === 'ssh')) {
       yield err(`ssh: connect to host ${hostname} port 22: Connection refused`);
       return 255;
     }
-    yield err(`${user}@${hostname}: Permission denied (publickey).`);
-    return 255;
+    // A key named with -i must be a readable file on the host the player is on.
+    let key: string | null = null;
+    if (values.i !== undefined) {
+      const path = ctx.path(values.i);
+      const node = lookup(ctx.state.fs, path);
+      if (node?.t === 'f' && canRead(node, ctx.game.currentUser)) {
+        key = path;
+        ctx.emit({ type: 'FileRead', host: ctx.state.host, path });
+      } else yield err(`Warning: Identity file ${values.i} not accessible: No such file or directory.`);
+    }
+    const login = host.ssh.find(
+      (l) =>
+        l.user === user &&
+        l.from.includes(ctx.state.host) &&
+        (l.key === undefined || l.key === key) &&
+        evaluate(l.if, ctx.state),
+    );
+    if (!login) {
+      yield err(`${user}@${hostname}: Permission denied (publickey).`);
+      return 255;
+    }
+    const from = ctx.game.currentHost.ip;
+    ctx.emit({ type: 'HostDiscovered', host: host.id });
+    ctx.emit({ type: 'SessionOpened', host: host.id, user });
+    yield out(
+      `${host.os ? `Welcome to ${host.os}` : 'Linux'}\n\nLast login: ${ctx.game.date().unix.replace(/ \w+ (\d{4})$/, ' $1')} from ${from}`,
+    );
+    return 0;
   },
 };
 

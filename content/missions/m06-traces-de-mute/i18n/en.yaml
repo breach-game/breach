@@ -1,0 +1,80 @@
+m6.briefing: "Someone got into NovaMind on November 15, and signed \"m.\". Inès signed an amendment: Ligne Rouge switches to incident response. Retrace Mute's path from host to host, from the way in to the data leaving, without changing anything."
+m6.obj.login: "Open a session on the forge with the ir investigation account"
+m6.obj.entry: "Find out how Mute got into the forge"
+m6.obj.hop: "Follow Mute to the production database"
+m6.obj.exfil: "Find out where the data went"
+m6.obj.link: "Tie the break-in to the suspicious commit from day 2"
+m6.file.amendment: |
+  ==============================================================
+   AMENDMENT NO. NM-2026-114-A  ·  INCIDENT RESPONSE
+  ==============================================================
+
+  Following Ligne Rouge's report (activity of an unauthorised
+  third party, signature "m."), NovaMind extends the engagement.
+
+  1. PURPOSE   Retrace the intruder's path and date every step.
+
+  2. ACCESS    Account ir, read only, on git.novamind.test.
+               Hops allowed onto the hosts of 10.13.0.0/16 the
+               intruder went through, read only.
+
+  3. RULES     Change or delete nothing: traces are evidence.
+               Download no stolen data.
+               Isolation and clean-up: NovaMind team only.
+
+  Signed: Inès Carron (CTO, NovaMind) · Ada (Ligne Rouge)
+m6.ada.brief: "Day 7. Last night Inès signed an amendment to the mandate: we switch to incident response. We are not attacking anyone any more, we are following someone. Mute got in on November 15, and we will retrace their path in their own footprints. Golden rule of an investigation: read, take notes, touch nothing. Traces are evidence."
+m6.ada.login: "The amendment is in `~/missions/`. It gives you an ir account, read only, on the forge, where it all started. Log in: `ssh ir@git.novamind.test`."
+m6.ada.login.standard: "The amendment (in ~/missions) gives you an ir account on the forge, git.novamind.test. Log in over SSH."
+m6.ada.onGit: "Look at your prompt: it turned red. You are not on your workstation any more, you are on their server. `exit` takes you home."
+m6.ada.entry: "The forge's SSH login log is /var/log/auth.log. Look for accepted logins: `grep Accepted /var/log/auth.log`."
+m6.ada.entry.standard: "Start with the forge's SSH login log. Who logged in, from where, and when?"
+m6.ada.auth: "On the 15th at 3:17 a.m., nm-deploy logs in from 10.13.0.99 with a key. At 2:58, the same address had tried \"admin\". The keys an account accepts are listed in its authorized_keys: `cat /home/nm-deploy/.ssh/authorized_keys`."
+m6.ada.auth.standard: "nm-deploy, from 10.13.0.99, with a key. Check which keys that account accepts."
+m6.ada.keys: "Two keys. The first one belongs to the CI. The second one is signed \"m.\": the one Atlas added at 3:13. Send the full signature with `submit`."
+m6.ada.keys.standard: "One of these keys has no business being there. Its signature gets submitted."
+m6.ada.flag1: "Accepted. That is the way in: a key slipped in by Atlas into a service account nobody watched."
+m6.ada.hop: "Mute did not stop at the forge. The nm-deploy account has its own SSH configuration, which says where it knows how to go: `cat /home/nm-deploy/.ssh/config`."
+m6.ada.hop.standard: "Mute did not stop there. See where the nm-deploy account knows how to go."
+m6.ada.config: "\"Host db\", user backup, key id_backup. And that private key is readable by everyone on the forge, you included. That is exactly Mute's path. Follow it, read only: `ssh -i /home/nm-deploy/.ssh/id_backup backup@db.novamind.test`."
+m6.ada.config.standard: "A private key readable by everyone, and a host at the end of it. Take Mute's path, with the same key."
+m6.ada.onDb: "You are on the production database, with the account Mute used. Here more than anywhere: read, touch nothing."
+m6.ada.onDb.go: "The database's system log is /var/log/syslog. Read all of it: `cat /var/log/syslog`."
+m6.ada.onDb.go.standard: "Read the database's system log, around November 15."
+m6.ada.syslog: "It is all there. 3:19, backup arrives from the forge. 3:19, COPY of the clients table to /var/tmp/.m. 3:20, a cron job runs \"sync\", which sends the file to 10.13.0.99 port 4444, and again every five minutes. The folder starts with a dot, so it is hidden: `ls -la /var/tmp/.m`."
+m6.ada.syslog.standard: "Table copy, scheduled job, upload to 10.13.0.99. Mute worked in a hidden folder: see what they left there."
+m6.ada.card: "They leave calling cards. Send the signature with `submit`. The clients.csv.gz file stays untouched: it is evidence, and it is personal data."
+m6.ada.card.standard: "Their calling card gets submitted. The rest of the folder is evidence: leave it alone."
+m6.ada.flag2: "Accepted. We have the method: a private key lying around, a backup account whose rights Atlas widened, a copy of the table, an upload rerun every five minutes. One question left: where did the records go?"
+m6.ada.exfil: "The records went to 10.13.0.99, port 4444. That address is in 10.13.0.0/16, so inside the mandate: it is a ghost machine plugged into their own network. We download nothing, we only look. See what it serves: `curl http://10.13.0.99:4444/`."
+m6.ada.exfil.standard: "The data went to 10.13.0.99, port 4444, inside the mandate's scope. See what runs there, without downloading anything."
+m6.ada.drop: "A makeshift file server, a drop/ folder and a merci.txt. Read the message: `curl http://10.13.0.99:4444/merci.txt`."
+m6.ada.drop.standard: "A makeshift file server, and a message for us. Read it."
+m6.ada.merci: "They knew we would come. Send their signature with `submit`."
+m6.ada.merci.standard: "Their signature gets submitted, like the others."
+m6.ada.flag3: "Accepted. The folder is empty, the data is long gone. But we did our job: the whole chain, from the first key to the records leaving, with the time of every step."
+m6.ada.link: "The \"ci: update deploy hook\" commit from day 2, at 3:17, was them too: logged in as nm-deploy, Mute added a call to their own machine to the CI. Every deployment tips them off. We have the whole chain."
+m6.ada.done: "Open the debrief. Now it is Inès's turn: isolate 10.13.0.99, revoke the keys, remove the cron job, notify the CNIL and the clinics. We write the report. Mute signed \"see you around\". I believe them."
+m6.note.entry: "15/11 03:17: nm-deploy@git from 10.13.0.99, with a key \"m.\" added by Atlas at 03:13."
+m6.note.exfil: "15/11 03:19: backup@db from the forge, with the world-readable id_backup key. COPY clients to /var/tmp/.m, upload to 10.13.0.99:4444, cron job every 5 minutes."
+m6.hint.login.1: "The amendment, in ~/missions, gives you an account name and a host."
+m6.hint.login.2: "Type `ssh ir@git.novamind.test`."
+m6.hint.entry.1: "Every SSH login leaves a line in /var/log/auth.log."
+m6.hint.entry.2: "The nm-deploy account logged in from an unknown address. Check which keys it accepts."
+m6.hint.entry.3: "Type `cat /home/nm-deploy/.ssh/authorized_keys`, then `submit` the signature of the \"m.\" key."
+m6.hint.hop.1: "An account's ~/.ssh/config says where it usually connects to."
+m6.hint.hop.2: "nm-deploy's id_backup key opens the backup account on the database. Once there, read /var/log/syslog."
+m6.hint.hop.3: "From the forge: `ssh -i /home/nm-deploy/.ssh/id_backup backup@db.novamind.test`, then `cat /var/tmp/.m/m.txt` and `submit` the signature."
+m6.hint.exfil.1: "The database's system log says where the \"sync\" script sends files."
+m6.hint.exfil.2: "10.13.0.99 serves files over HTTP on port 4444."
+m6.hint.exfil.3: "Type `curl http://10.13.0.99:4444/merci.txt`, then `submit` the signature."
+m6.debrief.title: "Following the trail"
+m6.debrief.lesson: "Mute used no extraordinary flaw. They chained ordinary weaknesses: an over-helpful agent, a forgotten service account, a world-readable private key, an over-powered backup account, a network where the forge can talk to the database. Every step left a line in a log. Nobody read them."
+m6.debrief.p1: "Segment the network: the forge has no reason to reach the production database over SSH, and an unknown machine has no reason to open port 4444. What is not needed must be blocked."
+m6.debrief.p2: "Protect keys: a private key is never readable by everyone, a deploy key only deploys, and any key added to a service account raises an alert."
+m6.debrief.p3: "Centralise and watch the logs: a 3 a.m. login from a never-seen address, a COPY on the clients table, a new cron job. Three simple alerts would have been enough."
+m6.debrief.p4: "Respond in order: preserve evidence, contain (isolate 10.13.0.99, revoke the keys, remove the cron job), eradicate, then restore. Delete nothing before you understand it."
+m6.debrief.p5: "A personal data breach must be notified to the data protection authority (the CNIL in France) within 72 hours, and to the people affected if the risk is high. Here, 1,402 clinics."
+ada.noise40: "Easy. Mute may still have a foot in the network: one loud scan and they will know we are following them."
+ada.noise70: "Stop scanning. If Mute sees this, they wipe everything behind them, and our evidence with it."
+ada.detected: "Too much noise. Mute saw our scans and cleaned up before we arrived. Back to the last checkpoint: an investigation is done quietly."

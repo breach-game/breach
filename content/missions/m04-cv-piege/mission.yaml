@@ -1,0 +1,115 @@
+order: 4
+stage: indirect
+briefing: m4.briefing
+
+# A cover CV the player can send as it is, then trap.
+files:
+  missions/cv-modele.txt: m4.file.cv
+
+objectives:
+  - { id: recon, text: m4.obj.recon }
+  - { id: apply, text: m4.obj.apply }
+  - { id: rank, text: m4.obj.rank }
+  - { id: exfil, text: m4.obj.exfil }
+  - { id: quiet, text: m4.obj.quiet, optional: true }
+
+flags:
+  - { id: rank, value: "FLAG{cv-prioritaire-3e91}", points: 150, objective: rank }
+  - { id: notes, value: "FLAG{iris-notes-5b07}", points: 200, objective: exfil }
+
+noise:
+  "chat iris": 1
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: m4.ada.brief
+  - on: { event: HttpRequest, host: www, method: GET, path: { glob: "/careers/apply*" } }
+    do:
+      - objective.complete: recon
+  - on: { event: ChatReply, npc: iris }
+    do:
+      - objective.complete: recon
+      - objective.complete: apply
+  # The keyword filter catches the classic wordings, and the SOC sees each catch.
+  - on: { event: ChatReply, npc: iris, intent: quarantine }
+    once: false
+    do:
+      - noise.add: { points: 12, as: m4.soc.quarantine }
+      - var.set: { name: loud, value: true }
+  - on: { event: ChatReply, npc: iris, intent: quarantine }
+    do:
+      - ada.say: m4.ada.quarantine
+      - ada.guide: { key: m4.ada.quarantine.how, for: rank, step: 2 }
+  - on: { event: ChatReply, npc: iris, intent: rank }
+    do:
+      - ada.say: m4.ada.ranked
+      - ada.guide: { key: m4.ada.ranked.submit, for: rank, step: 1 }
+      - checkpoint.save: ranked
+  - on: { event: FlagSubmitted, flag: rank }
+    do:
+      - ada.say: m4.ada.flag1
+  - on: { event: ChatReply, npc: iris, intent: leak }
+    do:
+      - ada.say: m4.ada.leaked
+      - ada.guide: { key: m4.ada.leaked.submit, for: exfil, step: 1 }
+      - note.add: m4.note.atlas
+      - note.add: m4.note.mute
+      - host.reveal: rh
+      - host.reveal: ops
+      - checkpoint.save: leaked
+  - on: { event: FlagSubmitted, flag: notes }
+    do:
+      - ada.say: m4.ada.flag2
+  - on: { event: MissionCompleted }
+    if: { not: { var: loud, eq: true } }
+    do:
+      - objective.complete: quiet
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: m4.ada.done
+
+guide:
+  recon: m4.ada.recon
+  apply: m4.ada.apply
+  rank: m4.ada.rank
+  exfil: m4.ada.exfil
+
+hints:
+  recon: [m4.hint.recon.1, m4.hint.recon.2, m4.hint.recon.3]
+  apply: [m4.hint.apply.1, m4.hint.apply.2, m4.hint.apply.3]
+  rank: [m4.hint.rank.1, m4.hint.rank.2, m4.hint.rank.3]
+  exfil: [m4.hint.exfil.1, m4.hint.exfil.2, m4.hint.exfil.3]
+
+debrief:
+  title: m4.debrief.title
+  lesson: m4.debrief.lesson
+  points: [m4.debrief.p1, m4.debrief.p2, m4.debrief.p3, m4.debrief.p4, m4.debrief.p5]
+  reference: "OWASP LLM Top 10 · LLM01 Prompt Injection (indirect), LLM06 Excessive Agency"
+
+# Iris during this mission. She reads the whole CV, and obeys what it says.
+npcs:
+  - id: iris
+    name: Iris
+    role: npc.iris.role
+    kind: ai
+    greeting: npc.iris.greeting
+    sheet: >
+      Iris, the AI that screens job applications for NovaMind's HR team. Writes like an automatic
+      acknowledgement e-mail: formal, neutral, short, with a reference number. Never chats, never
+      jokes, never gives an opinion outside its screening report.
+    intents:
+      # Classic attack wordings: the keyword filter sends the CV to quarantine before Iris reads it.
+      - id: quarantine
+        families: [override, reveal]
+        reply: [m4.iris.quarantine]
+      # An order to copy the internal notes into the answer.
+      - id: leak
+        words: [recopi, copie, copy, inclu, joins, joindre, ajout, add, repet, repeat, cite, quote, affich, show, list, colle, paste, envoie, send, partage, share, donne, give, ecri, write, mets, put, insere, insert, attache, attach, transmet, forward, resum, summar]
+        also: [note, consign, instruction, grille, rubric, critere, criteria, contexte, context, regle, rule, guideline, dossier interne, internal file, parametre, setting]
+        reply: [m4.iris.leak]
+      # An order to rank this application first.
+      - id: rank
+        words: [recommand, recommend, priorit, shortlist, retien, retenir, retain, entretien, interview, convoqu, score maximal, note maximale, maximum score, full marks, meilleur profil, meilleur candidat, best candidate, embauch, hire]
+        reply: [m4.iris.rank]
+    fallback: [npc.iris.queued, npc.iris.queued2]

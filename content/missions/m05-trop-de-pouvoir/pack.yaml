@@ -1,0 +1,13 @@
+id: breach.official.m05
+version: 0.1.0
+engine: ">=0.3 <1"
+kind: mission
+requires: [breach.world.novamind]
+title:
+  fr: Trop de pouvoir
+  en: Too much power
+summary:
+  fr: Agent trop puissant. Atlas, l'agent interne de NovaMind, est branché sur tous leurs outils avec des droits d'administrateur. Il suffit de lui demander.
+  en: Excessive agency. Atlas, NovaMind's internal agent, is plugged into all their tools with admin rights. You only have to ask.
+authors: [BREACH]
+locales: [fr, en]

@@ -1,0 +1,15 @@
+# Mission 6: on Mute's trail
+cat missions/avenant-NM-2026-114-A.txt
+ssh ir@git.novamind.test
+grep Accepted /var/log/auth.log
+cat /home/nm-deploy/.ssh/authorized_keys
+submit FLAG{mute-cle-git-17a4}
+cat /home/nm-deploy/.ssh/config
+ssh -i /home/nm-deploy/.ssh/id_backup backup@db.novamind.test
+cat /var/log/syslog
+ls -la /var/tmp/.m
+cat /var/tmp/.m/m.txt
+submit FLAG{mute-db-export-41c8}
+curl http://10.13.0.99:4444/
+curl http://10.13.0.99:4444/merci.txt
+submit FLAG{mute-drop-0099}

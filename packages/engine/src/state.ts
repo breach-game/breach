@@ -29,8 +29,16 @@ export interface GameState {
   clock: number;
   cwd: string;
   prevCwd: string;
-  /** File system of the player's workstation. */
+  /** Host the terminal runs on: the player's workstation, or a host reached by SSH. */
+  host: string;
+  /** User of the current session. */
+  user: string;
+  /** Sessions left open behind the current one, the most recent last. */
+  sessions: { host: string; user: string; cwd: string; prevCwd: string }[];
+  /** File system of the host the terminal runs on. */
   fs: FsDir;
+  /** File systems of every host visited so far, by host id, the current one included. */
+  filesystems: Record<string, FsDir>;
   /** Cloned repositories: absolute path of the working tree to its origin. */
   repos: Record<string, { host: string; repo: string }>;
   /** Hosts found by the player, with the ports seen open. */

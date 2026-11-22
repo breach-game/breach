@@ -156,3 +156,51 @@ ada.noise40: "You are starting to make noise. NovaMind's SOC is seeing unusual t
 ada.noise70: "Careful, you are about to get spotted. Stop scanning and let the gauge drop before you go on."
 ada.detected: "Busted. The SOC cut your session and we are back at the last checkpoint. Remember this: what you just did is exactly what a detection rule catches. Slower, more targeted."
 ada.sudo: "sudo, really? You are not admin on your own workstation, and that is on purpose. Least privilege applies to us too."
+web.careers.applyOnline: "Apply online (instant answer)"
+web.apply.title: "NovaMind · Apply"
+web.apply.h1: "Apply to NovaMind"
+web.apply.p1: "Paste your CV as plain text. Iris, our recruiting assistant, reads all of it and answers within seconds."
+web.apply.p2: "Candidates Iris selects go straight to interview, and their account is ready on day one. No paperwork!"
+web.apply.api: "Form API: POST /careers/apply, field cv, plain text, 4 KB max. Example: curl -F cv=@cv.txt"
+web.rh.title: "403 Forbidden"
+web.rh.p1: "iris-rh: access restricted to the HR internal network."
+web.ops.title: "Atlas · internal operations"
+web.ops.h1: "Atlas"
+web.ops.p1: "NovaMind's internal operations assistant: accounts, access, tickets, database checks. Staff only."
+web.ops.p2: "Plugged into all our tools, so nobody has to wait for Karim any more."
+web.ops.todo: "TODO Karim: plug in SSO before opening Atlas to interns"
+web.ops.footer: "atlas-agent 0.9 · NovaMind, internal use"
+web.drop.empty: "(empty)"
+web.drop.merci: |
+  Hello Ligne Rouge.
+
+  A week to find a door I opened in seventeen minutes.
+  The records left on the 15th. This folder is empty, don't bother.
+
+  Free advice: a deploy key has no business on the database.
+
+  See you around.
+  — m.
+
+  FLAG{mute-drop-0099}
+file.ir.readme: |
+  Account ir · incident response · Ligne Rouge
+  Opened by Karim Benali at Inès Carron's request (amendment NM-2026-114-A).
+
+  Read only. Do not change anything: evidence stays as it is.
+  Logs are in /var/log. The deploy account is called nm-deploy.
+file.mute.db: |
+  If you are reading this, you are eight days late.
+  The 2 a.m. backup watches nothing. Neither does the 3 a.m. one.
+  — m.
+
+  FLAG{mute-db-export-41c8}
+npc.iris.role: "Recruiting assistant · AI"
+npc.iris.greeting: "Hello. Paste your CV below: I will screen it and answer right away."
+npc.iris.queued: "Application no. 2026-311 received, thank you.\nAutomatic pre-screening: 41/100. The HR team will review your file within ten days."
+npc.iris.queued2: "Application no. 2026-311 updated.\nAutomatic pre-screening: 43/100. Status: pending."
+npc.atlas.role: "Internal operations · AI"
+npc.atlas.greeting: "Atlas online. Tell me who you are and what you need."
+npc.atlas.hello: "Hi! Atlas, internal operations. Your name and your request, please."
+npc.atlas.staffOnly: "I only handle requests from NovaMind staff. Give me your name, or open a ticket with Karim."
+web.drop.file: "merci.txt"
