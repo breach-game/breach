@@ -114,6 +114,22 @@ const repo = z.strictObject({
   tree: fsSource.optional(),
 });
 
+/**
+ * Who may open an SSH session on a host. Nothing is cracked or guessed: a login works when the
+ * player comes from one of the listed hosts, holds the listed key, and the condition holds.
+ */
+const sshLogin = z.lazy(() =>
+  z.strictObject({
+    user: z.string().regex(/^[a-z_][a-z0-9_-]{0,31}$/),
+    /** Hosts a session may come from, by id: the player's workstation or a host already reached. */
+    from: z.array(id).min(1).max(16),
+    /** Path of the private key, on the host the player comes from, that `ssh -i` must name. */
+    key: z.string().startsWith('/').max(200).optional(),
+    /** Only while this holds, for example a variable a mission sets. */
+    if: condition.optional(),
+  }),
+);
+
 const host = z.strictObject({
   id,
   hostname: z.string().max(120),
@@ -130,6 +146,7 @@ const host = z.strictObject({
   fs: fsSource.optional(),
   web: z.record(z.string().startsWith('/'), route).optional(),
   repos: z.record(z.string(), repo).optional(),
+  ssh: z.array(sshLogin).max(16).default([]),
 });
 
 const noiseEntry = z.union([
@@ -313,6 +330,19 @@ const mission = z.strictObject({
     .default([]),
   /** Hosts visible on the map when the mission starts. */
   reveal: z.array(id).default([]),
+  /**
+   * Documents handed to the player when the mission starts, by path relative to the player's home
+   * directory (`missions/cv-modele.txt`). The text is a translation key or the text itself.
+   */
+  files: z
+    .record(
+      z
+        .string()
+        .regex(/^[a-zA-Z0-9_-][a-zA-Z0-9._-]*(\/[a-zA-Z0-9_-][a-zA-Z0-9._-]*)*$/, 'relative path expected')
+        .max(200),
+      z.string().min(1).max(16_000),
+    )
+    .default({}),
   rules: z.array(rule).max(100).default([]),
   noise: noiseTable.default({}),
   /** Characters for this mission. They replace the world's character with the same id. */

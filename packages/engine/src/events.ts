@@ -33,6 +33,10 @@ export type EventBody =
       families: string[];
       brain: string;
     }
+  /** The terminal now runs on another host, reached by SSH. */
+  | { type: 'SessionOpened'; host: string; user: string }
+  /** `exit` from an SSH session: back to the host it was opened from. */
+  | { type: 'SessionClosed'; host: string }
   | { type: 'RepoCloned'; host: string; repo: string; path: string }
   | { type: 'CommitViewed'; host: string; repo: string; commit: string }
   | { type: 'OutOfScope'; target: string; command: string }

@@ -7,6 +7,9 @@ export const en: Record<string, string> = {
   'stage.recon': 'reconnaissance',
   'stage.social': 'social engineering',
   'stage.injection': 'prompt injection',
+  'stage.indirect': 'indirect prompt injection',
+  'stage.agency': 'excessive agency',
+  'stage.lateral': 'lateral movement',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',
@@ -58,6 +61,7 @@ export const en: Record<string, string> = {
   'cmd.history': 'Show the commands you typed',
   'cmd.sudo': 'Run as administrator',
   'cmd.exit': 'Close the session',
+  'cmd.logout': 'Leave the SSH session',
 
   'explain.usage': 'usage: explain <command>',
   'explain.unknown': 'explain: unknown "{name}". Type `help` for the list.',

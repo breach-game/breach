@@ -5,7 +5,7 @@ const whoami: Command = {
   summary: 'cmd.whoami',
   group: 'system',
   async *run(ctx) {
-    yield out(ctx.game.user);
+    yield out(ctx.game.currentUser);
     return 0;
   },
 };
@@ -15,8 +15,12 @@ const id: Command = {
   summary: 'cmd.id',
   group: 'system',
   async *run(ctx) {
-    const u = ctx.game.user;
-    yield out(`uid=1000(${u}) gid=1000(${u}) groups=1000(${u}),27(pentest)`);
+    const u = ctx.game.currentUser;
+    if (u === ctx.game.user) yield out(`uid=1000(${u}) gid=1000(${u}) groups=1000(${u}),27(pentest)`);
+    else {
+      const n = 1000 + ctx.game.currentHost.users.findIndex((x) => x.name === u) + 1;
+      yield out(`uid=${n}(${u}) gid=${n}(${u}) groups=${n}(${u})`);
+    }
     return 0;
   },
 };
@@ -26,7 +30,7 @@ const hostname: Command = {
   summary: 'cmd.hostname',
   group: 'system',
   async *run(ctx) {
-    const h = ctx.game.playerHost;
+    const h = ctx.game.currentHost;
     yield out(ctx.args.includes('-I') || ctx.args.includes('-i') ? h.ip : h.hostname.split('.')[0]!);
     return 0;
   },
@@ -49,7 +53,7 @@ const uname: Command = {
   async *run(ctx) {
     yield out(
       ctx.args.includes('-a')
-        ? `Linux ${ctx.game.playerHost.hostname.split('.')[0]} 6.12.0-lr-os #1 SMP x86_64 GNU/Linux`
+        ? `Linux ${ctx.game.currentHost.hostname.split('.')[0]} ${ctx.state.host === ctx.world.player.host ? '6.12.0-lr-os' : '6.8.0-49-generic'} #1 SMP x86_64 GNU/Linux`
         : 'Linux',
     );
     return 0;
@@ -82,7 +86,7 @@ const sudo: Command = {
   summary: 'cmd.sudo',
   group: 'system',
   async *run(ctx) {
-    yield err(`${ctx.game.user} is not in the sudoers file.\n${ctx.t('engine.sudo')}`);
+    yield err(`${ctx.game.currentUser} is not in the sudoers file.\n${ctx.t('engine.sudo')}`);
     return 1;
   },
 };
@@ -92,9 +96,27 @@ const exit: Command = {
   summary: 'cmd.exit',
   group: 'system',
   async *run(ctx) {
+    // In an SSH session, `exit` goes back to the host the session was opened from.
+    if (ctx.state.sessions.length) {
+      const name = ctx.game.currentHost.hostname;
+      ctx.emit({ type: 'SessionClosed', host: ctx.state.host });
+      yield out(`logout\nConnection to ${name} closed.`);
+      return 0;
+    }
     yield out(ctx.t('engine.exit'));
     return 0;
   },
 };
 
-export const systemCommands: Command[] = [whoami, id, hostname, date, uname, clear, history, sudo, exit];
+export const systemCommands: Command[] = [
+  whoami,
+  id,
+  hostname,
+  date,
+  uname,
+  clear,
+  history,
+  sudo,
+  exit,
+  { ...exit, name: 'logout', summary: 'cmd.logout' },
+];
