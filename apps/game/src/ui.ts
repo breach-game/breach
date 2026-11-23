@@ -382,13 +382,13 @@ const fr = {
   'defense.step.fix': 'Corriger et rejouer',
   'defense.step.done': '(fait)',
   'defense.find.ask':
-    'Voici les journaux de NovaMind pendant ta mission. Marque les lignes qui viennent de toi, et seulement celles-là. Il te faut au moins :',
+    'Voici les journaux de la cible pendant ta mission. Marque les lignes qui viennent de toi, et seulement celles-là. Il te faut au moins :',
   'defense.find.guided': 'Indice : tes actions partent de {ip}. Filtre sur cette adresse.',
   'defense.find.filter': 'Filtrer',
   'defense.find.console': 'Journaux de la cible',
   'defense.find.check': 'Valider ({n} lignes marquées)',
   'defense.find.wrong':
-    "{n} ligne(s) marquée(s) ne viennent pas de toi : c'est l'activité normale de NovaMind.",
+    "{n} ligne(s) marquée(s) ne viennent pas de toi : c'est l'activité normale de la cible.",
   'defense.find.missing': 'Il manque une des traces demandées (en ambre).',
   'defense.find.ok': 'Tes traces sont retrouvées.',
   'defense.detect.ask':
@@ -798,12 +798,12 @@ const en: typeof fr = {
   'defense.step.fix': 'Fix and replay',
   'defense.step.done': '(done)',
   'defense.find.ask':
-    "Here are NovaMind's logs during your mission. Mark the lines that came from you, and only those. You need at least:",
+    "Here are the target's logs during your mission. Mark the lines that came from you, and only those. You need at least:",
   'defense.find.guided': 'Hint: your actions come from {ip}. Filter on that address.',
   'defense.find.filter': 'Filter',
   'defense.find.console': "The target's logs",
   'defense.find.check': 'Check ({n} lines marked)',
-  'defense.find.wrong': "{n} marked line(s) did not come from you: that is NovaMind's normal activity.",
+  'defense.find.wrong': "{n} marked line(s) did not come from you: that is the target's normal activity.",
   'defense.find.missing': 'One of the traces asked for is missing (in amber).',
   'defense.find.ok': 'Your traces are found.',
   'defense.detect.ask':

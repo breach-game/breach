@@ -113,7 +113,7 @@ function Find({ lines, guided }: { lines: LogLine[]; guided: boolean }) {
           type="search"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="10.13.0.66"
+          placeholder={String(sources[0] ?? '')}
           spellCheck={false}
         />
       </label>
