@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { onGameEvent, terminalBridge, useGame } from '../session.ts';
 import { useT } from '../ui.ts';
+
+/** Render `code` spans, as the messenger does. Anything else is plain text. */
+function rich(text: string): ReactNode[] {
+  return text.split('`').map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part));
+}
 
 /** Objectives, flags, score and the player's notes. */
 export function Notebook({ onDebrief }: { onDebrief(): void }) {
@@ -30,7 +35,7 @@ export function Notebook({ onDebrief }: { onDebrief(): void }) {
             <i className="box" aria-hidden="true" />
             <span>
               <span className="sr-only">{done ? '✓ ' : ''}</span>
-              {game.t(o.text)}
+              {rich(game.t(o.text))}
               {o.optional && <small>{t('notes.optional')}</small>}
             </span>
           </div>

@@ -1,4 +1,5 @@
 import { sanitizeTerminal, stripAnsi } from '@breach/engine';
+import { needsNewline } from './termtext.ts';
 
 /** A flag in any output lights up in bold success green, so the find reads at a glance. */
 const highlightFlags = (text: string) =>
@@ -121,18 +122,29 @@ class Shell {
     }
     this.busy = true;
     this.skip = false;
+    // The prompt redraws its whole line, so an output that does not end with a newline
+    // (`base64 -d`, `echo -n`) would be wiped by it. Remember how the output ended.
+    let open = false;
     try {
       for await (const chunk of this.game.exec(line, elapsed())) {
         // The engine already cleans its output; cleaning again here keeps the terminal safe on its own.
-        if (chunk.k === 'out' || chunk.k === 'err')
-          this.term.write(crlf(highlightFlags(sanitizeTerminal(chunk.text))));
-        else if (chunk.k === 'clear') this.term.write('\x1b[2J\x1b[3J\x1b[H');
-        else if (!this.skip)
+        if (chunk.k === 'out' || chunk.k === 'err') {
+          const text = sanitizeTerminal(chunk.text);
+          if (text) open = needsNewline(text);
+          this.term.write(crlf(highlightFlags(text)));
+        } else if (chunk.k === 'clear') {
+          open = false;
+          this.term.write('\x1b[2J\x1b[3J\x1b[H');
+        } else if (!this.skip)
           await new Promise((r) => setTimeout(r, getSettings().effects ? chunk.ms : Math.min(chunk.ms, 40)));
       }
     } catch (error) {
-      this.term.write(crlf(`\x1b[31mlrsh: internal error: ${(error as Error).message}\x1b[0m\n`));
+      this.term.write(
+        crlf(`${open ? '\n' : ''}\x1b[31mlrsh: internal error: ${(error as Error).message}\x1b[0m\n`),
+      );
+      open = false;
     }
+    if (open) this.term.write('\r\n');
     touch();
     this.busy = false;
     this.prompt();
