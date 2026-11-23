@@ -137,7 +137,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .caret { position: relative; animation: blink 1s steps(1) infinite; }
 .caret::after { content: ''; position: absolute; left: 2px; top: 50%; width: 7px; height: 15px; margin-top: -7.5px; background: currentColor; }
 /* What is still to be typed: in the layout, so lines break as in the final message, but unseen. */
-.ghost { visibility: hidden; }
+.untyped { visibility: hidden; }
 /* Only as tall as the lines typed so far (height set by `Typing`). */
 .typing-p { overflow: hidden; }
 /* A `code` span being typed: only the typed part has the chip's background, which grows with it. */
@@ -700,15 +700,8 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 
 /* ---------- Journey: seasons, next step, what's new ---------- */
 /* Colour keeps its meaning: green only for finished missions, white for the player's next step. */
-.title-inner.has-step { gap: 22px; }
-.title-inner.has-step .wm { width: min(560px, 100%); }
-.title-inner.has-step .title-actions { width: min(560px, 100%); margin-top: 4px; }
-.title-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.title-grid .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
-.title-grid .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .btn.quiet { height: 44px; align-self: center; padding: 0 14px; font-size: 13px; color: var(--dim); background: transparent; border-color: transparent; }
 .btn.quiet:hover, .btn.quiet:focus-visible { color: var(--text); border-color: var(--line); }
-.j-badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font: 600 11px var(--mono); color: var(--night); background: var(--player); box-shadow: 0 0 12px rgba(238, 242, 255, 0.45); }
 
 .j-kicker { font: 500 11px var(--mono); letter-spacing: 0.24em; text-transform: uppercase; color: var(--dim); }
 .j-meta { font: 500 12px var(--mono); color: var(--dim); white-space: nowrap; }
@@ -723,6 +716,37 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .j-bar i[data-state='done'] { background: var(--success); box-shadow: 0 0 8px -2px var(--success); }
 .j-bar i[data-state='next'] { background: var(--player); animation: jpulse 1.8s ease-in-out infinite; }
 @keyframes jpulse { 50% { opacity: 0.45; } }
+
+/* The title screen as a home: next step on the left, the menu as tiles on the right. */
+.title.home { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 36px; padding: 32px 56px 24px; overflow-y: auto; }
+.title.home > * { flex-shrink: 0; }
+.home-grid { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 560px); justify-content: center; align-items: center; gap: 64px; }
+.home-main { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+.home .wm { width: min(520px, 100%); height: auto; }
+.home .tagline { margin-top: -8px; }
+.home .j-step { animation: fadein 600ms 1300ms both; }
+.j-step.pending { height: 240px; }
+.home-side { display: flex; flex-direction: column; gap: 12px; animation: fadein 600ms 1400ms both; }
+.home-label { font: 500 11px var(--mono); letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); }
+.home-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.home-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 132px; padding: 16px 18px; text-align: left; color: var(--text); background: rgba(14, 19, 32, 0.78); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 160ms, background 160ms, translate 160ms; }
+.home-tile:hover:not(:disabled), .home-tile:focus-visible { border-color: var(--player); background: rgba(22, 29, 46, 0.92); translate: 0 -2px; outline: none; }
+.home-tile:focus-visible { box-shadow: 0 0 0 2px var(--player); }
+.home-tile:disabled { cursor: not-allowed; opacity: 0.55; }
+.home-tile b { font: 600 17px/1.2 var(--human); color: #fff; }
+.home-tile > span:last-child { font: 400 13px/1.4 var(--human); color: var(--dim); }
+.home-ico { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(215, 224, 245, 0.16); background: rgba(215, 224, 245, 0.04); color: var(--player); }
+.home-new { position: absolute; top: 16px; right: 16px; }
+.home-panel { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 20px; border-radius: 12px; border: 1px solid var(--line); background: rgba(14, 19, 32, 0.78); }
+.home-panel .progress-file { align-items: stretch; animation: none; }
+.home-panel .btn { align-self: flex-start; }
+.home-options { display: flex; flex-direction: column; gap: 14px; }
+.home-option { display: flex; align-items: center; justify-content: space-between; gap: 16px; font: 500 12px var(--mono); letter-spacing: 0.06em; color: var(--dim); }
+.home-side .btn.quiet { align-self: flex-start; }
+.home .j-news { position: static; width: auto; animation-delay: 1500ms; }
+.home-foot { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
+.home-foot .legal { position: static; padding: 0; }
+@media (max-width: 1180px) { .home-grid { gap: 40px; } .title.home { padding-inline: 32px; } }
 
 /* The next-step card of the title screen. */
 .j-step { width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 20px; text-align: left; border-radius: 12px; border: 1px solid rgba(215, 224, 245, 0.16); background: linear-gradient(180deg, rgba(20, 26, 44, 0.9), rgba(10, 14, 24, 0.9)); box-shadow: 0 24px 60px -28px #000, 0 0 0 1px rgba(255, 255, 255, 0.02) inset; backdrop-filter: blur(10px); }
@@ -778,4 +802,13 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 @media (prefers-reduced-motion: reduce) {
   .j-news { animation: none; }
   .j-dot, .j-bar i[data-state='next'] { animation: none; }
+}
+/* Short windows: tighter tiles so the home fits without scrolling. */
+@media (max-height: 800px) {
+  .title.home { gap: 20px; padding-top: 20px; padding-bottom: 16px; }
+  .home-tile { min-height: 104px; padding: 12px 16px; gap: 6px; }
+  .home-ico { width: 36px; height: 36px; }
+  .home .wm { width: min(440px, 100%); }
+  .home .j-news ul { padding: 4px; }
+  .home .j-news li button { min-height: 48px; padding: 6px 10px; }
 }

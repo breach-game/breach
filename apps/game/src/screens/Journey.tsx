@@ -143,9 +143,6 @@ export function StepCard({
           <button type="button" className="btn primary" autoFocus onClick={() => go({ screen: 'community' })}>
             {t('title.community')} →
           </button>
-          <button type="button" className="btn" onClick={() => go({ screen: 'training' })}>
-            {t('title.training')}
-          </button>
         </div>
       </section>
     );

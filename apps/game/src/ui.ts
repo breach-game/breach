@@ -453,6 +453,16 @@ const fr = {
   'debrief.season.body':
     "Tu as joué la saison jusqu'au bout. Son score est compté à part de celui de la campagne.",
   'debrief.season.total': 'Score de la saison',
+  'home.where': 'Où aller',
+  'home.seasons.desc': '{done}/{total} saisons terminées',
+  'home.training.desc': 'Une technique en quelques minutes · {done}/{total} faits',
+  'home.community.desc': "Dossiers d'incidents réels et missions de joueurs",
+  'home.missions.desc': 'À un autre niveau, sans toucher ta partie',
+  'home.missions.locked': 'Termine une mission pour pouvoir la rejouer',
+  'home.progress': 'Ma progression',
+  'home.progress.desc': 'La garder dans un fichier, la reprendre ailleurs',
+  'home.settings': 'Réglages',
+  'home.settings.desc': 'Effets visuels et son',
 };
 
 const en: typeof fr = {
@@ -906,6 +916,16 @@ const en: typeof fr = {
   'debrief.season.title': 'Season {n} complete',
   'debrief.season.body': 'You played the season to the end. Its score is kept apart from the campaign’s.',
   'debrief.season.total': 'Season score',
+  'home.where': 'Where to',
+  'home.seasons.desc': '{done}/{total} seasons complete',
+  'home.training.desc': 'One technique in a few minutes · {done}/{total} done',
+  'home.community.desc': 'Real incident case files and missions by players',
+  'home.missions.desc': 'At another level, without touching your game',
+  'home.missions.locked': 'Finish a mission to replay it',
+  'home.progress': 'My progress',
+  'home.progress.desc': 'Keep it in a file, pick it up elsewhere',
+  'home.settings': 'Settings',
+  'home.settings.desc': 'Visual effects and sound',
 };
 
 export type UiKey = keyof typeof fr;
