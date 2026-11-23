@@ -13,6 +13,8 @@ describe('defence replay', () => {
   it.each(attacks.map((m) => [m.pack.id, m] as const))(
     '%s can be defended after its solution',
     async (_id, m) => {
+      // Each mission is replayed in its own world: seasons do not live in NovaMind.
+      const world = packs.find((p) => p.pack.id === m.pack.requires[0])!.pack;
       const { game } = await replaySolution(world, m.pack, m.solution!, 'fr');
       const defense = game.mission!.defense!;
       game.startDefense();
