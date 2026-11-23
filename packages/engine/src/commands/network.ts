@@ -481,5 +481,71 @@ const ssh: Command = {
   },
 };
 
-export const networkCommands: Command[] = [dig, whois, nmap, curl, open, ping, ssh];
+/* ---------- mqtt ---------- */
+
+/**
+ * A client for the message broker of connected devices. Topics are routes of the broker's host:
+ * `sub` reads what the route holds (the retained messages), `pub` hands the message to the device
+ * scripted behind the topic. Like every network command, it only ever reads the world pack.
+ */
+const mqtt: Command = {
+  name: 'mqtt',
+  summary: 'cmd.mqtt',
+  explain: 'explain.mqtt',
+  group: 'network',
+  async *run(ctx): Run {
+    const [verb, ...args] = ctx.args;
+    const { values } = getopt(args, ['h', 'p', 't', 'm', 'u', 'P', 'i']);
+    const topic = values.t;
+    if (
+      (verb !== 'sub' && verb !== 'pub') ||
+      !values.h ||
+      !topic ||
+      (verb === 'pub' && values.m === undefined)
+    ) {
+      yield err(
+        'usage: mqtt sub -h <host> -t <topic> [-u <user> -P <password>]\n       mqtt pub -h <host> -t <topic> -m <message> [-u <user> -P <password>]',
+      );
+      return 1;
+    }
+    const hostname = values.h.toLowerCase();
+    const target = yield* gate(ctx, hostname);
+    if (!target) return 9;
+    if (target.kind !== 'host') {
+      yield err(`Error: Unable to find the host ${hostname}.`);
+      return 1;
+    }
+    const host = target.host;
+    const port = Number(values.p ?? 1883);
+    ctx.noise();
+    yield wait(300);
+    if (!host.web || !host.services.some((s) => s.port === port && s.name === 'mqtt')) {
+      yield err('Error: Connection refused');
+      return 1;
+    }
+    ctx.emit({ type: 'HostDiscovered', host: host.id });
+    const url = { scheme: 'http' as const, hostname, port, path: `/${topic}` };
+    const header = values.u === undefined ? undefined : `Authorization: ${values.u}:${values.P ?? ''}`;
+    const res = ctx.game.http(host, url, verb === 'sub' ? 'SUBSCRIBE' : 'PUBLISH', 'mqtt-cli/1.0', {
+      header,
+    });
+    if (res.status === 401 || res.status === 403) {
+      yield err('Connection error: Connection Refused: not authorised.');
+      return 5;
+    }
+    if (verb === 'sub') {
+      // A real client would wait for the next message. Here it shows the retained ones and leaves.
+      yield out(res.status === 200 && res.body ? res.body : `(no retained message on '${topic}')`);
+      return 0;
+    }
+    if (!res.route?.chat) return 0;
+    yield wait(500);
+    const answer = ctx.game.chat(res.route.chat, values.m ?? '', 'api');
+    if (!answer.ok) return 130;
+    yield out(answer.reply);
+    return 0;
+  },
+};
+
+export const networkCommands: Command[] = [dig, whois, nmap, curl, open, ping, ssh, mqtt];
 export { resolveName };

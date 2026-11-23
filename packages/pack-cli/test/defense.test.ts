@@ -485,3 +485,52 @@ describe('season 7: phishing, where blocking the sender does not undo the delive
     expect(game.state.objectives.stop).toBe(false);
   });
 });
+
+describe('season 8: an intruder gives orders under the name of a sensor', () => {
+  const verdure = packs.find((p) => p.pack.id === 'breach.world.verdure')!.pack;
+  const last = packs.find((p) => p.pack.id === 'breach.season8.s04')!;
+
+  async function play(lines: string[]) {
+    const game = new Game({ world: verdure, missions: [last.pack], locale: 'fr' });
+    game.startMission(last.pack.id);
+    let out = '';
+    for (const line of lines)
+      for await (const c of game.exec(line, 20_000)) if (c.k === 'out' || c.k === 'err') out += c.text;
+    return { game, out };
+  }
+
+  it('shows the intruder in the broker log, under the name of a real sensor', async () => {
+    const { out } = await play(['soc sources', 'soc logs broker mqtt']);
+    expect(out).toMatch(/Received SUBSCRIBE from capteur-17@10\.22\.0\.180 '#'/);
+    expect(out).toMatch(
+      /Received PUBLISH from capteur-17@10\.22\.0\.117 'verdure\/serre\/2\/mesures\/capteur-17'/,
+    );
+  });
+
+  it('is stopped by blocking the address, but the factory key still works', async () => {
+    const { game } = await play(['soc sources', 'contain block 10.22.0.180', 'soc alerts']);
+    expect(game.state.objectives.stop).toBe(true);
+    expect(game.state.objectives.rotate).toBe(false);
+  });
+
+  it('is stopped for good by replacing the factory key, then the setpoints are put back', async () => {
+    const { game } = await play(['soc sources', 'contain rotate cle-usine', 'contain restore consignes']);
+    expect(game.state.objectives.stop).toBe(true);
+    expect(game.state.objectives.rotate).toBe(true);
+    expect(game.state.objectives.restore).toBe(true);
+    expect(game.state.detections).toBe(0);
+  });
+
+  it('does not count setpoints restored while the intruder is still there, until he is out', async () => {
+    const early = await play(['soc sources', 'contain restore consignes']);
+    expect(early.game.state.objectives.restore).toBe(false);
+    const { game } = await play(['soc sources', 'contain restore consignes', 'contain rotate cle-usine']);
+    expect(game.state.objectives.restore).toBe(true);
+  });
+
+  it('loses the basil when nothing is cut in time', async () => {
+    const { game } = await play(Array.from({ length: 8 }, () => 'soc alerts'));
+    expect(game.state.detections).toBe(1);
+    expect(game.state.objectives.stop).toBe(false);
+  });
+});

@@ -23,6 +23,8 @@ export const fr: Record<string, string> = {
   'stage.logic': 'logique métier',
   'stage.disclosure': 'divulgation',
   'stage.phishing': 'hameçonnage',
+  'stage.iot': 'objets connectés',
+  'stage.firmware': 'micrologiciel',
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
@@ -72,6 +74,7 @@ export const fr: Record<string, string> = {
     "open affiche une adresse dans le navigateur du poste. Le navigateur montre la page comme la verrait un visiteur, et « Voir la source » montre ce que le serveur a vraiment envoyé, commentaires compris.\n---\nPour le serveur, une visite au navigateur ou une requête curl, c'est la même ligne dans le journal d'accès. Naviguer comme un visiteur normal se fond dans le trafic habituel.",
   'cmd.ping': 'Teste si un hôte répond',
   'cmd.ssh': 'Ouvre une session distante',
+  'cmd.mqtt': "sub, pub : écoute ou publie sur le courtier de messages d'objets connectés",
   'cmd.git': 'clone, log, show : lire un dépôt et son historique',
   'cmd.whoami': 'Affiche ton utilisateur',
   'cmd.id': 'Affiche ton identité et tes groupes',
@@ -101,6 +104,8 @@ export const fr: Record<string, string> = {
     "ping envoie un petit paquet ICMP et mesure le temps de réponse. Il sert à vérifier qu'une machine est joignable.\n---\nUn ping isolé passe inaperçu. Un balayage de toute une plage, lui, apparaît dans les logs du pare-feu.",
   'explain.ssh':
     "ssh ouvre un terminal chiffré sur une autre machine, avec un mot de passe ou une clé. C'est l'outil principal pour se déplacer d'une machine à l'autre.\n---\nChaque tentative, réussie ou non, est écrite dans le journal d'authentification de la machine (auth.log). Des échecs répétés déclenchent une alerte et un blocage automatique.",
+  'explain.mqtt':
+    "MQTT est le protocole par lequel capteurs et automates s'échangent de petits messages, rangés par sujets (topics) sur un courtier. mqtt sub écoute un sujet (# vaut pour tout ce qui suit), mqtt pub y publie un message. Un courtier sans comptes ni droits par sujet laisse n'importe qui lire les mesures et envoyer des ordres.\n---\nLe courtier journalise chaque connexion, abonnement et publication avec le nom du client. Un abonnement à # ou un ordre publié par un capteur sont de bons signaux d'alerte.",
   'explain.git':
     "git clone copie un dépôt avec tout son historique. git log liste les commits, git show affiche ce qu'un commit a changé. Un secret supprimé d'un fichier reste lisible dans les anciens commits.\n---\nLe clone d'un dépôt public est une action normale, peu visible. La parade est en amont : scanner les secrets avant chaque push, et révoquer immédiatement toute clé qui a été publiée, même brièvement.",
 

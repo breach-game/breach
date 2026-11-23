@@ -1,0 +1,15 @@
+id: breach.season8
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: series
+requires: [breach.world.verdure]
+title:
+  fr: "Saison 8 : la ferme"
+  en: "Season 8: the farm"
+summary:
+  fr: "Après le festival, Verdure. Une ferme verticale fait pousser des salades sous des lampes, surveillées par quarante capteurs. Tu découvres comment les objets connectés se parlent, pourquoi n'importe qui peut les écouter puis leur donner des ordres, et ce qu'une clé d'usine identique partout permet. Une nuit, quelqu'un s'en sert, et tu passes côté défense."
+  en: "After the festival, Verdure. A vertical farm grows lettuce under lamps, watched by forty sensors. You find out how connected devices talk to each other, why anyone can listen to them and then give them orders, and what one factory key shared by all of them allows. One night someone uses it, and you switch to the defence side."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, recon, defense]

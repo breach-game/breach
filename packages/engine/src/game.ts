@@ -61,7 +61,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.10.0';
+export const ENGINE_VERSION = '0.11.0';
 
 export interface GameOptions {
   world: Pack;
@@ -1166,7 +1166,7 @@ export class Game {
     const route = findRoute(host, url.path);
     // A cookie or a header the request carries may get another answer from the same address.
     const variant =
-      method === 'POST' && route?.chat !== undefined
+      (method === 'POST' || method === 'PUBLISH') && route?.chat !== undefined
         ? undefined
         : route?.variants.find((v) => variantMatches(v, extras) && this.holds(v.if));
     const answer = variant ?? route;
@@ -1179,7 +1179,7 @@ export class Game {
           ? this.t(answer.bodyKey)
           : (answer.body ?? '');
     // A chat endpoint answers what is posted to it: the log records the answer, not the 405 page.
-    const chat = route?.chat !== undefined && method === 'POST';
+    const chat = route?.chat !== undefined && (method === 'POST' || method === 'PUBLISH');
     const bytes = chat ? undefined : new TextEncoder().encode(body).length;
     this.emit({
       type: 'HttpRequest',

@@ -23,6 +23,8 @@ export const en: Record<string, string> = {
   'stage.logic': 'business logic',
   'stage.disclosure': 'disclosure',
   'stage.phishing': 'phishing',
+  'stage.iot': 'connected devices',
+  'stage.firmware': 'firmware',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',
@@ -72,6 +74,7 @@ export const en: Record<string, string> = {
     'open shows an address in the workstation browser. The browser draws the page as a visitor would see it, and "View source" shows what the server really sent, comments included.\n---\nFor the server, a browser visit and a curl request are the same line in the access log. Browsing like a normal visitor blends into the usual traffic.',
   'cmd.ping': 'Check whether a host answers',
   'cmd.ssh': 'Open a remote session',
+  'cmd.mqtt': 'sub, pub: listen or publish on the message broker of connected devices',
   'cmd.git': 'clone, log, show: read a repository and its history',
   'cmd.whoami': 'Print your user name',
   'cmd.id': 'Print your identity and groups',
@@ -101,6 +104,8 @@ export const en: Record<string, string> = {
     'ping sends a small ICMP packet and measures the response time. It checks that a machine is reachable.\n---\nA single ping goes unnoticed. Sweeping a whole range shows up in the firewall logs.',
   'explain.ssh':
     "ssh opens an encrypted terminal on another machine, with a password or a key. It is the main tool for moving from one machine to the next.\n---\nEvery attempt, successful or not, is written to the machine's authentication log (auth.log). Repeated failures raise an alert and an automatic ban.",
+  'explain.mqtt':
+    'MQTT is the protocol sensors and controllers use to exchange small messages, filed by topic on a broker. mqtt sub listens to a topic (# stands for everything below), mqtt pub publishes a message to it. A broker with no accounts and no rights per topic lets anyone read the measurements and send orders.\n---\nThe broker logs every connection, subscription and publication with the client name. A subscription to # or an order published by a sensor are good alert signals.',
   'explain.git':
     'git clone copies a repository with its whole history. git log lists commits, git show prints what a commit changed. A secret removed from a file is still readable in older commits.\n---\nCloning a public repository is a normal, barely visible action. The defence comes earlier: scan for secrets before every push, and revoke at once any key that was published, even briefly.',
 

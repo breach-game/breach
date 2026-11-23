@@ -1,0 +1,4 @@
+verdure/maintenance/wifi ssid=verdure-capteurs psk=(removed from the audit copy)
+verdure/maintenance/planning firmware 2.4.1 pushed to 40 sensors on 2029-01-08
+verdure/maintenance/comptes capteur (shared by the 40 sensors), automate, tableau
+verdure/maintenance/temoin FLAG{verdure-same-key-everywhere-c05e}

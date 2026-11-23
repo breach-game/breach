@@ -1,0 +1,109 @@
+# Season 8, mission 3: firmware and its update channel. The build left a debug file next to the
+# firmware: it names the one account every sensor ships with. Updates come over plain HTTP and are
+# not signed, which the mission explains and never uses.
+order: 2
+stage: firmware
+briefing: v3.briefing
+startTime: "2029-02-14T09:00:00+01:00"
+
+files:
+  dossier/maj.yml: v3.file.policy
+
+objectives:
+  - { id: index, text: v3.obj.index }
+  - { id: strings, text: v3.obj.strings }
+  - { id: account, text: v3.obj.account }
+  - { id: flag, text: v3.obj.flag }
+  - { id: policy, text: v3.obj.policy }
+
+flags:
+  - { id: key, value: "FLAG{verdure-same-key-everywhere-c05e}", points: 250, objective: flag }
+
+checks:
+  - id: transport
+    text: v3.check.transport
+    if: { file: "~/dossier/maj.yml", contains: "transport: https" }
+    objective: policy
+  - id: signature
+    text: v3.check.signature
+    if: { file: "~/dossier/maj.yml", contains: "signature: required" }
+    objective: policy
+  - id: key
+    text: v3.check.key
+    if: { file: "~/dossier/maj.yml", contains: "device_key: per-device" }
+    objective: policy
+  - id: debug
+    text: v3.check.debug
+    if: { file: "~/dossier/maj.yml", contains: "debug_files: removed" }
+    objective: policy
+  - id: kept
+    text: v3.check.kept
+    if:
+      all:
+        - { file: "~/dossier/maj.yml", contains: "device: capteur" }
+        - { file: "~/dossier/maj.yml", contains: "check_every: night" }
+
+reveal: [www, broker, maj]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: v3.ada.brief
+  - on: { event: HttpRequest, host: maj, path: { in: [/firmware, /firmware/] } }
+    do:
+      - ada.say: v3.ada.index
+      - objective.complete: index
+  - on: { event: HttpRequest, host: maj, path: /firmware/capteur-2.4.1.manifest.json }
+    do:
+      - ada.say: v3.ada.manifest
+  - on: { event: HttpRequest, host: maj, path: { glob: "/firmware/*.bin" } }
+    do:
+      - ada.say: v3.ada.bin
+  - on: { event: HttpRequest, host: maj, path: /firmware/capteur-2.4.1.strings.txt, status: 200 }
+    do:
+      - objective.complete: index
+      - noise.add: { points: 4, as: v3.soc.strings }
+      - ada.say: v3.ada.strings
+      - objective.complete: strings
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: "/verdure/maintenance/#", status: 401 }
+    do:
+      - ada.guide: { key: v3.ada.g.denied, for: account, step: 1 }
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, variant: factory }
+    do:
+      - noise.add: { points: 8, as: v3.soc.account }
+      - ada.say: v3.ada.account
+      - objective.complete: account
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: v3.ada.flag
+  - on: { event: Verified }
+    if: { not: { objective: policy } }
+    once: false
+    do:
+      - ada.say: v3.ada.almost
+  - on: { event: ObjectiveCompleted, objective: policy }
+    do:
+      - ada.say: v3.ada.policy
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: v3.ada.done
+
+guide:
+  index: v3.ada.g.index
+  strings: v3.ada.g.strings
+  account: v3.ada.g.account
+  flag: v3.ada.g.flag
+  policy: v3.ada.g.policy
+
+hints:
+  index: [v3.hint.index.1]
+  strings: [v3.hint.strings.1, v3.hint.strings.2]
+  account: [v3.hint.account.1, v3.hint.account.2, v3.hint.account.3]
+  flag: [v3.hint.flag.1]
+  policy: [v3.hint.policy.1, v3.hint.policy.2, v3.hint.policy.3]
+
+debrief:
+  title: v3.debrief.title
+  lesson: v3.debrief.lesson
+  points: [v3.debrief.p1, v3.debrief.p2, v3.debrief.p3, v3.debrief.p4]
+  reference: "OWASP IoT Top 10 · I1 Hardcoded Passwords · I4 Lack of Secure Update Mechanism"

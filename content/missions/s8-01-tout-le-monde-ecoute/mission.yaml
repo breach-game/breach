@@ -1,0 +1,100 @@
+# Season 8, mission 1: a message broker that asks for no account. Anyone who can reach it can
+# subscribe to every topic and hear the whole farm.
+order: 0
+stage: iot
+briefing: v1.briefing
+
+objectives:
+  - { id: page, text: v1.obj.page }
+  - { id: find, text: v1.obj.find }
+  - { id: listen, text: v1.obj.listen }
+  - { id: flag, text: v1.obj.flag }
+
+flags:
+  - { id: listen, value: "FLAG{verdure-everyone-listens-7d21}", points: 200, objective: flag }
+
+reveal: [www]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: v1.ada.brief
+  - on: { event: HttpRequest, host: www, path: /ferme }
+    do:
+      - ada.say: v1.ada.page
+      - objective.complete: page
+  - on: { event: ServiceDiscovered, host: broker, port: 1883 }
+    do:
+      - ada.say: v1.ada.found
+      - objective.complete: find
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: /verdure/serre/0/# }
+    do:
+      - ada.guide: { key: v1.ada.g.wider, for: listen, step: 1 }
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: { in: ["/#", "/verdure/#", "/verdure/serre/#"] }, status: 200 }
+    do:
+      - noise.add: { points: 6, as: v1.soc.listen }
+      - objective.complete: page
+      - objective.complete: find
+      - ada.say: v1.ada.listen
+      - objective.complete: listen
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: v1.ada.flag
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: v1.ada.done
+
+guide:
+  page: v1.ada.g.page
+  find: v1.ada.g.find
+  listen: v1.ada.g.listen
+  flag: v1.ada.g.flag
+
+hints:
+  page: [v1.hint.page.1]
+  find: [v1.hint.find.1, v1.hint.find.2]
+  listen: [v1.hint.listen.1, v1.hint.listen.2]
+  flag: [v1.hint.flag.1]
+
+defense:
+  intro: v1.def.intro
+  lesson: v1.def.lesson
+  find:
+    - { source: mqtt, where: { client: kestrel, action: subscribe }, text: v1.def.find.sub }
+  rules:
+    - id: wide-subscription
+      title: v1.def.rule.wide.title
+      why: v1.def.rule.wide.why
+      source: mqtt
+      where: { action: subscribe, topic: { in: ["#", "verdure/#"] } }
+      correct: true
+    - id: every-subscription
+      title: v1.def.rule.every.title
+      why: v1.def.rule.every.why
+      source: mqtt
+      where: { action: subscribe }
+    - id: every-message
+      title: v1.def.rule.message.title
+      why: v1.def.rule.message.why
+      source: mqtt
+      where: { action: publish }
+  fixes:
+    - id: accounts
+      title: v1.def.fix.accounts.title
+      why: v1.def.fix.accounts.why
+      sets: { broker.auth: true }
+      correct: true
+    - id: port
+      title: v1.def.fix.port.title
+      why: v1.def.fix.port.why
+      sets: { broker.port_moved: true }
+    - id: link
+      title: v1.def.fix.link.title
+      why: v1.def.fix.link.why
+      sets: { broker.link_hidden: true }
+
+debrief:
+  title: v1.debrief.title
+  lesson: v1.debrief.lesson
+  points: [v1.debrief.p1, v1.debrief.p2, v1.debrief.p3, v1.debrief.p4]
+  reference: "OWASP IoT Top 10 · I2 Insecure Network Services"

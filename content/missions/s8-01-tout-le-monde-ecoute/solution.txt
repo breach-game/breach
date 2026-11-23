@@ -1,0 +1,5 @@
+# Season 8, mission 1: everyone is listening
+curl https://www.verdure.test/ferme
+nmap broker.verdure.test
+mqtt sub -h broker.verdure.test -t "#"
+submit FLAG{verdure-everyone-listens-7d21}

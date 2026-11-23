@@ -1,0 +1,17 @@
+id: breach.season8.s01
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.verdure]
+title:
+  fr: "Saison 8 · 1. Tout le monde écoute"
+  en: "Season 8 · 1. Everyone is listening"
+summary:
+  fr: "Objets connectés. Les capteurs de la ferme parlent tous à un même courtier de messages. Tu le trouves, tu t'y abonnes sans compte, et tu entends toute la ferme. Puis tu passes côté défense pour retrouver ton abonnement dans son journal et fermer la porte."
+  en: "Connected devices. The farm's sensors all talk to one message broker. You find it, subscribe without an account, and hear the whole farm. Then you switch to the defence side to find your subscription in its log and shut the door."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [iot, recon, defense]
+minutes: 15
