@@ -18,7 +18,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .cursor { display: inline-block; width: 11px; height: 17px; background: var(--defense); vertical-align: -3px; margin-left: 8px; box-shadow: 0 0 12px var(--defense); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-.title-actions { display: flex; flex-direction: column; gap: 12px; width: min(340px, 100%); margin-top: 18px; animation: fadein 600ms 1400ms both; }
+.title-actions { display: flex; flex-direction: column; gap: 12px; width: min(480px, 100%); margin-top: 18px; animation: fadein 600ms 1400ms both; }
 .btn { height: 48px; padding: 0 20px; border-radius: 10px; border: 1px solid rgba(215, 224, 245, 0.18); background: rgba(14, 19, 32, 0.8); font: 500 15px var(--human); letter-spacing: 0.06em; transition: border-color var(--t-snap), background var(--t-snap), box-shadow var(--t-snap), transform var(--t-snap); }
 .btn:hover { border-color: rgba(215, 224, 245, 0.45); }
 .btn:active { transform: scale(0.985); }
@@ -34,7 +34,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .seg button[aria-pressed='true'] { background: rgba(215, 224, 245, 0.12); color: #fff; }
 .legal { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center; font: 400 12px var(--mono); color: #55627f; padding: 0 20px; z-index: 2; }
 /* Short windows: the legal line follows the options instead of sitting on top of them. */
-@media (max-height: 800px) {
+@media (max-height: 940px) {
   .title { align-content: center; gap: 16px; overflow-y: auto; padding: 16px 0; }
   .title-inner { gap: 18px; }
   .legal { position: static; }
@@ -137,7 +137,7 @@ code { font-family: var(--mono); font-size: 0.92em; color: var(--player); backgr
 .caret { position: relative; animation: blink 1s steps(1) infinite; }
 .caret::after { content: ''; position: absolute; left: 2px; top: 50%; width: 7px; height: 15px; margin-top: -7.5px; background: currentColor; }
 /* What is still to be typed: in the layout, so lines break as in the final message, but unseen. */
-.ghost { visibility: hidden; }
+.untyped { visibility: hidden; }
 /* Only as tall as the lines typed so far (height set by `Typing`). */
 .typing-p { overflow: hidden; }
 /* A `code` span being typed: only the typed part has the chip's background, which grows with it. */
@@ -697,3 +697,118 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .store-refused { padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--attack) 45%, transparent); border-radius: 8px; font: 400 13px var(--human); color: var(--text); }
 .store-refused ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font: 400 12px/1.45 var(--mono); color: var(--dim); overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) { .store-import { animation: none; } }
+
+/* ---------- Journey: seasons, next step, what's new ---------- */
+/* Colour keeps its meaning: green only for finished missions, white for the player's next step. */
+.btn.quiet { height: 44px; align-self: center; padding: 0 14px; font-size: 13px; color: var(--dim); background: transparent; border-color: transparent; }
+.btn.quiet:hover, .btn.quiet:focus-visible { color: var(--text); border-color: var(--line); }
+
+.j-kicker { font: 500 11px var(--mono); letter-spacing: 0.24em; text-transform: uppercase; color: var(--dim); }
+.j-meta { font: 500 12px var(--mono); color: var(--dim); white-space: nowrap; }
+.j-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line); font: 600 10.5px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+.j-chip.started { color: var(--player); border-color: rgba(238, 242, 255, 0.35); }
+.j-chip.done { color: var(--success); border-color: rgba(61, 255, 154, 0.35); }
+.j-chip.new { color: var(--night); background: var(--player); border-color: var(--player); box-shadow: 0 0 16px -2px rgba(238, 242, 255, 0.6); }
+.j-progress { display: flex; align-items: center; gap: 14px; width: 100%; }
+.j-progress.wide { width: min(640px, 100%); }
+.j-bar { flex: 1; display: flex; gap: 4px; min-width: 0; }
+.j-bar i { flex: 1; height: 6px; border-radius: 3px; background: rgba(215, 224, 245, 0.12); }
+.j-bar i[data-state='done'] { background: var(--success); box-shadow: 0 0 8px -2px var(--success); }
+.j-bar i[data-state='next'] { background: var(--player); animation: jpulse 1.8s ease-in-out infinite; }
+@keyframes jpulse { 50% { opacity: 0.45; } }
+
+/* The title screen as a home: next step on the left, the menu as tiles on the right. */
+.title.home { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 36px; padding: 32px 56px 24px; overflow-y: auto; }
+.title.home > * { flex-shrink: 0; }
+.home-grid { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 560px); justify-content: center; align-items: center; gap: 64px; }
+.home-main { display: flex; flex-direction: column; align-items: flex-start; gap: 22px; }
+.home .wm { width: min(520px, 100%); height: auto; }
+.home .tagline { margin-top: -8px; }
+.home .j-step { animation: fadein 600ms 1300ms both; }
+.j-step.pending { height: 240px; }
+.home-side { display: flex; flex-direction: column; gap: 12px; animation: fadein 600ms 1400ms both; }
+.home-label { font: 500 11px var(--mono); letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); }
+.home-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.home-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 132px; padding: 16px 18px; text-align: left; color: var(--text); background: rgba(14, 19, 32, 0.78); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 160ms, background 160ms, translate 160ms; }
+.home-tile:hover:not(:disabled), .home-tile:focus-visible { border-color: var(--player); background: rgba(22, 29, 46, 0.92); translate: 0 -2px; outline: none; }
+.home-tile:focus-visible { box-shadow: 0 0 0 2px var(--player); }
+.home-tile:disabled { cursor: not-allowed; opacity: 0.55; }
+.home-tile b { font: 600 17px/1.2 var(--human); color: #fff; }
+.home-tile > span:last-child { font: 400 13px/1.4 var(--human); color: var(--dim); }
+.home-ico { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(215, 224, 245, 0.16); background: rgba(215, 224, 245, 0.04); color: var(--player); }
+.home-new { position: absolute; top: 16px; right: 16px; }
+.home-panel { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 20px; border-radius: 12px; border: 1px solid var(--line); background: rgba(14, 19, 32, 0.78); }
+.home-panel .progress-file { align-items: stretch; animation: none; }
+.home-panel .btn { align-self: flex-start; }
+.home-options { display: flex; flex-direction: column; gap: 14px; }
+.home-option { display: flex; align-items: center; justify-content: space-between; gap: 16px; font: 500 12px var(--mono); letter-spacing: 0.06em; color: var(--dim); }
+.home-side .btn.quiet { align-self: flex-start; }
+.home .j-news { position: static; width: auto; animation-delay: 1500ms; }
+.home-foot { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
+.home-foot .legal { position: static; padding: 0; }
+@media (max-width: 1180px) { .home-grid { gap: 40px; } .title.home { padding-inline: 32px; } }
+
+/* The next-step card of the title screen. */
+.j-step { width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 20px; text-align: left; border-radius: 12px; border: 1px solid rgba(215, 224, 245, 0.16); background: linear-gradient(180deg, rgba(20, 26, 44, 0.9), rgba(10, 14, 24, 0.9)); box-shadow: 0 24px 60px -28px #000, 0 0 0 1px rgba(255, 255, 255, 0.02) inset; backdrop-filter: blur(10px); }
+.j-step header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.j-step h2, .j-step h3 { margin: 0; font: 700 22px/1.2 var(--human); letter-spacing: 0.01em; color: #fff; text-transform: none; }
+.j-step h3::before { display: none; }
+.j-step p { margin: 0; font: 400 14px/1.5 var(--human); color: var(--text); }
+.j-step .j-summary { color: var(--dim); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.j-step .j-after { font: 500 12.5px var(--mono); color: var(--success); }
+.j-step-actions { display: flex; gap: 10px; margin-top: 6px; }
+.j-step-actions .btn { flex: 1; }
+.j-step-actions .btn:not(.primary):not(.defense) { flex: 0 0 auto; }
+.j-step.done header .j-kicker { color: var(--success); }
+.j-step.compact { padding: 16px 18px; background: rgba(10, 14, 24, 0.6); }
+.j-step.compact h3 { display: block; font-size: 19px; letter-spacing: 0.01em; }
+.j-next { display: flex; flex-direction: column; gap: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+.j-next .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* What's new: a notification of LR-OS, in the corner of the title screen. */
+.j-news { position: absolute; top: 22px; right: 22px; z-index: 3; width: min(330px, calc(100vw - 44px)); border-radius: 12px; border: 1px solid rgba(238, 242, 255, 0.28); background: rgba(12, 16, 28, 0.9); backdrop-filter: blur(12px); box-shadow: 0 20px 50px -20px #000, 0 0 40px -18px rgba(238, 242, 255, 0.35); animation: jnews 600ms 1700ms cubic-bezier(0.16, 1, 0.3, 1) both; overflow: hidden; }
+@keyframes jnews { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+.j-news header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 6px 4px 14px; border-bottom: 1px solid var(--line); }
+.j-news-title { display: inline-flex; align-items: center; gap: 9px; font: 600 11px var(--mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--player); }
+.j-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--player); box-shadow: 0 0 10px var(--player); animation: jpulse 1.6s ease-in-out infinite; }
+.j-news-count { font: 600 10.5px var(--mono); letter-spacing: 0; padding: 1px 6px; border-radius: 8px; color: var(--night); background: var(--player); }
+.j-news-dismiss { min-height: 44px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; font: 500 11.5px var(--mono); color: var(--dim); }
+.j-news-dismiss:hover, .j-news-dismiss:focus-visible { color: var(--text); background: rgba(215, 224, 245, 0.06); }
+.j-news ul { list-style: none; margin: 0; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.j-news li button { width: 100%; min-height: 56px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 10px; row-gap: 3px; align-items: center; padding: 9px 10px; text-align: left; border: 1px solid transparent; border-radius: 8px; background: transparent; }
+.j-news li button:hover, .j-news li button:focus-visible { background: rgba(215, 224, 245, 0.06); border-color: var(--line); }
+.j-news-kind { grid-column: 1; font: 500 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.j-news li b { grid-column: 1; font: 600 14.5px/1.3 var(--human); color: #fff; }
+.j-news-go { grid-column: 2; grid-row: 1 / span 2; color: var(--dim); font: 500 16px var(--mono); transition: transform var(--t-snap), color var(--t-snap); }
+.j-news li button:hover .j-news-go { color: var(--player); transform: translateX(3px); }
+
+/* The seasons screen: one progress card per season. */
+.j-seasons { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; width: min(900px, calc(100vw - 64px)); max-height: min(56vh, 620px); overflow-y: auto; padding: 4px; }
+.j-season { display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; text-align: left; color: var(--text); background: rgba(14, 19, 32, 0.78); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 160ms, background 160ms, translate 160ms; }
+.j-season:hover, .j-season:focus-visible { border-color: var(--player); background: rgba(22, 29, 46, 0.92); translate: 0 -2px; outline: none; }
+.j-season:focus-visible { box-shadow: 0 0 0 2px var(--player); }
+.j-season header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.j-season > b { font: 700 19px/1.25 var(--human); color: #fff; }
+.j-season .j-summary { font: 400 14px/1.45 var(--human); color: var(--text); }
+.j-season .j-progress { margin-top: auto; padding-top: 6px; }
+.j-season .j-note { font: 500 11px var(--mono); font-style: normal; color: var(--dim); }
+.j-season .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font: 500 11px var(--mono); color: var(--dim); }
+.j-season .tags .tag { font: 500 11px var(--mono); color: var(--dim); padding: 2px 7px; border: 1px solid var(--line); border-radius: 5px; }
+.j-season .tags .difficulty { display: inline-flex; gap: 6px; align-items: center; color: var(--text); font: 500 11px var(--mono); }
+.j-detail-head { display: flex; align-items: center; gap: 12px; }
+.j-detail-title { margin: 0; font: 700 28px/1.15 var(--human); color: #fff; text-align: center; }
+.j-meanwhile { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.j-meanwhile p { margin: 0; max-width: 60ch; text-align: center; font: 400 14px/1.5 var(--human); color: var(--dim); }
+@media (prefers-reduced-motion: reduce) {
+  .j-news { animation: none; }
+  .j-dot, .j-bar i[data-state='next'] { animation: none; }
+}
+/* Short windows: tighter tiles so the home fits without scrolling. */
+@media (max-height: 800px) {
+  .title.home { gap: 20px; padding-top: 20px; padding-bottom: 16px; }
+  .home-tile { min-height: 104px; padding: 12px 16px; gap: 6px; }
+  .home-ico { width: 36px; height: 36px; }
+  .home .wm { width: min(440px, 100%); }
+  .home .j-news ul { padding: 4px; }
+  .home .j-news li button { min-height: 48px; padding: 6px 10px; }
+}

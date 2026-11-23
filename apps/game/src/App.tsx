@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import type { Go } from './screens/Journey.tsx';
 import { Recover, RecoverScreen } from './screens/Recover.tsx';
 import { Title } from './screens/Title.tsx';
 import type { StartMode } from './session.ts';
@@ -12,9 +13,9 @@ const Community = lazy(() => import('./screens/Community.tsx').then((m) => ({ de
 const Seasons = lazy(() => import('./screens/Seasons.tsx').then((m) => ({ default: m.Seasons })));
 
 type Screen =
-  | { name: 'title' }
+  | { name: 'title'; picking?: boolean }
   | { name: 'community' }
-  | { name: 'seasons' }
+  | { name: 'seasons'; open?: string }
   | { name: 'missions' }
   | { name: 'training' }
   | { name: 'boot'; mode: StartMode }
@@ -41,16 +42,17 @@ function Screens() {
     return () => window.removeEventListener('vite:preloadError', onPreloadError);
   }, []);
   if (outdated) return <RecoverScreen outdated />;
+  const go = (to: Go) => {
+    if ('start' in to) setScreen({ name: 'boot', mode: to.start });
+    else if (to.screen === 'newGame') setScreen({ name: 'title', picking: true });
+    else if (to.screen === 'seasons') setScreen({ name: 'seasons', ...(to.open ? { open: to.open } : {}) });
+    else if (to.screen === 'title') setScreen({ name: 'title' });
+    else if (to.screen === 'training') setScreen({ name: 'training' });
+    else if (to.screen === 'missions') setScreen({ name: 'missions' });
+    else setScreen({ name: 'community' });
+  };
   if (screen.name === 'title')
-    return (
-      <Title
-        onStart={(mode) => setScreen({ name: 'boot', mode })}
-        onCommunity={() => setScreen({ name: 'community' })}
-        onSeasons={() => setScreen({ name: 'seasons' })}
-        onMissions={() => setScreen({ name: 'missions' })}
-        onTraining={() => setScreen({ name: 'training' })}
-      />
-    );
+    return <Title key={String(screen.picking)} go={go} picking={screen.picking ?? false} />;
   return (
     <Suspense fallback={<main className="title" aria-busy="true" />}>
       {screen.name === 'missions' ? (
@@ -69,10 +71,7 @@ function Screens() {
           onBack={() => setScreen({ name: 'title' })}
         />
       ) : screen.name === 'seasons' ? (
-        <Seasons
-          onStart={(mode) => setScreen({ name: 'boot', mode })}
-          onBack={() => setScreen({ name: 'title' })}
-        />
+        <Seasons {...(screen.open ? { open: screen.open } : {})} go={go} />
       ) : screen.name === 'boot' ? (
         <Boot
           mode={screen.mode}
@@ -80,7 +79,7 @@ function Screens() {
           onFail={() => setScreen({ name: 'title' })}
         />
       ) : (
-        <Desktop onQuit={() => setScreen({ name: 'title' })} />
+        <Desktop onQuit={(to) => go(to ?? { screen: 'title' })} />
       )}
     </Suspense>
   );

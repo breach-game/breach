@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playSfx, setScene, setTension } from '../audio.ts';
+import type { Go } from '../screens/Journey.tsx';
 import { liveNoise, missionNumber, onGameEvent, terminalBridge, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
@@ -59,7 +60,7 @@ const mix = (a: string, b: string, t: number) => {
 };
 
 /** The LR-OS desktop: the whole screen is the pentester's workstation. */
-export function Desktop({ onQuit }: { onQuit(): void }) {
+export function Desktop({ onQuit }: { onQuit(to?: Go): void }) {
   const game = useGame();
   const t = useT();
   const { effects, locale, guidance } = useSettings();
@@ -238,7 +239,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
       <StatusBar
         noise={noise}
         onResetLayout={() => setLayout(defaultLayout())}
-        onQuit={onQuit}
+        onQuit={() => onQuit()}
         onBrain={() => setBrain(true)}
       />
 
@@ -431,6 +432,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
             onChange={change('debrief')}
           >
             <Debrief
+              onLeave={onQuit}
               onClose={() => setDebrief(false)}
               onNext={() => {
                 const next = game.nextMission();

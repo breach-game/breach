@@ -39,7 +39,7 @@ export function reveal(node: ReactNode, shown: number): ReactNode {
           head
         ),
         caretPlaced ? null : caret(),
-        <span className="ghost" key={`ghost-${key}`}>
+        <span className="untyped" key={`untyped-${key}`}>
           {s.slice(head.length)}
         </span>,
       ];
@@ -49,7 +49,7 @@ export function reveal(node: ReactNode, shown: number): ReactNode {
       // Nothing of it shown yet: hide the whole box, background and border included.
       if (left === 0 && caretPlaced)
         return (
-          <span className="ghost" key={`ghost-${key}`}>
+          <span className="untyped" key={`untyped-${key}`}>
             {n}
           </span>
         );
