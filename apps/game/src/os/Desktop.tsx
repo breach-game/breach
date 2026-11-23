@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { playSfx, setScene, setTension } from '../audio.ts';
-import { liveNoise, onGameEvent, terminalBridge, useGame } from '../session.ts';
+import { liveNoise, missionNumber, onGameEvent, terminalBridge, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
 import { BrainSettings } from './BrainSettings.tsx';
@@ -497,8 +497,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
         <div className={`card${effects ? '' : ' static'}`} key={card} aria-live="polite">
           <div className="card-inner">
             <div className="num">
-              {t(pack.track === 'training' ? 'card.training' : 'card.mission')}{' '}
-              {String(pack.mission?.order ?? 0).padStart(2, '0')}
+              {t(pack.track === 'training' ? 'card.training' : 'card.mission')} {missionNumber(game)}
             </div>
             <h1>{pack.title[locale] ?? pack.title.fr ?? pack.title.en}</h1>
             <div className="rule" />

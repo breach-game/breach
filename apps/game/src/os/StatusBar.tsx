@@ -2,7 +2,7 @@ import { gameDate, socLevel } from '@breach/engine';
 import { useState } from 'react';
 import { activeBrain, useBrain } from '../brain.ts';
 import { Mark } from '../brand.tsx';
-import { liveClock, useGame } from '../session.ts';
+import { liveClock, missionNumber, useGame } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 
@@ -36,8 +36,8 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
           LR-OS <span>{t('bar.os')}</span>
         </div>
         <div className="mission">
-          {t(pack?.track === 'training' ? 'bar.training' : 'bar.mission')}{' '}
-          {String(pack?.mission?.order ?? 0).padStart(2, '0')} <b>/</b> {title}
+          {t(pack?.track === 'training' ? 'bar.training' : 'bar.mission')} {missionNumber(game)} <b>/</b>{' '}
+          {title}
         </div>
         {defending ? (
           <>

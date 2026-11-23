@@ -24,7 +24,9 @@ import {
   loadCommunityMission,
   loadPack,
   loadSeason,
+  loadSeasons,
   type PackProgress,
+  seriesMissions,
 } from './packs.ts';
 import { getSettings } from './settings.ts';
 
@@ -274,30 +276,56 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
 
 /* ---------- progress file ---------- */
 
-/** The campaign's finished missions and their scores, ready to download. Null without a save. */
-export async function exportProgress(): Promise<ProgressFile | null> {
-  const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
+/** Finished official missions of a save, by id, with their scores. */
+async function savedMissions(key: string): Promise<Record<string, { score: number }> | null> {
+  const save = await get<SaveData>(key).catch(() => undefined);
   if (!Array.isArray(save?.log)) return null;
-  const done = Object.entries(completedIn(save.log)).filter(([id]) => isOfficialId(id));
-  return progressFile(Object.fromEntries(done));
+  return Object.fromEntries(Object.entries(completedIn(save.log)).filter(([id]) => isOfficialId(id)));
 }
+
+/**
+ * The finished missions of the campaign and of every season, with their scores, ready to download.
+ * Null without any save. Mission ids are unique across the official content, so one list is enough.
+ */
+export async function exportProgress(): Promise<ProgressFile | null> {
+  const all: IDBValidKey[] = await keys().catch(() => []);
+  const seasonKeys: string[] = all.filter(
+    (k): k is string => typeof k === 'string' && k.startsWith('save:season:'),
+  );
+  const saves = await Promise.all([SAVE_KEY, ...seasonKeys].map((k) => savedMissions(k)));
+  if (saves.every((s) => s === null)) return null;
+  return progressFile(Object.assign({}, ...saves.filter((s) => s !== null)));
+}
+
+/** A save holding only finished missions: it replays on any world, nothing in it depends on a version. */
+const carriedSave = (missions: Record<string, { score: number }>): SaveData => ({
+  engine: ENGINE_VERSION,
+  world: { id: '', version: '' },
+  locale: getSettings().locale,
+  log: [carried(missions, 'import')],
+});
 
 /**
  * Replace the campaign save by the missions of a progress file. The file is untrusted: it is read
  * strictly, and only its list of finished missions and scores is kept. Throws on a bad file.
+ * Missions of a season go to that season's own save, which they replace; the rest is the campaign.
  */
 export async function importProgress(text: string): Promise<{ missions: number; score: number }> {
   const file = parseProgressFile(text);
   clearTimeout(saveTimer);
   game = null;
-  const save: SaveData = {
-    engine: ENGINE_VERSION,
-    // A log with no mission in it replays on any world: nothing in it depends on a version.
-    world: { id: '', version: '' },
-    locale: getSettings().locale,
-    log: [carried(file.missions, 'import')],
-  };
-  await set(SAVE_KEY, save);
+  const campaignMissions = { ...file.missions };
+  const { catalog, seasons } = await loadSeasons().catch(() => ({ catalog: null, seasons: [] }));
+  for (const season of catalog ? seasons : []) {
+    const ids = seriesMissions(season, catalog!).map((m) => m.id);
+    const mine = Object.fromEntries(
+      ids.filter((id) => id in campaignMissions).map((id) => [id, campaignMissions[id]!]),
+    );
+    if (Object.keys(mine).length === 0) continue;
+    for (const id of ids) delete campaignMissions[id];
+    await set(`save:season:${season.id}@${season.version}`, carriedSave(mine));
+  }
+  await set(SAVE_KEY, carriedSave(campaignMissions));
   notify();
   const scores = Object.values(file.missions);
   return { missions: scores.length, score: scores.reduce((sum, m) => sum + m.score, 0) };
@@ -305,6 +333,20 @@ export async function importProgress(text: string): Promise<{ missions: number; 
 
 /** What the running game is: the campaign, a replayed mission or a community mission. */
 export const playKind = (): PlayKind => kind;
+
+/**
+ * The number shown for the mission being played. The campaign keeps the numbers of its story
+ * (its mandate is mission 00). A season or a community series counts its missions from 01, as its
+ * screen lists them, whatever `order` its packs start from.
+ */
+export function missionNumber(g: Game): string {
+  const pack = g.state.mission ? g.missions.get(g.state.mission) : undefined;
+  const n =
+    kind === 'season' || kind === 'community'
+      ? g.campaign.findIndex((m) => m.id === pack?.id) + 1
+      : (pack?.mission?.order ?? 0);
+  return String(Math.max(n, 0)).padStart(2, '0');
+}
 
 export async function eraseSave() {
   clearTimeout(saveTimer);

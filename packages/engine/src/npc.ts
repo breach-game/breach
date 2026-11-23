@@ -126,18 +126,41 @@ function groupHeard(group: string, intent: Intent, heard: Heard | undefined): bo
   return !intent.literal && heard !== undefined && heard.words.includes(normalizeText(group));
 }
 
+const VERSION = /(?<![\w.])v?(\d{1,6}(?:\.\d{1,6}){0,3})(?![\w.]*\w)/i;
+
+/** The version number a message gives: the first one after the word "version", else the first one. */
+export function versionIn(message: string): number[] | null {
+  const at = message.toLowerCase().indexOf('version');
+  const match = (at >= 0 ? message.slice(at + 7) : message).match(VERSION);
+  return match?.[1] ? match[1].split('.').map(Number) : null;
+}
+
+/** True when version `a` is strictly higher than `b`, part by part, missing parts counting as 0. */
+export function versionAbove(a: number[], b: number[]): boolean {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const [x, y] = [a[i] ?? 0, b[i] ?? 0];
+    if (x !== y) return x > y;
+  }
+  return false;
+}
+
 function intentMatches(
   intent: Intent,
   words: string[],
   families: Family[],
   state: GameState,
-  heard?: Heard,
+  heard: Heard | undefined,
+  message: string,
 ): boolean {
   const any = (groups: string[]) =>
     groups.some((g) => groupMatches(g, words) || groupHeard(g, intent, heard));
   if (intent.words.length && !any(intent.words)) return false;
   if (intent.also.length && !any(intent.also)) return false;
   if (intent.families.length && !intent.families.some((f) => families.includes(f))) return false;
+  if (intent.above !== undefined) {
+    const given = versionIn(message);
+    if (!given || !versionAbove(given, intent.above.split('.').map(Number))) return false;
+  }
   return evaluate(intent.if, state);
 }
 
@@ -161,7 +184,7 @@ export function decide(npc: Npc, message: string, state: GameState, heard?: Hear
   const families = [...new Set([...detected, ...(heard?.families ?? [])])];
   const said = (id: string) =>
     (state.chats[npc.id] ?? []).filter((l) => l.from === 'npc' && l.intent === id).length;
-  const intent = npc.intents.find((i) => intentMatches(i, words, families, state, heard));
+  const intent = npc.intents.find((i) => intentMatches(i, words, families, state, heard, message));
   if (!intent) {
     const key = npc.fallback[said('fallback') % npc.fallback.length]!;
     return { intent: 'fallback', key, families, set: {} };

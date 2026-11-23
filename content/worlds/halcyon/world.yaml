@@ -176,10 +176,15 @@ npcs:
       The activity log of an open package mirror. It does not talk: it writes short, dry build
       reports, like a CI log, about what it received and what the next nightly build did with it.
     intents:
+      # Published under the internal name: the nightly build takes it only above the internal 1.4.2.
       - id: confusion
         words: [halcyon-telemetry, telemetry]
+        above: "1.4.2"
         reply: [npc.mirror.confusion]
         set: { published: true }
+      - id: lower
+        words: [halcyon-telemetry, telemetry]
+        reply: [npc.mirror.lower]
       - id: other
         words: [left-pad-lite, tiny-yaml, left pad, yaml]
         reply: [npc.mirror.other]
