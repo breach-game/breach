@@ -66,6 +66,38 @@ describe('community packs', () => {
     expect(series?.missions).toEqual(['example.forgotten-backup', 'example.closing-the-door']);
   });
 
+  it('lists the estimated length, the incident year and the dates of each pack', () => {
+    const timed = community.map((p) =>
+      p.pack.kind === 'mission' ? variant(p, { minutes: p.pack.id.includes('backup') ? 10 : 15 }) : p,
+    );
+    const dates = Object.fromEntries(
+      timed.map((p, i) => [p.pack.id, { added: `2026-11-0${i + 1}`, updated: `2026-11-1${i + 1}` }]),
+    );
+    const real = timed.map((p) => (p.pack.kind === 'series' ? variant(p, { incident: 2023 }) : p));
+    const { catalog } = buildAll(real, new Date(0), { community: true, dates });
+    const parsed = catalogSchema.parse(catalog);
+    const series = parsed.packs.find((p) => p.kind === 'series')!;
+    // A series without its own estimate adds up its missions'.
+    expect(series.minutes).toBe(25);
+    expect(series.incident).toBe(2023);
+    // A series is as old as its oldest part, and as recent as its latest change.
+    const own = [series.id, ...series.requires, ...(series.missions ?? [])].map((id) => dates[id]!);
+    expect(series.added).toBe(own.map((d) => d.added).sort()[0]);
+    expect(series.updated).toBe(
+      own
+        .map((d) => d.updated)
+        .sort()
+        .at(-1),
+    );
+    expect(parsed.packs.find((p) => p.id === 'example.forgotten-backup')?.minutes).toBe(10);
+  });
+
+  it('opens a catalogue that carries fields this game does not know', () => {
+    const { catalog } = buildAll(community, new Date(0), { community: true });
+    const later = { ...catalog, future: true, packs: catalog.packs.map((p) => ({ ...p, stars: 5 })) };
+    expect(catalogSchema.parse(later).packs).toHaveLength(4);
+  });
+
   it('refuses a series whose missions are missing, out of order or from another world', async () => {
     const series = community.find((p) => p.pack.kind === 'series')!;
     const others = community.filter((p) => p !== series);

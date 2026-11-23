@@ -448,11 +448,40 @@ export interface BuiltPack {
 export function buildAll(
   packs: LoadedPack[],
   now = new Date(),
-  options: { community?: boolean } = {},
+  options: {
+    community?: boolean;
+    /** First and last day each pack changed, by id (from git, for the community catalogue). */
+    dates?: Record<string, { added: string; updated: string }>;
+  } = {},
 ): { catalog: Catalog; files: BuiltPack[] } {
   const files: BuiltPack[] = [];
   const entries: Catalog['packs'] = [];
+  const byId = new Map(packs.map((p) => [p.pack.id, p.pack]));
+  // A series without its own estimate takes the sum of its missions', when all of them have one.
+  const minutesOf = (pack: Pack): number | undefined => {
+    if (pack.minutes || !pack.series) return pack.minutes;
+    const each = pack.series.missions.map((id) => byId.get(id)?.minutes);
+    return each.every((m) => m !== undefined)
+      ? Math.min(
+          600,
+          each.reduce((a, b) => a + b, 0),
+        )
+      : undefined;
+  };
   for (const { pack } of packs) {
+    const minutes = minutesOf(pack);
+    // A series changes when its world or one of its missions does.
+    const related = pack.series ? [pack.id, ...pack.requires, ...pack.series.missions] : [pack.id];
+    const known = related.map((id) => options.dates?.[id]).filter((d) => !!d);
+    const dates = known.length
+      ? {
+          added: known.map((d) => d.added).sort()[0]!,
+          updated: known
+            .map((d) => d.updated)
+            .sort()
+            .at(-1)!,
+        }
+      : undefined;
     const bytes = gzipSync(Buffer.from(JSON.stringify(pack)), { level: 9 });
     if (bytes.length > MAX_PACK_BYTES)
       throw new Error(`${pack.id}: pack is larger than ${MAX_PACK_BYTES} bytes`);
@@ -471,6 +500,9 @@ export function buildAll(
       ...(pack.kind === 'mission' ? { track: pack.track } : {}),
       ...(pack.difficulty ? { difficulty: pack.difficulty } : {}),
       ...(pack.skills.length ? { skills: pack.skills } : {}),
+      ...(pack.incident ? { incident: pack.incident } : {}),
+      ...(minutes ? { minutes } : {}),
+      ...(dates ? { added: dates.added, updated: dates.updated } : {}),
       ...(pack.series ? { missions: pack.series.missions } : {}),
       locales: pack.locales,
       file,

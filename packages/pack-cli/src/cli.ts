@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { verifySignature } from '@breach/pack-schema';
@@ -14,6 +15,15 @@ import {
 
 const args = process.argv.slice(2);
 
+/** First and last day a pack's folder changed in git. A folder git does not know counts as today. */
+function packDates(dir: string): { added: string; updated: string } {
+  const days = execFileSync('git', ['log', '--format=%cs', '--', '.'], { cwd: dir, encoding: 'utf8' })
+    .split('\n')
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  const today = new Date().toISOString().slice(0, 10);
+  return { added: days.at(-1) ?? today, updated: days[0] ?? today };
+}
+
 function usage(): never {
   console.error(`breach-pack: build and check BREACH content packs
 
@@ -28,7 +38,8 @@ function usage(): never {
 options:
   --with <dir>    packs that the checked packs may require (for example the game's content/ folder);
                   they are used, not checked, and cannot be overridden
-  --community     apply the community catalogue rules (no "breach." id, no campaign)`);
+  --community     apply the community catalogue rules (no "breach." id, no campaign)
+  --git-dates     (build) list the first and last day each pack changed, read from git`);
   process.exit(2);
 }
 
@@ -52,6 +63,7 @@ function flag(name: string): boolean {
 const withDirs = option('--with');
 const out = option('--out')[0];
 const community = flag('--community');
+const gitDates = flag('--git-dates');
 const [command, root, ...rest] = args;
 
 if (command === 'keygen') {
@@ -127,7 +139,8 @@ if (command === 'build') {
   const dir = resolve(out);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  const { catalog, files } = buildAll(packs, new Date(), { community });
+  const dates = gitDates ? Object.fromEntries(packs.map((p) => [p.pack.id, packDates(p.dir)])) : undefined;
+  const { catalog, files } = buildAll(packs, new Date(), { community, dates });
   for (const f of files) writeFileSync(join(dir, f.file), f.bytes);
   writeFileSync(join(dir, 'index.json'), `${JSON.stringify(catalog, null, 2)}\n`);
   console.log(`Wrote ${files.length} packs and index.json to ${dir}`);

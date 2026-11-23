@@ -677,6 +677,10 @@ const packBase = z.strictObject({
   difficulty: z.number().int().min(1).max(3).optional(),
   /** What the mission trains, shown as labels. */
   skills: z.array(z.enum(SKILLS)).max(4).default([]),
+  /** Year of the real incident the pack is inspired by, told in its `debrief.facts`. */
+  incident: z.number().int().min(1970).max(2100).optional(),
+  /** The author's estimate of the playing time, in minutes (for a series: the whole series). */
+  minutes: z.number().int().min(5).max(600).optional(),
   world: world.optional(),
   mission: mission.optional(),
   series: series.optional(),
@@ -700,8 +704,13 @@ export const packSchema = packBase.superRefine((pack, ctx) => {
 });
 export type Pack = z.infer<typeof packSchema>;
 
-/** Catalogue served next to the packs. */
-export const catalogSchema = z.strictObject({
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Catalogue served next to the packs. Unknown fields are dropped rather than refused, so a catalogue
+ * published with fields a newer game reads still opens in an older game.
+ */
+export const catalogSchema = z.object({
   format: z.literal(PACK_FORMAT),
   generatedAt: z.string(),
   campaign: z.array(id),
@@ -710,7 +719,7 @@ export const catalogSchema = z.strictObject({
   /** Official series played after the campaign, in order: each one is a season with its own world. */
   seasons: z.array(id).default([]),
   packs: z.array(
-    z.strictObject({
+    z.object({
       id,
       version: z.string(),
       kind: z.enum(KINDS),
@@ -723,6 +732,11 @@ export const catalogSchema = z.strictObject({
       track: z.enum(TRACKS).optional(),
       difficulty: z.number().int().min(1).max(3).optional(),
       skills: z.array(z.enum(SKILLS)).max(4).optional(),
+      incident: z.number().int().min(1970).max(2100).optional(),
+      minutes: z.number().int().min(5).max(600).optional(),
+      /** First and last day the pack changed in its repository (community catalogue only). */
+      added: day.optional(),
+      updated: day.optional(),
       /** For a series: its missions in playing order. */
       missions: z.array(id).max(12).optional(),
       locales: z.array(z.enum(LOCALES)),
