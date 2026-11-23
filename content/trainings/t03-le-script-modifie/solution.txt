@@ -3,6 +3,6 @@ cat training/download/SHA256SUMS
 sha256sum training/download/install.sh
 diff training/repo/install.sh training/download/install.sh
 submit 10.13.0.99
-answer b
+answer env
 sed -i /nm-report/d training/download/install.sh
 verify

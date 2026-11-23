@@ -79,3 +79,26 @@ export function gameDate(startTime: string, clock: number): GameDate {
     ls: `${MONTHS[d.getUTCMonth()]} ${pad(d.getUTCDate())} ${hms.slice(0, 5)}`,
   };
 }
+
+/**
+ * A copy of a list in an order drawn from a seed: the same seed always gives the same order.
+ * Deterministic on purpose (no Math.random), so that a replayed log shows what the player saw.
+ */
+export function shuffled<T>(items: readonly T[], seed: string): T[] {
+  // FNV-1a over the seed, then a small xorshift generator.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 0x01000193);
+  if (!h) h = 1;
+  const next = () => {
+    h ^= h << 13;
+    h ^= h >>> 17;
+    h ^= h << 5;
+    return (h >>> 0) / 0x100000000;
+  };
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}

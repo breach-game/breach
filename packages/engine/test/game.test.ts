@@ -11,10 +11,29 @@ describe('missions and rules', () => {
     expect(g.state.checkpoint?.name).toBe('scanned');
     expect((await run(g, 'submit FLAG{nope}')).err).toContain('not a flag');
     expect(g.state.missionDone).toBe(false);
+    expect((await run(g, 'submit FLAG{x}')).err).toContain('never showed you');
+    expect(g.state.missionDone).toBe(false);
+    await run(g, 'cat /srv/loot.txt');
     expect((await run(g, 'submit FLAG{x}')).out).toContain('FLAG VALIDATED +100');
     expect(g.state.missionDone).toBe(true);
     expect(g.state.completed['test.m1']?.score).toBe(200);
     expect((await run(g, 'submit FLAG{x}')).out).toContain('already');
+  });
+
+  it('only takes a flag the target showed: typing it, even through echo, is not seeing it', async () => {
+    const g = await newGame();
+    await run(g, 'echo FLAG{x}');
+    expect(g.state.shown).toEqual([]);
+    expect((await run(g, 'submit FLAG{x}')).err).toContain('never showed you');
+    expect(g.state.flags).toEqual({});
+    // Opening the file in the editor counts, like reading it in the terminal.
+    expect(g.readFile('/srv/loot.txt')).toContain('FLAG{x}');
+    expect(g.state.shown).toEqual(['FLAG{x}']);
+    // It is in the log, so a resumed game remembers it.
+    const { world, mission } = await fixture();
+    const again = new Game({ world, missions: [mission], locale: 'en', log: g.log });
+    expect(again.state.shown).toEqual(['FLAG{x}']);
+    expect((await run(g, 'submit flag{x}')).out).toContain('FLAG VALIDATED');
   });
 
   it('adapts Ada to the guidance level: commands, directions, or silence', async () => {

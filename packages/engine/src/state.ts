@@ -47,6 +47,8 @@ export interface GameState {
   revealed: Record<string, true>;
   objectives: Record<string, boolean>;
   flags: Record<string, true>;
+  /** Flag-shaped values the target has shown the player so far: `submit` takes no other. */
+  shown: string[];
   noise: number;
   hints: Record<string, number>;
   hintsUsed: number;

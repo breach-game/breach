@@ -158,6 +158,11 @@ const submit: Command = {
       yield out(ctx.t('submit.already'));
       return 0;
     }
+    // A flag is proof of what the player reached: one the target never showed them proves nothing.
+    if (!ctx.game.sandbox && !ctx.game.wasShown(value)) {
+      yield err(ctx.t('submit.unseen'));
+      return 1;
+    }
     ctx.emit({ type: 'FlagSubmitted', flag: flag.id, correct: true });
     yield out(`${paint(ctx, style.green, ctx.t('submit.ok'))} +${flag.points}`);
     if (flag.objective) ctx.game.completeObjective(flag.objective);
@@ -203,14 +208,16 @@ const answer: Command = {
     }
     const letter = (i: number) => String.fromCharCode(97 + i);
     const pick = (ctx.args[0] ?? '').toLowerCase();
-    const index = question.options.findIndex((o, i) => pick === letter(i) || pick === o.id);
+    // Letters follow the order shown, which is not the order written in the pack.
+    const options = ctx.game.optionsOf(question);
+    const index = options.findIndex((o, i) => pick === letter(i) || pick === o.id);
     if (index < 0) {
       yield out(paint(ctx, style.magenta, `Ada: ${ctx.t(question.text)}`));
-      for (const [i, o] of question.options.entries()) yield out(`  ${letter(i)}) ${ctx.t(o.text)}`);
+      for (const [i, o] of options.entries()) yield out(`  ${letter(i)}) ${ctx.t(o.text)}`);
       yield out(paint(ctx, style.dim, ctx.t('answer.usage')));
       return pick ? 1 : 0;
     }
-    const result = ctx.game.answer(question.id, question.options[index]!.id);
+    const result = ctx.game.answer(question.id, options[index]!.id);
     if (!result) return 1;
     yield out(
       result.correct

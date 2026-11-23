@@ -128,6 +128,15 @@ export function formatLine(
   }
 }
 
+/** Port a refused attempt was aimed at, by the kind of trace the step would have left. */
+const BLOCKED_PORT: Partial<Record<LogSource, number>> = {
+  auth: 22,
+  audit: 22,
+  git: 3000,
+  db: 5432,
+  dns: 53,
+};
+
 /* ---------- from events to lines ---------- */
 
 export interface TelemetryOptions {
@@ -315,10 +324,20 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
           });
         break;
       case 'AdversaryStep': {
-        if (e.blocked) break;
         const step = game.mission?.adversary?.steps.find((s) => s.id === e.step);
         if (!step) break;
         const from = game.mission?.adversary?.from ?? '';
+        if (e.blocked) {
+          // A containment that works leaves a trace too: the refused attempt, at the firewall.
+          push(e, 'adversary', step.host, 'flow', {
+            action: 'deny',
+            src: typeof step.fields.src === 'string' ? step.fields.src : ipOf(from),
+            dst: typeof step.fields.dst === 'string' ? step.fields.dst : ipOf(step.host),
+            dport: step.fields.dport ?? BLOCKED_PORT[step.source] ?? 443,
+            bytes: 0,
+          });
+          break;
+        }
         push(e, 'adversary', step.host, step.source, { src: ipOf(from), ...step.fields });
         break;
       }

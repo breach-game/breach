@@ -155,7 +155,9 @@ describe('defence mission: Mute returns', () => {
     expect(game.scoreDetail()).toMatchObject({ answers: 200, impact: 0 });
     // Mute's own lines are in the logs, and the exfiltration never happened.
     const mine = game.socLines().filter((l) => l.actor === 'adversary');
-    expect(mine.map((l) => l.source)).toEqual(['auth', 'audit']);
+    expect(mine.map((l) => l.source)).toEqual(['auth', 'audit', 'flow']);
+    // The step that the containment refused is in the logs too, as a denied connection.
+    expect(mine.at(-1)?.text).toContain('flow: deny');
   });
 
   it('isolating the database works, but costs the clinics', async () => {
