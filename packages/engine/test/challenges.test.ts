@@ -113,12 +113,18 @@ describe('repairs and questions', () => {
     g.writeFile('missions/app.conf', 'listen = 443\n');
     await run(g, 'verify');
     expect(g.openQuestions().map((q) => q.id)).toEqual(['cause']);
-    expect((await run(g, 'answer')).out).toContain('a) Bad luck');
-    const wrong = await run(g, 'answer a');
+    // Options are shown in a shuffled order that never changes for a given question.
+    const question = g.openQuestions()[0]!;
+    const shown = g.optionsOf(question).map((o) => o.id);
+    expect([...shown].sort()).toEqual(question.options.map((o) => o.id).sort());
+    expect(g.optionsOf(question).map((o) => o.id)).toEqual(shown);
+    const letter = (id: string) => String.fromCharCode(97 + shown.indexOf(id));
+    expect((await run(g, 'answer')).out).toContain(`${letter('luck')}) Bad luck`);
+    const wrong = await run(g, `answer ${letter('luck')}`);
     expect(wrong.out).toContain('Luck is not a cause.');
     expect(g.state.mistakes).toBe(1);
     expect(g.state.missionDone).toBe(false);
-    expect((await run(g, 'answer b')).status).toBe(0);
+    expect((await run(g, 'answer config')).status).toBe(0);
     expect(g.state.missionDone).toBe(true);
     expect(g.scoreDetail().mistakes).toBe(10);
     const again = new Game({

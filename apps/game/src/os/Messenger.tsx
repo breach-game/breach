@@ -95,7 +95,7 @@ function Questions({ hidden }: { hidden: boolean }) {
     <fieldset className="ask" hidden={hidden}>
       <legend>{t('ask.title')}</legend>
       <p>{rich(game.t(question.text))}</p>
-      {question.options.map((o, i) => (
+      {game.optionsOf(question).map((o, i) => (
         <button
           type="button"
           key={o.id}

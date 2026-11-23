@@ -24,6 +24,7 @@ async function savedMidway() {
   const game = new Game({ world, missions, locale: 'en' });
   game.startMission('test.m1');
   await run(game, 'nmap 10.13.0.0/24');
+  await run(game, 'cat /srv/loot.txt');
   await run(game, 'submit FLAG{x}');
   expect(game.state.completed['test.m1']).toBeDefined();
   game.startMission('test.m2');
@@ -140,6 +141,39 @@ describe('resuming a save after an update', () => {
     ] as unknown as GameEvent[];
     expect(completedIn(log)).toEqual({ a: { score: 10 }, c: { score: 20 } });
   });
+
+  it('keeps the points of the defence replay with the mission they belong to', async () => {
+    const log = [
+      {
+        type: 'ProgressCarried',
+        missions: { a: { score: 10, defense: 80 } },
+        source: 'update',
+        seq: 1,
+        t: 0,
+      },
+      { type: 'MissionCompleted', mission: 'c', score: 20, seq: 2, t: 0 },
+      { type: 'DefenseCompleted', mission: 'c', points: 140, seq: 3, t: 0 },
+      { type: 'DefenseCompleted', mission: 'unknown', points: 140, seq: 4, t: 0 },
+    ] as unknown as GameEvent[];
+    expect(completedIn(log)).toEqual({ a: { score: 10, defense: 80 }, c: { score: 20, defense: 140 } });
+    // Carried into a new game, they still count in the total.
+    const { world, missions } = await campaign();
+    const game = new Game({
+      world,
+      missions,
+      locale: 'en',
+      log: [
+        {
+          type: 'ProgressCarried',
+          missions: { 'test.m1': { score: 200, defense: 140 } },
+          source: 'import',
+          seq: 1,
+          t: 0,
+        },
+      ],
+    });
+    expect(game.state.completed['test.m1']).toEqual({ score: 200, defense: 140 });
+  });
 });
 
 describe('progress file', () => {
@@ -148,6 +182,8 @@ describe('progress file', () => {
 
   it('round-trips', () => {
     expect(parseProgressFile(JSON.stringify(good()))).toEqual(good());
+    const withDefense = progressFile({ 'breach.official.m01': { score: 150, defense: 140 } });
+    expect(parseProgressFile(JSON.stringify(withDefense))).toEqual(withDefense);
   });
 
   it.each([
@@ -171,6 +207,10 @@ describe('progress file', () => {
     [
       'an extra field in a mission',
       JSON.stringify({ ...good(), missions: { 'breach.official.m00': { score: 1, flags: [] } } }),
+    ],
+    [
+      'bad defence points',
+      JSON.stringify({ ...good(), missions: { 'breach.official.m00': { score: 1, defense: -3 } } }),
     ],
     ['too large a file', ' '.repeat(MAX_PROGRESS_BYTES + 1)],
   ])('refuses %s', (_, text) => {

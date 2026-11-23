@@ -7,6 +7,7 @@ describe('score by level', () => {
     const scores: number[] = [];
     for (const level of ['guided', 'standard', 'expert'] as const) {
       const g = await newGame(level);
+      await run(g, 'cat /srv/loot.txt');
       await run(g, 'submit FLAG{x}');
       expect(g.scoreDetail()).toMatchObject({ level, flags: 100, objectives: 50 });
       scores.push(g.score());
@@ -32,6 +33,7 @@ describe('score by level', () => {
   it('takes hints and detections off after the bonus, and never goes below zero', async () => {
     const g = await newGame('expert');
     await run(g, 'hint');
+    await run(g, 'cat /srv/loot.txt');
     await run(g, 'submit FLAG{x}');
     expect(g.scoreDetail()).toMatchObject({ bonus: 75, hints: 10, detections: 0, total: 215 });
     const poor = await newGame('guided');

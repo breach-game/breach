@@ -1,5 +1,5 @@
 # Season 2, mission 3: the shortest path, replayed by CI in every language.
-answer b
+answer own
 cat dossier/resolve.yml
 sed -i "s/internal_names: \[\]/internal_names: [halcyon-telemetry, halcyon-auth]/" dossier/resolve.yml
 sed -i "s/allow_public_for_internal: true/allow_public_for_internal: false/" dossier/resolve.yml

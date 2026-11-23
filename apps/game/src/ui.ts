@@ -16,7 +16,7 @@ const fr = {
   'title.seasons': 'Saisons',
   'season.title': 'Saisons',
   'season.intro':
-    "Après la campagne chez NovaMind, de nouvelles affaires, chacune dans sa propre entreprise. Une saison se joue d'une traite, dans sa propre sauvegarde, au niveau de guidage réglé dans les options.",
+    'La campagne chez NovaMind est la saison 1. Les suivantes sont de nouvelles affaires, chacune dans sa propre entreprise. Elles sont ouvertes dès maintenant, mais supposent les bases apprises dans la campagne. Une saison a sa propre sauvegarde et se joue au niveau de guidage réglé dans les options.',
   'season.none': 'Aucune saison pour le moment.',
   'season.new': 'Nouveau',
   'season.levelNote': 'Le niveau de guidage est celui réglé dans les options.',
@@ -431,7 +431,7 @@ const en: typeof fr = {
   'title.seasons': 'Seasons',
   'season.title': 'Seasons',
   'season.intro':
-    'After the campaign at NovaMind, new cases, each in its own company. A season is played in one go, in its own save, at the guidance level set in the options.',
+    'The campaign at NovaMind is season 1. The next ones are new cases, each in its own company. They are open right away, but assume the basics taught by the campaign. A season has its own save and is played at the guidance level set in the options.',
   'season.none': 'No season yet.',
   'season.new': 'New',
   'season.levelNote': 'The guidance level is the one set in the options.',

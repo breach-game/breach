@@ -4,4 +4,4 @@ grep B64 training/config.env | cut -d = -f 2- | base64 -d
 submit FLAG{b64-nest-pas-un-coffre}
 sed -i "s|^API_TOKEN_B64=.*|API_TOKEN=vault:nova-widget/api-token|" training/config.env
 verify
-answer c
+answer rotate

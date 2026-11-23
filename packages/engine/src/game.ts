@@ -34,7 +34,7 @@ import {
   type Scalar,
 } from './state.ts';
 import { type LogLine, runDetection, selects, telemetry } from './telemetry.ts';
-import { gameDate, sanitizeTerminal, stripAnsi, style } from './util.ts';
+import { gameDate, sanitizeTerminal, shuffled, stripAnsi, style } from './util.ts';
 import {
   buildFs,
   canRead,
@@ -174,6 +174,8 @@ interface ChatTurn {
 
 type Listener = (event: GameEvent, game: Game) => void;
 
+/** What a flag looks like in a text. */
+const FLAG_SHAPE = /FLAG\{[^{}\s]{1,120}\}/gi;
 const MAX_DT = 5 * 60_000;
 const MAX_RULE_DEPTH = 8;
 
@@ -384,6 +386,7 @@ export class Game {
       revealed: {},
       objectives: {},
       flags: {},
+      shown: [],
       noise: 0,
       hints: {},
       hintsUsed: 0,
@@ -571,6 +574,9 @@ export class Game {
       case 'FlagSubmitted':
         if (e.correct && e.flag) s.flags[e.flag] = true;
         break;
+      case 'FlagShown':
+        if (!s.shown.includes(e.value)) s.shown.push(e.value);
+        break;
       case 'NpcMessage':
         s.messages.push({ seq: e.seq, t: e.t, npc: e.npc, key: e.key, tone: e.tone });
         if (e.guide) s.guided[e.guide.objective] = Math.max(s.guided[e.guide.objective] ?? 0, e.guide.step);
@@ -676,7 +682,10 @@ export class Game {
       case 'ProgressCarried': {
         for (const [id, m] of Object.entries(e.missions))
           if (this.missions.has(id) && Number.isSafeInteger(m.score) && m.score >= 0)
-            s.completed[id] = { score: m.score };
+            s.completed[id] = {
+              score: m.score,
+              ...(Number.isSafeInteger(m.defense) && m.defense! >= 0 ? { defense: m.defense } : {}),
+            };
         // Every mission already finished: stay on the last one, its debrief still open to read.
         const last = this.campaign.at(-1);
         if (last && !this.nextMission()) {
@@ -774,6 +783,15 @@ export class Game {
     return { correct, why: option.why ? this.t(option.why) : undefined };
   }
 
+  /**
+   * The options of a question in the order the player sees them. A pack tends to write the right
+   * answer at the same place every time, so the order is shuffled: always the same way for a given
+   * question, so that a letter typed in a saved game or a solution keeps its meaning.
+   */
+  optionsOf<Q extends { id: string; options: { id: string }[] }>(question: Q): Q['options'] {
+    return shuffled(question.options, `${this.state.mission ?? ''}/${question.id}`);
+  }
+
   /** Questions asked and not yet settled, in the order of the pack. */
   openQuestions() {
     return (this.mission?.questions ?? []).filter((q) => this.state.asked[q.id] === null);
@@ -800,11 +818,31 @@ export class Game {
     return results;
   }
 
+  /**
+   * Remember the flag-shaped values in a text the target just showed the player. `typed` is the
+   * player's own line: a value they typed themselves was not shown to them.
+   */
+  private noteShown(text: string, typed = '') {
+    if (this.replaying || !text.includes('{')) return;
+    for (const found of text.match(FLAG_SHAPE) ?? []) {
+      const value = found.replace(/^flag/i, 'FLAG');
+      if (typed.toLowerCase().includes(found.toLowerCase()) || this.state.shown.includes(value)) continue;
+      this.emit({ type: 'FlagShown', value });
+    }
+  }
+
+  /** Whether a value may be submitted: anything that is not flag-shaped, or a flag the target showed. */
+  wasShown(value: string): boolean {
+    return !/^FLAG\{/.test(value) || this.state.shown.includes(value);
+  }
+
   /** Text of a file for the workstation's editor: '' for a new file, null when it cannot be read. */
   readFile(path: string): string | null {
     const node = lookup(this.state.fs, this.resolvePath(path));
     if (!node) return '';
-    return node.t === 'f' && canRead(node, this.currentUser) ? node.content : null;
+    const text = node.t === 'f' && canRead(node, this.currentUser) ? node.content : null;
+    if (text) this.noteShown(text);
+    return text;
   }
 
   /** Save a file from the workstation's editor. Returns false when it cannot be written there. */
@@ -1003,6 +1041,7 @@ export class Game {
         source: res.body,
       };
     });
+    if (result?.ok) this.noteShown(result.source);
     return result ?? { ok: false, url: shown, error: 'refused' };
   }
 
@@ -1168,7 +1207,9 @@ export class Game {
         families: d.families,
         brain: text === undefined ? 'scripted' : brain,
       });
-      return this.detectionPending ? null : (text ?? this.t(d.key));
+      const reply = this.detectionPending ? null : (text ?? this.t(d.key));
+      if (reply) this.noteShown(reply);
+      return reply;
     });
   }
 
@@ -1502,12 +1543,17 @@ export class Game {
       // Pack text reaches the terminal through many commands: clean every chunk at the one exit.
       const run = this.run(line, dt);
       let step = await run.next();
+      let printed = '';
       try {
         while (!step.done) {
           const chunk = step.value;
-          yield chunk.k === 'out' || chunk.k === 'err'
-            ? { ...chunk, text: sanitizeTerminal(chunk.text) }
-            : chunk;
+          if (chunk.k === 'out' || chunk.k === 'err') {
+            const text = sanitizeTerminal(chunk.text);
+            // A flag may arrive in pieces: look at everything this line printed so far.
+            printed += stripAnsi(text);
+            this.noteShown(printed, line);
+            yield { ...chunk, text };
+          } else yield chunk;
           step = await run.next();
         }
       } finally {

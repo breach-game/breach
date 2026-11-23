@@ -61,3 +61,4 @@ m1.def.fix.careers.title: "Rendre la page /careers plus vague sur les outils int
 m1.def.fix.careers.why: "Ça réduit un peu ce qu'un attaquant apprend, mais la clé reste valide dans l'historique du dépôt. Ton attaque passe toujours."
 m1.def.fix.ping.title: "Bloquer les pings venant de l'extérieur"
 m1.def.fix.ping.why: "Ça gêne le balayage, pas la fuite. La clé est dans un dépôt public, aucun ping n'est nécessaire pour la lire."
+m1.ada.home.standard: "Rien de sensible en vitrine, mais regarde le menu du site : une entreprise en dit souvent long quand elle recrute. Et ce commentaire oublié sur /staging, garde-le en tête : les développeurs laissent toujours des traces."

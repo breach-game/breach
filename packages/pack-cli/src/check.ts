@@ -35,6 +35,9 @@ export async function replaySolution(
   return { done: game.state.missionDone, transcript, game };
 }
 
+/** How much longer than the longest wrong option the right one may be. */
+const GIVEAWAY_RATIO = 1.3;
+
 /**
  * The defence replay must teach the right thing on the solution's own logs: the correct rule
  * catches the attack without false alarm, every wrong rule visibly misfires or misses, the correct
@@ -315,6 +318,17 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
         problems.push(`${pack.id}: question ${q.id} points to unknown objective ${q.objective}`);
       if (!q.options.some((o) => o.id === q.correct))
         problems.push(`${pack.id}: question ${q.id} has no option ${q.correct}`);
+      // A right answer much longer than every wrong one is found without reading the question.
+      for (const locale of pack.locales) {
+        const size = (key: string) => (pack.i18n[locale]?.[key] ?? '').length;
+        const right = q.options.find((o) => o.id === q.correct);
+        const wrong = Math.max(0, ...q.options.filter((o) => o.id !== q.correct).map((o) => size(o.text)));
+        if (right && wrong > 0 && size(right.text) > wrong * GIVEAWAY_RATIO)
+          problems.push(
+            `${pack.id}: question ${q.id} (${locale}): the right option is much longer than the others, ` +
+              'which gives it away. Make the wrong options as detailed, or shorten the right one',
+          );
+      }
     }
     for (const rule of m.rules)
       for (const effect of rule.do) {

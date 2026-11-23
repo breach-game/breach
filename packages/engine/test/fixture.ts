@@ -25,6 +25,8 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
           map: { x: 0, z: 0 },
           users: [{ name: 'kestrel', home: '/home/kestrel' }],
           fs: {
+            // What the player took from the target: the flag has to be shown before it is submitted.
+            srv: { 'loot.txt': 'KEY=FLAG{x}\n' },
             home: {
               kestrel: {
                 'a.txt': 'alpha\nbeta\ngamma\n',
