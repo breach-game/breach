@@ -56,7 +56,7 @@ Three guidance levels: **Guided** (Ada gives every command), **Standard** (Ada g
 | --- | --- |
 | **Trainings** | Four short missions, one technique each, always open: reading a log, encoding is not encryption, an altered install script, a suspicious email |
 | **Seasons** | Official series in new companies. Season 2 audits Halcyon's build chain: reconnaissance, dependency confusion, then the defence, with the 2021 research it comes from |
-| **Community missions** | Packs from [breach-game/packs](https://github.com/breach-game/packs), checked and signed. Among them the *case files*: nine short series, each inspired by a publicly documented incident (Codecov 2021, Twitter 2020, Uber 2022, Capital One 2019, xz Utils 2024, EchoLeak 2025 and others), played at a fictional company and closed by a sourced card of what really happened |
+| **Community missions** | Packs from [breach-game/packs](https://github.com/breach-game/packs), checked and signed. Among them the *case files*: twelve short series, each inspired by a publicly documented incident (Codecov 2021, Twitter 2020, Uber 2022, Capital One 2019, xz Utils 2024, EchoLeak 2025 and others), played at a fictional company and closed by a sourced card of what really happened |
 | **Replay a mission** | Any finished campaign mission again, at any guidance level, without touching your campaign score |
 
 | | |
