@@ -4,6 +4,7 @@ import { loadSeasons, seriesMissions } from '../packs.ts';
 import { type CampaignProgress, type StartMode, seasonProgress } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { useT } from '../ui.ts';
+import { Tags } from './Tags.tsx';
 
 /**
  * Official seasons: series of official missions played after the campaign, each in its own world and
@@ -117,6 +118,7 @@ export function Seasons({ onStart, onBack }: { onStart: (mode: StartMode) => voi
                 >
                   <b>{text(s.title)}</b>
                   <span>{text(s.summary)}</span>
+                  <Tags entry={s} />
                   <i>
                     {t('series.count', { n: done })}
                     {got > 0 ? ` · ${got}/${done} ✓` : ` · ${t('season.new')}`}

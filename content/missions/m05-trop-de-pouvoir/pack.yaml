@@ -2,6 +2,8 @@ id: breach.official.m05
 version: 0.1.0
 engine: ">=0.3 <1"
 kind: mission
+difficulty: 2
+skills: [llm, web]
 requires: [breach.world.novamind]
 title:
   fr: Trop de pouvoir

@@ -5,6 +5,7 @@ import { loadCatalog } from '../packs.ts';
 import { type CampaignProgress, campaignProgress, type StartMode } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { Tags } from './Tags.tsx';
 
 const LEVELS = ['guided', 'standard', 'expert'] as const;
 
@@ -112,6 +113,7 @@ export function Missions({ onStart, onBack }: { onStart: (mode: StartMode) => vo
                     {done || current ? text(e.summary) : t('missions.lockedHint')}
                     {current && <> {t('missions.resume')}</>}
                   </span>
+                  <Tags entry={e} />
                   <i>{status}</i>
                 </button>
               );

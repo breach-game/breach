@@ -5,6 +5,7 @@ import { loadCatalog } from '../packs.ts';
 import { type StartMode, singleScores } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { Tags } from './Tags.tsx';
 
 const LEVELS = ['guided', 'standard', 'expert'] as const;
 
@@ -83,7 +84,6 @@ export function Training({ onStart, onBack }: { onStart: (mode: StartMode) => vo
           <div className="levels community-list">
             {entries.map((e, i) => {
               const score = scores[e.id];
-              const difficulty = e.difficulty ?? 1;
               return (
                 <button
                   key={e.id}
@@ -94,17 +94,7 @@ export function Training({ onStart, onBack }: { onStart: (mode: StartMode) => vo
                 >
                   <b>{text(e.title)}</b>
                   <span>{text(e.summary)}</span>
-                  <span className="tags">
-                    <span className="difficulty" title={t(`difficulty.${difficulty}` as UiKey)}>
-                      <span aria-hidden="true">{'●'.repeat(difficulty) + '○'.repeat(3 - difficulty)}</span>
-                      {t(`difficulty.${difficulty}` as UiKey)}
-                    </span>
-                    {(e.skills ?? []).map((s) => (
-                      <span className="tag" key={s}>
-                        {t(`skill.${s}` as UiKey)}
-                      </span>
-                    ))}
-                  </span>
+                  <Tags entry={e} fallback={1} />
                   <i>
                     {score === undefined ? `▶ ${t('training.todo')}` : `✓ ${t('missions.done', { score })}`}
                   </i>
