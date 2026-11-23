@@ -41,6 +41,7 @@ export const LOG_FILES: Record<LogSource, string> = {
   git: '/var/log/gitea/gitea.log',
   db: '/var/log/postgresql/audit.log',
   flow: '/var/log/firewall/flows.log',
+  mail: '/var/log/mail/gateway.log',
 };
 
 /* ---------- time formats ---------- */
@@ -135,6 +136,8 @@ export function formatLine(
       return `${t.iso} ${short} postgres[${hashNum(short, 9000, 1000)}]: AUDIT: user=${str(f.user)} db=${str(f.db, 'novamind')} src=${str(f.src)} statement=${quote(f.query)} rows=${str(f.rows, '0')}`;
     case 'flow':
       return `${t.iso} fw01 flow: ${str(f.action, 'allow')} proto=tcp src=${str(f.src)} dst=${str(f.dst)} dport=${str(f.dport)} bytes=${str(f.bytes, '0')}`;
+    case 'mail':
+      return `${t.syslog} ${short} mailgw[${hashNum(key, 8000, 1200)}]: from=<${str(f.from)}> to=<${str(f.to)}> subject=${quote(f.subject)} link=${str(f.link, '-')} verdict=${str(f.verdict, 'delivered')}`;
   }
 }
 
@@ -465,6 +468,7 @@ const PRODUCTS: Record<LogSource, string> = {
   git: 'product: gitea',
   db: 'product: postgresql',
   flow: 'product: firewall',
+  mail: 'product: mail-gateway',
 };
 
 /** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */

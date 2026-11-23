@@ -1,0 +1,12 @@
+# Season 7, mission 3: the report
+curl https://api.lumierenoire.test/
+curl https://api.lumierenoire.test/v1/export/benevoles.csv
+cat rapports/LN-2028-014.yml
+sed -i "s/severity: unrated/severity: high/" rapports/LN-2028-014.yml
+sed -i "s/steps: none/steps: commands/" rapports/LN-2028-014.yml
+sed -i "s/proof: full-export/proof: test-marker/" rapports/LN-2028-014.yml
+sed -i "s/real_data: attached/real_data: none/" rapports/LN-2028-014.yml
+verify
+curl -d "Bonjour, voici mon rapport LN-2028-014" https://www.lumierenoire.test/securite/triage
+answer wait
+answer notify

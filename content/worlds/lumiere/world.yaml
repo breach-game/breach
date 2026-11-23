@@ -1,0 +1,383 @@
+# Season 7. Everything here is fictional: reserved .test domains and private addresses only.
+# Lumière Noire is a music festival with an online ticket office and a bug bounty programme.
+# The ticket office is a set of scripted answers: what is shown is the class of mistake (a ticket
+# read by its number, a refund that forgets a transfer, an export left public), never a way to use
+# it elsewhere. The payment provider and the look-alike site of the last mission are out of scope:
+# the scope guard refuses them, as a programme would.
+startTime: "2028-09-04T09:00:00+02:00"
+mandate: LN-BB-2028
+scope:
+  domains: ["www.lumierenoire.test", "billetterie.lumierenoire.test", "api.lumierenoire.test"]
+  networks: ["10.19.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.19.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.19.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [www]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            LN-BB-2028.txt: { $t: file.mandate }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: www
+    hostname: www.lumierenoire.test
+    ip: 10.19.0.10
+    os: Linux 6.6 (Debian 13)
+    map: { x: -80, z: -150, h: 110 }
+    links: [tickets, api]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/securite", label: web.nav.security }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - footer: web.footer
+      "/securite":
+        page:
+          title: web.sec.title
+          blocks:
+            - nav: *nav
+            - h1: web.sec.h1
+            - p: web.sec.p1
+            - h2: web.sec.scope.h2
+            - table:
+                head: [web.sec.th.asset, web.sec.th.status]
+                rows:
+                  - ["`www.lumierenoire.test`", web.sec.inscope]
+                  - ["`billetterie.lumierenoire.test`", web.sec.inscope]
+                  - ["`api.lumierenoire.test`", web.sec.inscope]
+                  - ["`pay.guichetpay.test`", web.sec.out.pay]
+                  - ["`mail.lumierenoire.test`", web.sec.out.mail]
+            - h2: web.sec.rules.h2
+            - list: [web.sec.r1, web.sec.r2, web.sec.r3, web.sec.r4, web.sec.r5]
+            - link: { href: "/securite/triage", label: web.sec.triage }
+            - footer: web.footer
+      "/.well-known/security.txt":
+        headers: { content-type: text/plain }
+        body: { $file: files/security.txt }
+      "/securite/triage":
+        page:
+          title: web.triage.title
+          blocks:
+            - nav: *nav
+            - h1: web.triage.h1
+            - p: web.triage.p1
+            - chat: malia
+            - footer: web.footer
+        chat: malia
+
+  - id: tickets
+    hostname: billetterie.lumierenoire.test
+    ip: 10.19.0.20
+    os: Linux 6.6 (Debian 13)
+    map: { x: 150, z: -190, h: 140 }
+    links: [api]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.office.title
+          blocks:
+            - nav: &shopnav
+                - { href: "/", label: web.office.nav.home }
+                - { href: "/transfert", label: web.office.nav.transfer }
+                - { href: "/remboursement", label: web.office.nav.refund }
+            - h1: web.office.h1
+            - p: web.office.p1
+            - p: web.office.p2
+            - p: web.office.pay
+            - footer: web.footer
+      "/compte":
+        status: 401
+        headers: { content-type: application/json }
+        body: &login "{\"error\":\"login required\",\"detail\":\"send the session cookie of your account\"}\n"
+        variants:
+          - id: mine
+            cookie: "session=ln_k7_4f2a"
+            headers: { content-type: application/json }
+            body: { $file: files/account.json }
+      "/billets/7102":
+        status: 401
+        headers: { content-type: application/json }
+        body: *login
+        variants:
+          - id: mine
+            cookie: "session=ln_k7_4f2a"
+            headers: { content-type: application/json }
+            body: { $file: files/ticket-7102.json }
+      # The ticket before: it belongs to another account, and the page never checks whose it is.
+      "/billets/7101":
+        status: 401
+        headers: { content-type: application/json }
+        body: *login
+        variants:
+          - &notyours
+            id: not-yours
+            cookie: "session=ln_k7_4f2a"
+            if: { config: tickets.owner_check, eq: true }
+            status: 403
+            headers: { content-type: application/json }
+            body: "{\"error\":\"Forbidden\",\"detail\":\"this ticket does not belong to your account\"}\n"
+          - id: other
+            cookie: "session=ln_k7_4f2a"
+            headers: { content-type: application/json }
+            body: { $file: files/ticket-7101.json }
+      # Real festival-goers. The audit copy shows nothing of them, and the request is logged.
+      "/billets/7100": &real
+        status: 401
+        headers: { content-type: application/json }
+        body: *login
+        variants:
+          - *notyours
+          - id: real
+            cookie: "session=ln_k7_4f2a"
+            headers: { content-type: application/json }
+            body: { $file: files/ticket-real.json }
+      "/billets/7099": *real
+      "/billets/7098": *real
+      "/billets/7103": *real
+      # The ticket issued to the friend, once the transfer is done.
+      "/billets/7140":
+        status: 404
+        headers: { content-type: application/json }
+        body: "{\"error\":\"no such ticket\"}\n"
+        variants:
+          - id: issued
+            if: { var: transferred, eq: true }
+            headers: { content-type: application/json }
+            body: { $file: files/ticket-7140.json }
+      "/transfert":
+        page:
+          title: web.transfer.title
+          blocks:
+            - nav: *shopnav
+            - h1: web.transfer.h1
+            - p: web.transfer.p1
+            - form: { to: transfer, label: web.transfer.label, button: web.transfer.button, name: billet }
+            - footer: web.footer
+        chat: transfer
+      "/remboursement":
+        page:
+          title: web.refund.title
+          blocks:
+            - nav: *shopnav
+            - h1: web.refund.h1
+            - p: web.refund.p1
+            - form: { to: refund, label: web.refund.label, button: web.refund.button, name: billet }
+            - footer: web.footer
+        chat: refund
+
+  - id: api
+    hostname: api.lumierenoire.test
+    ip: 10.19.0.30
+    os: Linux 6.6 (Debian 13)
+    map: { x: 60, z: 110, h: 100 }
+    services:
+      - { port: 443, name: https, product: ln-api 2028.3 }
+    web:
+      "/":
+        headers: { content-type: application/json }
+        body: { $file: files/api-index.json }
+      "/v1/status":
+        headers: { content-type: application/json }
+        body: "{\"status\":\"ok\",\"tickets_sold\":18240}\n"
+      "/v1/lineup":
+        headers: { content-type: application/json }
+        body: { $file: files/lineup.json }
+      "/v1/export/benevoles.csv":
+        headers: { content-type: text/csv }
+        body: { $file: files/benevoles.csv }
+        variants:
+          - id: private
+            if: { config: export.private, eq: true }
+            status: 401
+            headers: { content-type: application/json }
+            body: "{\"error\":\"login required\"}\n"
+
+  # The festival's mail gateway. Out of the programme's scope: it is only seen through its logs.
+  - id: mail
+    hostname: mail.lumierenoire.test
+    ip: 10.19.0.40
+    os: Linux 6.6 (Debian 13)
+    map: { x: 300, z: 60, h: 90 }
+    services:
+      - { port: 25, name: smtp, product: mailgw 4.1 }
+
+  # The payment provider. Not the festival's, so not in the programme.
+  - id: pay
+    hostname: pay.guichetpay.test
+    ip: 10.20.0.10
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 380, z: -220, h: 60 }
+
+  # A look-alike of the ticket office, set up by someone else. Seen through the festival's logs only.
+  - id: hook
+    hostname: lumiere-noire-billets.test
+    ip: 10.21.0.50
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 430, z: 280, h: 50 }
+
+dns:
+  lumierenoire.test: { A: ["10.19.0.10"] }
+  www.lumierenoire.test: { A: ["10.19.0.10"] }
+  billetterie.lumierenoire.test: { A: ["10.19.0.20"] }
+  api.lumierenoire.test: { A: ["10.19.0.30"] }
+  mail.lumierenoire.test: { A: ["10.19.0.40"] }
+  pay.guichetpay.test: { A: ["10.20.0.10"] }
+
+whois:
+  lumierenoire.test: |
+    Domain Name: LUMIERENOIRE.TEST
+    Creation Date: 2019-02-11T08:00:00Z
+    Registrant Organization: Association Lumière Noire
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+npcs:
+  # The transfer form: gives the ticket to a friend, who receives a new one.
+  - id: transfer
+    name: ticket-transfer
+    role: npc.transfer.role
+    intents:
+      - id: again
+        words: ["7102"]
+        if: { var: transferred, eq: true }
+        reply: [npc.transfer.again]
+      - id: done
+        words: ["7102"]
+        reply: [npc.transfer.done]
+        set: { transferred: true }
+    fallback: [npc.transfer.unknown]
+
+  # The refund form. It looks at the ticket's number, not at who holds it today.
+  - id: refund
+    name: ticket-refund
+    role: npc.refund.role
+    intents:
+      - id: refused
+        words: ["7102"]
+        if: { all: [{ var: transferred, eq: true }, { config: refund.owner_check, eq: true }] }
+        reply: [npc.refund.refused]
+      - id: after-transfer
+        words: ["7102"]
+        if: { var: transferred, eq: true }
+        reply: [npc.refund.double]
+      - id: normal
+        words: ["7102"]
+        reply: [npc.refund.normal]
+    fallback: [npc.refund.unknown]
+
+  # The person who reads the reports of the programme.
+  - id: malia
+    name: Malia
+    role: npc.malia.role
+    greeting: npc.malia.greeting
+    sheet: >
+      Malia reads the security reports sent to the Lumière Noire festival. Calm, precise, grateful
+      without flattery. She never promises a reward before a report is reproduced, and she always
+      says what happens next and when.
+    intents:
+      - id: payment
+        words: [paiement, payer, guichetpay, payment, pay]
+        reply: [npc.malia.payment]
+      # The written report is ready: she has what she needs to reproduce.
+      - id: report
+        words: [rapport, report, signaler, signale, faille, vulnerabilite, vulnerability, finding, bug, remboursement, refund, transfert, transfer, billet, ticket, export]
+        if: { var: report_ready, eq: true }
+        reply: [npc.malia.report, npc.malia.report.again]
+      # Before that, she asks for it.
+      - id: early
+        words: [rapport, report, signaler, signale, faille, vulnerabilite, vulnerability, finding, bug, remboursement, refund, transfert, transfer, billet, ticket, export]
+        reply: [npc.malia.early]
+      - id: bounty
+        words: [prime, recompense, bounty, reward, combien, much]
+        reply: [npc.malia.bounty]
+      - id: hello
+        words: [bonjour, salut, hello, hi]
+        reply: [npc.malia.hello]
+    fallback: [npc.malia.fallback]
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of the ticket office that decide whether a weakness is there. A fix changes them.
+config:
+  tickets.owner_check: false
+  refund.owner_check: false
+  refund.one_per_day: false
+  refund.button_hidden: false
+  export.private: false
+  mail.hook_blocked: false
+  accounts.reset: false
+  net.hook_blocked: false
+  transfers.off: false
+
+# An ordinary week before the festival.
+telemetry:
+  background:
+    # Festival-goers opening their own ticket.
+    - { host: tickets, source: access, every: 3, offset: 1, fields: { src: 198.51.100.44, method: GET, path: /billets/6920, status: 200, ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) Safari/619.1" } }
+    - { host: tickets, source: access, every: 7, offset: 2, fields: { src: 203.0.113.61, method: GET, path: /billets/5417, status: 200, ua: "Mozilla/5.0 (Linux; Android 16) Chrome/151.0" } }
+    # People signing in.
+    - { host: tickets, source: access, every: 5, offset: 3, fields: { src: 198.51.100.90, method: POST, path: /connexion, status: 302, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/141.0" } }
+    - { host: tickets, source: access, every: 13, offset: 6, fields: { src: 203.0.113.17, method: POST, path: /connexion, status: 302, ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_2) Safari/619.1" } }
+    # Ordinary transfers and refunds.
+    - { host: tickets, source: chat, every: 9, offset: 4, fields: { form: true, src: 198.51.100.44, npc: transfer, intent: done, families: [none], msg: "6920" } }
+    - { host: tickets, source: chat, every: 11, offset: 5, fields: { form: true, src: 203.0.113.61, npc: refund, intent: normal, families: [none], msg: "5417" } }
+    - { host: tickets, source: chat, every: 17, offset: 8, fields: { form: true, src: 198.51.100.131, npc: refund, intent: normal, families: [none], msg: "6033" } }
+    # The festival's own mails to its ticket holders.
+    - { host: mail, source: mail, every: 6, offset: 2, fields: { from: "billets@lumierenoire.test", to: "c.morin@example.test", subject: "Votre billet", link: "billetterie.lumierenoire.test", verdict: delivered } }
+    - { host: mail, source: mail, every: 10, offset: 7, fields: { from: "billets@lumierenoire.test", to: "a.benali@example.test", subject: "Transfert de billet", link: "billetterie.lumierenoire.test", verdict: delivered } }
+    - { host: mail, source: mail, every: 15, offset: 9, fields: { from: "infos@lumierenoire.test", to: "liste-benevoles@lumierenoire.test", subject: "Planning des benevoles", link: "-", verdict: delivered } }
+    # The API's public endpoints, called by the website.
+    - { host: api, source: access, every: 4, offset: 1, fields: { src: 10.19.0.10, method: GET, path: /v1/lineup, status: 200, ua: "ln-www/2028.3" } }

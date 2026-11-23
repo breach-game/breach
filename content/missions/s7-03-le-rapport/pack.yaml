@@ -1,0 +1,17 @@
+id: breach.season7.s03
+version: 0.1.0
+engine: ">=0.10 <1"
+kind: mission
+track: season
+requires: [breach.world.lumiere]
+title:
+  fr: "Saison 7 · 3. Le rapport"
+  en: "Season 7 · 3. The report"
+summary:
+  fr: "Divulgation responsable. Une trouvaille ne vaut rien tant que personne ne peut la reproduire et la corriger. Tu trouves un dernier export laissé public, tu écris un rapport sans une seule donnée réelle, tu l'envoies, puis tu décides quand en parler. Ta décision aura un écho."
+  en: "Responsible disclosure. A finding is worth nothing until someone can reproduce and fix it. You find one last export left public, write a report without a single piece of real data, send it, then decide when to talk about it. Your decision will have an echo."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [privacy, web]
+minutes: 15

@@ -436,3 +436,52 @@ describe('season 6: an authorised application keeps its own access', () => {
     expect(game.state.objectives.contain).toBe(false);
   });
 });
+
+describe('season 7: phishing, where blocking the sender does not undo the delivered mails', () => {
+  const lumiere = packs.find((p) => p.pack.id === 'breach.world.lumiere')!.pack;
+  const last = packs.find((p) => p.pack.id === 'breach.season7.s04')!;
+
+  async function play(lines: string[]) {
+    const game = new Game({ world: lumiere, missions: [last.pack], locale: 'fr' });
+    game.startMission(last.pack.id);
+    let out = '';
+    for (const line of lines)
+      for await (const c of game.exec(line, 20_000)) if (c.k === 'out' || c.k === 'err') out += c.text;
+    return { game, out };
+  }
+
+  it('writes the mail gateway log in its own format', async () => {
+    const { out } = await play(['soc sources', 'soc logs mail mail']);
+    expect(out).toMatch(
+      /mailgw\[\d+\]: from=<billets@lumiere-noire-billets\.test> to=<l\.perrin@example\.test> subject=".*" link=lumiere-noire-billets\.test verdict=delivered/,
+    );
+  });
+
+  it('is not stopped by blocking the sender: the stolen passwords still work', async () => {
+    const { game } = await play([
+      'contain block lumiere-noire-billets.test',
+      ...Array.from({ length: 5 }, () => 'soc alerts'),
+    ]);
+    expect(game.state.objectives.sender).toBe(true);
+    expect(game.state.objectives.stop).toBe(false);
+  });
+
+  it('is stopped by blocking the address, but the passwords are still good', async () => {
+    const { game } = await play(['soc sources', 'contain block 10.21.0.50', 'soc alerts', 'soc alerts']);
+    expect(game.state.objectives.stop).toBe(true);
+    expect(game.state.objectives.reset).toBe(false);
+  });
+
+  it('is stopped for good by resetting the phished accounts', async () => {
+    const { game } = await play(['soc sources', 'contain reset destinataires', 'soc alerts', 'soc alerts']);
+    expect(game.state.objectives.stop).toBe(true);
+    expect(game.state.objectives.reset).toBe(true);
+    expect(game.state.detections).toBe(0);
+  });
+
+  it('loses three tickets when nothing is cut in time', async () => {
+    const { game } = await play(Array.from({ length: 10 }, () => 'soc alerts'));
+    expect(game.state.detections).toBe(1);
+    expect(game.state.objectives.stop).toBe(false);
+  });
+});

@@ -1,0 +1,13 @@
+# Season 7, mission 4: the hook
+soc sources
+soc alerts
+soc logs mail mail
+contain reset destinataires
+soc logs tickets flow
+contain block lumiere-noire-billets.test
+answer domain lumiere-noire-billets.test
+cat regles/faux-billets.yml
+rule test regles/faux-billets.yml
+echo "from|endswith: lumiere-noire-billets.test" >> regles/faux-billets.yml
+rule test regles/faux-billets.yml
+answer confirm

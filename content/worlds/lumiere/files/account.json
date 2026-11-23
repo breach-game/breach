@@ -1,0 +1,6 @@
+{
+  "account": "kestrel-test",
+  "kind": "test account of the bug bounty programme",
+  "tickets": [7102],
+  "links": { "ticket": "/billets/7102", "transfer": "/transfert", "refund": "/remboursement" }
+}

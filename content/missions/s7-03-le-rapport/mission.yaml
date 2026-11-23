@@ -1,0 +1,121 @@
+# Season 7, mission 3: writing and sending the report. No exploit: one public export to notice,
+# a report to complete, a conversation with the person who reads reports, and a decision about
+# publication. The decision is not right or wrong: it has a price, and an echo in mission 4.
+order: 2
+stage: disclosure
+briefing: n3.briefing
+startTime: "2028-09-06T09:00:00+02:00"
+
+files:
+  rapports/LN-2028-014.yml: n3.file.report
+
+objectives:
+  - { id: export, text: n3.obj.export }
+  - { id: report, text: n3.obj.report }
+  - { id: send, text: n3.obj.send }
+  - { id: publish, text: n3.obj.publish }
+  - { id: breach, text: n3.obj.breach }
+
+flags: []
+
+checks:
+  - id: severity
+    text: n3.check.severity
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "severity: high" }
+    objective: report
+  - id: steps
+    text: n3.check.steps
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "steps: commands" }
+    objective: report
+  - id: proof
+    text: n3.check.proof
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "proof: test-marker" }
+    objective: report
+  - id: data
+    text: n3.check.data
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "real_data: none" }
+    objective: report
+  - id: kept
+    text: n3.check.kept
+    if:
+      all:
+        - { file: "~/rapports/LN-2028-014.yml", contains: "report: LN-2028-014" }
+        - { file: "~/rapports/LN-2028-014.yml", contains: "findings: 3" }
+
+questions:
+  # A decision: no option is wrong, each has a price.
+  - id: publish
+    text: n3.q.publish
+    objective: publish
+    options:
+      - { id: wait, text: n3.q.publish.wait, why: n3.q.publish.wait.why }
+      - { id: early, text: n3.q.publish.early, why: n3.q.publish.early.why, impact: 20 }
+      - { id: never, text: n3.q.publish.never, why: n3.q.publish.never.why }
+  - id: breach
+    text: n3.q.breach
+    objective: breach
+    correct: notify
+    options:
+      - { id: nothing, text: n3.q.breach.nothing, why: n3.q.breach.nothing.why }
+      - { id: notify, text: n3.q.breach.notify }
+      - { id: silence, text: n3.q.breach.silence, why: n3.q.breach.silence.why }
+
+reveal: [www, tickets, api]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: n3.ada.brief
+  - on: { event: HttpRequest, host: api, path: / }
+    do:
+      - ada.guide: { key: n3.ada.g.read, for: export, step: 1 }
+  - on: { event: HttpRequest, host: api, path: /v1/export/benevoles.csv }
+    do:
+      - noise.add: { points: 4, as: n3.soc.export }
+      - ada.say: n3.ada.export
+      - objective.complete: export
+  - on: { event: Verified }
+    if: { not: { objective: report } }
+    once: false
+    do:
+      - ada.say: n3.ada.almost
+  - on: { event: ObjectiveCompleted, objective: report }
+    do:
+      - var.set: { name: report_ready, value: true }
+      - ada.say: n3.ada.report
+  - on: { event: ChatReply, npc: malia, intent: early }
+    do:
+      - ada.guide: { key: n3.ada.early, for: report, step: 1 }
+  - on: { event: ChatReply, npc: malia, intent: report }
+    do:
+      - ada.say: n3.ada.sent
+      - objective.complete: send
+      - ada.ask: publish
+  - on: { event: ObjectiveCompleted, objective: publish }
+    do:
+      - ada.say: n3.ada.publish
+      - ada.ask: breach
+  - on: { event: ObjectiveCompleted, objective: breach }
+    do:
+      - ada.say: n3.ada.breach
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: n3.ada.done
+
+guide:
+  export: n3.ada.g.export
+  report: n3.ada.g.report
+  send: n3.ada.g.send
+  publish: n3.ada.g.publish
+  breach: n3.ada.answer
+
+hints:
+  export: [n3.hint.export.1, n3.hint.export.2]
+  report: [n3.hint.report.1, n3.hint.report.2, n3.hint.report.3]
+  send: [n3.hint.send.1, n3.hint.send.2]
+
+debrief:
+  title: n3.debrief.title
+  lesson: n3.debrief.lesson
+  points: [n3.debrief.p1, n3.debrief.p2, n3.debrief.p3, n3.debrief.p4]
+  reference: "ISO/IEC 29147 Vulnerability disclosure · RGPD art. 33 et 34"

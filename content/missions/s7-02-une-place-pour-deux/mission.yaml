@@ -1,0 +1,119 @@
+# Season 7, mission 2: a business logic flaw. No odd input anywhere: two honest forms, used in an
+# order nobody thought of. The refund looks at who bought the ticket, not at who holds it today.
+order: 1
+stage: logic
+briefing: n2.briefing
+startTime: "2028-09-05T09:00:00+02:00"
+
+files:
+  dossier/tickets.txt: { $file: files/refund.txt }
+
+objectives:
+  - { id: forms, text: n2.obj.forms }
+  - { id: transfer, text: n2.obj.transfer }
+  - { id: friend, text: n2.obj.friend }
+  - { id: refund, text: n2.obj.refund }
+  - { id: review, text: n2.obj.review }
+
+flags:
+  - { id: refund, value: "FLAG{lumiere-two-for-none-93c7}", points: 250, objective: refund }
+
+# Line 5 compares the account with the buyer of the ticket. After a transfer the buyer is still the
+# same person, so the check passes for a ticket that now belongs to someone else.
+reviews:
+  - { id: tickets, file: dossier/tickets.txt, lines: [5], objective: review }
+
+reveal: [www, tickets]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: n2.ada.brief
+  - on: { event: HttpRequest, host: tickets, path: { in: [/, /transfert, /remboursement] }, method: GET }
+    do:
+      - ada.say: n2.ada.forms
+      - objective.complete: forms
+  - on: { event: ChatReply, npc: refund, intent: normal }
+    do:
+      - objective.complete: forms
+      - ada.guide: { key: n2.ada.normal, for: transfer, step: 1 }
+  - on: { event: ChatReply, npc: transfer, intent: done }
+    do:
+      - objective.complete: forms
+      - ada.say: n2.ada.transfer
+      - objective.complete: transfer
+  - on: { event: HttpRequest, host: tickets, path: /billets/7140, variant: issued }
+    do:
+      - ada.say: n2.ada.friend
+      - objective.complete: friend
+  - on: { event: ChatReply, npc: refund, intent: after-transfer }
+    do:
+      - noise.add: { points: 8, as: n2.soc.double }
+      - ada.say: n2.ada.double
+      - ada.guide: { key: n2.ada.g.submit, for: refund, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: n2.ada.flag
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: n2.ada.review
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: n2.ada.done
+
+guide:
+  forms: n2.ada.g.forms
+  transfer: n2.ada.g.transfer
+  friend: n2.ada.g.friend
+  refund: n2.ada.g.refund
+  review: n2.ada.g.review
+
+hints:
+  forms: [n2.hint.forms.1]
+  transfer: [n2.hint.transfer.1, n2.hint.transfer.2]
+  friend: [n2.hint.friend.1]
+  refund: [n2.hint.refund.1, n2.hint.refund.2, n2.hint.refund.3]
+  review: [n2.hint.review.1, n2.hint.review.2, n2.hint.review.3]
+
+defense:
+  intro: n2.def.intro
+  lesson: n2.def.lesson
+  find:
+    - { source: chat, where: { npc: refund, intent: after-transfer }, text: n2.def.find.double }
+  rules:
+    - id: refund-after-transfer
+      title: n2.def.rule.after.title
+      why: n2.def.rule.after.why
+      source: chat
+      where: { npc: refund, intent: after-transfer }
+      correct: true
+    - id: every-refund
+      title: n2.def.rule.every.title
+      why: n2.def.rule.every.why
+      source: chat
+      where: { npc: refund }
+    - id: every-transfer
+      title: n2.def.rule.transfer.title
+      why: n2.def.rule.transfer.why
+      source: chat
+      where: { npc: transfer }
+  fixes:
+    - id: holder
+      title: n2.def.fix.holder.title
+      why: n2.def.fix.holder.why
+      sets: { refund.owner_check: true }
+      correct: true
+    - id: daily
+      title: n2.def.fix.daily.title
+      why: n2.def.fix.daily.why
+      sets: { refund.one_per_day: true }
+    - id: button
+      title: n2.def.fix.button.title
+      why: n2.def.fix.button.why
+      sets: { refund.button_hidden: true }
+
+debrief:
+  title: n2.debrief.title
+  lesson: n2.debrief.lesson
+  points: [n2.debrief.p1, n2.debrief.p2, n2.debrief.p3, n2.debrief.p4]
+  reference: "OWASP Top 10 · A04 Insecure Design · CWE-841"

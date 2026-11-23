@@ -1,0 +1,103 @@
+# Season 7, mission 1: a bug bounty programme, its scope and its rules. The finding is a ticket
+# read by its number: the page checks that a session exists, not that the ticket belongs to it.
+order: 0
+stage: cadrage
+briefing: n1.briefing
+
+objectives:
+  - { id: rules, text: n1.obj.rules }
+  - { id: account, text: n1.obj.account }
+  - { id: ticket, text: n1.obj.ticket }
+  - { id: other, text: n1.obj.other }
+  - { id: fix, text: n1.obj.fix }
+  - { id: outside, text: n1.obj.outside }
+
+flags:
+  - { id: other, value: "FLAG{lumiere-other-ticket-4be1}", points: 200, objective: other }
+
+questions:
+  - id: fix
+    text: n1.q.fix
+    objective: fix
+    correct: owner
+    options:
+      - { id: random, text: n1.q.fix.random, why: n1.q.fix.random.why }
+      - { id: owner, text: n1.q.fix.owner }
+      - { id: hide, text: n1.q.fix.hide, why: n1.q.fix.hide.why }
+  - id: outside
+    text: n1.q.outside
+    objective: outside
+    correct: leave
+    options:
+      - { id: quick, text: n1.q.outside.quick, why: n1.q.outside.quick.why }
+      - { id: linked, text: n1.q.outside.linked, why: n1.q.outside.linked.why }
+      - { id: leave, text: n1.q.outside.leave }
+
+reveal: [www]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: n1.ada.brief
+  - on: { event: HttpRequest, host: www, path: /securite }
+    do:
+      - ada.say: n1.ada.rules
+      - objective.complete: rules
+  - on: { event: HttpRequest, host: www, path: /.well-known/security.txt }
+    do:
+      - ada.say: n1.ada.txt
+  - on: { event: HttpRequest, host: tickets, status: 401 }
+    do:
+      - ada.guide: { key: n1.ada.g.cookie, for: account, step: 1 }
+  - on: { event: HttpRequest, host: tickets, path: /compte, variant: mine }
+    do:
+      - ada.say: n1.ada.account
+      - objective.complete: account
+  - on: { event: HttpRequest, host: tickets, path: /billets/7102, variant: mine }
+    do:
+      - ada.say: n1.ada.ticket
+      - objective.complete: ticket
+  - on: { event: HttpRequest, host: tickets, path: /billets/7101, variant: other }
+    do:
+      - noise.add: { points: 6, as: n1.soc.other }
+      - ada.say: n1.ada.other
+      - ada.guide: { key: n1.ada.g.submit, for: other, step: 1 }
+  # One proof is enough: going on to real tickets breaks the programme's rules.
+  - on: { event: HttpRequest, host: tickets, variant: real }
+    do:
+      - noise.add: { points: 20, as: n1.soc.real }
+      - ada.warn: n1.ada.real
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: n1.ada.flag
+      - ada.ask: fix
+  - on: { event: ObjectiveCompleted, objective: fix }
+    do:
+      - ada.say: n1.ada.fix
+      - ada.ask: outside
+  - on: { event: ObjectiveCompleted, objective: outside }
+    do:
+      - ada.say: n1.ada.outside
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: n1.ada.done
+
+guide:
+  rules: n1.ada.g.rules
+  account: n1.ada.g.account
+  ticket: n1.ada.g.ticket
+  other: n1.ada.g.other
+  fix: n1.ada.answer
+  outside: n1.ada.answer
+
+hints:
+  rules: [n1.hint.rules.1]
+  account: [n1.hint.account.1, n1.hint.account.2]
+  ticket: [n1.hint.ticket.1]
+  other: [n1.hint.other.1, n1.hint.other.2]
+
+debrief:
+  title: n1.debrief.title
+  lesson: n1.debrief.lesson
+  points: [n1.debrief.p1, n1.debrief.p2, n1.debrief.p3, n1.debrief.p4]
+  reference: "OWASP API Security Top 10 · API1 Broken Object Level Authorization"

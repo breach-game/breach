@@ -1,0 +1,15 @@
+id: breach.season7
+version: 0.1.0
+engine: ">=0.10 <1"
+kind: series
+requires: [breach.world.lumiere]
+title:
+  fr: "Saison 7 : le festival"
+  en: "Season 7: the festival"
+summary:
+  fr: "Après Alto, Lumière Noire. Un festival de musique t'invite à son programme de bug bounty. Tu apprends à chercher dans les règles : un périmètre, une preuve et pas deux, un rapport que quelqu'un peut reproduire, et la question de ce qu'on publie et quand. La veille de l'ouverture, un faux site de billets apparaît, et tu passes côté défense."
+  en: "After Alto, Lumière Noire. A music festival invites you to its bug bounty programme. You learn to search within rules: a scope, one proof and not two, a report someone can reproduce, and the question of what gets published and when. The day before the gates open, a fake ticket site appears, and you switch to the defence side."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, privacy, defense]

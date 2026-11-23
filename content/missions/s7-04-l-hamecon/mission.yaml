@@ -1,0 +1,262 @@
+# Season 7, mission 4: phishing seen from the defence. The "attacker" is a script of log lines:
+# mails from a look-alike domain on the mail gateway, then sign-ins and ticket transfers with the
+# passwords the recipients typed on the fake page. Blocking the sender does not undo the mails
+# already delivered: the stolen passwords have to stop working.
+side: defense
+order: 3
+stage: phishing
+briefing: n4.briefing
+startTime: "2028-09-22T18:00:00+02:00"
+reveal: [www, tickets, api, mail]
+
+files:
+  regles/faux-billets.yml: n4.file.rule
+
+objectives:
+  - { id: reset, text: n4.obj.reset }
+  - { id: stop, text: n4.obj.stop }
+  - { id: sender, text: n4.obj.sender }
+  - { id: domain, text: n4.obj.domain }
+  - { id: detect, text: n4.obj.detect }
+  - { id: lesson, text: n4.obj.lesson }
+  - { id: ip, text: n4.obj.ip, optional: true }
+
+flags: []
+
+adversary:
+  id: hook
+  name: lumiere-noire-billets.test
+  from: hook
+  pace: 1
+  delay: 0
+  steps:
+    # Three mails are already through when anyone looks.
+    - id: mail1
+      host: mail
+      source: mail
+      fields: { from: "billets@lumiere-noire-billets.test", to: "l.perrin@example.test", subject: "Confirmez votre billet", link: "lumiere-noire-billets.test", verdict: delivered }
+    - id: mail2
+      host: mail
+      source: mail
+      fields: { from: "billets@lumiere-noire-billets.test", to: "s.okafor@example.test", subject: "Confirmez votre billet", link: "lumiere-noire-billets.test", verdict: delivered }
+    - id: mail3
+      host: mail
+      source: mail
+      fields: { from: "billets@lumiere-noire-billets.test", to: "j.vasseur@example.test", subject: "Dernier rappel billet", link: "lumiere-noire-billets.test", verdict: delivered }
+      blockedIf: { config: mail.hook_blocked, eq: true }
+      continueIfBlocked: true
+    # Then the passwords typed on the fake page are used on the real one.
+    - id: login1
+      host: tickets
+      source: access
+      fields: { src: 10.21.0.50, method: POST, path: /connexion, status: 302, ua: "python-requests/2.32" }
+      blockedIf: &cut
+        any:
+          - { config: accounts.reset, eq: true }
+          - { config: net.hook_blocked, eq: true }
+    - id: transfer1
+      host: tickets
+      source: chat
+      fields: { form: true, src: 10.21.0.50, npc: transfer, intent: done, families: [none], msg: "6920" }
+      blockedIf: &cut2
+        any:
+          - { config: accounts.reset, eq: true }
+          - { config: net.hook_blocked, eq: true }
+          - { config: transfers.off, eq: true }
+    - id: login2
+      host: tickets
+      source: access
+      fields: { src: 10.21.0.50, method: POST, path: /connexion, status: 302, ua: "python-requests/2.32" }
+      blockedIf: *cut
+    - id: transfer2
+      host: tickets
+      source: chat
+      fields: { form: true, src: 10.21.0.50, npc: transfer, intent: done, families: [none], msg: "5417" }
+      blockedIf: *cut2
+    - id: mail4
+      host: mail
+      source: mail
+      fields: { from: "billets@lumiere-noire-billets.test", to: "c.morin@example.test", subject: "Confirmez votre billet", link: "lumiere-noire-billets.test", verdict: delivered }
+      blockedIf: { config: mail.hook_blocked, eq: true }
+      continueIfBlocked: true
+    - id: login3
+      host: tickets
+      source: access
+      fields: { src: 10.21.0.50, method: POST, path: /connexion, status: 302, ua: "python-requests/2.32" }
+      blockedIf: *cut
+    - id: transfer3
+      host: tickets
+      source: chat
+      fields: { form: true, src: 10.21.0.50, npc: transfer, intent: done, families: [none], msg: "6033" }
+      blockedIf: *cut2
+
+containment:
+  - id: reset-recipients
+    action: reset
+    target: destinataires
+    text: n4.contain.reset
+    sets: { accounts.reset: true }
+    impact: 2
+  - id: block-sender
+    action: block
+    target: lumiere-noire-billets.test
+    text: n4.contain.sender
+    sets: { mail.hook_blocked: true }
+    impact: 0
+  - id: block-address
+    action: block
+    target: 10.21.0.50
+    text: n4.contain.address
+    sets: { net.hook_blocked: true }
+    impact: 0
+  - id: disable-transfers
+    action: disable
+    target: transferts
+    text: n4.contain.transfers
+    sets: { transfers.off: true }
+    impact: 25
+
+alerts:
+  - id: lookalike
+    title: n4.alert.lookalike
+    why: n4.alert.lookalike.why
+    source: mail
+    where: { from: { contains: lumiere-noire-billets } }
+  - id: script
+    title: n4.alert.script
+    why: n4.alert.script.why
+    source: access
+    where: { ua: { contains: python-requests } }
+
+investigation:
+  - { id: domain, text: n4.q.domain, value: lumiere-noire-billets.test, points: 100, objective: domain }
+  - { id: ip, text: n4.q.ip, value: 10.21.0.50, points: 100, objective: ip }
+
+hunts:
+  - id: lookalike
+    file: regles/faux-billets.yml
+    catch: { source: mail, where: { from: { contains: lumiere-noire-billets } } }
+    objective: detect
+
+questions:
+  - id: lesson
+    text: n4.q.lesson
+    objective: lesson
+    correct: confirm
+    options:
+      - { id: train, text: n4.q.lesson.train, why: n4.q.lesson.train.why }
+      - { id: confirm, text: n4.q.lesson.confirm }
+      - { id: filter, text: n4.q.lesson.filter, why: n4.q.lesson.filter.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: n4.ada.brief
+  # The echo of the decision taken in mission 3.
+  - on: { event: MissionStarted }
+    if: { choice: publish, eq: early }
+    do:
+      - ada.say: n4.ada.echo.early
+  - on: { event: MissionStarted }
+    if: { choice: publish, eq: wait }
+    do:
+      - ada.say: n4.ada.echo.wait
+  - on: { event: MissionStarted }
+    if: { choice: publish, eq: never }
+    do:
+      - ada.say: n4.ada.echo.never
+  - on: { event: AdversaryStep, step: mail1 }
+    do:
+      - var.set: { name: seen, value: true }
+      - ada.guide: { key: n4.ada.g.alerts, for: reset, step: 1 }
+  - on: { event: CommandRun, command: soc, args: { contains: alerts } }
+    once: false
+    if: { var: seen, eq: true }
+    do:
+      - ada.guide: { key: n4.ada.g.logs, for: reset, step: 2 }
+  - on: { event: CommandRun, command: soc, args: { contains: mail } }
+    if: { var: seen, eq: true }
+    do:
+      - ada.say: n4.ada.mails
+      - ada.guide: { key: n4.ada.g.cut, for: reset, step: 3 }
+  - on: { event: AdversaryStep, step: login1, blocked: false }
+    do:
+      - ada.warn: n4.ada.login
+  - on: { event: AdversaryStep, step: transfer1, blocked: false }
+    do:
+      - ada.warn: n4.ada.first
+  - on: { event: AdversaryStep, step: transfer2, blocked: false }
+    do:
+      - ada.warn: n4.ada.second
+  - on: { event: AdversaryStep, step: transfer3, blocked: false }
+    do:
+      - mission.fail: n4.ada.fail
+  - on: { event: Contained, containment: block-sender }
+    if: { not: { objective: stop } }
+    do:
+      - ada.say: n4.ada.sender.early
+      - ada.guide: { key: n4.ada.g.again, for: reset, step: 4 }
+  - on: { event: Contained, containment: block-sender }
+    if: { objective: stop }
+    do:
+      - ada.say: n4.ada.sender
+  - on: { event: Contained, containment: block-sender }
+    do:
+      - objective.complete: sender
+  - on: { event: Contained, containment: block-address }
+    do:
+      - ada.say: n4.ada.address
+      - ada.guide: { key: n4.ada.g.again, for: reset, step: 4 }
+  - on: { event: Contained, containment: disable-transfers }
+    do:
+      - ada.say: n4.ada.transfers
+      - ada.guide: { key: n4.ada.g.again, for: reset, step: 4 }
+  - on: { event: Contained, containment: reset-recipients }
+    do:
+      - ada.say: n4.ada.reset
+      - objective.complete: reset
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: n4.ada.stopped
+      - objective.complete: stop
+  - on: { event: RuleTested, hunt: lookalike, passed: false, caught: { gte: 1 }, falsePositives: { gte: 1 } }
+    do:
+      - ada.guide: { key: n4.ada.g.false, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: lookalike, passed: false, falsePositives: 0, missed: { gte: 1 } }
+    do:
+      - ada.guide: { key: n4.ada.g.missed, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: lookalike, passed: true }
+    do:
+      - ada.say: n4.ada.detect
+      - ada.ask: lesson
+  - on: { event: ObjectiveCompleted, objective: lesson }
+    do:
+      - ada.say: n4.ada.lesson
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: n4.ada.done
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: n4.ada.end
+
+guide:
+  reset: n4.ada.g.start
+  stop: n4.ada.g.watch
+  sender: n4.ada.g.sender
+  domain: n4.ada.g.domain
+  detect: n4.ada.g.detect
+  lesson: n4.ada.answer
+
+hints:
+  reset: [n4.hint.reset.1, n4.hint.reset.2, n4.hint.reset.3]
+  stop: [n4.hint.stop.1]
+  sender: [n4.hint.sender.1, n4.hint.sender.2]
+  domain: [n4.hint.domain.1, n4.hint.domain.2]
+  detect: [n4.hint.detect.1, n4.hint.detect.2, n4.hint.detect.3]
+  lesson: [n4.hint.lesson.1]
+
+debrief:
+  title: n4.debrief.title
+  lesson: n4.debrief.lesson
+  points: [n4.debrief.p1, n4.debrief.p2, n4.debrief.p3, n4.debrief.p4]
+  reference: "MITRE ATT&CK · T1566.002 Spearphishing Link · T1078 Valid Accounts"

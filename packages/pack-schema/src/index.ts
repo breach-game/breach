@@ -416,6 +416,7 @@ export const LOG_SOURCES = [
   'git', // code forge
   'db', // database audit
   'flow', // firewall flow log
+  'mail', // inbound mail gateway
 ] as const;
 export type LogSource = (typeof LOG_SOURCES)[number];
 
@@ -846,6 +847,7 @@ export const SKILLS = [
   'defense',
   'crisis',
   'cloud',
+  'privacy',
 ] as const;
 export type Skill = (typeof SKILLS)[number];
 

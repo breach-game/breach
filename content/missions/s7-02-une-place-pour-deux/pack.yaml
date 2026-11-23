@@ -1,0 +1,17 @@
+id: breach.season7.s02
+version: 0.1.0
+engine: ">=0.10 <1"
+kind: mission
+track: season
+requires: [breach.world.lumiere]
+title:
+  fr: "Saison 7 · 2. Une place pour deux"
+  en: "Season 7 · 2. One seat for two"
+summary:
+  fr: "Logique métier. La billetterie sait transférer un billet à un ami et sait rembourser un billet. Chaque formulaire fait bien son travail. C'est leur enchaînement qui donne une entrée gratuite. Puis tu relis le code et tu choisis la correction."
+  en: "Business logic. The ticket office can transfer a ticket to a friend and can refund a ticket. Each form does its job well. It is their sequence that gives a free entry. Then you review the code and choose the fix."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, defense]
+minutes: 15
