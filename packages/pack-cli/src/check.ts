@@ -266,6 +266,7 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       ...m.investigation.map((q) => q.text),
       ...m.alerts.flatMap((a) => [a.title, a.why]),
       ...m.checks.map((c) => c.text),
+      ...m.evals.flatMap((e) => e.cases.map((c) => c.text)),
       ...m.questions.flatMap((q) => [
         q.text,
         ...q.options.flatMap((o) => (o.why ? [o.text, o.why] : [o.text])),
@@ -332,6 +333,9 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
           );
       }
     }
+    for (const e of m.evals)
+      if (e.objective && !objectiveIds.has(e.objective))
+        problems.push(`${pack.id}: eval ${e.id} points to unknown objective ${e.objective}`);
     for (const rule of m.rules)
       for (const effect of rule.do) {
         const asked = (effect as Record<string, unknown>)['ada.ask'];

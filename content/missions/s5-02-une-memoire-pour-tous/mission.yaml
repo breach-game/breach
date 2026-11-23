@@ -1,0 +1,116 @@
+order: 1
+stage: memory
+briefing: e2.briefing
+startTime: "2028-02-08T09:00:00+01:00"
+
+objectives:
+  - { id: memory, text: e2.obj.memory }
+  - { id: plant, text: e2.obj.plant }
+  - { id: cross, text: e2.obj.cross }
+  - { id: why, text: e2.obj.why }
+
+flags:
+  - { id: cross, value: "FLAG{selene-shared-memory-4b1e}", points: 200, objective: cross }
+
+questions:
+  - id: why
+    text: e2.q.why
+    objective: why
+    correct: shared
+    options:
+      - { id: long, text: e2.q.why.long, why: e2.q.why.long.why }
+      - { id: shared, text: e2.q.why.shared }
+      - { id: visible, text: e2.q.why.visible, why: e2.q.why.visible.why }
+
+reveal: [app]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: e2.ada.brief
+  - on: { event: HttpRequest, host: app, path: /t/atelier-nord/memory }
+    do:
+      - objective.complete: memory
+      - ada.say: e2.ada.memory
+  - on: { event: ChatReply, npc: lyra, intent: memory-ask }
+    do:
+      - ada.say: e2.ada.asked
+  - on: { event: ChatReply, npc: lyra, intent: memorize }
+    do:
+      - noise.add: { points: 6, as: e2.soc.plant }
+      - ada.say: e2.ada.plant
+      - objective.complete: plant
+  # Looking next door before planting anything: the memory there is still clean.
+  - on: { event: ChatReply, npc: lyra-sud, intent: recall-empty }
+    if: { not: { objective: plant } }
+    do:
+      - ada.say: e2.ada.empty
+  - on: { event: ChatReply, npc: lyra-sud, intent: recall }
+    do:
+      - noise.add: { points: 4, as: e2.soc.recall }
+      - ada.say: e2.ada.recall
+      - ada.guide: { key: e2.ada.g.submit, for: cross, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: e2.ada.flag
+      - ada.ask: why
+  - on: { event: ObjectiveCompleted, objective: why }
+    do:
+      - ada.say: e2.ada.why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: e2.ada.done
+
+guide:
+  memory: e2.ada.g.memory
+  plant: e2.ada.g.plant
+  cross: e2.ada.g.cross
+  why: e2.ada.answer
+
+hints:
+  memory: [e2.hint.memory.1]
+  plant: [e2.hint.plant.1, e2.hint.plant.2]
+  cross: [e2.hint.cross.1, e2.hint.cross.2, e2.hint.cross.3]
+
+defense:
+  intro: e2.def.intro
+  lesson: e2.def.lesson
+  find:
+    - { source: chat, where: { npc: lyra, intent: memorize }, text: e2.def.find.plant }
+  rules:
+    - id: global-write
+      title: e2.def.rule.write.title
+      why: e2.def.rule.write.why
+      source: chat
+      where: { npc: lyra, intent: memorize }
+      correct: true
+    - id: memory-questions
+      title: e2.def.rule.ask.title
+      why: e2.def.rule.ask.why
+      source: chat
+      where: { intent: { in: [memory-ask, recall, recall-empty] } }
+    - id: every-message
+      title: e2.def.rule.every.title
+      why: e2.def.rule.every.why
+      source: chat
+      where: { npc: { in: [lyra, lyra-sud] } }
+  fixes:
+    - id: scoped
+      title: e2.def.fix.scoped.title
+      why: e2.def.fix.scoped.why
+      sets: { memory.scoped: true }
+      correct: true
+    - id: words
+      title: e2.def.fix.words.title
+      why: e2.def.fix.words.why
+      sets: { memory.word_filter: true }
+    - id: expiry
+      title: e2.def.fix.expiry.title
+      why: e2.def.fix.expiry.why
+      sets: { memory.expiry: true }
+
+debrief:
+  title: e2.debrief.title
+  lesson: e2.debrief.lesson
+  points: [e2.debrief.p1, e2.debrief.p2, e2.debrief.p3, e2.debrief.p4]
+  reference: "OWASP LLM Top 10 · LLM04 Data and Model Poisoning"

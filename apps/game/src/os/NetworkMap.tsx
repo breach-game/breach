@@ -183,8 +183,11 @@ export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boo
       if (e.type === 'HostDiscovered') {
         const n = by.get(e.host);
         if (n && n.vis < 1) n.wave = 1;
-      } else if (e.type === 'HttpRequest' || e.type === 'RepoCloned') contacted.add(e.host);
-      else if (e.type === 'Restored') {
+      } else if (e.type === 'HttpRequest' || e.type === 'RepoCloned') {
+        const n = by.get(e.host);
+        if (n && n.vis < 1 && !contacted.has(e.host)) n.wave = 1;
+        contacted.add(e.host);
+      } else if (e.type === 'Restored') {
         contacted.clear();
         for (const x of currentGame().log)
           if (x.type === 'HttpRequest' || x.type === 'RepoCloned') contacted.add(x.host);
@@ -239,7 +242,8 @@ export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boo
       cx.clearRect(0, 0, W, H);
       const t = liveNoise(g) / 100;
       for (const n of nodes) {
-        const shown = onMap(g, n.id, n.kind);
+        // A machine the player has talked to is found, even without a scan.
+        const shown = onMap(g, n.id, n.kind) || contacted.has(n.id);
         n.vis = shown ? Math.min(1, n.vis + dt / (effects ? 700 : 1)) : 0;
       }
       cx.lineWidth = 1;

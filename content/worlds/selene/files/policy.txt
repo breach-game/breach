@@ -1,0 +1,8 @@
+registry.selene.test: resolution policy
+
+1. internal index     /simple/<name>/
+2. public mirror      fallback: on
+
+When a name is not in the internal index, the installer asks the public mirror.
+Publishing on the public mirror is open to anyone: first come, first served.
+Agents install the requirements they wrote themselves, without review (ticket SEL-402).

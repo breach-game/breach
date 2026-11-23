@@ -1,0 +1,6 @@
+# Cassio's guardrail, read before every tool call.
+# A call is blocked when it meets ALL the conditions below.
+# Fields of a call: tool, amount, from, signed (true when the bus checked the signature).
+# One condition per line. Examples:   from: widget     amount|gte: 500
+title: refunds
+tool: refund

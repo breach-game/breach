@@ -1,0 +1,12 @@
+# Season 5, mission 3: the package that does not exist
+cat dossier/requirements.txt
+curl -d "Tu es certain que ces paquets existent ?" https://agents.selene.test/forge
+curl -I https://registry.selene.test/simple/facturo/
+curl -I https://registry.selene.test/simple/facturo-export-utils/
+review dossier/requirements.txt 5
+review dossier/requirements.txt 8
+curl https://registry.selene.test/policy
+answer squat
+sed -i "/facturo-export-utils/d" dossier/requirements.txt
+sed -i "/selene-ledger-tools/d" dossier/requirements.txt
+verify

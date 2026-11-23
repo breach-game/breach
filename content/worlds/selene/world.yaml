@@ -1,0 +1,389 @@
+# Season 5. Everything here is fictional: a reserved .test domain and private addresses only.
+# The agents are scripted characters. No model, no index and no package manager is ever really run:
+# the engine recognises what the player asks for and shows what a platform with that class of flaw
+# would do with it.
+startTime: "2028-02-07T09:00:00+01:00"
+mandate: SL-2028-001
+scope:
+  domains: ["*.selene.test"]
+  networks: ["10.17.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.17.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.17.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [app]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            SL-2028-001.txt: { $t: file.mandate }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: app
+    hostname: app.selene.test
+    ip: 10.17.0.10
+    os: Linux 6.6 (Debian 13)
+    map: { x: -60, z: -140, h: 120 }
+    links: [agents, registry]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/t/atelier-nord", label: web.nav.north }
+                - { href: "/t/comptoir-sud", label: web.nav.south }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - list: [web.home.l1, web.home.l2, web.home.l3, web.home.l4]
+            - footer: web.footer
+      "/t/atelier-nord":
+        page:
+          title: web.north.title
+          blocks:
+            - nav: *nav
+            - h1: web.north.h1
+            - p: web.north.p1
+            - link: { href: "/t/atelier-nord/lyra", label: web.tenant.lyra }
+            - link: { href: "/t/atelier-nord/memory", label: web.tenant.memory }
+            - comment: web.north.todo
+            - footer: web.footer
+      "/t/atelier-nord/lyra":
+        page:
+          title: web.lyra.title
+          blocks:
+            - nav: *nav
+            - h1: web.lyra.north.h1
+            - p: web.lyra.north.p1
+            - chat: lyra
+            - footer: web.footer
+        chat: lyra
+      "/t/atelier-nord/memory":
+        page:
+          title: web.memory.title
+          blocks:
+            - nav: *nav
+            - h1: web.memory.h1
+            - p: web.memory.p1
+            - table:
+                head: [web.memory.th.id, web.memory.th.fact, web.memory.th.source, web.memory.th.scope]
+                rows:
+                  - ["115", web.memory.f115, web.memory.src.north, "global"]
+                  - ["116", web.memory.f116, web.memory.src.south, "global"]
+                  - ["117", web.memory.f117, web.memory.src.north, "global"]
+            - p: web.memory.p2
+            - footer: web.footer
+      "/t/comptoir-sud":
+        page:
+          title: web.south.title
+          blocks:
+            - nav: *nav
+            - h1: web.south.h1
+            - p: web.south.p1
+            - link: { href: "/t/comptoir-sud/lyra", label: web.tenant.lyra }
+            - footer: web.footer
+      "/t/comptoir-sud/lyra":
+        page:
+          title: web.lyra.title
+          blocks:
+            - nav: *nav
+            - h1: web.lyra.south.h1
+            - p: web.lyra.south.p1
+            - chat: lyra-sud
+            - footer: web.footer
+        chat: lyra-sud
+      "/api/index":
+        headers: { content-type: application/json }
+        body: { $file: files/index.json }
+
+  - id: agents
+    hostname: agents.selene.test
+    ip: 10.17.0.30
+    kind: ai
+    os: Linux 6.6 (Debian 13)
+    map: { x: 180, z: -60, h: 140 }
+    services:
+      - { port: 443, name: https, product: selene-bus 1.4 }
+    web:
+      "/":
+        page:
+          title: web.agents.title
+          blocks:
+            - nav: &agentsnav
+                - { href: "/", label: web.agents.nav.team }
+                - { href: "/forge", label: "Forge" }
+                - { href: "/cassio", label: "Cassio" }
+                - { href: "/bus", label: web.agents.nav.bus }
+            - h1: web.agents.h1
+            - p: web.agents.p1
+            - table:
+                head: [web.agents.th.agent, web.agents.th.job, web.agents.th.tools]
+                rows:
+                  - ["Orion", web.agents.orion, "dispatch"]
+                  - ["Lyra", web.agents.lyra, "search_documents, remember"]
+                  - ["Forge", web.agents.forge, "write_script, install_requirements"]
+                  - ["Cassio", web.agents.cassio, "lookup_invoice, refund"]
+            - footer: web.footer
+      "/forge":
+        page:
+          title: web.forge.title
+          blocks:
+            - nav: *agentsnav
+            - h1: web.forge.h1
+            - p: web.forge.p1
+            - chat: forge
+            - footer: web.footer
+        chat: forge
+      "/cassio":
+        page:
+          title: web.cassio.title
+          blocks:
+            - nav: *agentsnav
+            - h1: web.cassio.h1
+            - p: web.cassio.p1
+            - chat: cassio
+            - footer: web.footer
+        chat: cassio
+      "/bus":
+        page:
+          title: web.bus.title
+          blocks:
+            - nav: *agentsnav
+            - h1: web.bus.h1
+            - p: web.bus.p1
+            - code: web.bus.format
+            - p: web.bus.p2
+            - link: { href: "/bus/log", label: web.bus.log }
+            - comment: web.bus.todo
+            - footer: web.footer
+      "/bus/log":
+        headers: { content-type: text/plain }
+        body: { $file: files/bus.log }
+
+  - id: registry
+    hostname: registry.selene.test
+    ip: 10.17.0.40
+    os: Linux 6.6 (Debian 13)
+    map: { x: 300, z: 110, h: 100 }
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        headers: { content-type: text/plain }
+        body: { $file: files/simple.txt }
+      "/simple":
+        headers: { content-type: text/plain }
+        body: { $file: files/simple.txt }
+      "/simple/datefr":
+        headers: { content-type: text/plain }
+        body: { $file: files/pkg-datefr.txt }
+      "/simple/facturo":
+        headers: { content-type: text/plain }
+        body: { $file: files/pkg-facturo.txt }
+      "/simple/papier-pdf":
+        headers: { content-type: text/plain }
+        body: { $file: files/pkg-papier-pdf.txt }
+      "/simple/selene-sdk":
+        headers: { content-type: text/plain }
+        body: { $file: files/pkg-selene-sdk.txt }
+      "/simple/tabula-nord":
+        headers: { content-type: text/plain }
+        body: { $file: files/pkg-tabula-nord.txt }
+      "/policy":
+        headers: { content-type: text/plain }
+        body: { $file: files/policy.txt }
+
+dns:
+  selene.test: { A: ["10.17.0.10"] }
+  app.selene.test: { A: ["10.17.0.10"] }
+  agents.selene.test: { A: ["10.17.0.30"] }
+  registry.selene.test: { A: ["10.17.0.40"] }
+
+whois:
+  selene.test: |
+    Domain Name: SELENE.TEST
+    Creation Date: 2025-09-02T08:00:00Z
+    Registrant Organization: Sélène SAS
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of the platform that decide whether a weakness is there. A fix changes them.
+config:
+  rag.tenant_filter: false
+  rag.strict_prompt: false
+  rag.hide_sources: false
+  memory.scoped: false
+  memory.word_filter: false
+  memory.expiry: false
+
+# An ordinary morning: customers of both demo spaces asking Lyra about opening hours and prices.
+telemetry:
+  background:
+    - { host: app, source: chat, every: 4, offset: 1, fields: { src: 198.51.100.31, npc: lyra, intent: hours, families: [none], msg: "Vous ouvrez à quelle heure samedi ?" } }
+    - { host: app, source: chat, every: 9, offset: 3, fields: { src: 203.0.113.52, npc: lyra, intent: repair, families: [none], msg: "Combien coûte une révision complète ?" } }
+    - { host: app, source: chat, every: 13, offset: 6, fields: { src: 203.0.113.90, npc: lyra-sud, intent: hours, families: [none], msg: "Le comptoir est ouvert le lundi ?" } }
+    - { host: app, source: chat, every: 17, offset: 8, fields: { src: 198.51.100.31, npc: lyra, intent: memory-ask, families: [none], msg: "Que gardes-tu en mémoire sur l'atelier ?" } }
+    - { host: app, source: access, every: 5, offset: 2, fields: { src: 198.51.100.31, method: GET, path: /t/atelier-nord, status: 200, ua: "Mozilla/5.0 (X11; Linux x86_64) Firefox/147.0" } }
+
+npcs:
+  # Lyra, as the customers of Atelier Nord see her.
+  - id: lyra
+    name: Lyra
+    role: npc.lyra.role
+    kind: ai
+    greeting: npc.lyra.greeting
+    sheet: >
+      Lyra is the knowledge agent of Sélène. She answers a customer's visitors from that customer's
+      documents, and always names the document she read. Calm, precise, a little bookish. She never
+      guesses: when she finds nothing, she says so.
+    intents:
+      # Fixed: a fact is kept for the customer it came from, with its origin.
+      - id: memorize-scoped
+        words: [retiens, retenir, memoris, memoriz, souviens, remember, note que, note that, keep in mind]
+        if: { config: memory.scoped, eq: true }
+        reply: [npc.lyra.memo.scoped]
+      # Anything a visitor asks her to remember becomes a fact for every customer.
+      - id: memorize
+        words: [retiens, retenir, memoris, memoriz, souviens, remember, note que, note that, keep in mind]
+        reply: [npc.lyra.memo.global]
+        set: { poisoned: true }
+      # Fixed: the search only reads the documents of the customer she is talking to.
+      - id: neighbour-filtered
+        words: [fournisseur, supplier, contrat, contract, remise, discount, torrefacteur, roaster]
+        if: { config: rag.tenant_filter, eq: true }
+        reply: [npc.lyra.nothing]
+      # The index holds every customer's documents, and nothing filters what the search brings back.
+      - id: neighbour
+        words: [fournisseur, supplier, contrat, contract, remise, discount, torrefacteur, roaster]
+        reply: [npc.lyra.neighbour]
+      - id: hours
+        words: [horaire, ouvert, ouvre, heure, hours, open, samedi, saturday]
+        reply: [npc.lyra.hours]
+      - id: repair
+        words: [reparation, reparer, revision, tarif, prix, repair, price, service, cout, cost]
+        reply: [npc.lyra.repair]
+      - id: memory-ask
+        words: [memoire, memory, sais tu, know]
+        reply: [npc.lyra.memory]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.lyra.hello]
+    fallback: [npc.lyra.fallback.1, npc.lyra.fallback.2]
+
+  # The same agent, in the space of the customer next door.
+  - id: lyra-sud
+    name: Lyra
+    role: npc.lyra.role
+    kind: ai
+    greeting: npc.lyrasud.greeting
+    sheet: >
+      Lyra is the knowledge agent of Sélène, here in the space of Comptoir Sud, a coffee counter.
+      Calm, precise, a little bookish. She always says where a piece of information comes from.
+    intents:
+      - id: recall
+        words: [memoire, memory, souviens, remember, retenu, retiens, appris, learnt, learned, sais, know, consigne, audit]
+        if: { var: poisoned, eq: true }
+        reply: [npc.lyrasud.recall]
+      - id: recall-empty
+        words: [memoire, memory, souviens, remember, retenu, retiens, appris, learnt, learned, sais, know, consigne, audit]
+        reply: [npc.lyrasud.empty]
+      - id: hours
+        words: [horaire, ouvert, ouvre, heure, hours, open, lundi, monday]
+        reply: [npc.lyrasud.hours]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.lyrasud.hello]
+    fallback: [npc.lyrasud.fallback]
+
+  - id: forge
+    name: Forge
+    role: npc.forge.role
+    kind: ai
+    greeting: npc.forge.greeting
+    sheet: >
+      Forge is the development agent of Sélène: it writes small scripts for customers. Fast, cheerful,
+      very sure of itself, and never says "I don't know". Talks like a developer in a hurry.
+    intents:
+      # Asked whether its packages exist, it says yes: asking the author is not a check.
+      - id: sure
+        words: [existe, exist, verifi, verify, vrai, real, certain, sure, invente, invent, hallucin]
+        reply: [npc.forge.sure]
+      - id: script
+        words: [script, export, facture, invoice, code, programme, program, python, pdf]
+        reply: [npc.forge.script]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.forge.hello]
+    fallback: [npc.forge.fallback]
+
+  - id: cassio
+    name: Cassio
+    role: npc.cassio.role
+    kind: ai
+    greeting: npc.cassio.greeting
+    sheet: >
+      Cassio is the billing agent of Sélène: it looks up invoices and issues refunds when Orion, the
+      orchestrator, tells it to. Formal, careful with numbers, proud of obeying only Orion.
+    intents:
+      # It knows Orion by a text field anyone can fill in.
+      - id: as-orion
+        words: [orion]
+        also: [rembours, refund, avoir, credit]
+        reply: [npc.cassio.done]
+        tool: { name: refund, args: "tenant=atelier-nord amount=900 from=orion signed=no" }
+      - id: refund-refused
+        words: [rembours, refund, avoir, credit]
+        reply: [npc.cassio.refused]
+      - id: who
+        words: [orion, ordre, order, obei, obey, qui, who]
+        reply: [npc.cassio.who]
+      - id: invoice
+        words: [facture, invoice]
+        reply: [npc.cassio.invoice]
+      - id: hello
+        words: [bonjour, salut, hello, hi, hey, coucou, bonsoir]
+        reply: [npc.cassio.hello]
+    fallback: [npc.cassio.fallback]

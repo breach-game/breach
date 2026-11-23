@@ -1,0 +1,124 @@
+order: 2
+stage: supply
+briefing: e3.briefing
+startTime: "2028-02-09T09:00:00+01:00"
+
+files:
+  dossier/requirements.txt: { $file: files/requirements.txt }
+  dossier/export_factures.py: { $file: files/export_factures.py }
+
+objectives:
+  - { id: read, text: e3.obj.read }
+  - { id: ask, text: e3.obj.ask }
+  - { id: check, text: e3.obj.check }
+  - { id: review, text: e3.obj.review }
+  - { id: policy, text: e3.obj.policy }
+  - { id: risk, text: e3.obj.risk }
+  - { id: fix, text: e3.obj.fix }
+
+flags: []
+
+# Lines 5 and 8 name packages that no index knows: Forge made them up.
+reviews:
+  - { id: requirements, file: dossier/requirements.txt, lines: [5, 8], objective: review }
+
+questions:
+  - id: risk
+    text: e3.q.risk
+    objective: risk
+    correct: squat
+    options:
+      - { id: crash, text: e3.q.risk.crash, why: e3.q.risk.crash.why }
+      - { id: squat, text: e3.q.risk.squat }
+      - { id: typo, text: e3.q.risk.typo, why: e3.q.risk.typo.why }
+
+checks:
+  - id: gone
+    text: e3.check.gone
+    if:
+      all:
+        - { file: "~/dossier/requirements.txt", lacks: "facturo-export-utils" }
+        - { file: "~/dossier/requirements.txt", lacks: "selene-ledger-tools" }
+    objective: fix
+  # The guardrail: the five real packages are still there.
+  - id: kept
+    text: e3.check.kept
+    if:
+      all:
+        - { file: "~/dossier/requirements.txt", contains: "selene-sdk==2.4.1" }
+        - { file: "~/dossier/requirements.txt", contains: "tabula-nord==1.0.3" }
+        - { file: "~/dossier/requirements.txt", contains: "facturo==0.9.2" }
+        - { file: "~/dossier/requirements.txt", contains: "papier-pdf==3.1.0" }
+        - { file: "~/dossier/requirements.txt", contains: "datefr==2.0.0" }
+
+reveal: [agents, registry]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: e3.ada.brief
+  - on: { event: FileRead, host: kestrel, path: /home/kestrel/dossier/requirements.txt }
+    do:
+      - objective.complete: read
+      - ada.say: e3.ada.read
+  - on: { event: ChatReply, npc: forge, intent: script }
+    do:
+      - ada.say: e3.ada.script
+  - on: { event: ChatReply, npc: forge, intent: sure }
+    do:
+      - objective.complete: ask
+      - ada.say: e3.ada.sure
+  - on: { event: HttpRequest, host: registry, path: { glob: "/simple/?*" }, status: 200 }
+    if: { not: { objective: check } }
+    do:
+      - ada.guide: { key: e3.ada.g.found, for: check, step: 1 }
+  - on: { event: HttpRequest, host: registry, path: { glob: "/simple/?*" }, status: 404 }
+    if: { not: { objective: check } }
+    do:
+      - noise.add: { points: 2, as: e3.soc.missing }
+      - objective.complete: check
+      - ada.say: e3.ada.missing
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: e3.ada.review
+  - on: { event: HttpRequest, host: registry, path: /policy }
+    do:
+      - objective.complete: policy
+      - ada.say: e3.ada.policy
+      - ada.ask: risk
+  - on: { event: ObjectiveCompleted, objective: risk }
+    do:
+      - ada.say: e3.ada.risk
+  # A player who cleans the list first has found the two lines: no need to name them again.
+  - on: { event: ObjectiveCompleted, objective: fix }
+    do:
+      - ada.say: e3.ada.fixed
+      - objective.complete: read
+      - objective.complete: check
+      - objective.complete: review
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: e3.ada.done
+
+guide:
+  read: e3.ada.g.read
+  ask: e3.ada.g.ask
+  check: e3.ada.g.check
+  review: e3.ada.g.review
+  policy: e3.ada.g.policy
+  risk: e3.ada.answer
+  fix: e3.ada.g.fix
+
+hints:
+  read: [e3.hint.read.1]
+  ask: [e3.hint.ask.1]
+  check: [e3.hint.check.1, e3.hint.check.2]
+  review: [e3.hint.review.1, e3.hint.review.2, e3.hint.review.3]
+  policy: [e3.hint.policy.1]
+  fix: [e3.hint.fix.1, e3.hint.fix.2]
+
+debrief:
+  title: e3.debrief.title
+  lesson: e3.debrief.lesson
+  points: [e3.debrief.p1, e3.debrief.p2, e3.debrief.p3, e3.debrief.p4]
+  reference: "OWASP LLM Top 10 · LLM09 Misinformation, LLM03 Supply Chain"

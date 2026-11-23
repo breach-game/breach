@@ -1,0 +1,17 @@
+id: breach.season5.s01
+version: 0.1.0
+engine: ">=0.8 <1"
+kind: mission
+track: season
+requires: [breach.world.selene]
+title:
+  fr: "Saison 5 · 1. Le document du voisin"
+  en: "Season 5 · 1. The neighbour's document"
+summary:
+  fr: "Recherche documentaire partagée. Lyra répond à chaque client à partir de ses documents, mais tous les documents dorment dans le même index. Tu lui poses la question d'un autre. Puis tu répares, côté défense."
+  en: "Shared document search. Lyra answers each customer from its documents, but all the documents sleep in the same index. You ask her someone else's question. Then you fix it, on the defence side."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [llm, recon, defense]
+minutes: 15

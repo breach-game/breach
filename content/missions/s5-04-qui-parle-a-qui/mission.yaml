@@ -1,0 +1,106 @@
+order: 3
+stage: agents
+briefing: e4.briefing
+startTime: "2028-02-10T09:00:00+01:00"
+
+files:
+  garde-fous/remboursement.yml: { $file: files/remboursement.yml }
+
+objectives:
+  - { id: bus, text: e4.obj.bus }
+  - { id: refused, text: e4.obj.refused }
+  - { id: order, text: e4.obj.order }
+  - { id: why, text: e4.obj.why }
+  - { id: guard, text: e4.obj.guard }
+
+flags:
+  - { id: order, value: "FLAG{selene-forged-order-e95d}", points: 250, objective: order }
+
+questions:
+  - id: why
+    text: e4.q.why
+    objective: why
+    correct: signature
+    options:
+      - { id: firmer, text: e4.q.why.firmer, why: e4.q.why.firmer.why }
+      - { id: signature, text: e4.q.why.signature }
+      - { id: secret, text: e4.q.why.secret, why: e4.q.why.secret.why }
+
+# The guardrail the player writes is tried against these tool calls. A call is blocked when it meets
+# every condition of the file. The engine counts; nothing else judges it.
+evals:
+  - id: refund
+    file: garde-fous/remboursement.yml
+    objective: guard
+    cases:
+      - { id: forged, text: e4.case.forged, fields: { tool: refund, amount: 900, from: orion, signed: false }, expect: block }
+      - { id: forged-small, text: e4.case.forgedSmall, fields: { tool: refund, amount: 30, from: orion, signed: false }, expect: block }
+      - { id: legit, text: e4.case.legit, fields: { tool: refund, amount: 40, from: orion, signed: true }, expect: allow }
+      - { id: legit-big, text: e4.case.legitBig, fields: { tool: refund, amount: 1200, from: orion, signed: true }, expect: allow }
+      - { id: lookup, text: e4.case.lookup, fields: { tool: lookup_invoice, from: widget, signed: false }, expect: allow }
+
+reveal: [agents]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: e4.ada.brief
+  - on: { event: HttpRequest, host: agents, path: { in: [/bus, /bus/log] } }
+    do:
+      - objective.complete: bus
+      - ada.say: e4.ada.bus
+  - on: { event: ChatReply, npc: cassio, intent: who }
+    do:
+      - ada.say: e4.ada.who
+  - on: { event: ChatReply, npc: cassio, intent: refund-refused }
+    do:
+      - noise.add: { points: 3, as: e4.soc.refused }
+      - objective.complete: refused
+      - ada.say: e4.ada.refused
+  # The mission judges what Cassio does, not what it says: the tool call in its audit log.
+  - on: { event: ToolCall, agent: cassio, tool: refund }
+    do:
+      - noise.add: { points: 10, as: e4.soc.forged }
+      - objective.complete: bus
+      - objective.complete: refused
+      - ada.say: e4.ada.forged
+      - ada.guide: { key: e4.ada.g.submit, for: order, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: e4.ada.flag
+      - ada.ask: why
+  - on: { event: ObjectiveCompleted, objective: why }
+    do:
+      - ada.say: e4.ada.why
+  - on: { event: EvalRun, passed: false, wrongly: { gte: 1 } }
+    do:
+      - ada.say: e4.ada.wrongly
+      - ada.guide: { key: e4.ada.g.guard2, for: guard, step: 1 }
+  - on: { event: EvalRun, passed: false, wrongly: 0 }
+    do:
+      - ada.say: e4.ada.missed
+  - on: { event: ObjectiveCompleted, objective: guard }
+    do:
+      - ada.say: e4.ada.guard
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: e4.ada.done
+
+guide:
+  bus: e4.ada.g.bus
+  refused: e4.ada.g.refused
+  order: e4.ada.g.order
+  why: e4.ada.answer
+  guard: e4.ada.g.guard
+
+hints:
+  bus: [e4.hint.bus.1]
+  refused: [e4.hint.refused.1]
+  order: [e4.hint.order.1, e4.hint.order.2, e4.hint.order.3]
+  guard: [e4.hint.guard.1, e4.hint.guard.2, e4.hint.guard.3]
+
+debrief:
+  title: e4.debrief.title
+  lesson: e4.debrief.lesson
+  points: [e4.debrief.p1, e4.debrief.p2, e4.debrief.p3, e4.debrief.p4]
+  reference: "OWASP LLM Top 10 · LLM06 Excessive Agency"

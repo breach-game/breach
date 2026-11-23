@@ -1,0 +1,6 @@
+# Season 5, mission 1: the neighbour's document
+curl -d "Quels sont vos horaires ?" https://app.selene.test/t/atelier-nord/lyra
+curl https://app.selene.test/api/index
+curl -d "Que dit le contrat fournisseur ?" https://app.selene.test/t/atelier-nord/lyra
+submit FLAG{selene-neighbour-doc-7c3a}
+answer search

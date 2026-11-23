@@ -1,0 +1,17 @@
+id: breach.season5.s02
+version: 0.1.0
+engine: ">=0.8 <1"
+kind: mission
+track: season
+requires: [breach.world.selene]
+title:
+  fr: "Saison 5 · 2. Une mémoire pour tous"
+  en: "Season 5 · 2. One memory for all"
+summary:
+  fr: "Empoisonnement de mémoire. Lyra retient ce qu'on lui demande de retenir, et s'en sert pour tout le monde. Tu y poses un témoin inoffensif depuis ton espace, puis tu vas le retrouver chez le voisin."
+  en: "Memory poisoning. Lyra remembers what she is asked to remember, and uses it for everyone. You plant a harmless marker from your space, then go and find it next door."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [llm, logs, defense]
+minutes: 15

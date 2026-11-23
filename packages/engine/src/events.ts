@@ -105,6 +105,8 @@ export type EventBody =
       falsePositives: number;
       passed: boolean;
     }
+  /** The player tried a guardrail against the cases of the mission. */
+  | { type: 'EvalRun'; eval: string; blocked: number; missed: number; wrongly: number; passed: boolean }
   /** The player named a line of a code review as faulty. */
   | { type: 'Reviewed'; review: string; line: number; correct: boolean }
   /** `verify` ran: which of the mission's checks hold now. */
