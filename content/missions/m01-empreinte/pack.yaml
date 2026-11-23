@@ -2,6 +2,8 @@ id: breach.official.m01
 version: 0.1.0
 engine: ">=0.1 <1"
 kind: mission
+difficulty: 1
+skills: [recon, web]
 requires: [breach.world.novamind]
 title:
   fr: Empreinte

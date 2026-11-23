@@ -2,6 +2,8 @@ id: breach.official.m03
 version: 0.1.0
 engine: ">=0.2 <1"
 kind: mission
+difficulty: 2
+skills: [llm]
 requires: [breach.world.novamind]
 title:
   fr: Nova en sait trop
