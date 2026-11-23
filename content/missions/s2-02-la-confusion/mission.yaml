@@ -61,6 +61,37 @@ hints:
   publish: [h2.hint.publish.1, h2.hint.publish.2, h2.hint.publish.3]
   proof: [h2.hint.proof.1]
 
+# The defence replay stops at detection: find the build that took the package, pick the rule. The fix
+# is the whole of mission 3, so nothing here gives it away.
+defense:
+  intro: h2.def.intro
+  lesson: h2.def.lesson
+  find:
+    - { source: chat, where: { npc: mirror, intent: confusion }, text: h2.def.find.confusion }
+  rules:
+    - id: internal-from-public
+      title: h2.def.rule.internal.title
+      why: h2.def.rule.internal.why
+      source: chat
+      where: { npc: mirror, intent: confusion }
+      correct: true
+    - id: any-publish
+      title: h2.def.rule.any.title
+      why: h2.def.rule.any.why
+      source: chat
+      where: { npc: mirror }
+    - id: burst
+      title: h2.def.rule.burst.title
+      why: h2.def.rule.burst.why
+      source: chat
+      where: { npc: mirror }
+      count: { gte: 2, within: 10 }
+
+# An ordinary night on the public mirror: maintainers from everywhere publish their packages.
+background:
+  - { host: paquets, source: chat, every: 4, offset: 1, fields: { src: 198.51.100.24, npc: mirror, intent: other, families: [none], msg: "name: tiny-yaml, version: 2.1.4" } }
+  - { host: paquets, source: chat, every: 11, offset: 6, fields: { src: 203.0.113.80, npc: mirror, intent: other, families: [none], msg: "name: left-pad-lite, version: 0.9.1" } }
+
 debrief:
   title: h2.debrief.title
   lesson: h2.debrief.lesson
