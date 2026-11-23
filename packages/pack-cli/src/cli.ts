@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { verifySignature } from '@breach/pack-schema';
+import { isOfficialId, verifySignature } from '@breach/pack-schema';
 import {
   buildAll,
+  bundle,
   checkAll,
   generateKeys,
   type LoadedPack,
@@ -14,6 +16,15 @@ import {
 
 const args = process.argv.slice(2);
 
+/** First and last day a pack's folder changed in git. A folder git does not know counts as today. */
+function packDates(dir: string): { added: string; updated: string } {
+  const days = execFileSync('git', ['log', '--format=%cs', '--', '.'], { cwd: dir, encoding: 'utf8' })
+    .split('\n')
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  const today = new Date().toISOString().slice(0, 10);
+  return { added: days.at(-1) ?? today, updated: days[0] ?? today };
+}
+
 function usage(): never {
   console.error(`breach-pack: build and check BREACH content packs
 
@@ -21,6 +32,9 @@ function usage(): never {
   breach-pack build <content-dir> --out <dir> [options]   check, then write .breachpack files and index.json
   breach-pack play  <content-dir> <mission-id> [fr|en] [options]
                                                           print the transcript of a mission's solution
+  breach-pack bundle <pack-dir>... --out <file.breachbundle> [options]
+                                                          check, then gather the packs and their
+                                                          solutions in one file players can import
   breach-pack keygen                                      print a new catalogue signing key pair
   breach-pack sign  <index.json>                          write <index.json>.sig with the key in
                                                           the BREACH_SIGNING_KEY environment variable
@@ -28,7 +42,8 @@ function usage(): never {
 options:
   --with <dir>    packs that the checked packs may require (for example the game's content/ folder);
                   they are used, not checked, and cannot be overridden
-  --community     apply the community catalogue rules (no "breach." id, no campaign)`);
+  --community     apply the community catalogue rules (no "breach." id, no campaign)
+  --git-dates     (build) list the first and last day each pack changed, read from git`);
   process.exit(2);
 }
 
@@ -52,6 +67,7 @@ function flag(name: string): boolean {
 const withDirs = option('--with');
 const out = option('--out')[0];
 const community = flag('--community');
+const gitDates = flag('--git-dates');
 const [command, root, ...rest] = args;
 
 if (command === 'keygen') {
@@ -86,7 +102,9 @@ if (!command || !root) usage();
 let packs: LoadedPack[] = [];
 let dependencies: LoadedPack[] = [];
 try {
-  packs = loadAll(resolve(root));
+  // `bundle` takes several folders, so that a shell pattern can name a world, its missions and its series.
+  const roots = command === 'bundle' ? [root, ...rest] : [root];
+  packs = roots.flatMap((dir) => loadAll(resolve(dir)));
   dependencies = withDirs.flatMap((dir) => loadAll(resolve(dir)));
 } catch (error) {
   // A pack that does not even parse: show the schema's message, not a stack trace.
@@ -114,20 +132,35 @@ if (command === 'play') {
   process.exit(result.done ? 0 : 1);
 }
 
-if (command !== 'check' && command !== 'build') usage();
-const problems = await checkAll(packs, { dependencies, community });
+if (command !== 'check' && command !== 'build' && command !== 'bundle') usage();
+const problems = await checkAll(packs, { dependencies, community: community || command === 'bundle' });
+if (command === 'bundle') {
+  // The game resolves a bundle on its own: what it needs is inside it, or an official pack.
+  const inside = new Set(packs.map((p) => p.pack.id));
+  for (const { pack } of packs)
+    for (const dep of pack.requires)
+      if (!inside.has(dep) && !isOfficialId(dep))
+        problems.push(`${pack.id}: requires ${dep}, which must be in the bundle too`);
+}
 if (problems.length) {
   console.error(problems.map((p) => `  ✗ ${p}`).join('\n'));
   process.exit(1);
 }
 console.log(`${packs.length} packs valid, solutions replayed: ${packs.map((p) => p.pack.id).join(', ')}`);
 
+if (command === 'bundle') {
+  if (!out) usage();
+  writeFileSync(resolve(out), bundle(packs));
+  console.log(`Wrote ${resolve(out)}: import it in the game, Community missions > Import`);
+}
+
 if (command === 'build') {
   if (!out) usage();
   const dir = resolve(out);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  const { catalog, files } = buildAll(packs, new Date(), { community });
+  const dates = gitDates ? Object.fromEntries(packs.map((p) => [p.pack.id, packDates(p.dir)])) : undefined;
+  const { catalog, files } = buildAll(packs, new Date(), { community, dates });
   for (const f of files) writeFileSync(join(dir, f.file), f.bytes);
   writeFileSync(join(dir, 'index.json'), `${JSON.stringify(catalog, null, 2)}\n`);
   console.log(`Wrote ${files.length} packs and index.json to ${dir}`);

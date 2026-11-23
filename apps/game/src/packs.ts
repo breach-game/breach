@@ -45,12 +45,12 @@ export interface PackProgress {
   state: 'cached' | 'downloading' | 'verified';
 }
 
-async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
+export async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function gunzip(bytes: ArrayBuffer, limit: number): Promise<string> {
+export async function gunzip(bytes: ArrayBuffer, limit: number): Promise<string> {
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];

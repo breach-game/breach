@@ -677,6 +677,10 @@ const packBase = z.strictObject({
   difficulty: z.number().int().min(1).max(3).optional(),
   /** What the mission trains, shown as labels. */
   skills: z.array(z.enum(SKILLS)).max(4).default([]),
+  /** Year of the real incident the pack is inspired by, told in its `debrief.facts`. */
+  incident: z.number().int().min(1970).max(2100).optional(),
+  /** The author's estimate of the playing time, in minutes (for a series: the whole series). */
+  minutes: z.number().int().min(5).max(600).optional(),
   world: world.optional(),
   mission: mission.optional(),
   series: series.optional(),
@@ -700,8 +704,13 @@ export const packSchema = packBase.superRefine((pack, ctx) => {
 });
 export type Pack = z.infer<typeof packSchema>;
 
-/** Catalogue served next to the packs. */
-export const catalogSchema = z.strictObject({
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Catalogue served next to the packs. Unknown fields are dropped rather than refused, so a catalogue
+ * published with fields a newer game reads still opens in an older game.
+ */
+export const catalogSchema = z.object({
   format: z.literal(PACK_FORMAT),
   generatedAt: z.string(),
   campaign: z.array(id),
@@ -710,7 +719,7 @@ export const catalogSchema = z.strictObject({
   /** Official series played after the campaign, in order: each one is a season with its own world. */
   seasons: z.array(id).default([]),
   packs: z.array(
-    z.strictObject({
+    z.object({
       id,
       version: z.string(),
       kind: z.enum(KINDS),
@@ -723,6 +732,11 @@ export const catalogSchema = z.strictObject({
       track: z.enum(TRACKS).optional(),
       difficulty: z.number().int().min(1).max(3).optional(),
       skills: z.array(z.enum(SKILLS)).max(4).optional(),
+      incident: z.number().int().min(1970).max(2100).optional(),
+      minutes: z.number().int().min(5).max(600).optional(),
+      /** First and last day the pack changed in its repository (community catalogue only). */
+      added: day.optional(),
+      updated: day.optional(),
       /** For a series: its missions in playing order. */
       missions: z.array(id).max(12).optional(),
       locales: z.array(z.enum(LOCALES)),
@@ -737,6 +751,68 @@ export type Catalog = z.infer<typeof catalogSchema>;
 export type CatalogEntry = Catalog['packs'][number];
 
 export const MAX_PACK_BYTES = 2_000_000;
+
+/**
+ * The catalogue entry of a pack. `packs` holds the packs published with it, so that a series without
+ * its own length estimate adds up its missions'.
+ */
+export function catalogEntry(
+  pack: Pack,
+  built: { file: string; sha256: string; size: number },
+  packs: ReadonlyMap<string, Pack>,
+  extra: { reviewed: boolean; added?: string; updated?: string },
+): CatalogEntry {
+  let minutes = pack.minutes;
+  if (!minutes && pack.series) {
+    const each = pack.series.missions.map((id) => packs.get(id)?.minutes);
+    if (each.every((m) => m !== undefined))
+      minutes = Math.min(
+        600,
+        each.reduce((a, b) => a + b, 0),
+      );
+  }
+  return {
+    id: pack.id,
+    version: pack.version,
+    kind: pack.kind,
+    engine: pack.engine,
+    requires: pack.requires,
+    title: pack.title,
+    summary: pack.summary,
+    authors: pack.authors,
+    order: pack.mission?.order,
+    ...(pack.kind === 'mission' ? { track: pack.track } : {}),
+    ...(pack.difficulty ? { difficulty: pack.difficulty } : {}),
+    ...(pack.skills.length ? { skills: pack.skills } : {}),
+    ...(pack.incident ? { incident: pack.incident } : {}),
+    ...(minutes ? { minutes } : {}),
+    ...(extra.added && extra.updated ? { added: extra.added, updated: extra.updated } : {}),
+    ...(pack.series ? { missions: pack.series.missions } : {}),
+    locales: pack.locales,
+    ...built,
+    reviewed: extra.reviewed,
+  };
+}
+
+/**
+ * A bundle gathers the packs of one author's work (a world, its missions, a series) with their
+ * solutions, so that a player can import it from a file. Gzipped JSON, like a `.breachpack`.
+ */
+export const BUNDLE_FORMAT = 'breach-bundle/1';
+export const MAX_BUNDLE_BYTES = 4_000_000;
+export const bundleSchema = z.strictObject({
+  format: z.literal(BUNDLE_FORMAT),
+  packs: z
+    .array(
+      z.strictObject({
+        pack: z.unknown(),
+        solution: z.array(z.string().max(2000)).max(400).nullable(),
+      }),
+    )
+    .min(1)
+    .max(30),
+});
+export type Bundle = z.infer<typeof bundleSchema>;
 
 export function parsePack(data: unknown): Pack {
   const result = packSchema.safeParse(data);
