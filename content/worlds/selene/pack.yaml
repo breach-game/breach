@@ -1,0 +1,12 @@
+id: breach.world.selene
+version: 0.1.0
+engine: ">=0.8 <1"
+kind: world
+title:
+  fr: Sélène
+  en: Sélène
+summary:
+  fr: Sélène, éditeur fictif qui loue des équipes d'agents IA à de petites entreprises, et ses agents Lyra, Forge, Cassio et Orion.
+  en: Sélène, a fictional vendor that rents teams of AI agents to small companies, and its agents Lyra, Forge, Cassio and Orion.
+authors: [BREACH]
+locales: [fr, en]

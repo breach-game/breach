@@ -6,6 +6,7 @@ import type {
   Guidance,
   Host,
   Locale,
+  Matcher,
   Mission,
   NoiseTable,
   Npc,
@@ -33,7 +34,7 @@ import {
 import { engineStrings, interpolate } from './i18n.ts';
 import { resolveTarget } from './net.ts';
 import { acceptHearing, type Decision, decide, type Heard, vocabulary } from './npc.ts';
-import { evaluate, triggerMatches } from './rules.ts';
+import { evaluate, matches, triggerMatches } from './rules.ts';
 import { parse, ShellSyntaxError, type Stage, type Word } from './shell/parse.ts';
 import {
   type DefenseState,
@@ -60,7 +61,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.7.0';
+export const ENGINE_VERSION = '0.8.0';
 
 export interface GameOptions {
   world: Pack;
@@ -884,6 +885,39 @@ export class Game {
       if (passed && hunt.objective) this.completeObjective(hunt.objective);
     }
     return { ...result, hunt, wanted: wanted.length, caughtWanted: caught, missed, passed };
+  }
+
+  /** The eval of the current mission whose guardrail lives in this file, if any. */
+  evalOf(path: string) {
+    const abs = this.resolvePath(path);
+    const home = this.homeOf(this.world.player.host, this.world.player.user);
+    if (this.state.host !== this.world.player.host) return undefined;
+    return this.mission?.evals.find((e) => `${home}/${e.file}` === abs);
+  }
+
+  /**
+   * Try a guardrail the player wrote against the cases of the mission. A case is blocked when it
+   * meets every condition; a guardrail without any condition blocks everything. It passes when all
+   * the attacks are blocked and no legitimate request is. Returns null when no eval reads this file.
+   */
+  runEval(path: string, where: Record<string, Matcher>) {
+    const suite = this.evalOf(path);
+    if (!suite) return null;
+    const cases = suite.cases.map((c) => ({
+      ...c,
+      blocked: Object.entries(where).every(([name, matcher]) => matches(matcher, c.fields[name])),
+    }));
+    const attacks = cases.filter((c) => c.expect === 'block');
+    const legit = cases.filter((c) => c.expect === 'allow');
+    const blocked = attacks.filter((c) => c.blocked).length;
+    const missed = attacks.length - blocked;
+    const wrongly = legit.filter((c) => c.blocked).length;
+    const passed = missed === 0 && wrongly === 0;
+    if (!this.state.missionDone) {
+      this.emit({ type: 'EvalRun', eval: suite.id, blocked, missed, wrongly, passed });
+      if (passed && suite.objective) this.completeObjective(suite.objective);
+    }
+    return { cases, attacks: attacks.length, legit: legit.length, blocked, missed, wrongly, passed };
   }
 
   /**

@@ -1,0 +1,17 @@
+id: breach.season5.s03
+version: 0.1.0
+engine: ">=0.8 <1"
+kind: mission
+track: season
+requires: [breach.world.selene]
+title:
+  fr: "Saison 5 · 3. Le paquet qui n'existe pas"
+  en: "Season 5 · 3. The package that does not exist"
+summary:
+  fr: "Dépendances inventées. Forge écrit un script et la liste de ses paquets, avec aplomb. Deux d'entre eux n'existent nulle part. Tu les trouves, tu comprends ce qu'un inconnu pourrait en faire, et tu nettoies la liste. Rien n'est publié."
+  en: "Invented dependencies. Forge writes a script and the list of its packages, with great confidence. Two of them exist nowhere. You find them, understand what a stranger could do with them, and clean the list. Nothing is published."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [llm, supply, defense]
+minutes: 20

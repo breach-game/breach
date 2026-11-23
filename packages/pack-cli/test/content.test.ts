@@ -340,6 +340,7 @@ describe('official content', () => {
       'breach.season2',
       'breach.season3',
       'breach.season4',
+      'breach.season5',
     ]);
     expect(catalog.packs.find((p) => p.id === 'breach.season3')?.missions).toEqual(
       [1, 2, 3, 4, 5].map((n) => `breach.season3.s0${n}`),

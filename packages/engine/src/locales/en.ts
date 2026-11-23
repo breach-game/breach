@@ -17,6 +17,9 @@ export const en: Record<string, string> = {
   'stage.escalation': 'privilege escalation',
   'stage.supply': 'supply chain',
   'stage.cloud': 'cloud',
+  'stage.rag': 'shared index',
+  'stage.memory': 'memory poisoning',
+  'stage.agents': 'agent impersonation',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',
@@ -185,6 +188,15 @@ export const en: Record<string, string> = {
   'rule.nohunt': 'The mission does not expect this rule: result given for information.',
   'rule.pass': 'Rule accepted: {n} line(s) of the attack detected, no false alert.',
   'rule.false': '{n} false alert(s) on ordinary activity (lines marked "?"). Tighten the selection.',
+  'cmd.eval': 'Try a guardrail written in a file: eval run <file>',
+  'explain.eval':
+    '`eval run <file>` tries a guardrail against the cases of the mission: attack requests, which it must block, and legitimate requests, which it must let through. One condition per line (`field: value`, or `field|contains`, `field|startswith`, `field|gte`); a request that meets them all is blocked.',
+  'eval.usage':
+    'usage: eval run <file>. The file holds one condition per line, for example `tool: refund`. A request that meets every condition is blocked.',
+  'eval.none': 'No test set of the mission reads this file.',
+  'eval.pass': 'Guardrail accepted: every attack is blocked, no legitimate request is.',
+  'eval.wrongly': '{n} legitimate request(s) blocked (lines marked "!"). The guardrail is too broad.',
+  'eval.missed': '{n} attack(s) still get through (lines marked "!").',
   'rule.early': 'No line of the attack is in the logs yet: run the test again in a moment.',
   'rule.missed': '{n} line(s) of the attack to detect still escape the rule.',
   'answer.right': 'Correct.',
@@ -206,7 +218,7 @@ export const en: Record<string, string> = {
   'review.range': 'Give a line number between 1 and {n}.',
   'review.none': 'This file is not under review, or the review is over.',
   'review.again': 'You already named this line.',
-  'review.wrong': 'Line {line}: not this one. Read again what the line does with what the client sends.',
+  'review.wrong': 'Line {line}: not this one. Read the file again: look for the line the problem comes from.',
   'review.right': 'Line {line}: yes, that is one of the faulty lines. {left} left.',
   'review.done': 'Line {line}: yes. Review complete, every faulty line is found.',
   'explain.jq':

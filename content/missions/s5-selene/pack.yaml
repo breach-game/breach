@@ -1,0 +1,15 @@
+id: breach.season5
+version: 0.1.0
+engine: ">=0.8 <1"
+kind: series
+requires: [breach.world.selene]
+title:
+  fr: "Saison 5 : l'équipe d'agents"
+  en: "Season 5: the team of agents"
+summary:
+  fr: "Après Corbelle, Sélène. Tu audites une plateforme qui loue des équipes d'agents IA : un index de documents sans cloisons, une mémoire où tout le monde écrit, un agent développeur qui invente ses paquets, et un agent caissier qui croit sur parole. Pour finir, tu écris toi-même le garde-fou, et un banc d'essai le juge."
+  en: "After Corbelle, Sélène. You audit a platform that rents teams of AI agents: a document index with no walls, a memory everyone writes in, a developer agent that invents its packages, and a cashier agent that takes people at their word. To finish, you write the guardrail yourself, and a test bench judges it."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [llm, supply, defense]

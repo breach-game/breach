@@ -1,0 +1,10 @@
+Sélène internal package index
+
+datefr
+facturo
+papier-pdf
+selene-sdk
+tabula-nord
+
+5 packages. One page per package: /simple/<name>/
+Resolution policy: /policy

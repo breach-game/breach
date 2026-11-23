@@ -1,0 +1,18 @@
+{
+  "collection": "shared-v2",
+  "documents": 6,
+  "tenants": ["atelier-nord", "comptoir-sud"],
+  "tenant_filter": {
+    "retrieval": "off",
+    "prompt": "on",
+    "note": "Lyra is told to answer only from the documents of the customer she is talking to."
+  },
+  "titles": [
+    "atelier-nord/horaires.md",
+    "atelier-nord/tarifs-reparation.md",
+    "atelier-nord/garantie.md",
+    "comptoir-sud/horaires.md",
+    "comptoir-sud/contrat-fournisseur.md",
+    "comptoir-sud/carte-des-cafes.md"
+  ]
+}

@@ -17,6 +17,9 @@ export const fr: Record<string, string> = {
   'stage.escalation': 'élévation de privilèges',
   'stage.supply': 'chaîne logicielle',
   'stage.cloud': 'cloud',
+  'stage.rag': 'index partagé',
+  'stage.memory': 'mémoire empoisonnée',
+  'stage.agents': "usurpation d'agent",
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
@@ -187,6 +190,16 @@ export const fr: Record<string, string> = {
   'rule.pass': "Règle validée : {n} ligne(s) de l'attaque détectée(s), aucune fausse alerte.",
   'rule.false':
     "{n} fausse(s) alerte(s) sur l'activité ordinaire (lignes marquées « ? »). Resserre la sélection.",
+  'cmd.eval': 'Essayer un garde-fou écrit dans un fichier : eval run <fichier>',
+  'explain.eval':
+    "`eval run <fichier>` essaie un garde-fou contre les cas de la mission : des demandes d'attaque, qu'il doit bloquer, et des demandes légitimes, qu'il doit laisser passer. Une condition par ligne (`champ: valeur`, ou `champ|contains`, `champ|startswith`, `champ|gte`) ; une demande qui les remplit toutes est bloquée.",
+  'eval.usage':
+    'usage : eval run <fichier>. Le fichier contient une condition par ligne, par exemple `tool: refund`. Une demande qui remplit toutes les conditions est bloquée.',
+  'eval.none': "Aucun jeu d'essai de la mission ne lit ce fichier.",
+  'eval.pass': "Garde-fou validé : toutes les attaques sont bloquées, aucune demande légitime ne l'est.",
+  'eval.wrongly':
+    '{n} demande(s) légitime(s) bloquée(s) (lignes marquées « ! »). Le garde-fou est trop large.',
+  'eval.missed': '{n} attaque(s) passe(nt) encore (lignes marquées « ! »).',
   'rule.early': "Aucune ligne de l'attaque n'est encore dans les journaux : relance le test dans un instant.",
   'rule.missed': "{n} ligne(s) de l'attaque à détecter échappe(nt) encore à la règle.",
   'answer.right': 'Exact.',
@@ -208,7 +221,8 @@ export const fr: Record<string, string> = {
   'review.range': 'Donne un numéro de ligne entre 1 et {n}.',
   'review.none': "Ce fichier n'est pas en relecture, ou la relecture est terminée.",
   'review.again': 'Tu as déjà désigné cette ligne.',
-  'review.wrong': "Ligne {line} : ce n'est pas elle. Relis ce que la ligne fait de ce que le client envoie.",
+  'review.wrong':
+    "Ligne {line} : ce n'est pas elle. Relis le fichier : cherche la ligne d'où vient le problème.",
   'review.right': "Ligne {line} : oui, c'est une des lignes fautives. Il en reste {left}.",
   'review.done': 'Ligne {line} : oui. Relecture terminée, toutes les lignes fautives sont trouvées.',
   'explain.jq':

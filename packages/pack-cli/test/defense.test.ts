@@ -360,3 +360,42 @@ describe('season 4: decisions echo at the end of the season', () => {
     expect(game.state.detections).toBe(2);
   });
 });
+
+describe('season 5: the guardrail is judged by the engine', () => {
+  const selene = packs.find((p) => p.pack.id === 'breach.world.selene')!.pack;
+  const last = packs.find((p) => p.pack.id === 'breach.season5.s04')!;
+  const file = 'garde-fous/remboursement.yml';
+
+  async function guard(lines: string[]) {
+    const game = new Game({ world: selene, missions: [last.pack], locale: 'fr' });
+    game.startMission(last.pack.id);
+    let out = '';
+    for (const line of [...lines, `eval run ${file}`])
+      for await (const c of game.exec(line, 20_000)) if (c.k === 'out' || c.k === 'err') out += c.text;
+    return { game, out };
+  }
+
+  it('refuses the file as delivered: it blocks every refund', async () => {
+    const { game, out } = await guard([]);
+    expect(out).toContain('2/2 attacks blocked, 2/3 legitimate requests blocked');
+    expect(game.state.objectives.guard).toBe(false);
+  });
+
+  it('refuses a threshold on the amount, which the attacker chooses', async () => {
+    const { game, out } = await guard([`echo "amount|gte: 500" >> ${file}`]);
+    expect(out).toContain('1/2 attacks blocked, 1/3 legitimate requests blocked');
+    expect(game.state.objectives.guard).toBe(false);
+  });
+
+  it('refuses a guardrail on the signature alone, which stops a visitor reading an invoice', async () => {
+    const { game, out } = await guard([`echo "signed: false" > ${file}`]);
+    expect(out).toContain('2/2 attacks blocked, 1/3 legitimate requests blocked');
+    expect(game.state.objectives.guard).toBe(false);
+  });
+
+  it('accepts unsigned refunds only', async () => {
+    const { game, out } = await guard([`echo "signed: false" >> ${file}`]);
+    expect(out).toContain('2/2 attacks blocked, 0/3 legitimate requests blocked');
+    expect(game.state.objectives.guard).toBe(true);
+  });
+});

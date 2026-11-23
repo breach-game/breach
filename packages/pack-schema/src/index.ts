@@ -783,6 +783,38 @@ const mission = z.strictObject({
     )
     .max(4)
     .default([]),
+  /**
+   * Guardrails the player writes in a file of the workstation and tries with `eval run <file>`.
+   * A guardrail is a list of conditions on a request (a tool call of an agent): a request that meets
+   * them all is blocked. It passes when every case marked `block` is blocked and no case marked
+   * `allow` is. The cases are data: nothing is run, and no model judges.
+   */
+  evals: z
+    .array(
+      z.strictObject({
+        id,
+        /** Path of the guardrail file, relative to the player's home directory. */
+        file: z.string().min(1).max(200),
+        cases: z
+          .array(
+            z.strictObject({
+              id,
+              text: i18nKey,
+              fields: z.record(z.string().regex(/^[a-z_]{1,20}$/), scalar),
+              expect: z.enum(['block', 'allow']),
+            }),
+          )
+          .min(2)
+          .max(16)
+          .refine(
+            (cases) => cases.some((c) => c.expect === 'block') && cases.some((c) => c.expect === 'allow'),
+            'an eval needs at least one case to block and one to allow',
+          ),
+        objective: id.optional(),
+      }),
+    )
+    .max(4)
+    .default([]),
 });
 export type Mission = z.infer<typeof mission>;
 

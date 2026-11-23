@@ -1,0 +1,17 @@
+id: breach.season5.s04
+version: 0.1.0
+engine: ">=0.8 <1"
+kind: mission
+track: season
+requires: [breach.world.selene]
+title:
+  fr: "Saison 5 · 4. Qui parle à qui"
+  en: "Season 5 · 4. Who is talking to whom"
+summary:
+  fr: "Usurpation entre agents. Cassio ne rembourse que sur ordre d'Orion, et reconnaît Orion à un mot dans le message. Tu te fais passer pour lui, puis tu écris le garde-fou qui arrête le faux ordre sans bloquer les vrais."
+  en: "Impersonation between agents. Cassio only refunds on Orion's order, and knows Orion by one word in the message. You pass yourself off as Orion, then write the guardrail that stops the forged order without blocking the real ones."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [llm, social, defense]
+minutes: 20

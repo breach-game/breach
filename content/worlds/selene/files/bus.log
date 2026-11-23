@@ -1,0 +1,6 @@
+2028-02-04T09:12:41+01:00 bus: from=orion to=lyra task=answer tenant=atelier-nord signed=no
+2028-02-04T09:40:03+01:00 bus: from=orion to=cassio task=refund tenant=comptoir-sud amount=40 signed=no
+2028-02-04T10:02:17+01:00 bus: from=orion to=forge task=write_script tenant=atelier-nord signed=no
+2028-02-04T11:26:55+01:00 bus: from=widget to=cassio task=lookup_invoice tenant=atelier-nord signed=no
+2028-02-04T14:08:30+01:00 bus: from=orion to=cassio task=refund tenant=atelier-nord amount=25 signed=no
+# from= is a text field filled in by the sender. signed= is planned for bus v2 (ticket SEL-388).

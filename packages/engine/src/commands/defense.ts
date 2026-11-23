@@ -178,10 +178,14 @@ const RULE_NOISE = new Set(['title', 'id', 'description', 'where', 'detection', 
 
 /**
  * Read a detection rule written by the player: `source: auth`, then one `field: value` per line.
- * A field may end with `|contains`, `|startswith` or `|endswith`. Returns the rule, or the line that
+ * A field may end with `|contains`, `|startswith`, `|endswith` or `|gte`. Returns the rule, or the line that
  * could not be read. Plain text only: nothing here is evaluated.
  */
-export function parseRule(text: string): { rule: PlayerRule } | { error: string } {
+export function parseRule(
+  text: string,
+  options: { source?: boolean } = {},
+): { rule: PlayerRule } | { error: string } {
+  const needsSource = options.source ?? true;
   let source: LogSource | undefined;
   const where: Where = {};
   for (const raw of text.split('\n')) {
@@ -215,10 +219,11 @@ export function parseRule(text: string): { rule: PlayerRule } | { error: string 
     else if (modifier === 'contains') where[name] = { contains: value };
     else if (modifier === 'startswith') where[name] = { glob: `${value.replace(/[*?]/g, '')}*` };
     else if (modifier === 'endswith') where[name] = { glob: `*${value.replace(/[*?]/g, '')}` };
+    else if (modifier === 'gte' && /^\d{1,9}$/.test(value)) where[name] = { gte: Number(value) };
     else return { error: raw.trim() };
   }
-  if (!source) return { error: 'source:' };
-  return { rule: { source, where } };
+  if (!source && needsSource) return { error: 'source:' };
+  return { rule: { source: source ?? 'agent', where } };
 }
 
 /**
@@ -275,6 +280,71 @@ const rule: Command = {
   },
 };
 
+/**
+ * `eval run <file>`: try a guardrail written on the workstation against the cases of the mission.
+ * A guardrail is one condition per line (`field: value`, same modifiers as a detection rule); a
+ * request that meets them all is blocked. The engine counts, nothing else judges.
+ */
+const evalCmd: Command = {
+  name: 'eval',
+  summary: 'cmd.eval',
+  explain: 'explain.eval',
+  group: 'game',
+  async *run(ctx): Run {
+    const [sub, file] = ctx.args;
+    if (sub !== 'run' || !file) {
+      yield out(ctx.t('eval.usage'));
+      return sub ? 2 : 0;
+    }
+    const node = lookup(ctx.state.fs, ctx.path(file));
+    if (node?.t !== 'f' || !canRead(node, ctx.game.currentUser)) {
+      yield err(`eval: ${file}: No such file`);
+      return 1;
+    }
+    const parsed = parseRule(node.content, { source: false });
+    if ('error' in parsed) {
+      yield err(ctx.t('rule.syntax', { line: parsed.error }));
+      return 2;
+    }
+    yield wait(400);
+    const r = ctx.game.runEval(file, parsed.rule.where);
+    if (!r) {
+      yield out(paint(ctx, style.dim, ctx.t('eval.none')));
+      return 1;
+    }
+    const conditions = Object.entries(parsed.rule.where)
+      .map(([k, m]) => {
+        if (typeof m !== 'object') return `${k}=${String(m)}`;
+        if ('gte' in m) return `${k}>=${m.gte}`;
+        if ('contains' in m) return `${k}~${m.contains}`;
+        if ('glob' in m) return `${k}=${m.glob}`;
+        return `${k}=${JSON.stringify(m)}`;
+      })
+      .join(' ');
+    yield out(paint(ctx, style.dim, `guardrail: ${conditions || '(no condition: blocks everything)'}`));
+    for (const c of r.cases) {
+      const right = c.blocked === (c.expect === 'block');
+      const verdict = `${c.blocked ? 'BLOCK' : 'ALLOW'}${right ? ' ' : '!'}`;
+      const kind = c.expect === 'block' ? 'attack' : 'legit ';
+      const line = `  ${verdict} ${kind}  ${ctx.t(c.text)}`;
+      yield out(right ? line : paint(ctx, style.yellow, line));
+    }
+    yield out(
+      `result: ${r.blocked}/${r.attacks} attacks blocked, ${r.wrongly}/${r.legit} legitimate requests blocked`,
+    );
+    if (r.passed) {
+      yield out(paint(ctx, style.green, ctx.t('eval.pass')));
+      return 0;
+    }
+    if (r.wrongly > 0) yield out(paint(ctx, style.yellow, ctx.t('eval.wrongly', { n: r.wrongly })));
+    if (r.missed > 0) yield out(paint(ctx, style.yellow, ctx.t('eval.missed', { n: r.missed })));
+    return 1;
+  },
+  complete(words, current) {
+    return words.length === 0 ? ['run'].filter((w) => w.startsWith(current)) : [];
+  },
+};
+
 /** The pentest report, from the journal. `report > rapport.md` keeps a copy on the workstation. */
 const report: Command = {
   name: 'report',
@@ -287,4 +357,4 @@ const report: Command = {
   },
 };
 
-export const defenseCommands: Command[] = [soc, contain, rule, report];
+export const defenseCommands: Command[] = [soc, contain, rule, evalCmd, report];
