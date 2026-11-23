@@ -16,7 +16,7 @@ const fr = {
   'title.seasons': 'Saisons',
   'season.title': 'Saisons',
   'season.intro':
-    'La campagne chez NovaMind est la saison 1. Les suivantes sont de nouvelles affaires, chacune dans sa propre entreprise. Elles sont ouvertes dès maintenant, mais supposent les bases apprises dans la campagne. Une saison a sa propre sauvegarde et se joue au niveau de guidage réglé dans les options.',
+    'Chaque saison est une affaire dans une entreprise différente, avec sa propre sauvegarde. La saison 1, chez NovaMind, pose les bases ; les suivantes sont ouvertes dès maintenant et se jouent au niveau de guidage réglé dans les options. Une nouvelle saison apparaît ici dès sa sortie.',
   'season.none': 'Aucune saison pour le moment.',
   'season.new': 'Nouveau',
   'season.levelNote': 'Le niveau de guidage est celui réglé dans les options.',
@@ -364,9 +364,9 @@ const fr = {
   'debrief.soc.note':
     "Chaque ligne est une de tes actions, ou une réaction qu'elle a provoquée, telle qu'elle apparaît dans les journaux de la cible.",
   'debrief.next': 'Mission suivante',
-  'debrief.end.title': 'Campagne NovaMind terminée',
+  'debrief.end.title': 'Saison 1 terminée · NovaMind',
   'debrief.end.body':
-    "Du mandat signé jusqu'à la console du SOC, tu as attaqué NovaMind, rejoué chaque attaque côté défense, puis arrêté Mute et ceux qui ont suivi. Inès a reçu ton rapport ce matin : six constats, six correctifs vérifiés, trois incidents contenus. Ada, elle, a déjà un nouveau mandat sur son bureau. Les missions de la communauté t'attendent depuis l'écran titre.",
+    "Du mandat signé jusqu'à la console du SOC, tu as attaqué NovaMind, rejoué chaque attaque côté défense, puis arrêté Mute et ceux qui ont suivi. Inès a reçu ton rapport ce matin : six constats, six correctifs vérifiés, trois incidents contenus. Ada, elle, a déjà un nouveau mandat sur son bureau.",
   'debrief.end.report': 'Télécharger le rapport (.md)',
   'debrief.end.reportHint': 'Le même rapport s’affiche dans le terminal avec la commande report.',
   'debrief.tally.defense': 'Défense',
@@ -414,6 +414,45 @@ const fr = {
   'debrief.sources': 'Sources (à ouvrir toi-même, le jeu ne suit aucun lien) :',
   'card.mission': 'MISSION',
   'card.training': 'ENTRAÎNEMENT',
+  'season.kicker': 'Saison {n}',
+  'season.one.title': 'Le mandat NovaMind',
+  'season.one.summary':
+    "Ton premier mandat chez Ligne Rouge : une start-up pleine de chatbots et d'agents IA, attaquée puis défendue, du périmètre signé jusqu'à la console du SOC.",
+  'season.state.fresh': 'À découvrir',
+  'season.state.started': 'En cours',
+  'season.state.done': 'Terminée',
+  'season.count': '{done}/{total} missions',
+  'season.points': '{score} pts',
+  'season.progress': 'Progression : {done} missions terminées sur {total}',
+  'season.after': 'Conseillée après la saison {n}',
+  'season.allDone':
+    "Toutes les saisons sont terminées. Les prochaines apparaîtront ici, et l'écran titre te les annoncera.",
+  'season.meanwhile': 'En attendant',
+  'step.mission': 'Mission {n} · {title}',
+  'step.newMission': 'Une nouvelle mission prolonge la saison {n}.',
+  'step.start': 'Commencer la saison {n}',
+  'step.after': 'Saison {n} terminée · {score} pts. La suite t’attend.',
+  'step.done.kicker': 'Toutes les saisons terminées',
+  'step.done.title': 'Tu es à jour',
+  'step.done.body':
+    'Les prochaines saisons s’annonceront ici dès leur sortie. En attendant, d’autres affaires t’attendent.',
+  'step.done.total': '{n} saisons · {score} pts au total',
+  'news.title': 'Nouveautés',
+  'news.dismiss': 'Marquer comme lu',
+  'news.season': 'Nouvelle saison',
+  'news.mission': 'Nouvelle mission · saison {n}',
+  'news.training': 'Nouvel entraînement',
+  'news.count': '{n} nouveautés',
+  'debrief.next.kicker': 'La suite',
+  'debrief.next.start': 'Continuer vers la saison {n}',
+  'debrief.next.resume': 'Reprendre la saison {n}',
+  'debrief.next.all': 'Toutes les saisons',
+  'debrief.next.done.title': 'Tu as terminé toutes les saisons disponibles',
+  'debrief.next.done.body': 'Les prochaines s’annonceront sur l’écran titre dès leur sortie. En attendant :',
+  'debrief.season.title': 'Saison {n} terminée',
+  'debrief.season.body':
+    "Tu as joué la saison jusqu'au bout. Son score est compté à part de celui de la campagne.",
+  'debrief.season.total': 'Score de la saison',
 };
 
 const en: typeof fr = {
@@ -431,7 +470,7 @@ const en: typeof fr = {
   'title.seasons': 'Seasons',
   'season.title': 'Seasons',
   'season.intro':
-    'The campaign at NovaMind is season 1. The next ones are new cases, each in its own company. They are open right away, but assume the basics taught by the campaign. A season has its own save and is played at the guidance level set in the options.',
+    'Each season is a case in a different company, with its own save. Season 1, at NovaMind, teaches the basics; the next ones are open right away and are played at the guidance level set in the options. A new season shows up here as soon as it is out.',
   'season.none': 'No season yet.',
   'season.new': 'New',
   'season.levelNote': 'The guidance level is the one set in the options.',
@@ -780,9 +819,9 @@ const en: typeof fr = {
   'debrief.soc.note':
     "Each line is one of your actions, or a reaction it caused, as it shows up in the target's logs.",
   'debrief.next': 'Next mission',
-  'debrief.end.title': 'NovaMind campaign complete',
+  'debrief.end.title': 'Season 1 complete · NovaMind',
   'debrief.end.body':
-    'From the signed mandate to the SOC console, you attacked NovaMind, replayed every attack on the defence side, then stopped Mute and those who followed. Inès got your report this morning: six findings, six verified fixes, three incidents contained. Ada already has a new mandate on her desk. Community missions are waiting on the title screen.',
+    'From the signed mandate to the SOC console, you attacked NovaMind, replayed every attack on the defence side, then stopped Mute and those who followed. Inès got your report this morning: six findings, six verified fixes, three incidents contained. Ada already has a new mandate on her desk.',
   'debrief.end.report': 'Download the report (.md)',
   'debrief.end.reportHint': 'The same report shows in the terminal with the report command.',
   'debrief.tally.defense': 'Defence',
@@ -828,6 +867,45 @@ const en: typeof fr = {
   'debrief.sources': 'Sources (open them yourself, the game follows no link):',
   'card.mission': 'MISSION',
   'card.training': 'TRAINING',
+  'season.kicker': 'Season {n}',
+  'season.one.title': 'The NovaMind mandate',
+  'season.one.summary':
+    'Your first mandate at Ligne Rouge: a start-up full of chatbots and AI agents, attacked then defended, from the signed scope to the SOC console.',
+  'season.state.fresh': 'Not started',
+  'season.state.started': 'In progress',
+  'season.state.done': 'Complete',
+  'season.count': '{done}/{total} missions',
+  'season.points': '{score} pts',
+  'season.progress': 'Progress: {done} of {total} missions finished',
+  'season.after': 'Best played after season {n}',
+  'season.allDone':
+    'Every season is complete. The next ones will show up here, and the title screen will tell you.',
+  'season.meanwhile': 'Meanwhile',
+  'step.mission': 'Mission {n} · {title}',
+  'step.newMission': 'A new mission extends season {n}.',
+  'step.start': 'Start season {n}',
+  'step.after': 'Season {n} complete · {score} pts. What comes next is waiting.',
+  'step.done.kicker': 'Every season complete',
+  'step.done.title': 'You are all caught up',
+  'step.done.body':
+    'New seasons will be announced here as soon as they are out. Meanwhile, other cases are waiting.',
+  'step.done.total': '{n} seasons · {score} pts in all',
+  'news.title': 'What’s new',
+  'news.dismiss': 'Mark as read',
+  'news.season': 'New season',
+  'news.mission': 'New mission · season {n}',
+  'news.training': 'New training',
+  'news.count': '{n} new items',
+  'debrief.next.kicker': 'What comes next',
+  'debrief.next.start': 'Continue to season {n}',
+  'debrief.next.resume': 'Resume season {n}',
+  'debrief.next.all': 'All seasons',
+  'debrief.next.done.title': 'You have finished every season available',
+  'debrief.next.done.body':
+    'The next ones will be announced on the title screen as soon as they are out. Meanwhile:',
+  'debrief.season.title': 'Season {n} complete',
+  'debrief.season.body': 'You played the season to the end. Its score is kept apart from the campaign’s.',
+  'debrief.season.total': 'Season score',
 };
 
 export type UiKey = keyof typeof fr;

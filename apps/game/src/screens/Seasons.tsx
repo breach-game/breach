@@ -1,134 +1,215 @@
-import type { CatalogEntry } from '@breach/pack-schema';
 import { useEffect, useState } from 'react';
-import { loadSeasons, seriesMissions } from '../packs.ts';
-import { type CampaignProgress, type StartMode, seasonProgress } from '../session.ts';
-import { useSettings } from '../settings.ts';
+import {
+  bareTitle,
+  findNews,
+  type Journey,
+  missionKey,
+  missionLabel,
+  nextStep,
+  type Season,
+  seasonKey,
+  seasonState,
+  upNext,
+} from '../journey.ts';
+import { loadJourney, markSeen, readSeen } from '../session.ts';
 import { useT } from '../ui.ts';
+import {
+  type Go,
+  playSeason,
+  SeasonBar,
+  SeasonKicker,
+  SeasonMeta,
+  StateChip,
+  seasonSummary,
+  seasonTitle,
+  useText,
+} from './Journey.tsx';
 import { Tags } from './Tags.tsx';
 
 /**
- * Official seasons: series of official missions played after the campaign, each in its own world and
- * its own save. Listed from the game's own catalogue, like the campaign, so no download is needed.
+ * Every official season as a progress card: season 1 is the NovaMind campaign, the next ones are the
+ * catalogue's seasons, each in its own world and its own save. Listed from the game's own catalogue,
+ * so no download is needed, and a new season shows up here by itself.
  */
-export function Seasons({ onStart, onBack }: { onStart: (mode: StartMode) => void; onBack: () => void }) {
+export function Seasons({ open, go }: { open?: string; go: (to: Go) => void }) {
   const t = useT();
-  const { locale } = useSettings();
-  const [seasons, setSeasons] = useState<CatalogEntry[] | null>(null);
-  const [catalog, setCatalog] = useState<Parameters<typeof seriesMissions>[1] | null>(null);
-  const [progress, setProgress] = useState<Record<string, CampaignProgress>>({});
-  const [opened, setOpened] = useState<CatalogEntry | null>(null);
+  const text = useText();
+  const [journey, setJourney] = useState<Journey | null>(null);
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [opened, setOpened] = useState<string | null>(open ?? null);
 
   useEffect(() => {
     let live = true;
-    void loadSeasons().then(async ({ catalog, seasons }) => {
-      if (!live) return;
-      setCatalog(catalog);
-      setSeasons(seasons);
-      const entries = await Promise.all(seasons.map((s) => seasonProgress(s)));
-      if (live) setProgress(Object.fromEntries(seasons.map((s, i) => [s.id, entries[i]!])));
-    });
+    Promise.all([loadJourney(), readSeen()]).then(
+      ([j, seen]) => {
+        if (!live) return;
+        setJourney(j);
+        // Seasons the title screen announces as new, marked the same way here.
+        setFresh(new Set(seen ? findNews(j, seen).map((n) => n.key) : []));
+      },
+      (e: Error) => live && setError(e.message),
+    );
     return () => {
       live = false;
     };
   }, []);
 
-  const text = (v: { fr?: string; en?: string } | undefined) => (v ? (v[locale] ?? v.fr ?? v.en ?? '') : '');
+  const season = journey?.seasons.find((s) => s.id === opened);
+  // Opening a season files its news.
+  useEffect(() => {
+    if (season) void markSeen([seasonKey(season), ...season.missions.map(missionKey)]);
+  }, [season]);
 
-  if (opened && catalog) {
-    const prog = progress[opened.id] ?? { completed: {}, current: null };
-    const list = seriesMissions(opened, catalog);
-    const next = prog.current ?? list.find((m) => !(m.id in prog.completed))?.id;
-    const started = Object.keys(prog.completed).length > 0 || prog.current !== null;
-    return (
-      <main className="title community">
-        <div className="title-inner">
-          <h1 className="levels-title">{text(opened.title)}</h1>
-          <p className="community-intro">{text(opened.summary)}</p>
-          <ol className="series-list">
-            {list.map((m, i) => {
-              const score = prog.completed[m.id];
-              const open = score !== undefined || m.id === next;
-              return (
-                <li key={m.id} data-state={score !== undefined ? 'done' : m.id === next ? 'next' : 'locked'}>
-                  <b>
-                    {String(i + 1).padStart(2, '0')} · {text(m.title)}
-                  </b>
-                  <span>{open ? text(m.summary) : t('missions.lockedHint')}</span>
-                  <i>
-                    {score !== undefined
-                      ? `✓ ${t('missions.done', { score })}`
-                      : m.id === next
-                        ? `▶ ${t(prog.current === m.id ? 'missions.current' : 'missions.next')}`
-                        : `⊘ ${t('missions.locked')}`}
-                  </i>
-                </li>
-              );
-            })}
-          </ol>
-          <p className="levels-note">{t('season.levelNote')}</p>
-          <div className="title-actions community-actions">
-            <button
-              type="button"
-              className="btn primary"
-              autoFocus
-              onClick={() => onStart({ season: opened.id, restart: started && !next })}
-            >
-              {t(!started ? 'series.start' : next ? 'series.continue' : 'series.again')}
-            </button>
-            {started && next && (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => onStart({ season: opened.id, restart: true })}
-              >
-                {t('series.restart')}
-              </button>
-            )}
-            <button type="button" className="btn" onClick={() => setOpened(null)}>
-              {t('community.back')}
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (season) return <SeasonDetail season={season} go={go} onBack={() => setOpened(null)} />;
 
+  const all = journey ? nextStep(journey.seasons).kind === 'done' : false;
   return (
     <main className="title community">
       <div className="title-inner">
         <h1 className="levels-title">{t('season.title')}</h1>
         <p className="community-intro">{t('season.intro')}</p>
-        {seasons === null ? (
-          <p className="fine">{t('community.loading')}</p>
-        ) : seasons.length === 0 ? (
-          <p className="fine">{t('season.none')}</p>
+        {error ? (
+          <div className="community-state title-error">
+            {t('title.error')} {error}
+          </div>
+        ) : !journey ? (
+          <p className="community-state" role="status">
+            {t('community.loading')}
+          </p>
         ) : (
-          <div className="levels community-list">
-            {seasons.map((s, i) => {
-              const prog = progress[s.id] ?? { completed: {}, current: null };
-              const done = catalog ? seriesMissions(s, catalog).length : 0;
-              const got = Object.keys(prog.completed).length;
+          <div className="j-seasons">
+            {journey.seasons.map((s, i) => {
+              const before = journey.seasons[i - 1];
+              const early = before && seasonState(s) === 'fresh' && seasonState(before) !== 'done';
               return (
                 <button
                   key={s.id}
                   type="button"
-                  className="level"
+                  className="j-season"
+                  data-state={seasonState(s)}
                   autoFocus={i === 0}
-                  onClick={() => setOpened(s)}
+                  onClick={() => setOpened(s.id)}
                 >
-                  <b>{text(s.title)}</b>
-                  <span>{text(s.summary)}</span>
-                  <Tags entry={s} />
-                  <i>
-                    {t('series.count', { n: done })}
-                    {got > 0 ? ` · ${got}/${done} ✓` : ` · ${t('season.new')}`}
-                  </i>
+                  <header>
+                    <SeasonKicker season={s} />
+                    <StateChip season={s} fresh={fresh.has(seasonKey(s))} />
+                  </header>
+                  <b>{seasonTitle(s, text, t)}</b>
+                  <span className="j-summary">{seasonSummary(s, text, t)}</span>
+                  {s.entry && <Tags entry={s.entry} />}
+                  <div className="j-progress">
+                    <SeasonBar season={s} next={seasonState(s) === 'started' ? upNext(s) : null} />
+                    <SeasonMeta season={s} />
+                  </div>
+                  {early && <i className="j-note">{t('season.after', { n: before.number })}</i>}
                 </button>
               );
             })}
           </div>
         )}
+        {all && (
+          <div className="j-meanwhile">
+            <p>{t('season.allDone')}</p>
+            <div className="title-actions community-actions">
+              <button type="button" className="btn" onClick={() => go({ screen: 'training' })}>
+                {t('title.training')}
+              </button>
+              <button type="button" className="btn" onClick={() => go({ screen: 'community' })}>
+                {t('title.community')}
+              </button>
+            </div>
+          </div>
+        )}
         <div className="title-actions community-actions">
+          <button type="button" className="btn" onClick={() => go({ screen: 'title' })}>
+            {t('community.back')}
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/** One season, mission by mission, with what can be done with it. */
+function SeasonDetail({ season, go, onBack }: { season: Season; go: (to: Go) => void; onBack: () => void }) {
+  const t = useT();
+  const text = useText();
+  const state = seasonState(season);
+  const next = upNext(season);
+  const campaign = season.kind === 'campaign';
+  const restart: Go = { start: { season: season.id, restart: true } };
+  return (
+    <main className="title community">
+      <div className="title-inner">
+        <div className="j-detail-head">
+          <SeasonKicker season={season} />
+          <StateChip season={season} />
+        </div>
+        <h1 className="j-detail-title">{seasonTitle(season, text, t)}</h1>
+        <p className="community-intro">{seasonSummary(season, text, t)}</p>
+        <div className="j-progress wide">
+          <SeasonBar season={season} next={state === 'started' ? next : null} />
+          <SeasonMeta season={season} />
+        </div>
+        <ol className="series-list">
+          {season.missions.map((m) => {
+            const score = season.progress.completed[m.id];
+            const isNext = score === undefined && m.id === next?.id;
+            return (
+              <li key={m.id} data-state={score !== undefined ? 'done' : isNext ? 'next' : 'locked'}>
+                <b>
+                  {missionLabel(season, m)} · {bareTitle(text(m.title))}
+                </b>
+                <span>{score !== undefined || isNext ? text(m.summary) : t('missions.lockedHint')}</span>
+                <i>
+                  {score !== undefined
+                    ? `✓ ${t('missions.done', { score })}`
+                    : isNext
+                      ? `▶ ${t(season.progress.current === m.id ? 'missions.current' : 'missions.next')}`
+                      : `⊘ ${t('missions.locked')}`}
+                </i>
+              </li>
+            );
+          })}
+        </ol>
+        {!campaign && <p className="levels-note">{t('season.levelNote')}</p>}
+        <div className="title-actions community-actions">
+          {state !== 'done' ? (
+            <button type="button" className="btn primary" autoFocus onClick={() => go(playSeason(season))}>
+              {state === 'fresh'
+                ? campaign
+                  ? t('title.new')
+                  : t('step.start', { n: season.number })
+                : campaign
+                  ? t('title.continue')
+                  : t('series.continue')}{' '}
+              →
+            </button>
+          ) : campaign ? (
+            <button
+              type="button"
+              className="btn primary"
+              autoFocus
+              onClick={() => go({ screen: 'missions' })}
+            >
+              {t('title.missions')}
+            </button>
+          ) : (
+            <button type="button" className="btn primary" autoFocus onClick={() => go(restart)}>
+              {t('series.again')}
+            </button>
+          )}
+          {campaign && state === 'started' && (
+            <button type="button" className="btn" onClick={() => go({ screen: 'missions' })}>
+              {t('title.missions')}
+            </button>
+          )}
+          {!campaign && state === 'started' && (
+            <button type="button" className="btn" onClick={() => go(restart)}>
+              {t('series.restart')}
+            </button>
+          )}
           <button type="button" className="btn" onClick={onBack}>
             {t('community.back')}
           </button>

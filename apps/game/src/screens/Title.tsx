@@ -1,44 +1,81 @@
 import { LEVEL_BONUS } from '@breach/engine';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Wordmark } from '../brand.tsx';
-import { eraseSave, hasSave } from '../session.ts';
+import {
+  findNews,
+  initialSeen,
+  type Journey,
+  type News,
+  newsKeys,
+  nextStep,
+  returning,
+  settleSeen,
+} from '../journey.ts';
+import { eraseSave, hasSave, loadJourney, markSeen, readSeen, writeSeen } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { type Go, NewsPanel, StepCard } from './Journey.tsx';
 import { ProgressFile } from './ProgressFile.tsx';
 
 const LEVELS = ['guided', 'standard', 'expert'] as const;
 
 const MIN_WIDTH = 900;
 
-export function Title({
-  onStart,
-  onCommunity,
-  onMissions,
-  onTraining,
-  onSeasons,
-}: {
-  onStart: (mode: 'new' | 'continue') => void;
-  onCommunity: () => void;
-  onMissions: () => void;
-  onTraining: () => void;
-  onSeasons: () => void;
-}) {
+export function Title({ go, picking: initialPicking = false }: { go: (to: Go) => void; picking?: boolean }) {
   const t = useT();
   const settings = useSettings();
   const [save, setSave] = useState<boolean | null>(null);
-  const [picking, setPicking] = useState(false);
+  const [journey, setJourney] = useState<Journey | null | undefined>(undefined);
+  const [news, setNews] = useState<News[]>([]);
+  const [picking, setPicking] = useState(initialPicking);
   const [wide, setWide] = useState(window.innerWidth >= MIN_WIDTH);
 
+  // Every save, read at once: what comes next, and what is new since the last visit. Read again
+  // after a progress file was imported.
+  const readSaves = useCallback(async () => {
+    setSave(await hasSave());
+    try {
+      const [j, stored] = await Promise.all([loadJourney(), readSeen()]);
+      const seen = settleSeen(j, stored ?? initialSeen(j));
+      if (seen !== stored) await writeSeen(seen);
+      setJourney(j);
+      setNews(findNews(j, seen));
+    } catch {
+      setJourney(null);
+    }
+  }, []);
+
   useEffect(() => {
-    void hasSave().then(setSave);
+    void readSaves();
     const onResize = () => setWide(window.innerWidth >= MIN_WIDTH);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+  }, [readSaves]);
+
+  const follow = (to: Go, seen?: readonly News[]) => {
+    if (seen?.length) void markSeen(seen.flatMap(newsKeys));
+    if ('screen' in to && to.screen === 'newGame') setPicking(true);
+    else go(to);
+  };
+  const ready = save !== null && journey !== undefined;
+  const back = journey ? returning(journey.seasons) : Boolean(save);
+  const step = journey && back ? nextStep(journey.seasons) : null;
+  const allDone = step?.kind === 'done';
+  const count = (kinds: News['kind'][]) => news.filter((n) => kinds.includes(n.kind)).length;
 
   return (
     <main className="title">
-      <div className="title-inner">
+      {wide && !picking && (
+        <NewsPanel
+          news={news}
+          go={follow}
+          onDismiss={() => {
+            void markSeen(news.flatMap(newsKeys));
+            setNews([]);
+          }}
+        />
+      )}
+      <div className={`title-inner${wide && !picking && back && journey ? ' has-step' : ''}`}>
         <Wordmark className="wm" />
         <div className="tagline">
           {t('title.tagline')}
@@ -55,7 +92,7 @@ export function Title({
                 autoFocus={i === 0}
                 onClick={() => {
                   updateSettings({ guidance: g });
-                  onStart('new');
+                  go({ start: 'new' });
                 }}
               >
                 <b>{t(`guidance.${g}` as UiKey)}</b>
@@ -67,52 +104,80 @@ export function Title({
           </div>
         ) : wide ? (
           <div className="title-actions">
-            {save ? (
-              <>
-                <button type="button" className="btn primary" autoFocus onClick={() => onStart('continue')}>
-                  {t('title.continue')}
-                </button>
-                <button type="button" className="btn" onClick={onMissions}>
-                  {t('title.missions')}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={async () => {
-                    await eraseSave();
-                    setSave(false);
-                    setPicking(true);
-                  }}
-                >
-                  {t('title.restart')}
-                </button>
-              </>
-            ) : (
+            {!ready ? (
+              <button type="button" className="btn primary" disabled>
+                {t('title.continue')}
+              </button>
+            ) : step && journey ? (
+              <StepCard step={step} seasons={journey.seasons} news={news} go={follow} />
+            ) : back ? (
+              // The catalogue could not be read: the campaign can still resume.
               <button
                 type="button"
                 className="btn primary"
                 autoFocus
-                disabled={save === null}
-                onClick={() => setPicking(true)}
+                onClick={() => go({ start: 'continue' })}
               >
+                {t('title.continue')}
+              </button>
+            ) : (
+              <button type="button" className="btn primary" autoFocus onClick={() => setPicking(true)}>
                 {t('title.new')}
               </button>
             )}
-            <button type="button" className="btn" disabled={save === null} onClick={onTraining}>
-              {t('title.training')}
-            </button>
-            <button type="button" className="btn" disabled={save === null} onClick={onSeasons}>
-              {t('title.seasons')}
-            </button>
-            <button type="button" className="btn" disabled={save === null} onClick={onCommunity}>
-              {t('title.community')}
-            </button>
+            <div className="title-grid">
+              {/* Once everything is finished, the card above already offers the trainings and the store. */}
+              <button
+                type="button"
+                className="btn"
+                disabled={!ready}
+                onClick={() => go({ screen: 'seasons' })}
+              >
+                {t('title.seasons')}
+                <Badge n={count(['season', 'mission'])} />
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={!ready}
+                onClick={() => go({ screen: 'training' })}
+              >
+                {t('title.training')}
+                <Badge n={count(['training'])} />
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={!ready}
+                onClick={() => go({ screen: 'community' })}
+              >
+                {t('title.community')}
+              </button>
+              {save && (
+                <button type="button" className="btn" onClick={() => go({ screen: 'missions' })}>
+                  {t('title.missions')}
+                </button>
+              )}
+            </div>
+            {save && (
+              <button
+                type="button"
+                className="btn quiet"
+                onClick={async () => {
+                  await eraseSave();
+                  setSave(false);
+                  setPicking(true);
+                }}
+              >
+                {t('title.restart')}
+              </button>
+            )}
           </div>
         ) : (
           <p className="small-screen">{t('title.desktop')}</p>
         )}
         {wide && !picking && save !== null && (
-          <ProgressFile hasSave={save} onImported={() => setSave(true)} />
+          <ProgressFile hasSave={save} onImported={() => void readSaves()} />
         )}
         <div className="title-options">
           <div className="seg" role="group" aria-label="Language">
@@ -169,5 +234,17 @@ export function Title({
       </div>
       <p className="legal">{t('title.legal')}</p>
     </main>
+  );
+}
+
+/** A count of news on a title button, read out with it. */
+function Badge({ n }: { n: number }) {
+  const t = useT();
+  if (n === 0) return null;
+  return (
+    <span className="j-badge" title={t('news.count', { n })}>
+      <span aria-hidden="true">{n}</span>
+      <span className="sr-only">{t('news.count', { n })}</span>
+    </span>
   );
 }

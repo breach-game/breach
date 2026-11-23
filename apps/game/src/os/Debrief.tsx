@@ -1,6 +1,18 @@
 import { LEVEL_BONUS, pentestReport, socView } from '@breach/engine';
 import { useEffect, useRef, useState } from 'react';
-import { playKind, useGame } from '../session.ts';
+import { finishing, nextStep, type Season } from '../journey.ts';
+import {
+  type Go,
+  playSeason,
+  SeasonBar,
+  SeasonKicker,
+  SeasonMeta,
+  StateChip,
+  seasonSummary,
+  seasonTitle,
+  useText,
+} from '../screens/Journey.tsx';
+import { flushSave, loadJourney, playedSeason, playKind, useGame } from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 import { Defense } from './Defense.tsx';
@@ -9,7 +21,16 @@ import { Defense } from './Defense.tsx';
  * End-of-mission debrief: the defender's lesson, and the player's own commands as the target's
  * SOC saw them. The list comes straight from the event log.
  */
-export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }) {
+export function Debrief({
+  onNext,
+  onClose,
+  onLeave,
+}: {
+  onNext(): void;
+  onClose(): void;
+  /** Leave the desktop for another screen, or start another season. */
+  onLeave(to: Go): void;
+}) {
   const game = useGame();
   const t = useT();
   const { locale } = useSettings();
@@ -27,10 +48,15 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
   const defense = mission?.defense;
   const done = game.state.mission ? game.state.completed[game.state.mission] : undefined;
   const defended = !defense || done?.defense !== undefined;
+  // The last debrief of a season says what comes next: the next season, or what else there is.
+  const seasonEnd = defended && !game.nextMission() && playedSeason() !== null;
+  const seasons = useJourneyAfter(seasonEnd);
+  const thisSeason = seasons?.find((s) => s.id === playedSeason());
+  const leave = (to: Go) => void flushSave().then(() => onLeave(to));
   // Ready for Enter, without scrolling past the lesson.
   useEffect(() => {
-    if (defended) nextButton.current?.focus({ preventScroll: true });
-  }, [defended]);
+    if (defended && seasons !== null) nextButton.current?.focus({ preventScroll: true });
+  }, [defended, seasons]);
   if (!mission || !game.state.mission) return null;
   const entries = socView(game);
   const next = game.nextMission();
@@ -176,13 +202,25 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           <p>{t('debrief.community.body')}</p>
         </>
       )}
-      {!next && (playKind() === 'community' || playKind() === 'season') && series && (
+      {!next && playKind() === 'community' && series && (
         <>
           <h3>{t('debrief.series.title')}</h3>
           <p>{t('debrief.series.body')}</p>
           <div className="stats">
             <span>
               {t('debrief.series.total')}
+              <b>{campaign}</b>
+            </span>
+          </div>
+        </>
+      )}
+      {!next && defended && playKind() === 'season' && (
+        <>
+          <h3>{t('debrief.season.title', { n: thisSeason?.number ?? '' })}</h3>
+          <p>{t('debrief.season.body')}</p>
+          <div className="stats">
+            <span>
+              {t('debrief.season.total')}
               <b>{campaign}</b>
             </span>
           </div>
@@ -212,6 +250,9 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           <p className="fine">{t('debrief.end.reportHint')}</p>
         </>
       )}
+      {seasonEnd && seasons && seasons.length > 0 && (
+        <WhatNext seasons={seasons} go={leave} primary={nextButton} />
+      )}
       <div className="actions">
         {next && defended && (
           <button type="button" className="btn defense" ref={nextButton} onClick={onNext}>
@@ -224,6 +265,101 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Every season, read from the saves once the running one is written, with the season being played
+ * counted as finished (its save may still be a few hundred milliseconds behind). Null while loading,
+ * empty if the catalogue cannot be read.
+ */
+function useJourneyAfter(enabled: boolean): Season[] | null {
+  const game = useGame();
+  const [seasons, setSeasons] = useState<Season[] | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let live = true;
+    const id = playedSeason();
+    const completed = Object.fromEntries(
+      Object.entries(game.state.completed).map(([m, c]) => [m, c.score + (c.defense ?? 0)]),
+    );
+    flushSave()
+      .then(loadJourney)
+      .then(
+        (j) => live && setSeasons(id ? finishing(j.seasons, id, completed) : j.seasons),
+        () => live && setSeasons([]),
+      );
+    return () => {
+      live = false;
+    };
+  }, [enabled, game]);
+  return enabled ? seasons : null;
+}
+
+/**
+ * After the last mission of a season: the next season, ready to start in one click, or, once
+ * everything is finished, the other things to play. Never a dead end.
+ */
+function WhatNext({
+  seasons,
+  go,
+  primary,
+}: {
+  seasons: readonly Season[];
+  go: (to: Go) => void;
+  primary: React.RefObject<HTMLButtonElement | null>;
+}) {
+  const t = useT();
+  const text = useText();
+  const step = nextStep(seasons);
+  if (step.kind === 'done')
+    return (
+      <section className="j-next">
+        <h3>{t('debrief.next.done.title')}</h3>
+        <p>{t('debrief.next.done.body')}</p>
+        <div className="actions">
+          <button
+            type="button"
+            className="btn defense"
+            ref={primary}
+            onClick={() => go({ screen: 'community' })}
+          >
+            {t('title.community')} →
+          </button>
+          <button type="button" className="btn" onClick={() => go({ screen: 'training' })}>
+            {t('title.training')}
+          </button>
+          <button type="button" className="btn" onClick={() => go({ screen: 'seasons' })}>
+            {t('debrief.next.all')}
+          </button>
+        </div>
+      </section>
+    );
+  const { season } = step;
+  return (
+    <section className="j-next">
+      <h3>{t('debrief.next.kicker')}</h3>
+      <div className="j-step compact">
+        <header>
+          <SeasonKicker season={season} />
+          <StateChip season={season} />
+        </header>
+        <h3>{seasonTitle(season, text, t)}</h3>
+        <p className="j-summary">{seasonSummary(season, text, t)}</p>
+        <div className="j-progress">
+          <SeasonBar season={season} next={step.kind === 'resume' ? step.mission : null} />
+          <SeasonMeta season={season} />
+        </div>
+        <div className="j-step-actions">
+          <button type="button" className="btn defense" ref={primary} onClick={() => go(playSeason(season))}>
+            {t(step.kind === 'start' ? 'debrief.next.start' : 'debrief.next.resume', { n: season.number })} →
+          </button>
+          <button type="button" className="btn" onClick={() => go({ screen: 'seasons' })}>
+            {t('debrief.next.all')}
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 

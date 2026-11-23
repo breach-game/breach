@@ -19,10 +19,12 @@ import {
 import { type Catalog, type CatalogEntry, isOfficialId, type Pack } from '@breach/pack-schema';
 import { del, get, keys, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
+import { CAMPAIGN, type Journey, type Season } from './journey.ts';
 import { localSaveKey } from './local.ts';
 import {
   type Campaign,
   loadCampaign,
+  loadCatalog,
   loadCommunityMission,
   loadPack,
   loadSeason,
@@ -56,6 +58,8 @@ export type PlayKind = 'campaign' | 'season' | 'replay' | 'community';
  */
 let saveKey = SAVE_KEY;
 let kind: PlayKind = 'campaign';
+/** The season being played: `campaign` (season 1), a season's id, or null for anything else. */
+let seasonId: string | null = CAMPAIGN;
 
 let game: Game | null = null;
 let campaign: Campaign | null = null;
@@ -97,7 +101,7 @@ export async function prepare(onProgress?: (p: PackProgress) => void): Promise<C
 }
 
 export interface CampaignProgress {
-  /** Score of each finished mission, by id. */
+  /** Score of each finished mission, by id, defence replay included (as the debrief shows it). */
   completed: Record<string, number>;
   /** The mission the campaign is on, if one was started and not finished. */
   current: string | null;
@@ -108,7 +112,9 @@ export async function campaignProgress(): Promise<CampaignProgress> {
   const save = await get<SaveData>(SAVE_KEY).catch(() => undefined);
   const log = Array.isArray(save?.log) ? save.log : [];
   // Missions carried over from an earlier save (after an update, or imported) count as finished.
-  const completed = Object.fromEntries(Object.entries(completedIn(log)).map(([id, m]) => [id, m.score]));
+  const completed = Object.fromEntries(
+    Object.entries(completedIn(log)).map(([id, m]) => [id, m.score + (m.defense ?? 0)]),
+  );
   let current: string | null = null;
   for (const e of log) {
     if (e.type === 'MissionStarted') current = e.mission;
@@ -121,7 +127,9 @@ export async function campaignProgress(): Promise<CampaignProgress> {
 async function savedProgress(key: string): Promise<CampaignProgress> {
   const save = await get<SaveData>(key).catch(() => undefined);
   const log = Array.isArray(save?.log) ? save.log : [];
-  const completed = Object.fromEntries(Object.entries(completedIn(log)).map(([id, m]) => [id, m.score]));
+  const completed = Object.fromEntries(
+    Object.entries(completedIn(log)).map(([id, m]) => [id, m.score + (m.defense ?? 0)]),
+  );
   let current: string | null = null;
   for (const e of log) {
     if (e.type === 'MissionStarted') current = e.mission;
@@ -143,6 +151,65 @@ export function localProgress(entry: CatalogEntry, bundle: string): Promise<Camp
 /** Progress of an official season, read from its own save. */
 export function seasonProgress(series: CatalogEntry): Promise<CampaignProgress> {
   return savedProgress(`save:season:${series.id}@${series.version}`);
+}
+
+/**
+ * Every official season with the player's progress in it: the campaign as season 1, then the
+ * catalogue's seasons, and the trainings. Read from the saves, without starting a game.
+ */
+export async function loadJourney(): Promise<Journey> {
+  const catalog = await loadCatalog();
+  const world = (id: string | undefined) =>
+    catalog.packs.find((p) => p.id === id && p.kind === 'world')?.title;
+  const missions = catalog.campaign
+    .map((id) => catalog.packs.find((p) => p.id === id && p.kind === 'mission'))
+    .filter((e): e is CatalogEntry => !!e);
+  const seasons: Season[] = [
+    {
+      id: CAMPAIGN,
+      number: 1,
+      kind: 'campaign',
+      world: world(missions[0]?.requires[0]),
+      missions,
+      progress: await campaignProgress(),
+    },
+  ];
+  const { seasons: entries } = await loadSeasons();
+  for (const [i, entry] of entries.entries())
+    seasons.push({
+      id: entry.id,
+      number: i + 2,
+      kind: 'season',
+      entry,
+      world: world(entry.requires[0]),
+      missions: seriesMissions(entry, catalog),
+      progress: await seasonProgress(entry),
+    });
+  const trainings = catalog.training
+    .map((id) => catalog.packs.find((p) => p.id === id && p.kind === 'mission'))
+    .filter((e): e is CatalogEntry => !!e);
+  return { seasons, trainings };
+}
+
+const SEEN_KEY = 'news:seen';
+
+/** What the title screen already announced on this computer, or null the first time. */
+export async function readSeen(): Promise<string[] | null> {
+  const seen = await get<unknown>(SEEN_KEY).catch(() => undefined);
+  return Array.isArray(seen) ? seen.filter((k): k is string => typeof k === 'string') : null;
+}
+
+/** Remember more announced keys. Kept on this computer only, like the saves. */
+export async function markSeen(keys: readonly string[]): Promise<void> {
+  const seen = (await readSeen()) ?? [];
+  const known = new Set(seen);
+  const add = keys.filter((k) => !known.has(k));
+  if (add.length) await set(SEEN_KEY, [...seen, ...add]).catch(() => {});
+}
+
+/** Overwrite what was announced (first look, or a season started by the player). */
+export async function writeSeen(keys: readonly string[]): Promise<void> {
+  await set(SEEN_KEY, [...keys]).catch(() => {});
 }
 
 /** Best known result of each mission played on its own (trainings, replays), by id: its last score. */
@@ -209,6 +276,8 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
           ? 'season'
           : 'replay';
   const c = await missionsFor(mode, onProgress);
+  seasonId =
+    kind === 'campaign' ? CAMPAIGN : typeof mode === 'object' && 'season' in mode ? mode.season : null;
   const single = c.missions[0];
   // A community series or a season is a small campaign: one save for all its missions, resumed like
   // the campaign. A season is named by its id; its version comes from the catalogue it was loaded from.
@@ -356,6 +425,9 @@ export async function importProgress(text: string): Promise<{ missions: number; 
 
 /** What the running game is: the campaign, a replayed mission or a community mission. */
 export const playKind = (): PlayKind => kind;
+
+/** The season being played (`campaign` for season 1), or null outside the seasons. */
+export const playedSeason = (): string | null => seasonId;
 
 /**
  * The number shown for the mission being played. The campaign keeps the numbers of its story
