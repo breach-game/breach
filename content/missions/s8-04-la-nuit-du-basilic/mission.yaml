@@ -1,0 +1,221 @@
+# Season 8, mission 4: the defence side. Someone on the farm's network uses the factory account
+# under a sensor's name and gives orders to growing room 2. The "attacker" is a script of broker
+# log lines. Blocking his address holds for a while; the stolen key has to stop working.
+side: defense
+order: 3
+stage: response
+briefing: v4.briefing
+startTime: "2029-02-16T02:10:00+01:00"
+reveal: [www, broker, maj]
+
+files:
+  regles/ordres.yml: v4.file.rule
+
+objectives:
+  - { id: rotate, text: v4.obj.rotate }
+  - { id: stop, text: v4.obj.stop }
+  - { id: restore, text: v4.obj.restore }
+  - { id: client, text: v4.obj.client }
+  - { id: detect, text: v4.obj.detect }
+  - { id: ip, text: v4.obj.ip, optional: true }
+
+flags: []
+
+adversary:
+  id: visitor
+  name: capteur-17
+  from: visitor
+  pace: 1
+  delay: 0
+  steps:
+    - id: listen
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: subscribe, topic: "#" }
+    - id: lamps
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/lampes/set, bytes: 2 }
+      blockedIf: &cut
+        any:
+          - { config: devices.unique_keys, eq: true }
+          - { config: net.visitor_blocked, eq: true }
+          - { config: broker.off, eq: true }
+    - id: heat1
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/consigne/set, bytes: 2 }
+      blockedIf: *cut
+    - id: mist
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/brume/set, bytes: 3 }
+      blockedIf: *cut
+    - id: heat2
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/consigne/set, bytes: 2 }
+      blockedIf: *cut
+    - id: lamps2
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/lampes/set, bytes: 2 }
+      blockedIf: *cut
+    - id: heat3
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/consigne/set, bytes: 2 }
+      blockedIf: *cut
+    - id: heat4
+      host: broker
+      source: mqtt
+      fields: { client: capteur-17, src: 10.22.0.180, action: publish, topic: verdure/serre/2/consigne/set, bytes: 2 }
+      blockedIf: *cut
+
+containment:
+  - id: rotate-keys
+    action: rotate
+    target: cle-usine
+    text: v4.contain.rotate
+    sets: { devices.unique_keys: true }
+    impact: 2
+  - id: block-visitor
+    action: block
+    target: 10.22.0.180
+    text: v4.contain.block
+    sets: { net.visitor_blocked: true }
+    impact: 0
+  - id: disable-broker
+    action: disable
+    target: courtier
+    text: v4.contain.broker
+    sets: { broker.off: true }
+    impact: 30
+  - id: restore-setpoints
+    action: restore
+    target: consignes
+    text: v4.contain.restore
+    sets: { room2.restored: true }
+    impact: 0
+
+alerts:
+  - id: sensor-order
+    title: v4.alert.order
+    why: v4.alert.order.why
+    source: mqtt
+    where: { client: { glob: "capteur-*" }, action: publish, topic: { glob: "*/set" } }
+  - id: wide
+    title: v4.alert.wide
+    why: v4.alert.wide.why
+    source: mqtt
+    where: { action: subscribe, topic: "#" }
+
+investigation:
+  - { id: client, text: v4.q.client, value: capteur-17, points: 100, objective: client }
+  - { id: ip, text: v4.q.ip, value: 10.22.0.180, points: 100, objective: ip }
+
+hunts:
+  - id: orders
+    file: regles/ordres.yml
+    catch: { source: mqtt, where: { client: capteur-17, action: publish, topic: { glob: "*/set" } } }
+    objective: detect
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: v4.ada.brief
+  - on: { event: AdversaryStep, step: listen }
+    do:
+      - var.set: { name: seen, value: true }
+      - ada.guide: { key: v4.ada.g.alerts, for: rotate, step: 1 }
+  - on: { event: CommandRun, command: soc, args: { contains: alerts } }
+    once: false
+    if: { var: seen, eq: true }
+    do:
+      - ada.guide: { key: v4.ada.g.logs, for: rotate, step: 2 }
+  - on: { event: CommandRun, command: soc, args: { contains: mqtt } }
+    if: { var: seen, eq: true }
+    do:
+      - ada.say: v4.ada.log
+      - ada.guide: { key: v4.ada.g.cut, for: rotate, step: 3 }
+  - on: { event: AdversaryStep, step: lamps, blocked: false }
+    do:
+      - ada.warn: v4.ada.lamps
+  - on: { event: AdversaryStep, step: heat1, blocked: false }
+    do:
+      - ada.warn: v4.ada.heat1
+  - on: { event: AdversaryStep, step: heat2, blocked: false }
+    do:
+      - ada.warn: v4.ada.heat2
+  - on: { event: AdversaryStep, step: heat3, blocked: false }
+    do:
+      - ada.warn: v4.ada.heat3
+  - on: { event: AdversaryStep, step: heat4, blocked: false }
+    do:
+      - mission.fail: v4.ada.fail
+  - on: { event: Contained, containment: block-visitor }
+    do:
+      - ada.say: v4.ada.block
+      - ada.guide: { key: v4.ada.g.again, for: rotate, step: 4 }
+  - on: { event: Contained, containment: disable-broker }
+    do:
+      - ada.say: v4.ada.broker
+      - ada.guide: { key: v4.ada.g.again, for: rotate, step: 4 }
+  - on: { event: Contained, containment: rotate-keys }
+    do:
+      - ada.say: v4.ada.rotate
+      - objective.complete: rotate
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: v4.ada.stopped
+      - objective.complete: stop
+  # Setpoints restored too early: once he is out, Nour puts them back again and they hold.
+  - on: { event: AdversaryStep, stop: true }
+    if: { config: room2.restored, eq: true }
+    do:
+      - ada.say: v4.ada.restore.again
+      - objective.complete: restore
+  - on: { event: Contained, containment: restore-setpoints }
+    if: { not: { objective: stop } }
+    do:
+      - ada.say: v4.ada.restore.early
+  - on: { event: Contained, containment: restore-setpoints }
+    if: { objective: stop }
+    do:
+      - ada.say: v4.ada.restore
+      - objective.complete: restore
+  - on: { event: RuleTested, hunt: orders, passed: false, caught: { gte: 1 }, falsePositives: { gte: 1 } }
+    do:
+      - ada.guide: { key: v4.ada.g.false, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: orders, passed: false, falsePositives: 0, missed: { gte: 1 } }
+    do:
+      - ada.guide: { key: v4.ada.g.missed, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: orders, passed: true }
+    do:
+      - ada.say: v4.ada.detect
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: v4.ada.done
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: v4.ada.end
+
+guide:
+  rotate: v4.ada.g.start
+  stop: v4.ada.g.watch
+  restore: v4.ada.g.restore
+  client: v4.ada.g.client
+  detect: v4.ada.g.detect
+
+hints:
+  rotate: [v4.hint.rotate.1, v4.hint.rotate.2, v4.hint.rotate.3]
+  stop: [v4.hint.stop.1]
+  restore: [v4.hint.restore.1]
+  client: [v4.hint.client.1, v4.hint.client.2]
+  detect: [v4.hint.detect.1, v4.hint.detect.2, v4.hint.detect.3]
+
+debrief:
+  title: v4.debrief.title
+  lesson: v4.debrief.lesson
+  points: [v4.debrief.p1, v4.debrief.p2, v4.debrief.p3, v4.debrief.p4]
+  reference: "MITRE ATT&CK for ICS · T0855 Unauthorized Command Message · T0859 Valid Accounts"

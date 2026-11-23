@@ -1,0 +1,15 @@
+verdure/info broker.verdure.test - maintenance topics need a device account
+verdure/serre/0/lampe/state off
+verdure/serre/0/mesures/capteur-00 {"temp":19.8,"hum":61}
+verdure/serre/1/lampes/state on
+verdure/serre/1/consigne/state 21
+verdure/serre/1/mesures/capteur-03 {"temp":21.2,"hum":68}
+verdure/serre/2/lampes/state on
+verdure/serre/2/consigne/state 22
+verdure/serre/2/brume/state on
+verdure/serre/2/mesures/capteur-11 {"temp":22.1,"hum":74}
+verdure/serre/2/mesures/capteur-17 {"temp":21.9,"hum":73}
+verdure/serre/3/lampes/state off
+verdure/serre/3/mesures/capteur-24 {"temp":18.4,"hum":66}
+verdure/livraisons/prochaine cantines de Corbelle, mardi 6h, 240 kg
+verdure/audit/temoin FLAG{verdure-everyone-listens-7d21}

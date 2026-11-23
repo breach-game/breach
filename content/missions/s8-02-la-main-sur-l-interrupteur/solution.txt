@@ -1,0 +1,7 @@
+# Season 8, mission 2: a hand on the switch
+mqtt sub -h broker.verdure.test -t "verdure/serre/0/#"
+mqtt pub -h broker.verdure.test -t verdure/serre/0/lampe/set -m on
+submit FLAG{verdure-anyone-gives-orders-41b8}
+review dossier/acl.conf
+review dossier/acl.conf 11
+answer rights

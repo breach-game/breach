@@ -1,0 +1,10 @@
+# strings capteur-2.4.1.bin | grep -i -E "mqtt|update|verify|debug"
+# left on the server by the build script
+mqtt_host=broker.verdure.test
+mqtt_port=1883
+mqtt_user=capteur
+mqtt_pass=vd-factory-2019
+mqtt_topic=verdure/serre/%d/mesures/%s
+update_url=http://maj.verdure.test/firmware/
+update_verify_signature=0
+debug_console=enabled

@@ -1,0 +1,12 @@
+id: breach.world.verdure
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: world
+title:
+  fr: Verdure
+  en: Verdure
+summary:
+  fr: "Verdure, ferme verticale fictive : des salades sous des lampes, des capteurs partout, et un courtier de messages qui écoute tout le monde."
+  en: "Verdure, a fictional vertical farm: lettuce under lamps, sensors everywhere, and a message broker that listens to everyone."
+authors: [BREACH]
+locales: [fr, en]

@@ -1,0 +1,272 @@
+# Season 8. Everything here is fictional: reserved .test domains and private addresses only.
+# Verdure grows lettuce in a vertical farm. Sensors and the controller talk through a message
+# broker, modelled as a host whose routes are topics. What is shown is the class of mistake (a
+# broker open to all, no rights per topic, one factory password in every device, unsigned updates),
+# never a way to use it elsewhere. Only the workshop's test bench answers an order: the three
+# growing rooms never change, and touching them costs noise.
+startTime: "2029-02-12T09:00:00+01:00"
+mandate: VD-2029-02
+scope:
+  domains: ["*.verdure.test"]
+  networks: ["10.22.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.22.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.22.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [www]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            VD-2029-02.txt: { $t: file.mandate }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: www
+    hostname: www.verdure.test
+    ip: 10.22.0.10
+    os: Linux 6.6 (Debian 13)
+    map: { x: -90, z: -140, h: 100 }
+    links: [broker, maj]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/ferme", label: web.nav.farm }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - footer: web.footer
+      "/ferme":
+        page:
+          title: web.farm.title
+          blocks:
+            - nav: *nav
+            - h1: web.farm.h1
+            - p: web.farm.p1
+            - table:
+                head: [web.farm.col.room, web.farm.col.crop, web.farm.col.sensors]
+                rows:
+                  - [web.farm.room0, web.farm.crop0, "1"]
+                  - [web.farm.room1, web.farm.crop1, "12"]
+                  - [web.farm.room2, web.farm.crop2, "14"]
+                  - [web.farm.room3, web.farm.crop3, "13"]
+            - p: web.farm.p2
+            - comment: web.farm.comment
+            - footer: web.footer
+
+  # The message broker. Its routes are topics: what a subscription shows, what a publication reaches.
+  - id: broker
+    hostname: broker.verdure.test
+    ip: 10.22.0.20
+    os: Linux 6.1 (Debian 12)
+    map: { x: 80, z: -30, h: 130 }
+    links: [maj]
+    services:
+      - { port: 1883, name: mqtt, product: Mosquitto 2.0.18 }
+    web:
+      # Everything, for anyone: the broker asks for no account.
+      "/#": &all
+        body: { $file: files/topics-all.txt }
+        variants:
+          - id: closed
+            if: { config: broker.auth, eq: true }
+            status: 401
+            body: ""
+      "/verdure/#": *all
+      "/verdure/serre/#": *all
+      "/verdure/serre/0/#":
+        body: { $file: files/topics-bench.txt }
+        variants:
+          - id: closed
+            if: { config: broker.auth, eq: true }
+            status: 401
+            body: ""
+      # The workshop's test bench: the only place where the mandate allows an order.
+      "/verdure/serre/0/lampe/set":
+        chat: bench
+      # The growing rooms. The audit copy never switches anything there.
+      "/verdure/serre/1/lampes/set": &room
+        chat: rooms
+      "/verdure/serre/2/lampes/set": *room
+      "/verdure/serre/3/lampes/set": *room
+      "/verdure/serre/1/consigne/set": *room
+      "/verdure/serre/2/consigne/set": *room
+      "/verdure/serre/3/consigne/set": *room
+      "/verdure/serre/2/brume/set": *room
+      # Maintenance topics: they ask for a device account, and every device has the same one.
+      "/verdure/maintenance/#":
+        status: 401
+        body: ""
+        variants:
+          - id: rotated
+            header: "Authorization: capteur:vd-factory-2019"
+            if: { config: devices.unique_keys, eq: true }
+            status: 401
+            body: ""
+          - id: factory
+            header: "Authorization: capteur:vd-factory-2019"
+            body: { $file: files/topics-maintenance.txt }
+
+  # The update server of the sensors, in plain HTTP.
+  - id: maj
+    hostname: maj.verdure.test
+    ip: 10.22.0.30
+    os: Linux 6.1 (Debian 12)
+    map: { x: 260, z: 120, h: 90 }
+    services:
+      - { port: 80, name: http, product: nginx 1.24 }
+    web:
+      "/":
+        headers: { content-type: text/plain }
+        body: "Verdure - mises a jour des capteurs. Voir /firmware/\n"
+      "/firmware":
+        headers: { content-type: text/plain }
+        body: { $file: files/firmware-index.txt }
+      "/firmware/capteur-2.4.1.manifest.json":
+        headers: { content-type: application/json }
+        body: { $file: files/manifest.json }
+      "/firmware/capteur-2.4.1.strings.txt":
+        headers: { content-type: text/plain }
+        body: { $file: files/strings.txt }
+        variants:
+          - id: removed
+            if: { config: fw.debug_removed, eq: true }
+            status: 404
+            headers: { content-type: text/plain }
+            body: "404 Not Found\n"
+      "/firmware/capteur-2.4.1.bin":
+        headers: { content-type: text/plain }
+        body: { $file: files/bin.txt }
+      "/firmware/capteur-2.3.0.bin":
+        headers: { content-type: text/plain }
+        body: { $file: files/bin.txt }
+
+  # Someone plugged into the farm's network, seen through the broker's log in the last mission.
+  - id: visitor
+    hostname: poste-180.verdure.test
+    ip: 10.22.0.180
+    hidden: true
+    os: unknown
+    map: { x: 400, z: -200, h: 50 }
+
+  # The wholesaler's order portal. Not Verdure's, so not in the mandate.
+  - id: orders
+    hostname: commandes.fraisco.test
+    ip: 10.23.0.10
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 420, z: 260, h: 60 }
+
+dns:
+  verdure.test: { A: ["10.22.0.10"] }
+  www.verdure.test: { A: ["10.22.0.10"] }
+  broker.verdure.test: { A: ["10.22.0.20"] }
+  maj.verdure.test: { A: ["10.22.0.30"] }
+  commandes.fraisco.test: { A: ["10.23.0.10"] }
+
+whois:
+  verdure.test: |
+    Domain Name: VERDURE.TEST
+    Creation Date: 2019-03-04T08:00:00Z
+    Registrant Organization: Verdure SCOP
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 1
+  mqtt: 2
+  ssh: 6
+
+npcs:
+  # The lamp of the test bench: it obeys whoever publishes, unless the broker has rights per topic.
+  - id: bench
+    name: lampe-banc
+    role: npc.bench.role
+    intents:
+      - id: denied
+        words: [on, off, "1", "0"]
+        if: { config: broker.acl, eq: true }
+        reply: [npc.bench.denied]
+      - id: "on"
+        words: [on, "1"]
+        reply: [npc.bench.on]
+        set: { bench_on: true }
+      - id: "off"
+        words: [off, "0"]
+        reply: [npc.bench.off]
+    fallback: [npc.bench.unknown]
+
+  # The growing rooms: the audit copy answers, and nothing is switched.
+  - id: rooms
+    name: serres
+    role: npc.rooms.role
+    intents:
+      - id: order
+        words: [on, off]
+        reply: [npc.rooms.order]
+    fallback: [npc.rooms.order]
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of the farm that decide whether a weakness is there. A fix changes them.
+config:
+  broker.auth: false
+  broker.acl: false
+  broker.port_moved: false
+  broker.link_hidden: false
+  devices.unique_keys: false
+  fw.debug_removed: false
+  net.visitor_blocked: false
+  broker.off: false
+  room2.restored: false
+
+# An ordinary day: sensors publish, the controller gives orders, the dashboard reads.
+telemetry:
+  background:
+    - { host: broker, source: mqtt, every: 2, offset: 0, fields: { client: capteur-03, src: 10.22.0.103, action: publish, topic: verdure/serre/1/mesures/capteur-03, bytes: 24 } }
+    - { host: broker, source: mqtt, every: 3, offset: 1, fields: { client: capteur-11, src: 10.22.0.111, action: publish, topic: verdure/serre/2/mesures/capteur-11, bytes: 24 } }
+    - { host: broker, source: mqtt, every: 4, offset: 2, fields: { client: capteur-17, src: 10.22.0.117, action: publish, topic: verdure/serre/2/mesures/capteur-17, bytes: 24 } }
+    - { host: broker, source: mqtt, every: 9, offset: 3, fields: { client: automate, src: 10.22.0.40, action: publish, topic: verdure/serre/2/lampes/set, bytes: 2 } }
+    - { host: broker, source: mqtt, every: 13, offset: 5, fields: { client: automate, src: 10.22.0.40, action: publish, topic: verdure/serre/1/consigne/set, bytes: 2 } }
+    - { host: broker, source: mqtt, every: 11, offset: 4, fields: { client: tableau, src: 10.22.0.10, action: subscribe, topic: "verdure/serre/#" } }
+    - { host: www, source: access, every: 5, offset: 1, fields: { src: 198.51.100.23, method: GET, path: /ferme, status: 200, ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_2) Safari/619.1" } }
+    - { host: maj, source: access, every: 8, offset: 2, fields: { src: 10.22.0.103, method: GET, path: /firmware/capteur-2.4.1.manifest.json, status: 200, ua: "verdure-capteur/2.4.1" } }

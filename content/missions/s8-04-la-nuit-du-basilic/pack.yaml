@@ -1,0 +1,17 @@
+id: breach.season8.s04
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.verdure]
+title:
+  fr: "Saison 8 · 4. La nuit du basilic"
+  en: "Season 8 · 4. The night of the basil"
+summary:
+  fr: "Côté défense. Deux heures du matin, la serre 2 chauffe toute seule. Quelqu'un donne des ordres avec le nom d'un capteur. Tu lis le journal du courtier, tu coupes le bon fil avant que le basilic cuise, tu remets les consignes, et tu écris la règle qui aurait sonné."
+  en: "Defence side. Two in the morning, room 2 is heating up on its own. Someone is giving orders under a sensor's name. You read the broker's log, cut the right wire before the basil cooks, restore the setpoints, and write the rule that would have rung."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [iot, logs, defense]
+minutes: 15

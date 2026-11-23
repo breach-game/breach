@@ -1,0 +1,17 @@
+id: breach.season8.s03
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.verdure]
+title:
+  fr: "Saison 8 · 3. La clé d'usine"
+  en: "Season 8 · 3. The factory key"
+summary:
+  fr: "Les capteurs se mettent à jour seuls, la nuit, depuis un serveur en clair. À côté du micrologiciel, le script de fabrication a laissé un fichier bavard : le même mot de passe pour les quarante capteurs. Tu montres ce qu'il ouvre, puis tu réécris la politique de mise à jour."
+  en: "The sensors update themselves at night, from a server in plain text. Next to the firmware, the build script left a talkative file: the same password for all forty sensors. You show what it opens, then rewrite the update policy."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, supply]
+minutes: 15

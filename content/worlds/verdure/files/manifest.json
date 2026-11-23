@@ -1,0 +1,8 @@
+{
+  "device": "capteur",
+  "version": "2.4.1",
+  "url": "http://maj.verdure.test/firmware/capteur-2.4.1.bin",
+  "sha256": "(removed from the audit copy)",
+  "signature": "none",
+  "note": "sensors fetch this file every night and install what it names"
+}

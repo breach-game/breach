@@ -1,0 +1,6 @@
+Index of /firmware/
+
+capteur-2.4.1.bin              2029-01-08 10:12    412K
+capteur-2.4.1.manifest.json    2029-01-08 10:12     214
+capteur-2.4.1.strings.txt      2029-01-08 10:13    1.9K
+capteur-2.3.0.bin              2028-06-19 16:40    398K

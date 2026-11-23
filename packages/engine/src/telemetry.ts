@@ -1,5 +1,6 @@
 import type { Detection, LogFields, LogSource, Pack, Where, World } from '@breach/pack-schema';
 import type { GameEvent } from './events.ts';
+import { findRoute } from './http.ts';
 import { matches } from './rules.ts';
 import { rng } from './util.ts';
 
@@ -42,6 +43,7 @@ export const LOG_FILES: Record<LogSource, string> = {
   db: '/var/log/postgresql/audit.log',
   flow: '/var/log/firewall/flows.log',
   mail: '/var/log/mail/gateway.log',
+  mqtt: '/var/log/mosquitto/mosquitto.log',
 };
 
 /* ---------- time formats ---------- */
@@ -138,6 +140,14 @@ export function formatLine(
       return `${t.iso} fw01 flow: ${str(f.action, 'allow')} proto=tcp src=${str(f.src)} dst=${str(f.dst)} dport=${str(f.dport)} bytes=${str(f.bytes, '0')}`;
     case 'mail':
       return `${t.syslog} ${short} mailgw[${hashNum(key, 8000, 1200)}]: from=<${str(f.from)}> to=<${str(f.to)}> subject=${quote(f.subject)} link=${str(f.link, '-')} verdict=${str(f.verdict, 'delivered')}`;
+    case 'mqtt': {
+      const who = `${str(f.client)}@${str(f.src)}`;
+      const verb = f.result === 'denied' ? 'Denied' : 'Received';
+      if (f.action === 'connect')
+        return `${t.syslog}: New client connected from ${str(f.src)} as ${str(f.client)}`;
+      if (f.action === 'subscribe') return `${t.syslog}: ${verb} SUBSCRIBE from ${who} '${str(f.topic)}'`;
+      return `${t.syslog}: ${verb} PUBLISH from ${who} '${str(f.topic)}' (${str(f.bytes, '0')} bytes)`;
+    }
   }
 }
 
@@ -148,6 +158,8 @@ const BLOCKED_PORT: Partial<Record<LogSource, number>> = {
   git: 3000,
   db: 5432,
   dns: 53,
+  mail: 25,
+  mqtt: 1883,
 };
 
 /* ---------- from events to lines ---------- */
@@ -250,6 +262,7 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
     });
   };
   const lastSent: Record<string, string> = {};
+  let viaBroker = false;
   const end = options.to ?? Number.POSITIVE_INFINITY;
   let firstT = Number.POSITIVE_INFINITY;
   let lastT = 0;
@@ -271,6 +284,21 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
           });
           break;
         }
+        // A message broker writes its own log, not a web server's.
+        if (e.method === 'SUBSCRIBE' || e.method === 'PUBLISH') {
+          const target = hosts.get(e.host);
+          viaBroker = e.method === 'PUBLISH' && !!target && findRoute(target, e.path)?.chat !== undefined;
+          push(e, 'player', e.host, 'mqtt', {
+            src,
+            client: world.player.user,
+            action: e.method.toLowerCase(),
+            topic: e.path.slice(1),
+            result: e.status === 401 || e.status === 403 ? 'denied' : 'ok',
+            bytes: e.bytes ?? 0,
+          });
+          break;
+        }
+        viaBroker = false;
         push(e, 'player', e.host, 'access', {
           src,
           method: e.method,
@@ -285,7 +313,10 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
         break;
       case 'ChatReply': {
         const at = chatHost(world, e.npc);
-        if (!at) break;
+        // A device answering a published message is not a conversation: the broker's line says it all.
+        const device = viaBroker;
+        viaBroker = false;
+        if (!at || device) break;
         push(e, 'player', at.id, 'chat', {
           src,
           npc: e.npc,
@@ -469,6 +500,7 @@ const PRODUCTS: Record<LogSource, string> = {
   db: 'product: postgresql',
   flow: 'product: firewall',
   mail: 'product: mail-gateway',
+  mqtt: 'product: mosquitto',
 };
 
 /** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */

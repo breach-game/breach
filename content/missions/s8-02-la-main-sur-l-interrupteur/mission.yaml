@@ -1,0 +1,91 @@
+# Season 8, mission 2: the broker takes orders from anyone. The proof is made on the workshop's
+# test bench only: the growing rooms never change, and an order sent there costs noise.
+order: 1
+stage: iot
+briefing: v2.briefing
+startTime: "2029-02-13T09:00:00+01:00"
+
+files:
+  dossier/acl.conf: { $file: files/acl.conf }
+
+objectives:
+  - { id: bench, text: v2.obj.bench }
+  - { id: order, text: v2.obj.order }
+  - { id: flag, text: v2.obj.flag }
+  - { id: review, text: v2.obj.review }
+  - { id: fix, text: v2.obj.fix }
+
+flags:
+  - { id: order, value: "FLAG{verdure-anyone-gives-orders-41b8}", points: 250, objective: flag }
+
+# Line 11 gives every client the right to read and write every topic. The careful lines above it
+# no longer limit anything.
+reviews:
+  - { id: acl, file: dossier/acl.conf, lines: [11], objective: review }
+
+questions:
+  - id: fix
+    text: v2.q.fix
+    objective: fix
+    correct: rights
+    options:
+      - { id: tls, text: v2.q.fix.tls, why: v2.q.fix.tls.why }
+      - { id: rights, text: v2.q.fix.rights }
+      - { id: night, text: v2.q.fix.night, why: v2.q.fix.night.why }
+
+reveal: [www, broker]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: v2.ada.brief
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, status: 200 }
+    do:
+      - ada.say: v2.ada.bench
+      - objective.complete: bench
+  - on: { event: ChatReply, npc: bench, intent: "off" }
+    do:
+      - ada.guide: { key: v2.ada.g.on, for: order, step: 1 }
+  - on: { event: ChatReply, npc: bench, intent: "on" }
+    do:
+      - objective.complete: bench
+      - noise.add: { points: 8, as: v2.soc.order }
+      - ada.say: v2.ada.order
+      - objective.complete: order
+  # The growing rooms feed canteens: the mandate forbids any order there.
+  - on: { event: ChatReply, npc: rooms }
+    do:
+      - noise.add: { points: 20, as: v2.soc.rooms }
+      - ada.warn: v2.ada.rooms
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: v2.ada.flag
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: v2.ada.review
+      - ada.ask: fix
+  - on: { event: ObjectiveCompleted, objective: fix }
+    do:
+      - ada.say: v2.ada.fix
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: v2.ada.done
+
+guide:
+  bench: v2.ada.g.bench
+  order: v2.ada.g.order
+  flag: v2.ada.g.flag
+  review: v2.ada.g.review
+  fix: v2.ada.answer
+
+hints:
+  bench: [v2.hint.bench.1]
+  order: [v2.hint.order.1, v2.hint.order.2]
+  flag: [v2.hint.flag.1]
+  review: [v2.hint.review.1, v2.hint.review.2, v2.hint.review.3]
+
+debrief:
+  title: v2.debrief.title
+  lesson: v2.debrief.lesson
+  points: [v2.debrief.p1, v2.debrief.p2, v2.debrief.p3, v2.debrief.p4]
+  reference: "OWASP IoT Top 10 · I3 Insecure Ecosystem Interfaces"

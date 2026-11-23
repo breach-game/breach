@@ -1,0 +1,12 @@
+# Season 8, mission 4: the night of the basil
+soc sources
+soc alerts
+soc logs broker mqtt
+contain rotate cle-usine
+soc logs broker flow
+contain restore consignes
+answer client capteur-17
+cat regles/ordres.yml
+rule test regles/ordres.yml
+echo "client|startswith: capteur" >> regles/ordres.yml
+rule test regles/ordres.yml

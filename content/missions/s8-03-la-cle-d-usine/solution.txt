@@ -1,0 +1,11 @@
+# Season 8, mission 3: the factory key
+curl http://maj.verdure.test/firmware/
+curl http://maj.verdure.test/firmware/capteur-2.4.1.strings.txt
+mqtt sub -h broker.verdure.test -t "verdure/maintenance/#" -u capteur -P vd-factory-2019
+submit FLAG{verdure-same-key-everywhere-c05e}
+cat dossier/maj.yml
+sed -i "s/transport: http /transport: https /" dossier/maj.yml
+sed -i "s/signature: none/signature: required/" dossier/maj.yml
+sed -i "s/device_key: shared/device_key: per-device/" dossier/maj.yml
+sed -i "s/debug_files: published/debug_files: removed/" dossier/maj.yml
+verify

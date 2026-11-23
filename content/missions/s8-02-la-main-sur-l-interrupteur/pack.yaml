@@ -1,0 +1,17 @@
+id: breach.season8.s02
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.verdure]
+title:
+  fr: "Saison 8 · 2. La main sur l'interrupteur"
+  en: "Season 8 · 2. A hand on the switch"
+summary:
+  fr: "Écouter, c'était une chose. Le courtier accepte aussi les ordres de n'importe qui. Tu le prouves sur le banc d'essai de l'atelier, et nulle part ailleurs, puis tu trouves dans le fichier de droits la ligne qui a tout ouvert."
+  en: "Listening was one thing. The broker also takes orders from anyone. You prove it on the workshop's test bench, and nowhere else, then find in the rights file the line that opened everything."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, web]
+minutes: 15
