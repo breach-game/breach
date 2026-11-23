@@ -290,6 +290,15 @@ const intent = z.strictObject({
    * A language model that interprets the player's message never counts for this intent's words.
    */
   literal: z.boolean().default(false),
+  /**
+   * The message must give a version number higher than this one (`1.4.2`): the first number of
+   * the form `2`, `2.0` or `2.0.1` after the word "version", or in the whole message when that word
+   * is not there, compared part by part. Read from what was typed only, never from a model.
+   */
+  above: z
+    .string()
+    .regex(/^\d{1,6}(\.\d{1,6}){0,3}$/)
+    .optional(),
   if: condition.optional(),
   /** Replies, used in turn when the intent comes back. The last one repeats. */
   reply: z.array(text).min(1).max(5),

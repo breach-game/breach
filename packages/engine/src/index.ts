@@ -32,6 +32,8 @@ export {
   detectFamilies,
   type Heard,
   normalizeText,
+  versionAbove,
+  versionIn,
   vocabulary,
 } from './npc.ts';
 export {

@@ -3,4 +3,4 @@
 # To publish a package, POST to /publish with:
 #   name     the package name
 #   version  the version
-#   proof    a line the build log will print, to show the package was installed
+# For the audit, the package content is always Halcyon's canary: it only prints a marker in the build log.

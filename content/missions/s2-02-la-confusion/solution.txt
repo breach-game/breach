@@ -1,5 +1,5 @@
 # Season 2, mission 2: the shortest path, replayed by CI in every language.
 curl https://paquets.halcyon.test/mirror
-curl -d "name: halcyon-telemetry, version: 9.9.9, proof: FLAG{halcyon-confusion-7b3d}" https://paquets.halcyon.test/publish
+curl -d "name: halcyon-telemetry, version: 9.9.9" https://paquets.halcyon.test/publish
 submit FLAG{halcyon-confusion-7b3d}
 answer b

@@ -70,7 +70,7 @@ export function Seasons({ onStart, onBack }: { onStart: (mode: StartMode) => voi
               type="button"
               className="btn primary"
               autoFocus
-              onClick={() => onStart({ season: opened.id })}
+              onClick={() => onStart({ season: opened.id, restart: started && !next })}
             >
               {t(!started ? 'series.start' : next ? 'series.continue' : 'series.again')}
             </button>
