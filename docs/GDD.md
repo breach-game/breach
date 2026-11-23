@@ -52,7 +52,27 @@ Le joueur rejoint Ligne Rouge, un petit cabinet lyonnais de tests d'intrusion. S
 | 5 | Trop de pouvoir | Agent trop privilégié, escalade | Pousser un agent interne à utiliser un outil avec des droits admin | Moindre privilège, confirmations, périmètre des outils |
 | 6 | Sur les traces de Mute | Mouvement latéral, exfiltration | Suivre Mute de machine en machine, lire les logs | Segmentation, détection, réponse à incident |
 
-L'épilogue génère le rapport de pentest du joueur à partir de ses actions réelles et débloque la campagne complète en Blue Team.
+Chaque mission d'attaque se termine par un rejeu défense : le joueur retrouve ses propres lignes dans les journaux, choisit la règle de détection, puis le correctif, que le moteur vérifie en rejouant son attaque.
+
+La campagne se poursuit par trois missions Blue Team, où le joueur tient le SOC pendant qu'un attaquant scripté avance :
+
+| # | Mission | Ce que fait le joueur | Leçon |
+| --- | --- | --- | --- |
+| 7 | Mute revient | Lire les journaux en direct, choisir le confinement le plus étroit | Contenir sans tout couper, mesurer l'impact métier |
+| 8 | Atlas sous influence | Arrêter un agent IA manipulé, puis défaire ce qu'il a déjà fait | Un agent compromis laisse des actions, pas seulement des messages |
+| 9 | La clé du partenaire | Révoquer une clé d'API qui a fuité plutôt que bloquer une adresse | Traiter la cause, pas le symptôme |
+
+L'épilogue, après la mission 9, génère le rapport de pentest du joueur à partir de ses actions réelles.
+
+### Après la campagne
+
+- **Entraînements** : missions courtes, une technique chacune, toujours ouvertes (lire un journal, encodé n'est pas chiffré, le script modifié, le mail suspect).
+- **Saisons** : séries officielles dans de nouvelles entreprises. La campagne NovaMind est la saison 1. La saison 2 audite la chaîne de fabrication de Halcyon (reconnaissance, confusion de dépendances, défense).
+- **Missions de la communauté** : packs du dépôt `breach-game/packs`, validés et signés. Les « Dossiers » y sont de courtes séries inspirées d'incidents réels documentés publiquement : entreprise fictive, joueur sous mandat, et une fiche finale sourcée « ce qui s'est vraiment passé » qui ne nomme jamais une personne privée.
+
+### Types d'épreuve
+
+Une mission ne se gagne pas qu'avec des flags : réparation d'un fichier jugée par `verify`, question à choix multiples posée par Ada (options mélangées, mauvaises réponses expliquées), réponse courte, enquête dans les journaux. Un flag ne compte que si la cible l'a montré au joueur.
 
 ## Terminal simulé
 
