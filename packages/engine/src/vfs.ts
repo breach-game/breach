@@ -112,6 +112,16 @@ export function writeFile(root: FsDir, abs: string, content: string, owner: stri
   return true;
 }
 
+/** Delete a file. Returns false when there is no such file. */
+export function removeFile(root: FsDir, abs: string): boolean {
+  const idx = abs.lastIndexOf('/');
+  const parent = lookup(root, abs.slice(0, idx) || '/');
+  const name = abs.slice(idx + 1);
+  if (!parent || parent.t !== 'd' || own(parent, name)?.t !== 'f') return false;
+  delete parent.c[name];
+  return true;
+}
+
 export function mkdirp(root: FsDir, abs: string, owner: string): FsDir | undefined {
   let node: FsDir = root;
   for (const part of abs.split('/')) {

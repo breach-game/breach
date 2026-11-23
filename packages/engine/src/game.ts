@@ -1,5 +1,6 @@
 import type {
   Condition,
+  Detection,
   Effect,
   Fix,
   Guidance,
@@ -49,15 +50,17 @@ import {
   canRead,
   canWrite,
   chown,
+  type FsDir,
   globMatch,
   lookup,
   mkdir,
   mkdirp,
   normalize,
+  removeFile,
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.6.0';
+export const ENGINE_VERSION = '0.7.0';
 
 export interface GameOptions {
   world: Pack;
@@ -417,6 +420,7 @@ export class Game {
       hintsUsed: 0,
       detections: 0,
       asked: {},
+      choices: {},
       reviewed: {},
       mistakes: 0,
       level: null,
@@ -511,6 +515,9 @@ export class Game {
         s.vars = {};
         s.checkpoint = null;
         s.missionStartSeq = e.seq;
+        // The clock only ever goes forward: a mission may start later than the previous one ended.
+        if (mission?.startTime)
+          s.clock = Math.max(s.clock, Date.parse(mission.startTime) - Date.parse(this.world.startTime));
         s.missionDone = false;
         s.config = { ...this.world.config, ...(mission?.config ?? {}) };
         s.defense = null;
@@ -565,9 +572,15 @@ export class Game {
         s.cwd = e.path;
         break;
       case 'FileWritten': {
-        const fs = s.filesystems[e.host];
+        // An order may write on a machine the player never opened a session on.
+        const fs = this.fsOf(s, e.host);
         if (fs)
           writeFile(fs, e.path, e.content, e.host === s.host ? s.user : this.world.player.user, e.append);
+        break;
+      }
+      case 'FileRemoved': {
+        const fs = this.fsOf(s, e.host);
+        if (fs) removeFile(fs, e.path);
         break;
       }
       case 'HostDiscovered':
@@ -584,6 +597,8 @@ export class Game {
       case 'Answered':
         if (e.correct) s.asked[e.question] = e.option;
         else s.mistakes++;
+        if (e.impact) s.impact = Math.min(100, s.impact + e.impact);
+        if (e.decision) (s.choices ??= {})[e.question] = e.option;
         break;
       case 'Reviewed':
         if (!e.correct) s.mistakes++;
@@ -804,14 +819,71 @@ export class Game {
    * Answer one of the questions Ada asked. The judge is the pack's `correct` option, nothing else.
    * Returns null when there is no such open question or option.
    */
-  answer(questionId: string, optionId: string): { correct: boolean; why?: string } | null {
+  answer(
+    questionId: string,
+    optionId: string,
+  ): { correct: boolean; why?: string; decision?: boolean; impact?: number } | null {
     const question = this.mission?.questions.find((q) => q.id === questionId);
     const option = question?.options.find((o) => o.id === optionId);
     if (!question || !option || this.state.asked[questionId] !== null || this.state.missionDone) return null;
+    const why = option.why ? this.t(option.why) : undefined;
+    if (question.correct === undefined) {
+      // A decision: no option is wrong. The choice changes the target, then the rules react to it.
+      for (const [key, value] of Object.entries(option.sets ?? {}))
+        this.emit({ type: 'ConfigPatched', key, value, by: `${questionId}.${optionId}` });
+      // What the choice leads to is told in the messenger, before the rules move the story on.
+      if (option.why) this.emit({ type: 'NpcMessage', npc: 'ada', key: option.why, tone: 'info' });
+      this.emit({
+        type: 'Answered',
+        question: questionId,
+        option: optionId,
+        correct: true,
+        decision: true,
+        ...(option.impact ? { impact: option.impact } : {}),
+      });
+      if (question.objective) this.completeObjective(question.objective);
+      return { correct: true, why, decision: true, impact: option.impact ?? 0 };
+    }
     const correct = option.id === question.correct;
     this.emit({ type: 'Answered', question: questionId, option: optionId, correct });
     if (correct && question.objective) this.completeObjective(question.objective);
-    return { correct, why: option.why ? this.t(option.why) : undefined };
+    return { correct, why };
+  }
+
+  /** The hunt of the current mission whose rule lives in this file, if any. */
+  huntOf(path: string) {
+    const abs = this.resolvePath(path);
+    const home = this.homeOf(this.world.player.host, this.world.player.user);
+    if (this.state.host !== this.world.player.host) return undefined;
+    return this.mission?.hunts.find((h) => `${home}/${h.file}` === abs);
+  }
+
+  /**
+   * Try a detection rule the player wrote against the logs of the mission. It passes when it alerts
+   * on every attacker line the pack wants caught and on no ordinary line. The judge is `runDetection`.
+   */
+  testRule(path: string, rule: Pick<Detection, 'source' | 'where' | 'count'>) {
+    const lines = this.socLines();
+    const result = runDetection(rule, lines);
+    const hunt = this.huntOf(path);
+    const wanted = hunt
+      ? lines.filter((l) => l.actor !== 'background' && selects(l, hunt.catch.source, hunt.catch.where))
+      : [];
+    const caught = wanted.filter((l) => result.alerts.includes(l)).length;
+    const missed = wanted.length - caught;
+    const passed = hunt !== undefined && wanted.length > 0 && missed === 0 && result.falsePositives === 0;
+    if (hunt && !this.state.missionDone) {
+      this.emit({
+        type: 'RuleTested',
+        hunt: hunt.id,
+        caught,
+        missed,
+        falsePositives: result.falsePositives,
+        passed,
+      });
+      if (passed && hunt.objective) this.completeObjective(hunt.objective);
+    }
+    return { ...result, hunt, wanted: wanted.length, caughtWanted: caught, missed, passed };
   }
 
   /**
@@ -944,6 +1016,15 @@ export class Game {
     }
   }
 
+  /** The file system of a host, built from the pack the first time something touches it. */
+  private fsOf(s: GameState, id: string): FsDir | undefined {
+    if (s.filesystems[id]) return s.filesystems[id];
+    const host = this.world.hosts.find((h) => h.id === id);
+    if (!host) return undefined;
+    s.filesystems[id] = this.hostFs(host, this.worldText(s.locale));
+    return s.filesystems[id];
+  }
+
   completeObjective(id: string) {
     const mission = this.mission;
     if (!mission || !(id in this.state.objectives) || this.state.objectives[id]) return;
@@ -1006,6 +1087,7 @@ export class Game {
   /** Go back to the last checkpoint (or the mission start) after the SOC caught the player. */
   private restore() {
     this.detectionPending = false;
+    const failed = this.failPending;
     this.failPending = null;
     const s = this.state;
     const detections = s.detections + 1;
@@ -1018,6 +1100,12 @@ export class Game {
     this.state.clock = Math.max(this.state.clock, clock);
     if (!s.checkpoint) this.reactToMissionStart();
     this.emit({ type: 'Restored', checkpoint: name, detections });
+    // Ada's explanation was said after the checkpoint, so going back erased it: say it again, to stay.
+    if (failed) {
+      // A failed defence starts again from the workstation, whatever session the checkpoint was taken in.
+      while (this.state.sessions.length) this.emit({ type: 'SessionClosed', host: this.state.host });
+      this.emit({ type: 'NpcMessage', npc: 'ada', key: failed, tone: 'warn' });
+    }
     this.syncLevel();
   }
 
@@ -1534,6 +1622,9 @@ export class Game {
     this.emit({ type: 'Contained', containment: id, impact: order.impact });
     for (const [key, value] of Object.entries(order.sets))
       this.emit({ type: 'ConfigPatched', key, value, by: id });
+    for (const r of order.removes) this.emit({ type: 'FileRemoved', host: r.host, path: r.path });
+    for (const w of order.writes)
+      this.emit({ type: 'FileWritten', host: w.host, path: w.path, content: w.content, append: false });
     // An attacker already inside feels it at once: his next step fails now, not at his next turn.
     const adv = this.mission?.adversary;
     const s = this.state;

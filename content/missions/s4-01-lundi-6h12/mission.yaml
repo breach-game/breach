@@ -1,0 +1,174 @@
+# Season 4, mission 1: the attack is running. The intruder is a script of log lines.
+side: defense
+order: 0
+stage: response
+briefing: c1.briefing
+reveal: [intranet, fichiers, etatcivil, sauvegarde, accueil]
+
+objectives:
+  - { id: contain, text: c1.obj.contain }
+  - { id: entry, text: c1.obj.entry }
+  - { id: account, text: c1.obj.account }
+  - { id: relay, text: c1.obj.relay, optional: true }
+
+flags: []
+
+# Planning and the canteen are already locked when the player arrives. The locker goes on with the
+# common share, then reaches for the civil registry.
+adversary:
+  id: locker
+  name: Verrou
+  from: relais
+  pace: 2
+  delay: 0
+  steps:
+    # The tool on the front desk workstation calls home. Blocking that address does not stop it:
+    # it already has what it needs.
+    - id: beacon
+      host: accueil
+      source: flow
+      fields: { src: 10.16.0.101, dst: 10.16.0.199, dport: 443, bytes: 5120 }
+      blockedIf:
+        any:
+          - { config: cb.relay_blocked, eq: true }
+          - { config: cb.accueil_isolated, eq: true }
+          - { config: cb.network_down, eq: true }
+      continueIfBlocked: true
+    - id: login
+      host: fichiers
+      source: auth
+      fields: { user: svc-sauvegarde, result: Accepted, method: password, src: 10.16.0.101 }
+      blockedIf: &cut
+        any:
+          - { config: cb.accueil_isolated, eq: true }
+          - { config: cb.svc_revoked, eq: true }
+          - { config: cb.files_isolated, eq: true }
+          - { config: cb.network_down, eq: true }
+    - id: commun
+      host: fichiers
+      source: audit
+      fields: { user: svc-sauvegarde, exe: /var/tmp/.cache/verrou, cmd: "verrou --dir /srv/partages/commun" }
+      blockedIf: *cut
+    - id: hop
+      host: etatcivil
+      source: auth
+      fields: { user: svc-sauvegarde, result: Accepted, method: password, src: 10.16.0.20 }
+      blockedIf: *cut
+    - id: registry
+      host: etatcivil
+      source: audit
+      fields: { user: svc-sauvegarde, exe: /var/tmp/.cache/verrou, cmd: "verrou --base etat-civil" }
+      blockedIf: *cut
+
+containment:
+  - id: isolate-accueil
+    action: isolate
+    target: poste-accueil.corbelle.test
+    text: c1.contain.accueil
+    sets: { cb.accueil_isolated: true }
+    impact: 2
+  - id: revoke-svc
+    action: revoke
+    target: svc-sauvegarde
+    text: c1.contain.svc
+    sets: { cb.svc_revoked: true }
+    impact: 5
+  - id: block-relay
+    action: block
+    target: 10.16.0.199
+    text: c1.contain.relay
+    sets: { cb.relay_blocked: true }
+    impact: 0
+  - id: isolate-fichiers
+    action: isolate
+    target: fichiers.corbelle.test
+    text: c1.contain.fichiers
+    sets: { cb.files_isolated: true }
+    impact: 30
+  - id: disable-network
+    action: disable
+    target: reseau-mairie
+    text: c1.contain.network
+    sets: { cb.network_down: true }
+    impact: 70
+
+alerts:
+  - id: svc-password
+    title: c1.alert.svc
+    why: c1.alert.svc.why
+    source: auth
+    where: { user: svc-sauvegarde, method: password }
+  - id: locker
+    title: c1.alert.locker
+    why: c1.alert.locker.why
+    source: audit
+    where: { exe: { contains: verrou } }
+  - id: unknown-dst
+    title: c1.alert.relay
+    why: c1.alert.relay.why
+    source: flow
+    where: { dst: 10.16.0.199 }
+
+investigation:
+  - { id: entry, text: c1.q.entry, value: 10.16.0.101, points: 100, objective: entry }
+  - { id: account, text: c1.q.account, value: svc-sauvegarde, points: 100, objective: account }
+  - { id: relay, text: c1.q.relay, value: 10.16.0.199, points: 100, objective: relay }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c1.ada.brief
+  - on: { event: AdversaryStep, step: beacon }
+    do:
+      - ada.guide: { key: c1.ada.beacon, for: contain, step: 1 }
+  - on: { event: AdversaryStep, step: login, blocked: false }
+    do:
+      - var.set: { name: login, value: true }
+      - ada.guide: { key: c1.ada.alert, for: contain, step: 2 }
+  # Only once the line is there to be read.
+  - on: { event: CommandRun, command: soc, args: { contains: auth } }
+    once: false
+    if: { var: login, eq: true }
+    do:
+      - ada.guide: { key: c1.ada.seen, for: contain, step: 3 }
+  - on: { event: AdversaryStep, step: commun, blocked: false }
+    do:
+      - ada.warn: c1.ada.commun
+  - on: { event: AdversaryStep, step: hop, blocked: false }
+    do:
+      - ada.warn: c1.ada.hop
+  - on: { event: AdversaryStep, step: registry, blocked: false }
+    do:
+      - mission.fail: c1.ada.fail
+  - on: { event: Contained, containment: block-relay }
+    do:
+      - ada.say: c1.ada.relay
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: c1.ada.stopped
+      - objective.complete: contain
+  - on: { event: Contained, containment: isolate-fichiers }
+    do:
+      - ada.say: c1.ada.costly.fichiers
+  - on: { event: Contained, containment: disable-network }
+    do:
+      - ada.say: c1.ada.costly.network
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c1.ada.done
+
+guide:
+  contain: c1.ada.start
+  entry: c1.ada.entry
+  account: c1.ada.account
+
+hints:
+  contain: [c1.hint.contain.1, c1.hint.contain.2, c1.hint.contain.3]
+  entry: [c1.hint.entry.1, c1.hint.entry.2]
+  account: [c1.hint.account.1, c1.hint.account.2]
+
+debrief:
+  title: c1.debrief.title
+  lesson: c1.debrief.lesson
+  points: [c1.debrief.p1, c1.debrief.p2, c1.debrief.p3, c1.debrief.p4]
+  reference: "NIST SP 800-61 · Containment · MITRE ATT&CK T1486, T1078"

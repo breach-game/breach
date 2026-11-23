@@ -228,7 +228,8 @@ export type Condition =
   /** A setting of the target, that a defender's fix can change (`config` of the world). */
   | { config: string; eq: string | number | boolean }
   | { file: string; host?: string; contains?: string; lacks?: string }
-  | { answer: string; eq: string };
+  | { answer: string; eq: string }
+  | { choice: string; eq: string };
 
 const condition: z.ZodType<Condition> = z.lazy(() =>
   z.union([
@@ -254,6 +255,11 @@ const condition: z.ZodType<Condition> = z.lazy(() =>
     }),
     /** The option the player picked for a question. */
     z.strictObject({ answer: id, eq: id }),
+    /**
+     * The option the player took for a decision, in this mission or an earlier one of the same game.
+     * False when the decision was never taken (a mission replayed alone): write that branch as the default.
+     */
+    z.strictObject({ choice: id, eq: id }),
   ]),
 );
 
@@ -549,12 +555,36 @@ export type Adversary = z.infer<typeof adversary>;
 /** A containment the player can order with `contain <action> <target>`. */
 const containment = z.strictObject({
   id,
-  action: z.enum(['block', 'revoke', 'isolate', 'disable', 'reset']),
+  action: z.enum(['block', 'revoke', 'isolate', 'disable', 'reset', 'remove', 'restore', 'rotate']),
   target: z.string().min(1).max(80),
   text: i18nKey,
   sets: z.record(id, scalar),
   /** What it costs the business, out of 100: an isolated database stops every clinic. */
   impact: z.number().min(0).max(100).default(0),
+  /**
+   * Files of the target the order rewrites, so that the machine shows what was done (a scheduled
+   * job removed, an account locked). Plain text, on a host of the world.
+   */
+  writes: z
+    .array(
+      z.strictObject({
+        host: id,
+        path: z.string().regex(/^\/[\w./-]{1,200}$/, 'absolute path expected'),
+        content: z.string().max(4000),
+      }),
+    )
+    .max(4)
+    .default([]),
+  /** Files of the target the order deletes: what a restore sweeps away. */
+  removes: z
+    .array(
+      z.strictObject({
+        host: id,
+        path: z.string().regex(/^\/[\w./-]{1,200}$/, 'absolute path expected'),
+      }),
+    )
+    .max(8)
+    .default([]),
 });
 export type Containment = z.infer<typeof containment>;
 
@@ -574,6 +604,14 @@ const mission = z.strictObject({
   /** Attack stage, shown in the notebook. */
   stage: z.string().max(40),
   briefing: i18nKey,
+  /**
+   * When the mission takes place, if later than where the game clock stands: a series can skip a
+   * few hours or days between two missions. Same form as the world's `startTime`.
+   */
+  startTime: z
+    .string()
+    .refine((v) => Number.isFinite(Date.parse(v)), 'a date and time such as 2027-09-13T09:30:00+02:00')
+    .optional(),
   objectives: z
     .array(z.strictObject({ id, text: i18nKey, optional: z.boolean().default(false) }))
     .min(1)
@@ -636,15 +674,38 @@ const mission = z.strictObject({
         id,
         text: i18nKey,
         options: z
-          .array(z.strictObject({ id, text: i18nKey, why: i18nKey.optional() }))
+          .array(
+            z.strictObject({
+              id,
+              text: i18nKey,
+              why: i18nKey.optional(),
+              /** Decisions only: settings of the target this choice changes. */
+              sets: z.record(id, scalar).optional(),
+              /** Decisions only: what this choice costs the organisation, out of 100. */
+              impact: z.number().min(0).max(100).optional(),
+            }),
+          )
           .min(2)
           .max(5),
-        correct: id,
+        /**
+         * The right option. Without it the question is a decision: no option is wrong, each one has
+         * consequences (`sets`, `impact`, and the rules that react to `Answered`), and any of them
+         * completes the objective.
+         */
+        correct: id.optional(),
         objective: id.optional(),
       }),
     )
     .max(12)
-    .default([]),
+    .default([])
+    .superRefine((questions, ctx) => {
+      for (const q of questions)
+        if (q.correct !== undefined && q.options.some((o) => o.sets !== undefined || o.impact !== undefined))
+          ctx.addIssue({
+            code: 'custom',
+            message: `question ${q.id}: sets and impact belong to a decision (a question without correct)`,
+          });
+    }),
   /**
    * Code reviews: the player reads a file of the workstation with `review <file>` and names the
    * faulty lines with `review <file> <line>`. Finding them all completes the objective; a line that
@@ -705,6 +766,23 @@ const mission = z.strictObject({
   alerts: z.array(detection).max(10).default([]),
   /** Open questions of a defence investigation, answered in free text and judged by hash. */
   investigation: z.array(investigationQuestion).max(8).default([]),
+  /**
+   * Detection rules the player writes in a file of the workstation and tries with `rule test <file>`.
+   * The rule passes when it raises an alert on every line `catch` selects among the attacker's, and
+   * on no line of the ordinary activity.
+   */
+  hunts: z
+    .array(
+      z.strictObject({
+        id,
+        /** Path of the rule file, relative to the player's home directory. */
+        file: z.string().min(1).max(200),
+        catch: z.strictObject({ source: z.enum(LOG_SOURCES), where: where.default({}) }),
+        objective: id.optional(),
+      }),
+    )
+    .max(4)
+    .default([]),
 });
 export type Mission = z.infer<typeof mission>;
 
@@ -733,6 +811,7 @@ export const SKILLS = [
   'crypto',
   'supply',
   'defense',
+  'crisis',
 ] as const;
 export type Skill = (typeof SKILLS)[number];
 

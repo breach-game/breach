@@ -55,6 +55,8 @@ export interface GameState {
   detections: number;
   /** Questions Ada asked in this mission, with the option that settled each one. */
   asked: Record<string, string | null>;
+  /** Decisions taken in this game, by question id: kept from one mission to the next. */
+  choices: Record<string, string>;
   /** Faulty lines found so far in each code review of this mission. */
   reviewed: Record<string, number[]>;
   /** Wrong answers given in this mission, and lines wrongly named in a review. */

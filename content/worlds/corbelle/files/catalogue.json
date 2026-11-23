@@ -1,0 +1,14 @@
+{
+  "serveur": "sauvegarde.corbelle.test",
+  "perimetre": ["fichiers:/srv/partages", "etat-civil:base"],
+  "hors_perimetre": ["systeme des serveurs", "postes des agents"],
+  "sauvegardes": [
+    { "id": "hebdo-0905", "date": "2027-09-05T05:00", "type": "hors-ligne", "etat": "complete", "fichiers_modifies": 212 },
+    { "id": "jeu-0909", "date": "2027-09-09T02:00", "type": "nuit", "etat": "complete", "fichiers_modifies": 41 },
+    { "id": "ven-0910", "date": "2027-09-10T02:00", "type": "nuit", "etat": "complete", "fichiers_modifies": 38 },
+    { "id": "sam-0911", "date": "2027-09-11T02:00", "type": "nuit", "etat": "complete", "fichiers_modifies": 3 },
+    { "id": "dim-0912", "date": "2027-09-12T02:00", "type": "nuit", "etat": "complete", "fichiers_modifies": 0 },
+    { "id": "hebdo-0912", "date": "2027-09-12T05:00", "type": "hors-ligne", "etat": "complete", "fichiers_modifies": 44 },
+    { "id": "lun-0913", "date": "2027-09-13T02:00", "type": "nuit", "etat": "complete", "fichiers_modifies": 0 }
+  ]
+}

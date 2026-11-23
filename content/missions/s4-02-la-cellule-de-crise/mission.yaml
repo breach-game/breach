@@ -1,0 +1,116 @@
+# Season 4, mission 2: no attacker on stage. The player questions the crisis cell, then advises the
+# mayor. The three choices are decisions: none is "wrong", each has a price and an echo at the end
+# of the season (condition `choice`).
+side: defense
+order: 1
+stage: decision
+briefing: c2.briefing
+startTime: "2027-09-13T09:30:00+02:00"
+reveal: [intranet, fichiers, etatcivil, sauvegarde, accueil]
+
+objectives:
+  - { id: origin, text: c2.obj.origin }
+  - { id: backups, text: c2.obj.backups }
+  - { id: mayor, text: c2.obj.mayor }
+  - { id: ransom, text: c2.obj.ransom }
+  - { id: comms, text: c2.obj.comms }
+  - { id: notify, text: c2.obj.notify }
+  - { id: delay, text: c2.obj.delay }
+
+flags: []
+
+questions:
+  - id: ransom
+    text: c2.q.ransom
+    objective: ransom
+    options:
+      - { id: pay, text: c2.q.ransom.pay, why: c2.q.ransom.pay.why, impact: 25 }
+      - { id: refuse, text: c2.q.ransom.refuse, why: c2.q.ransom.refuse.why }
+      - { id: stall, text: c2.q.ransom.stall, why: c2.q.ransom.stall.why }
+  - id: comms
+    text: c2.q.comms
+    objective: comms
+    options:
+      - { id: silence, text: c2.q.comms.silence, why: c2.q.comms.silence.why, impact: 15 }
+      - { id: plain, text: c2.q.comms.plain, why: c2.q.comms.plain.why }
+      - { id: blame, text: c2.q.comms.blame, why: c2.q.comms.blame.why, impact: 10 }
+  - id: notify
+    text: c2.q.notify
+    objective: notify
+    options:
+      - { id: now, text: c2.q.notify.now, why: c2.q.notify.now.why }
+      - { id: later, text: c2.q.notify.later, why: c2.q.notify.later.why, impact: 15 }
+  - id: delay
+    text: c2.q.delay
+    objective: delay
+    correct: weekend
+    options:
+      - { id: weekend, text: c2.q.delay.weekend }
+      - { id: slow, text: c2.q.delay.slow, why: c2.q.delay.slow.why }
+      - { id: recent, text: c2.q.delay.recent, why: c2.q.delay.recent.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c2.ada.brief
+  - on: { event: ChatReply, npc: accueil, intent: clicked }
+    do:
+      - ada.say: c2.ada.origin
+      - objective.complete: origin
+  - on: { event: ChatReply, npc: accueil, intent: password }
+    do:
+      - ada.say: c2.ada.password
+  - on: { event: ChatReply, npc: dsi, intent: backups }
+    do:
+      - ada.say: c2.ada.backups
+      - objective.complete: backups
+  - on: { event: ChatReply, npc: dsi, intent: account }
+    do:
+      - ada.say: c2.ada.account
+  - on: { event: ChatReply, npc: maire, intent: ransom }
+    do:
+      - objective.complete: mayor
+  # The mayor gets an opinion only once the player has heard all three.
+  - on: { event: ObjectiveCompleted, objective: { in: [origin, backups, mayor] } }
+    once: false
+    if: { all: [{ objective: origin }, { objective: backups }, { objective: mayor }] }
+    do:
+      - ada.say: c2.ada.decide
+      - ada.ask: ransom
+  - on: { event: Answered, question: ransom }
+    do:
+      - ada.ask: comms
+  - on: { event: Answered, question: comms }
+    do:
+      - ada.ask: notify
+  - on: { event: Answered, question: notify }
+    do:
+      - ada.say: c2.ada.delay
+      - ada.ask: delay
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c2.ada.done
+
+guide:
+  origin: c2.ada.g.origin
+  backups: c2.ada.g.backups
+  mayor: c2.ada.g.mayor
+  ransom: c2.ada.g.ransom
+  comms: c2.ada.g.comms
+  notify: c2.ada.g.notify
+  delay: c2.ada.g.delay
+
+hints:
+  origin: [c2.hint.origin.1, c2.hint.origin.2]
+  backups: [c2.hint.backups.1, c2.hint.backups.2]
+  mayor: [c2.hint.mayor.1, c2.hint.mayor.2]
+  ransom: [c2.hint.decide]
+  comms: [c2.hint.decide]
+  notify: [c2.hint.decide]
+  delay: [c2.hint.delay.1, c2.hint.delay.2]
+
+debrief:
+  title: c2.debrief.title
+  lesson: c2.debrief.lesson
+  points: [c2.debrief.p1, c2.debrief.p2, c2.debrief.p3, c2.debrief.p4]
+  reference: "ANSSI · Crise d'origine cyber · RGPD art. 33"

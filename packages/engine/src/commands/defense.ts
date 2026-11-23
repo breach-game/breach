@@ -1,8 +1,9 @@
-import type { LogSource } from '@breach/pack-schema';
+import type { Detection, LogSource, Where } from '@breach/pack-schema';
 import { LOG_SOURCES } from '@breach/pack-schema';
 import { pentestReport } from '../report.ts';
 import { LOG_FILES, runDetection } from '../telemetry.ts';
 import { sha256, style } from '../util.ts';
+import { canRead, lookup } from '../vfs.ts';
 import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
 
 /**
@@ -168,6 +169,112 @@ export async function* investigate(ctx: CommandCtx): Run {
   return 0;
 }
 
+/* ---------- rule ---------- */
+
+export type PlayerRule = Pick<Detection, 'source' | 'where' | 'count'>;
+
+/** Words a rule file may carry around its selection, as Sigma does, and that select nothing. */
+const RULE_NOISE = new Set(['title', 'id', 'description', 'where', 'detection', 'selection', 'condition']);
+
+/**
+ * Read a detection rule written by the player: `source: auth`, then one `field: value` per line.
+ * A field may end with `|contains`, `|startswith` or `|endswith`. Returns the rule, or the line that
+ * could not be read. Plain text only: nothing here is evaluated.
+ */
+export function parseRule(text: string): { rule: PlayerRule } | { error: string } {
+  let source: LogSource | undefined;
+  const where: Where = {};
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\s+#.*$/, '').trim();
+    if (!line || line.startsWith('#')) continue;
+    const cut = line.indexOf(':');
+    if (cut < 0) return { error: raw.trim() };
+    const key = line.slice(0, cut).trim().toLowerCase();
+    const value = line
+      .slice(cut + 1)
+      .trim()
+      .replace(/^(["'])(.*)\1$/, '$2');
+    if (key === 'source' || key === 'logsource') {
+      const found = LOG_SOURCES.find((s) => s === value.toLowerCase());
+      if (!found) return { error: raw.trim() };
+      source = found;
+      continue;
+    }
+    if (RULE_NOISE.has(key)) continue;
+    const [name = '', modifier, ...more] = key.split('|');
+    if (!/^[a-z_]{1,20}$/.test(name) || more.length || !value || Object.keys(where).length >= 8)
+      return { error: raw.trim() };
+    if (modifier === undefined)
+      where[name] = /^\d{1,9}$/.test(value)
+        ? Number(value)
+        : value === 'true'
+          ? true
+          : value === 'false'
+            ? false
+            : value;
+    else if (modifier === 'contains') where[name] = { contains: value };
+    else if (modifier === 'startswith') where[name] = { glob: `${value.replace(/[*?]/g, '')}*` };
+    else if (modifier === 'endswith') where[name] = { glob: `*${value.replace(/[*?]/g, '')}` };
+    else return { error: raw.trim() };
+  }
+  if (!source) return { error: 'source:' };
+  return { rule: { source, where } };
+}
+
+/**
+ * `rule test <file>`: try a detection rule written on the workstation against the logs of the
+ * mission. The engine counts what it catches and what it raises by mistake; nothing else judges it.
+ */
+const rule: Command = {
+  name: 'rule',
+  summary: 'cmd.rule',
+  explain: 'explain.rule',
+  group: 'game',
+  async *run(ctx): Run {
+    const [sub, file] = ctx.args;
+    if (sub !== 'test' || !file) {
+      yield out(ctx.t('rule.usage'));
+      return sub ? 2 : 0;
+    }
+    const node = lookup(ctx.state.fs, ctx.path(file));
+    if (node?.t !== 'f' || !canRead(node, ctx.game.currentUser)) {
+      yield err(`rule: ${file}: No such file`);
+      return 1;
+    }
+    const parsed = parseRule(node.content);
+    if ('error' in parsed) {
+      yield err(ctx.t('rule.syntax', { line: parsed.error }));
+      return 2;
+    }
+    yield wait(400);
+    const r = ctx.game.testRule(file, parsed.rule);
+    const selection = Object.entries(parsed.rule.where)
+      .map(([k, m]) => `${k}=${typeof m === 'object' ? JSON.stringify(m) : JSON.stringify(m)}`)
+      .join(' ');
+    yield out(paint(ctx, style.dim, `rule: source=${parsed.rule.source} ${selection}`.trimEnd()));
+    yield out(`alerts: ${r.alerts.length}  (attack: ${r.caught}, ordinary activity: ${r.falsePositives})`);
+    for (const l of r.alerts.slice(0, 4))
+      yield out(`  ${l.actor === 'background' ? '?' : '!'} ${l.hostname}: ${l.text}`);
+    if (r.alerts.length > 4) yield out(paint(ctx, style.dim, `  … ${r.alerts.length - 4} more`));
+    if (!r.hunt) {
+      yield out(paint(ctx, style.dim, ctx.t('rule.nohunt')));
+      return 0;
+    }
+    if (r.passed) {
+      yield out(paint(ctx, style.green, ctx.t('rule.pass', { n: r.caughtWanted })));
+      return 0;
+    }
+    if (r.falsePositives > 0)
+      yield out(paint(ctx, style.yellow, ctx.t('rule.false', { n: r.falsePositives })));
+    if (r.wanted === 0) yield out(paint(ctx, style.dim, ctx.t('rule.early')));
+    else if (r.missed > 0) yield out(paint(ctx, style.yellow, ctx.t('rule.missed', { n: r.missed })));
+    return 1;
+  },
+  complete(words, current) {
+    return words.length === 0 ? ['test'].filter((w) => w.startsWith(current)) : [];
+  },
+};
+
 /** The pentest report, from the journal. `report > rapport.md` keeps a copy on the workstation. */
 const report: Command = {
   name: 'report',
@@ -180,4 +287,4 @@ const report: Command = {
   },
 };
 
-export const defenseCommands: Command[] = [soc, contain, report];
+export const defenseCommands: Command[] = [soc, contain, rule, report];

@@ -1,0 +1,17 @@
+id: breach.season4.s02
+version: 0.1.0
+engine: ">=0.7 <1"
+kind: mission
+track: season
+requires: [breach.world.corbelle]
+title:
+  fr: "Saison 4 · 2. La cellule de crise"
+  en: "Season 4 · 2. The crisis cell"
+summary:
+  fr: "Le verrouillage est arrêté, pas la crise. Trois personnes ont chacune un morceau de l'histoire, et la maire doit décider avant midi : la rançon, ce qu'on dit, qui on prévient. Aucune réponse n'est gratuite."
+  en: "The locking has stopped, the crisis has not. Three people each hold a part of the story, and the mayor has to decide before noon: the ransom, what to say, whom to tell. No answer comes free."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [crisis, social, defense]
+minutes: 12

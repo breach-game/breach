@@ -40,6 +40,7 @@ export function evaluate(cond: Condition | undefined, state: GameState, places?:
     return cond.lacks === undefined || !node.content.includes(cond.lacks);
   }
   if ('answer' in cond) return state.asked[cond.answer] === cond.eq;
+  if ('choice' in cond) return (state.choices ?? {})[cond.choice] === cond.eq;
   if ('objective' in cond) return state.objectives[cond.objective] === true;
   if ('flag' in cond) return state.flags[cond.flag] === true;
   if ('discovered' in cond) {

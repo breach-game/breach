@@ -112,7 +112,7 @@ export const en: Record<string, string> = {
     'The target never showed you this flag. Get it to appear on your screen first, then submit it.',
   'submit.ok': 'FLAG VALIDATED',
   'engine.failed.line1': '[{target} SOC] The attacker reached its goal.',
-  'engine.failed.line2': 'The attack got through. Back to the last checkpoint: contain it sooner.',
+  'engine.failed.line2': 'The attack got through. Back to the last checkpoint: try another way.',
   'submit.revoked': 'This secret is worthless now: the target revoked it.',
   'defense.replay.unseen':
     '(replay) This flag never showed up during the replay: the attack no longer gets it.',
@@ -170,6 +170,23 @@ export const en: Record<string, string> = {
   'verify.failed': '{n} check(s) still fail. Fix the file, then run verify again.',
   'answer.none': 'Ada has no open question.',
   'answer.usage': 'Answer with its letter, for example: answer a',
+  'answer.decided': 'Decision made.',
+  'cmd.crontab': "List an account's scheduled jobs: crontab -l",
+  'explain.crontab':
+    'crontab -l shows the jobs the system runs at fixed times for this account. It is a classic place where an intruder leaves a way back in.',
+  'crontab.readonly':
+    'crontab: this machine is under investigation, nothing is changed by hand here. A job is removed by a containment order (contain).',
+  'cmd.rule': 'Try a detection rule written in a file: rule test <file>',
+  'explain.rule':
+    'rule test reads your rule (source, then one field per line) and runs it over the logs of the mission. It counts the alerts on the attack and the false alerts on ordinary activity.',
+  'rule.usage':
+    'usage: rule test <file>\nA rule: one line "source: auth", then one field per line (user: name, src|startswith: 10.16.0.1, cmd|contains: word).',
+  'rule.syntax': 'rule: cannot read this line: {line}',
+  'rule.nohunt': 'The mission does not expect this rule: result given for information.',
+  'rule.pass': 'Rule accepted: {n} line(s) of the attack detected, no false alert.',
+  'rule.false': '{n} false alert(s) on ordinary activity (lines marked "?"). Tighten the selection.',
+  'rule.early': 'No line of the attack is in the logs yet: run the test again in a moment.',
+  'rule.missed': '{n} line(s) of the attack to detect still escape the rule.',
   'answer.right': 'Correct.',
   'answer.wrong': 'Not quite. Try again.',
   'explain.diff':

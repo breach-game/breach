@@ -336,7 +336,11 @@ describe('official content', () => {
     expect(catalogSchema.parse(catalog).seasons).toContain('breach.season2');
     const season = catalog.packs.find((p) => p.id === 'breach.season2');
     expect(season?.missions).toEqual(['breach.season2.s01', 'breach.season2.s02', 'breach.season2.s03']);
-    expect(catalogSchema.parse(catalog).seasons).toEqual(['breach.season2', 'breach.season3']);
+    expect(catalogSchema.parse(catalog).seasons).toEqual([
+      'breach.season2',
+      'breach.season3',
+      'breach.season4',
+    ]);
     expect(catalog.packs.find((p) => p.id === 'breach.season3')?.missions).toEqual(
       [1, 2, 3, 4, 5].map((n) => `breach.season3.s0${n}`),
     );

@@ -1,0 +1,8 @@
+# Season 4, mission 2: the crisis cell
+curl -d "que s'est-il passé vendredi ?" https://intranet.corbelle.test/api/cellule/accueil
+curl -d "où en sont les sauvegardes ?" https://intranet.corbelle.test/api/cellule/dsi
+curl -d "que demande la rançon ?" https://intranet.corbelle.test/api/cellule/maire
+answer refuse
+answer plain
+answer now
+answer weekend

@@ -219,6 +219,13 @@ const answer: Command = {
     }
     const result = ctx.game.answer(question.id, options[index]!.id);
     if (!result) return 1;
+    if (result.decision) {
+      // What it leads to arrives as a message from Ada, in the terminal and in the messenger alike.
+      yield out(paint(ctx, style.cyan, ctx.t('answer.decided')));
+      if (result.impact)
+        yield out(paint(ctx, style.yellow, ctx.t('contain.impact', { impact: result.impact })));
+      return 0;
+    }
     yield out(
       result.correct
         ? paint(ctx, style.green, ctx.t('answer.right'))

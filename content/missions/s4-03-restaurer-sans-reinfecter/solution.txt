@@ -1,0 +1,12 @@
+# Season 4, mission 3: restore without reinfecting
+ssh ir@fichiers.corbelle.test
+crontab -l -u svc-sauvegarde
+exit
+contain remove tache-verrou
+ssh ir@sauvegarde.corbelle.test
+jq -r '.sauvegardes[].id' /srv/sauvegardes/catalogue.json
+cat /srv/sauvegardes/journal.log
+exit
+contain restore ven-0910
+contain rotate svc-sauvegarde
+answer before

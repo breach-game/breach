@@ -142,6 +142,16 @@ function drawLabels(cx: CanvasRenderingContext2D, labels: Label[], fk: number) {
  * at the moment the engine emits `HostDiscovered`, in step with the terminal output.
  * Lot 0 uses a light canvas projection; the react-three-fiber version comes with lot 2.
  */
+/**
+ * A host is drawn once the player has found it. A defender is handed the network he protects: the
+ * hosts a defence mission reveals are on the map from the start.
+ */
+function onMap(game: Game, id: string, kind: string | undefined): boolean {
+  if (kind === 'player' || id in game.state.discovered) return true;
+  const mission = game.mission;
+  return mission?.side === 'defense' && mission.reveal.includes(id);
+}
+
 export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const blueRef = useRef(blue);
@@ -162,7 +172,7 @@ export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boo
       z: h.map.z,
       h: h.map.h,
       links: h.links,
-      vis: h.kind === 'player' || h.id in game.state.discovered ? 1 : 0,
+      vis: onMap(game, h.id, h.kind) ? 1 : 0,
       wave: 0,
     }));
     const by = new Map(nodes.map((n) => [n.id, n]));
@@ -229,7 +239,7 @@ export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boo
       cx.clearRect(0, 0, W, H);
       const t = liveNoise(g) / 100;
       for (const n of nodes) {
-        const shown = n.kind === 'player' || n.id in g.state.discovered;
+        const shown = onMap(g, n.id, n.kind);
         n.vis = shown ? Math.min(1, n.vis + dt / (effects ? 700 : 1)) : 0;
       }
       cx.lineWidth = 1;
