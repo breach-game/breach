@@ -277,6 +277,9 @@ const curl: Command = {
       'o',
       'A',
       'u',
+      'b',
+      'cookie',
+      'header',
       'data',
       'data-binary',
       'data-raw',
@@ -315,7 +318,10 @@ const curl: Command = {
       values.request ??
       (data !== undefined ? 'POST' : flags.has('I') ? 'HEAD' : 'GET')
     ).toUpperCase();
-    const res = ctx.game.http(host, url, method);
+    const res = ctx.game.http(host, url, method, undefined, {
+      cookie: values.b ?? values.cookie,
+      header: values.H ?? values.header,
+    });
     // A chat endpoint: the character answers what was posted.
     if (res.route?.chat && method === 'POST') {
       const message = chatMessage(data ?? '');
@@ -325,7 +331,12 @@ const curl: Command = {
         yield wait(700);
         const answer = ctx.game.chat(res.route.chat, message, 'api');
         if (!answer.ok) return 130;
-        Object.assign(res, { status: 200, body: `${JSON.stringify({ reply: answer.reply })}\n` });
+        // A form of the application answers as a page would, in plain text; a chat API answers in JSON.
+        const form = res.route.page?.blocks.some((b) => 'form' in b && b.form.to === res.route?.chat);
+        if (form) {
+          Object.assign(json, { 'content-type': 'text/plain; charset=utf-8' });
+          Object.assign(res, { status: 200, body: `${answer.reply}\n` });
+        } else Object.assign(res, { status: 200, body: `${JSON.stringify({ reply: answer.reply })}\n` });
       }
       res.headers = {
         ...res.headers,

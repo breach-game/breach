@@ -1,0 +1,6 @@
+# kiosk: how the shop displays text written by strangers
+reviews_enabled: true
+reviews_output: raw            # raw | escaped
+assistant_output: html         # html | text
+content_security_policy: off   # off | strict
+moderation_preview: true

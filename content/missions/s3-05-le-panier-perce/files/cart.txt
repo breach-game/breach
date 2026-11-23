@@ -1,0 +1,25 @@
+# kiosk/cart.py (extract handed over by Pélican)
+
+def update_quantity(cart, item_id, qty):
+    qty = int(qty)
+    cart.items[item_id].qty = qty
+    return cart.total()
+
+def apply_promo(cart, code):
+    promo = promos.find(code)
+    if promo is None:
+        return "Unknown code."
+    if promo.expired():
+        return "Expired code."
+    cart.discounts.append(promo)
+    return cart.total()
+
+def total(cart):
+    amount = sum(i.price * i.qty for i in cart.items)
+    for d in cart.discounts:
+        amount -= d.value(cart)
+    return amount
+
+def checkout(cart, session):
+    order = orders.create(session.user, cart.items, cart.total())
+    return payment.charge(session.user, order.amount)

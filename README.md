@@ -55,7 +55,7 @@ Three guidance levels: **Guided** (Ada gives every command), **Standard** (Ada g
 | From the title screen | What it is |
 | --- | --- |
 | **Trainings** | Four short missions, one technique each, always open: reading a log, encoding is not encryption, an altered install script, a suspicious email |
-| **Seasons** | Official series in new companies. Season 2 audits Halcyon's build chain: reconnaissance, dependency confusion, then the defence, with the 2021 research it comes from |
+| **Seasons** | Official series in new companies. Season 2 audits Halcyon's build chain: reconnaissance, dependency confusion, then the defence, with the 2021 research it comes from. Season 3 audits Pélican, an online shop, before its sales: the classic web flaws (what a site gives away, injection, stored markup and an assistant that repeats it, guessable sessions, business logic), each with its fix |
 | **Community missions** | Packs from [breach-game/packs](https://github.com/breach-game/packs), checked and signed. Among them the *case files*: twelve short series, each inspired by a publicly documented incident (Codecov 2021, Twitter 2020, Uber 2022, Capital One 2019, xz Utils 2024, EchoLeak 2025 and others), played at a fictional company and closed by a sourced card of what really happened |
 | **Replay a mission** | Any finished campaign mission again, at any guidance level, without touching your campaign score |
 
@@ -114,7 +114,7 @@ Going live: [docs/deploy.md](docs/deploy.md). GitHub Pages publishes the game af
 | `packages/pack-schema` | pack format and content safety checks |
 | `packages/pack-cli` | pack validation and build |
 | `apps/game` | LR-OS interface |
-| `content/` | Official worlds (NovaMind, Halcyon), campaign and season missions, trainings |
+| `content/` | Official worlds (NovaMind, Halcyon, Pélican), campaign and season missions, trainings |
 | `gateway/` | optional LLM gateway for free-form NPC dialogue (after v1) |
 
 A mission is a declarative pack with no code. Official missions live in `content/` (see `CLAUDE.md`). Missions written by players live in [breach-game/packs](https://github.com/breach-game/packs), which has the guide for writing one; the game lists them under *Community missions*.

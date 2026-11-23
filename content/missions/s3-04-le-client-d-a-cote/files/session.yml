@@ -1,0 +1,6 @@
+# kiosk: how the shop recognises its customers
+session_id: counter               # counter | random
+session_cookie_samesite: none     # none | lax | strict
+api_token_alg: none               # none | hs256
+csrf_token: off                   # off | on
+session_lifetime_minutes: 30

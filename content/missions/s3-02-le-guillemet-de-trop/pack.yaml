@@ -1,0 +1,17 @@
+id: breach.season3.s02
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: mission
+track: season
+requires: [breach.world.pelican]
+title:
+  fr: "Saison 3 · 2. Le guillemet de trop"
+  en: "Season 3 · 2. One quote too many"
+summary:
+  fr: "Injection. Le formulaire de recherche colle ton texte dans une requête : un seul caractère suffit pour que la base lise tes mots comme des ordres. Puis tu répares, côté défense."
+  en: "Injection. The search form pastes your text into a query: one character is enough for the database to read your words as orders. Then you fix it, on the defence side."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, logs, defense]
+minutes: 15

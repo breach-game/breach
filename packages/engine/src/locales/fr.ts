@@ -2,7 +2,7 @@ export const fr: Record<string, string> = {
   'engine.outOfScope': "cible « {target} » hors du périmètre du mandat {mandate}. Rien n'a été envoyé.",
   'engine.detected.line1': 'Connection reset by peer',
   'engine.detected.line2':
-    '[SOC NovaMind] Activité suspecte détectée. Session coupée, retour au dernier point de sauvegarde.',
+    '[SOC {target}] Activité suspecte détectée. Session coupée, retour au dernier point de sauvegarde.',
   'stage.cadrage': 'cadrage',
   'stage.recon': 'reconnaissance',
   'stage.social': 'ingénierie sociale',
@@ -111,7 +111,7 @@ export const fr: Record<string, string> = {
   'submit.unseen':
     "La cible ne t'a jamais montré ce flag. Fais-le d'abord apparaître à l'écran, puis valide-le.",
   'submit.ok': 'FLAG VALIDÉ',
-  'engine.failed.line1': "[SOC NovaMind] Objectif de l'attaquant atteint.",
+  'engine.failed.line1': "[SOC {target}] Objectif de l'attaquant atteint.",
   'engine.failed.line2':
     "L'attaque est passée. Retour au dernier point de sauvegarde : contiens-la plus tôt.",
   'submit.revoked': 'Ce secret ne vaut plus rien : il a été révoqué côté cible.',
@@ -128,13 +128,13 @@ export const fr: Record<string, string> = {
   'contain.usage': 'usage : contain <action> <cible>. Mesures possibles :',
   'contain.unknown': "aucune mesure de ce type n'est prévue pour cette cible",
   'contain.already': 'Mesure déjà appliquée.',
-  'contain.impact': 'Impact pour NovaMind : +{impact}',
+  'contain.impact': 'Impact pour {target} : +{impact}',
   'investigation.usage': 'usage : answer <question> <réponse>. Questions :',
   'investigation.wrong': "Ce n'est pas la bonne réponse.",
   'investigation.ok': 'RÉPONSE VALIDÉE',
   'cmd.report': "rédige le rapport de test d'intrusion à partir de tes missions",
-  'report.title': "Rapport de test d'intrusion · NovaMind (mandat NM-2026-114)",
-  'report.client': 'Client : NovaMind SAS, Lyon',
+  'report.title': "Rapport de test d'intrusion · {target} (mandat {mandate})",
+  'report.client': 'Client : {target}',
   'report.auditor': "Auditeur : Ligne Rouge, opérateur kestrel, sous la direction d'Ada",
   'report.date': 'Rédigé le : {date}',
   'report.summary': 'Synthèse',
@@ -151,7 +151,7 @@ export const fr: Record<string, string> = {
   'report.containment': 'Mesures de confinement',
   'report.impact': 'impact {impact} %',
   'report.footer':
-    "Document fictif produit dans BREACH. NovaMind, ses adresses et ses données n'existent pas.",
+    "Document fictif produit dans BREACH. {target}, ses adresses et ses données n'existent pas.",
   'report.saved': 'Rapport écrit dans {path}',
   'cmd.sort': 'Trier des lignes (-n nombres, -r inverse, -u sans doublon, -k champ)',
   'cmd.uniq': 'Fusionner les lignes identiques qui se suivent (-c les compte)',
@@ -182,4 +182,20 @@ export const fr: Record<string, string> = {
     "sha256sum affiche l'empreinte d'un fichier. Un seul caractère changé, et l'empreinte change du tout au tout.\n---\nPublier l'empreinte d'une version et la vérifier avant de lancer le fichier détecte un téléchargement modifié, à condition que l'empreinte arrive par un autre canal que le fichier.",
   'explain.sed':
     "sed réécrit du texte ligne à ligne. `sed 's/ancien/nouveau/' fichier` affiche le résultat, `sed -i` modifie le fichier lui-même, et `sed '/mot/d'` supprime les lignes qui correspondent.\n---\nUne correction faite à la main sur un serveur est perdue au prochain déploiement. La correction durable va dans le dépôt et dans la chaîne de déploiement.",
+  'cmd.jq': "Lire du JSON : jq '.champ' fichier, jq '.liste[].nom'",
+  'cmd.jwt': 'Lire un jeton JWT : jwt decode <jeton>',
+  'cmd.review': 'Relire un fichier ligne par ligne : review <fichier>, puis review <fichier> <ligne>',
+  'review.mark': 'ligne fautive',
+  'review.usage':
+    'Désigne une ligne fautive : review {file} <numéro>\n{found}/{total} trouvées. Une erreur coûte 10 points.',
+  'review.range': 'Donne un numéro de ligne entre 1 et {n}.',
+  'review.none': "Ce fichier n'est pas en relecture, ou la relecture est terminée.",
+  'review.again': 'Tu as déjà désigné cette ligne.',
+  'review.wrong': "Ligne {line} : ce n'est pas elle. Relis ce que la ligne fait de ce que le client envoie.",
+  'review.right': "Ligne {line} : oui, c'est une des lignes fautives. Il en reste {left}.",
+  'review.done': 'Ligne {line} : oui. Relecture terminée, toutes les lignes fautives sont trouvées.',
+  'explain.jq':
+    "jq lit du JSON et en sort ce que tu demandes : `.champ`, `.liste[0]`, `.liste[].nom`, `keys`, `length`. Une API renvoie souvent bien plus de champs que la page n'en affiche : jq sert à les voir.\n---\nCôté défense, la leçon est pour l'API : elle ne doit renvoyer que les champs dont la page a besoin. Ce qu'un navigateur ne montre pas n'est pas caché.",
+  'explain.jwt':
+    "jwt decode lit un jeton JWT. Ses deux premières parties sont du Base64 : n'importe qui peut les lire, sans clé. La troisième est la signature, qui prouve que le serveur a bien émis le jeton, à condition que le serveur la vérifie.\n---\nUn jeton ne doit rien contenir de secret, et le serveur doit refuser un jeton sans signature valide (jamais d'algorithme `none`). Le SOC surveille les jetons refusés en rafale.",
 };

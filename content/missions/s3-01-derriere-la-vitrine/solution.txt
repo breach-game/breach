@@ -1,0 +1,8 @@
+# Season 3, mission 1: behind the shop window
+curl https://shop.pelican.test/
+curl -I https://shop.pelican.test/
+curl https://shop.pelican.test/robots.txt
+curl https://shop.pelican.test/staff-preview
+curl https://shop.pelican.test/api/products.json | jq '.items[3]'
+submit FLAG{pelican-hidden-field-3c1a}
+answer sent

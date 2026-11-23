@@ -256,6 +256,19 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .page p, .page ul { margin: 0; text-wrap: pretty; }
 .page ul { padding-left: 20px; }
 .page pre { margin: 0; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(7, 9, 15, 0.6); font: 400 12.5px/1.5 var(--mono); color: var(--player); white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
+.page table { border-collapse: collapse; width: 100%; font: 400 13.5px/1.45 var(--human); }
+.page th, .page td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.page th { font: 500 11px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.page-form { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(7, 9, 15, 0.5); }
+.page-form form { display: flex; gap: 8px; align-items: flex-end; }
+.page-form label { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; font: 500 12px/1.3 var(--human); color: var(--dim); }
+.page-form input { height: 44px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: rgba(7, 9, 15, 0.6); color: var(--player); font: 400 14px var(--mono); font-variant-ligatures: none; }
+.page-form input:focus { outline: none; border-color: color-mix(in srgb, var(--text) 50%, transparent); }
+.page-form .btn { height: 44px; font-size: 13.5px; }
+.page-form .btn:disabled { opacity: 0.4; cursor: default; }
+.form-result { display: flex; flex-direction: column; gap: 6px; }
+.form-result small { font: 400 11px/1.4 var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+.form-result .flag { color: var(--success); text-shadow: 0 0 12px rgba(61, 255, 154, 0.5); }
 .page footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); font: 400 12px/1.5 var(--mono); color: var(--dim); }
 .page-link { padding: 6px 10px; margin-left: -10px; border: 0; border-radius: 7px; background: transparent; color: #fff; font: 500 14px var(--human); text-decoration: underline; text-decoration-color: rgba(215, 224, 245, 0.35); text-underline-offset: 4px; }
 .page nav .page-link { margin-left: 0; }
@@ -324,17 +337,17 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .brain .use label.check input { margin-top: 3px; flex: none; }
 .brain .use label.check span { display: flex; flex-direction: column; gap: 3px; }
 .brain .use label.check b { font: 600 14.5px var(--human); color: #fff; }
-.brain .use label.check small { font: 400 13px/1.45 var(--human); color: var(--text-2); }
+.brain .use label.check small { font: 400 13px/1.45 var(--human); color: var(--dim); }
 .brain .use[data-on='true'] label.check b::before { content: '◆ '; color: var(--ai); }
 .brain .use-model { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-left: 28px; }
 .brain .use-model select { flex: 1 1 360px; max-width: 420px; min-width: 0; }
 .brain .use-model select:disabled { opacity: 0.45; }
 .brain .use-model .cost { font: 400 12.5px var(--mono); color: var(--text); font-variant-numeric: tabular-nums; }
-.brain .use[data-on='false'] .cost { color: var(--text-2); }
+.brain .use[data-on='false'] .cost { color: var(--dim); }
 .brain .uses .total { font: 400 13px/1.45 var(--human); color: var(--text); }
 .brain .state { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line); font: 400 13px/1.4 var(--human); }
 .brain .state i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
-.brain .usage { font: 400 12px/1.4 var(--mono); color: var(--text-2); }
+.brain .usage { font: 400 12px/1.4 var(--mono); color: var(--dim); }
 .brain .state[data-tone='on'] { border-color: color-mix(in srgb, var(--ai) 50%, transparent); }
 .brain .state[data-tone='on'] i { background: var(--ai); box-shadow: 0 0 10px var(--ai); }
 .brain .state[data-tone='warn'] { border-color: color-mix(in srgb, var(--alert) 50%, transparent); }
@@ -365,8 +378,8 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .series-list { list-style: none; margin: 0; padding: 4px; width: min(640px, 100%); max-height: min(48vh, 520px); overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .series-list li { display: grid; gap: 4px; padding: 12px 14px; text-align: left; border: 1px solid rgba(215, 224, 245, 0.14); border-radius: 10px; background: var(--panel); }
 .series-list li b { font: 600 16px/1.2 var(--human); color: var(--text); }
-.series-list li span { font: 400 14px/1.45 var(--human); color: var(--text-2); }
-.series-list li i { font: 400 12px var(--mono); font-style: normal; color: var(--text-2); }
+.series-list li span { font: 400 14px/1.45 var(--human); color: var(--dim); }
+.series-list li i { font: 400 12px var(--mono); font-style: normal; color: var(--dim); }
 .series-list li[data-state="done"] i { color: var(--green); }
 .series-list li[data-state="next"] { border-color: rgba(215, 224, 245, 0.45); }
 .series-list li[data-state="next"] i { color: var(--text); }
@@ -783,7 +796,7 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .j-news li button:hover .j-news-go { color: var(--player); transform: translateX(3px); }
 
 /* The seasons screen: one progress card per season. */
-.j-seasons { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; width: min(900px, calc(100vw - 64px)); max-height: min(56vh, 620px); overflow-y: auto; padding: 4px; }
+.j-seasons { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; width: min(1240px, calc(100vw - 64px)); max-height: max(300px, calc(100vh - 330px)); overflow-y: auto; padding: 4px; }
 .j-season { display: flex; flex-direction: column; gap: 10px; padding: 18px 18px 16px; text-align: left; color: var(--text); background: rgba(14, 19, 32, 0.78); border: 1px solid var(--line); border-radius: 12px; cursor: pointer; transition: border-color 160ms, background 160ms, translate 160ms; }
 .j-season:hover, .j-season:focus-visible { border-color: var(--player); background: rgba(22, 29, 46, 0.92); translate: 0 -2px; outline: none; }
 .j-season:focus-visible { box-shadow: 0 0 0 2px var(--player); }

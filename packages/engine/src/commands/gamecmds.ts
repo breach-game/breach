@@ -229,6 +229,74 @@ const answer: Command = {
   },
 };
 
+/**
+ * A code review: `review <file>` prints the file with its line numbers, `review <file> <line>` names
+ * a line as faulty. The mission's list of lines is the judge.
+ */
+const review: Command = {
+  name: 'review',
+  summary: 'cmd.review',
+  group: 'game',
+  async *run(ctx): Run {
+    const [arg, given] = ctx.args;
+    if (!arg) {
+      yield err('usage: review <file> [line]');
+      return 1;
+    }
+    const node = lookup(ctx.state.fs, ctx.path(arg));
+    if (node?.t !== 'f' || !canRead(node, ctx.game.currentUser)) {
+      yield err(`review: ${arg}: No such file`);
+      return 1;
+    }
+    const rows = (node.content.endsWith('\n') ? node.content.slice(0, -1) : node.content).split('\n');
+    const target = ctx.game.reviewOf(arg);
+    const found = target ? (ctx.state.reviewed[target.id] ?? []) : [];
+    if (given === undefined) {
+      ctx.emit({ type: 'FileRead', host: ctx.state.host, path: ctx.path(arg) });
+      yield out(
+        rows
+          .map((row, i) => {
+            const text = `${String(i + 1).padStart(4)}  ${row}`;
+            return found.includes(i + 1)
+              ? paint(ctx, style.yellow, `${text}   <-- ${ctx.t('review.mark')}`)
+              : text;
+          })
+          .join('\n'),
+      );
+      if (target)
+        yield out(
+          paint(
+            ctx,
+            style.dim,
+            ctx.t('review.usage', { file: arg, found: found.length, total: target.lines.length }),
+          ),
+        );
+      return 0;
+    }
+    const line = Number.parseInt(given, 10);
+    if (!Number.isInteger(line) || line < 1 || line > rows.length) {
+      yield err(ctx.t('review.range', { n: rows.length }));
+      return 1;
+    }
+    const result = ctx.game.review(arg, line);
+    if (!result) {
+      yield out(ctx.t('review.none'));
+      return 0;
+    }
+    if (result.again) yield out(ctx.t('review.again'));
+    else if (!result.correct) yield out(paint(ctx, style.yellow, ctx.t('review.wrong', { line })));
+    else
+      yield out(
+        paint(
+          ctx,
+          style.green,
+          result.left ? ctx.t('review.right', { line, left: result.left }) : ctx.t('review.done', { line }),
+        ),
+      );
+    return result.correct ? 0 : 1;
+  },
+};
+
 const edit: Command = {
   name: 'edit',
   summary: 'cmd.edit',
@@ -262,6 +330,7 @@ const edit: Command = {
 
 export const gameCommands: Command[] = [
   verify,
+  review,
   answer,
   edit,
   { ...edit, name: 'nano', summary: 'cmd.nano' },

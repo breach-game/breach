@@ -1,4 +1,4 @@
-import { FAMILIES, type Family, type Intent, type Npc } from '@breach/pack-schema';
+import { FAMILIES, type Family, type InputShape, type Intent, type Npc } from '@breach/pack-schema';
 import { evaluate } from './rules.ts';
 import type { GameState, Scalar } from './state.ts';
 
@@ -67,6 +67,20 @@ export function detectFamilies(message: string): Family[] {
   return (Object.keys(FAMILY_PATTERNS) as Family[]).filter((f) =>
     FAMILY_PATTERNS[f].some((re) => re.test(text)),
   );
+}
+
+/**
+ * What a raw input looks like to an application that does not treat it as plain text. Each shape
+ * stands for a class of flaw the game explains, and none of them is a working attack: a quote that
+ * is not part of a word (the text ends a string early), an HTML tag (the text becomes markup), a number below zero.
+ * An apostrophe inside a word ("l'avis", "don't") is ordinary text, not a quote left open.
+ */
+export function inputShapes(message: string): InputShape[] {
+  const shapes: InputShape[] = [];
+  if (message.replace(/(?<=\p{L})['’](?=\p{L})/gu, '').includes("'")) shapes.push('quote');
+  if (/<\/?[a-z][a-z0-9]*(\s[^<>]*)?>/i.test(message)) shapes.push('markup');
+  if (/(^|[\s=:(,])-\d/.test(message)) shapes.push('negative');
+  return shapes;
 }
 
 /** True when every word of the group is in the message. Words of four letters or more match as prefixes. */
@@ -157,6 +171,10 @@ function intentMatches(
   if (intent.words.length && !any(intent.words)) return false;
   if (intent.also.length && !any(intent.also)) return false;
   if (intent.families.length && !intent.families.some((f) => families.includes(f))) return false;
+  if (intent.input.length) {
+    const shapes = inputShapes(message);
+    if (!intent.input.every((shape) => shapes.includes(shape))) return false;
+  }
   if (intent.above !== undefined) {
     const given = versionIn(message);
     if (!given || !versionAbove(given, intent.above.split('.').map(Number))) return false;

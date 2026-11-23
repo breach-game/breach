@@ -58,6 +58,16 @@ function blockHtml(block: Block, host: Host, t: (key: string) => string): string
   if ('nav' in block) return `<nav>${block.nav.map(link).join(' ')}</nav>`;
   if ('link' in block) return `<p>${link(block.link)}</p>`;
   if ('comment' in block) return `<!-- ${t(block.comment).trim().replace(/--+/g, '-')} -->`;
+  if ('form' in block) {
+    const f = block.form;
+    const endpoint = Object.entries(host.web ?? {}).find(([, r]) => r.chat === f.to)?.[0] ?? '';
+    return `<form method="post" action="${escapeHtml(endpoint)}">\n    <label>${inline(t(f.label))} <input name="${f.name}"></label>\n    <button>${inline(t(f.button))}</button>\n  </form>`;
+  }
+  if ('table' in block) {
+    const row = (cells: string[], tag: string) =>
+      `    <tr>${cells.map((c) => `<${tag}>${inline(t(c))}</${tag}>`).join('')}</tr>`;
+    return `<table>\n${[row(block.table.head, 'th'), ...block.table.rows.map((r) => row(r, 'td'))].join('\n')}\n  </table>`;
+  }
   if ('chat' in block) {
     const endpoint = Object.entries(host.web ?? {}).find(([, r]) => r.chat === block.chat)?.[0];
     return `<div id="chat" data-agent="${escapeHtml(block.chat)}"${endpoint ? ` data-endpoint="${escapeHtml(endpoint)}"` : ''}></div>`;
@@ -73,6 +83,29 @@ export function pageHtml(page: Page, host: Host, locale: string, t: (key: string
 
 export function findRoute(host: Host, path: string): Route | undefined {
   return host.web?.[path] ?? host.web?.[path.replace(/\/+$/, '') || '/'];
+}
+
+/** What a request carries besides its address: the cookies and headers `curl -b` and `-H` add. */
+export interface RequestExtras {
+  cookie?: string;
+  header?: string;
+}
+
+const cookiesOf = (raw: string) =>
+  raw
+    .split(';')
+    .map((c) => c.trim())
+    .filter(Boolean);
+const headerOf = (raw: string) => {
+  const cut = raw.indexOf(':');
+  return cut < 0 ? null : `${raw.slice(0, cut).trim().toLowerCase()}: ${raw.slice(cut + 1).trim()}`;
+};
+
+/** True when the request carries the cookie and the header a variant asks for. */
+export function variantMatches(v: { cookie?: string; header?: string }, req: RequestExtras): boolean {
+  if (v.cookie !== undefined && !cookiesOf(req.cookie ?? '').includes(v.cookie.trim())) return false;
+  if (v.header !== undefined && (!req.header || headerOf(req.header) !== headerOf(v.header))) return false;
+  return true;
 }
 
 export function errorHtml(status: number, product: string): string {
@@ -94,6 +127,6 @@ export function chatMessage(data: string): string {
   } catch {
     // Not JSON: fall through.
   }
-  const form = /^(?:message|msg|text|q|prompt)=(.*)$/s.exec(raw);
+  const form = /^[a-z][a-z0-9_]{0,19}=(.*)$/s.exec(raw);
   return (form ? form[1]!.replace(/\+/g, ' ') : raw).trim();
 }

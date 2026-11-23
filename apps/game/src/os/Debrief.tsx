@@ -127,7 +127,8 @@ export function Debrief({
         )}
         {detail.impact > 0 && (
           <span>
-            {t('debrief.tally.impact', { impact: game.state.impact })} <b>−{detail.impact}</b>
+            {t('debrief.tally.impact', { impact: game.state.impact, target: game.target })}{' '}
+            <b>−{detail.impact}</b>
           </span>
         )}
         {defensePoints > 0 && (

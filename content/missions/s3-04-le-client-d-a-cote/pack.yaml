@@ -1,0 +1,17 @@
+id: breach.season3.s04
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: mission
+track: season
+requires: [breach.world.pelican]
+title:
+  fr: "Saison 3 · 4. Le client d'à côté"
+  en: "Season 3 · 4. The customer next door"
+summary:
+  fr: "Sessions et jetons. Un cookie qui se devine, un jeton que personne ne signe, un formulaire qui croit tout ce que le navigateur lui envoie : trois façons de se tromper sur « qui parle »."
+  en: "Sessions and tokens. A cookie that can be guessed, a token nobody signs, a form that believes whatever the browser sends: three ways of being wrong about \"who is speaking\"."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, crypto, defense]
+minutes: 20

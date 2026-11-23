@@ -88,6 +88,13 @@ function hashNum(text: string, mod: number, base = 0): number {
 }
 const quote = (v: unknown) => JSON.stringify(str(v, ''));
 
+/** True when a character is the program behind a web form (a `form` block of a page points to it). */
+export function isForm(world: World, npc: string): boolean {
+  return world.hosts.some((h) =>
+    Object.values(h.web ?? {}).some((r) => r.page?.blocks.some((b) => 'form' in b && b.form.to === npc)),
+  );
+}
+
 /** Write one line in the format of the real tool. */
 export function formatLine(
   source: LogSource,
@@ -110,6 +117,9 @@ export function formatLine(
         : `${t.syslog} ${short} sshd[${pid}]: Accepted ${method} for ${str(f.user)} from ${str(f.src)} port ${port} ssh2`;
     }
     case 'chat':
+      // A web form is no conversation: its application writes one line per submission.
+      if (f.form)
+        return `${t.iso} ${short} app: form=${str(f.npc)} src=${str(f.src)} result=${str(f.intent)} input=${quote(f.msg)}`;
       return `${t.iso} ${short} chat-gateway: bot=${str(f.npc)} src=${str(f.src)} intent=${str(f.intent)} flags=${str(f.families, 'none')} msg=${quote(f.msg)}`;
     case 'agent':
       return `${t.iso} ${short} agent=${str(f.agent)} tool=${str(f.tool)} args=${quote(f.args)} role=${str(f.role, 'user')} confirmed=${str(f.confirmed, 'no')} requested_by=${str(f.src)}`;
@@ -279,6 +289,7 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
           intent: e.intent,
           families: e.families.length ? e.families : ['none'],
           msg: (lastSent[e.npc] ?? '').slice(0, 160),
+          ...(isForm(world, e.npc) ? { form: true } : {}),
         });
         break;
       }
@@ -457,7 +468,16 @@ const PRODUCTS: Record<LogSource, string> = {
 };
 
 /** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */
-export function sigmaText(rule: Pick<Detection, 'id' | 'source' | 'where' | 'count'>, title: string): string {
+export function sigmaText(
+  rule: Pick<Detection, 'id' | 'source' | 'where' | 'count'>,
+  title: string,
+  /** The world, to name a web form's fields as its log does (`form`, `result`). */
+  world?: World,
+): string {
+  const npc = rule.where.npc;
+  const form = rule.source === 'chat' && world !== undefined && typeof npc === 'string' && isForm(world, npc);
+  const label = (name: string) =>
+    form ? ({ npc: 'form', intent: 'result', msg: 'input' }[name] ?? name) : name;
   const field = (name: string, m: Where[string]): string => {
     if (typeof m !== 'object') return `    ${name}: ${JSON.stringify(m)}`;
     if ('contains' in m) return `    ${name}|contains: ${JSON.stringify(m.contains)}`;
@@ -473,10 +493,10 @@ export function sigmaText(rule: Pick<Detection, 'id' | 'source' | 'where' | 'cou
     `title: ${title}`,
     `id: breach-${rule.id}`,
     'logsource:',
-    `  ${PRODUCTS[rule.source]}`,
+    `  ${form ? 'category: webserver\n  service: application' : PRODUCTS[rule.source]}`,
     'detection:',
     selection.length
-      ? `  selection:\n${selection.map(([k, m]) => field(k, m)).join('\n')}`
+      ? `  selection:\n${selection.map(([k, m]) => field(label(k), m)).join('\n')}`
       : '  selection: {}',
     rule.count ? `  condition: selection | count() by src >= ${rule.count.gte}` : '  condition: selection',
   ];

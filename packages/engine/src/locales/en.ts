@@ -2,7 +2,7 @@ export const en: Record<string, string> = {
   'engine.outOfScope': 'target "{target}" is outside the scope of mandate {mandate}. Nothing was sent.',
   'engine.detected.line1': 'Connection reset by peer',
   'engine.detected.line2':
-    '[NovaMind SOC] Suspicious activity detected. Session cut, back to the last checkpoint.',
+    '[{target} SOC] Suspicious activity detected. Session cut, back to the last checkpoint.',
   'stage.cadrage': 'scoping',
   'stage.recon': 'reconnaissance',
   'stage.social': 'social engineering',
@@ -111,7 +111,7 @@ export const en: Record<string, string> = {
   'submit.unseen':
     'The target never showed you this flag. Get it to appear on your screen first, then submit it.',
   'submit.ok': 'FLAG VALIDATED',
-  'engine.failed.line1': '[NovaMind SOC] The attacker reached its goal.',
+  'engine.failed.line1': '[{target} SOC] The attacker reached its goal.',
   'engine.failed.line2': 'The attack got through. Back to the last checkpoint: contain it sooner.',
   'submit.revoked': 'This secret is worthless now: the target revoked it.',
   'defense.replay.unseen':
@@ -127,13 +127,13 @@ export const en: Record<string, string> = {
   'contain.usage': 'usage: contain <action> <target>. Available measures:',
   'contain.unknown': 'no such measure is planned for this target',
   'contain.already': 'Measure already applied.',
-  'contain.impact': 'Impact on NovaMind: +{impact}',
+  'contain.impact': 'Impact on {target}: +{impact}',
   'investigation.usage': 'usage: answer <question> <answer>. Questions:',
   'investigation.wrong': 'That is not the right answer.',
   'investigation.ok': 'ANSWER ACCEPTED',
   'cmd.report': 'writes the pentest report from your missions',
-  'report.title': 'Penetration test report · NovaMind (mandate NM-2026-114)',
-  'report.client': 'Client: NovaMind SAS, Lyon',
+  'report.title': 'Penetration test report · {target} (mandate {mandate})',
+  'report.client': 'Client: {target}',
   'report.auditor': 'Auditor: Ligne Rouge, operator kestrel, led by Ada',
   'report.date': 'Written on: {date}',
   'report.summary': 'Summary',
@@ -150,7 +150,7 @@ export const en: Record<string, string> = {
   'report.containment': 'Containment measures',
   'report.impact': 'impact {impact} %',
   'report.footer':
-    'Fictional document produced in BREACH. NovaMind, its addresses and its data do not exist.',
+    'Fictional document produced in BREACH. {target}, its addresses and its data do not exist.',
   'report.saved': 'Report written to {path}',
   'cmd.sort': 'Sort lines (-n numbers, -r reverse, -u unique, -k field)',
   'cmd.uniq': 'Merge repeated lines that follow each other (-c counts them)',
@@ -180,4 +180,20 @@ export const en: Record<string, string> = {
     'sha256sum prints the fingerprint of a file. Change one character and the fingerprint changes completely.\n---\nPublishing the fingerprint of a release and checking it before running the file detects a tampered download, as long as the fingerprint comes from another channel than the file.',
   'explain.sed':
     "sed rewrites text line by line. `sed 's/old/new/' file` prints the result, `sed -i` changes the file itself, and `sed '/word/d'` deletes the matching lines.\n---\nA fix applied by hand on one server is lost at the next deployment. The lasting fix goes into the repository and the deployment pipeline.",
+  'cmd.jq': "Read JSON: jq '.field' file, jq '.list[].name'",
+  'cmd.jwt': 'Read a JWT: jwt decode <token>',
+  'cmd.review': 'Review a file line by line: review <file>, then review <file> <line>',
+  'review.mark': 'faulty line',
+  'review.usage':
+    'Name a faulty line: review {file} <number>\n{found}/{total} found. A mistake costs 10 points.',
+  'review.range': 'Give a line number between 1 and {n}.',
+  'review.none': 'This file is not under review, or the review is over.',
+  'review.again': 'You already named this line.',
+  'review.wrong': 'Line {line}: not this one. Read again what the line does with what the client sends.',
+  'review.right': 'Line {line}: yes, that is one of the faulty lines. {left} left.',
+  'review.done': 'Line {line}: yes. Review complete, every faulty line is found.',
+  'explain.jq':
+    'jq reads JSON and prints what you ask for: `.field`, `.list[0]`, `.list[].name`, `keys`, `length`. An API often returns many more fields than the page shows: jq lets you see them.\n---\nFor the defender the lesson is about the API: it should only return the fields the page needs. What a browser does not show is not hidden.',
+  'explain.jwt':
+    'jwt decode reads a JWT. Its first two parts are Base64: anyone can read them, without a key. The third is the signature, which proves the server issued the token, provided the server checks it.\n---\nA token must hold nothing secret, and the server must refuse a token without a valid signature (never the `none` algorithm). The SOC watches for bursts of refused tokens.',
 };

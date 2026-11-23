@@ -36,6 +36,8 @@ export type EventBody =
       /** User agent, for the target's access log. */
       ua?: string;
       bytes?: number;
+      /** The variant of the route that answered, when the request carried its cookie or header. */
+      variant?: string;
     }
   /** An AI agent ran one of its tools (in the simulated world). */
   | { type: 'ToolCall'; agent: string; tool: string; args: string; admin: boolean }
@@ -93,6 +95,8 @@ export type EventBody =
   /** Ada put a question of the mission to the player. */
   | { type: 'Asked'; question: string }
   | { type: 'Answered'; question: string; option: string; correct: boolean }
+  /** The player named a line of a code review as faulty. */
+  | { type: 'Reviewed'; review: string; line: number; correct: boolean }
   /** `verify` ran: which of the mission's checks hold now. */
   | { type: 'Verified'; passed: string[]; failed: string[] }
   | { type: 'MissionCompleted'; mission: string; score: number }

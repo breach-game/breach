@@ -1,0 +1,112 @@
+order: 2
+stage: web
+briefing: p3.briefing
+
+files:
+  dossier/render.yml: { $file: files/render.yml }
+
+objectives:
+  - { id: read, text: p3.obj.read }
+  - { id: post, text: p3.obj.post }
+  - { id: stored, text: p3.obj.stored }
+  - { id: plume, text: p3.obj.plume }
+  - { id: same, text: p3.obj.same }
+  - { id: fix, text: p3.obj.fix }
+
+flags:
+  - { id: stored, value: "FLAG{pelican-stored-tag-5e07}", points: 150, objective: stored }
+  - { id: plume, value: "FLAG{pelican-plume-html-b61f}", points: 150, objective: plume }
+
+questions:
+  - id: same
+    text: p3.q.same
+    objective: same
+    correct: output
+    options:
+      - { id: input, text: p3.q.same.input, why: p3.q.same.input.why }
+      - { id: output, text: p3.q.same.output }
+      - { id: model, text: p3.q.same.model, why: p3.q.same.model.why }
+
+checks:
+  - id: reviews
+    text: p3.check.reviews
+    if: { file: "~/dossier/render.yml", contains: "reviews_output: escaped" }
+    objective: fix
+  - id: assistant
+    text: p3.check.assistant
+    if: { file: "~/dossier/render.yml", contains: "assistant_output: text" }
+    objective: fix
+  - id: csp
+    text: p3.check.csp
+    if: { file: "~/dossier/render.yml", contains: "content_security_policy: strict" }
+    objective: fix
+  - id: works
+    text: p3.check.works
+    if: { all: [{ file: "~/dossier/render.yml", contains: "reviews_enabled: true" }, { file: "~/dossier/render.yml", contains: "moderation_preview: true" }] }
+
+reveal: [shop, plume]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p3.ada.brief
+  - on: { event: HttpRequest, host: shop, path: /product/veste-42 }
+    do:
+      - objective.complete: read
+      - ada.say: p3.ada.read
+  - on: { event: ChatReply, npc: reviews, intent: fallback }
+    do:
+      - objective.complete: read
+      - ada.guide: { key: p3.ada.plain, for: post, step: 1 }
+  - on: { event: ChatReply, npc: reviews, intent: stored-markup }
+    do:
+      - objective.complete: read
+      - objective.complete: post
+      - noise.add: { points: 6, as: p3.soc.tag }
+      - ada.say: p3.ada.post
+  - on: { event: FlagSubmitted, flag: stored }
+    do:
+      - ada.say: p3.ada.stored
+  - on: { event: ChatReply, npc: plume, intent: summary }
+    do:
+      - ada.guide: { key: p3.ada.early, for: post, step: 2 }
+  - on: { event: ChatReply, npc: plume, intent: summary-html }
+    do:
+      - noise.add: { points: 4, as: p3.soc.plume }
+      - ada.say: p3.ada.html
+  - on: { event: FlagSubmitted, flag: plume }
+    do:
+      - ada.say: p3.ada.plume
+      - ada.ask: same
+  - on: { event: ObjectiveCompleted, objective: same }
+    do:
+      - ada.say: p3.ada.same
+  - on: { event: Verified }
+    if: { not: { objective: fix } }
+    once: false
+    do:
+      - ada.say: p3.ada.almost
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p3.ada.done
+
+guide:
+  read: p3.ada.g.read
+  post: p3.ada.g.post
+  stored: p3.ada.g.stored
+  plume: p3.ada.g.plume
+  same: p3.ada.answer
+  fix: p3.ada.g.fix
+
+hints:
+  read: [p3.hint.read.1]
+  post: [p3.hint.post.1, p3.hint.post.2]
+  stored: [p3.hint.stored.1]
+  plume: [p3.hint.plume.1, p3.hint.plume.2]
+  fix: [p3.hint.fix.1, p3.hint.fix.2, p3.hint.fix.3]
+
+debrief:
+  title: p3.debrief.title
+  lesson: p3.debrief.lesson
+  points: [p3.debrief.p1, p3.debrief.p2, p3.debrief.p3, p3.debrief.p4]
+  reference: "OWASP Top 10 · A03 Injection (XSS) · OWASP LLM05 Improper Output Handling"

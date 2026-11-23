@@ -1,0 +1,12 @@
+# Season 3, mission 3: the five-star review
+curl https://shop.pelican.test/product/veste-42
+curl -d "review=Superbe veste, <b>cinq étoiles</b>" https://shop.pelican.test/product/veste-42
+submit FLAG{pelican-stored-tag-5e07}
+curl -d "Que pensent les clients de la veste ?" https://plume.pelican.test/api/chat
+submit FLAG{pelican-plume-html-b61f}
+answer output
+cat dossier/render.yml
+sed -i "s/reviews_output: raw/reviews_output: escaped/" dossier/render.yml
+sed -i "s/assistant_output: html/assistant_output: text/" dossier/render.yml
+sed -i "s/content_security_policy: off/content_security_policy: strict/" dossier/render.yml
+verify

@@ -1,0 +1,17 @@
+id: breach.season3.s05
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: mission
+track: season
+requires: [breach.world.pelican]
+title:
+  fr: "Saison 3 · 5. Le panier percé"
+  en: "Season 3 · 5. The leaky cart"
+summary:
+  fr: "Logique métier. Aucun caractère spécial, aucune technique : seulement des valeurs que personne n'a pensé à refuser. Deux chemins mènent à la preuve, puis tu relis le code pour trouver les lignes fautives."
+  en: "Business logic. No special character, no technique: only values nobody thought of refusing. Two paths lead to the proof, then you review the code to find the faulty lines."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [web, defense]
+minutes: 20
