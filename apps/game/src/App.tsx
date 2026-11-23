@@ -9,10 +9,12 @@ const Desktop = lazy(() => import('./os/Desktop.tsx').then((m) => ({ default: m.
 const Missions = lazy(() => import('./screens/Missions.tsx').then((m) => ({ default: m.Missions })));
 const Training = lazy(() => import('./screens/Training.tsx').then((m) => ({ default: m.Training })));
 const Community = lazy(() => import('./screens/Community.tsx').then((m) => ({ default: m.Community })));
+const Seasons = lazy(() => import('./screens/Seasons.tsx').then((m) => ({ default: m.Seasons })));
 
 type Screen =
   | { name: 'title' }
   | { name: 'community' }
+  | { name: 'seasons' }
   | { name: 'missions' }
   | { name: 'training' }
   | { name: 'boot'; mode: StartMode }
@@ -44,6 +46,7 @@ function Screens() {
       <Title
         onStart={(mode) => setScreen({ name: 'boot', mode })}
         onCommunity={() => setScreen({ name: 'community' })}
+        onSeasons={() => setScreen({ name: 'seasons' })}
         onMissions={() => setScreen({ name: 'missions' })}
         onTraining={() => setScreen({ name: 'training' })}
       />
@@ -62,6 +65,11 @@ function Screens() {
         />
       ) : screen.name === 'community' ? (
         <Community
+          onStart={(mode) => setScreen({ name: 'boot', mode })}
+          onBack={() => setScreen({ name: 'title' })}
+        />
+      ) : screen.name === 'seasons' ? (
+        <Seasons
           onStart={(mode) => setScreen({ name: 'boot', mode })}
           onBack={() => setScreen({ name: 'title' })}
         />

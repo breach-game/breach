@@ -18,7 +18,14 @@ import {
 import { type Catalog, type CatalogEntry, isOfficialId } from '@breach/pack-schema';
 import { del, get, keys, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
-import { type Campaign, loadCampaign, loadCommunityMission, loadPack, type PackProgress } from './packs.ts';
+import {
+  type Campaign,
+  loadCampaign,
+  loadCommunityMission,
+  loadPack,
+  loadSeason,
+  type PackProgress,
+} from './packs.ts';
 import { getSettings } from './settings.ts';
 
 const SAVE_KEY = 'save:campaign';
@@ -31,10 +38,11 @@ export type StartMode =
   | 'new'
   | 'continue'
   | { replay: string }
-  | { community: CatalogEntry; catalog: Catalog; restart?: boolean };
+  | { community: CatalogEntry; catalog: Catalog; restart?: boolean }
+  | { season: string; restart?: boolean };
 
-/** What is being played: the campaign, or a single mission outside it. */
-export type PlayKind = 'campaign' | 'replay' | 'community';
+/** What is being played: the campaign, a season, a single mission, or one community mission. */
+export type PlayKind = 'campaign' | 'season' | 'replay' | 'community';
 
 /**
  * Where the running game is saved. A replayed or community mission has its own save, apart from
@@ -103,9 +111,9 @@ export async function campaignProgress(): Promise<CampaignProgress> {
   return { completed, current };
 }
 
-/** Progress of a community series, read from its own save: finished missions and the one under way. */
-export async function seriesProgress(series: CatalogEntry): Promise<CampaignProgress> {
-  const save = await get<SaveData>(`save:community:${series.id}@${series.version}`).catch(() => undefined);
+/** Progress of a series save (`community` or `season`): finished missions and the one under way. */
+async function savedProgress(key: string): Promise<CampaignProgress> {
+  const save = await get<SaveData>(key).catch(() => undefined);
   const log = Array.isArray(save?.log) ? save.log : [];
   const completed = Object.fromEntries(Object.entries(completedIn(log)).map(([id, m]) => [id, m.score]));
   let current: string | null = null;
@@ -114,6 +122,16 @@ export async function seriesProgress(series: CatalogEntry): Promise<CampaignProg
     if (e.type === 'MissionCompleted' && current === e.mission) current = null;
   }
   return { completed, current };
+}
+
+/** Progress of a community series, read from its own save: finished missions and the one under way. */
+export function seriesProgress(series: CatalogEntry): Promise<CampaignProgress> {
+  return savedProgress(`save:community:${series.id}@${series.version}`);
+}
+
+/** Progress of an official season, read from its own save. */
+export function seasonProgress(series: CatalogEntry): Promise<CampaignProgress> {
+  return savedProgress(`save:season:${series.id}@${series.version}`);
 }
 
 /** Best known result of each mission played on its own (trainings, replays), by id: its last score. */
@@ -131,6 +149,7 @@ export async function singleScores(entries: CatalogEntry[]): Promise<Record<stri
 async function missionsFor(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Campaign> {
   if (typeof mode !== 'object') return prepare(onProgress);
   if ('community' in mode) return loadCommunityMission(mode.community, mode.catalog, onProgress);
+  if ('season' in mode) return loadSeason(mode.season, onProgress);
   const c = await prepare(onProgress);
   const mission = c.missions.find((m) => m.id === mode.replay);
   if (mission) return { ...c, missions: [mission] };
@@ -166,12 +185,28 @@ const carried = (missions: Record<string, { score: number }>, source: 'update' |
  * updated since: then it starts over.
  */
 export async function start(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Game> {
-  kind = typeof mode !== 'object' ? 'campaign' : 'community' in mode ? 'community' : 'replay';
+  kind =
+    typeof mode !== 'object'
+      ? 'campaign'
+      : 'community' in mode
+        ? 'community'
+        : 'season' in mode
+          ? 'season'
+          : 'replay';
   const c = await missionsFor(mode, onProgress);
   const single = c.missions[0];
-  // A community series is a small campaign: one save for all its missions, resumed like the campaign.
-  const series = typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series';
-  const saved = series ? mode.community : single;
+  // A community series or a season is a small campaign: one save for all its missions, resumed like
+  // the campaign. A season is named by its id; its version comes from the catalogue it was loaded from.
+  const seasonEntry =
+    typeof mode === 'object' && 'season' in mode
+      ? c.catalog.packs.find((p) => p.id === mode.season && p.kind === 'series')
+      : undefined;
+  const series =
+    (typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series') || !!seasonEntry;
+  const saved =
+    typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series'
+      ? mode.community
+      : (seasonEntry ?? single);
   saveKey = kind === 'campaign' || !saved ? SAVE_KEY : `save:${kind}:${saved.id}@${saved.version}`;
   const alone = kind !== 'campaign' && !series;
   const options = {

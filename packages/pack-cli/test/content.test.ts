@@ -12,8 +12,10 @@ import { describe, expect, it } from 'vitest';
 import { buildAll, checkAll, loadAll, replaySolution } from '../src/index.ts';
 
 const packs = loadAll(resolve(import.meta.dirname, '../../../content'));
-const world = packs.find((p) => p.pack.kind === 'world')!.pack;
+const worlds = packs.filter((p) => p.pack.kind === 'world');
+const world = worlds.find((p) => p.pack.id === 'breach.world.novamind')!.pack;
 const missions = packs.filter((p) => p.pack.kind === 'mission');
+const worldFor = (m: (typeof missions)[number]) => worlds.find((w) => w.pack.id === m.pack.requires[0])!.pack;
 
 describe('official content', () => {
   it('is valid, translated and solvable', async () => {
@@ -24,7 +26,7 @@ describe('official content', () => {
     '%s is finished by its solution without being detected',
     async (_id, m) => {
       for (const locale of m.pack.locales) {
-        const result = await replaySolution(world, m.pack, m.solution!, locale);
+        const result = await replaySolution(worldFor(m), m.pack, m.solution!, locale);
         expect(result.done).toBe(true);
         expect(result.game.state.detections).toBe(0);
         expect(result.transcript).not.toContain('command not found');
@@ -83,7 +85,7 @@ describe('official content', () => {
 
   it('every required objective opens with guidance in guided mode', async () => {
     for (const m of missions) {
-      const { game } = await replaySolution(world, m.pack, m.solution!, 'fr');
+      const { game } = await replaySolution(worldFor(m), m.pack, m.solution!, 'fr');
       const said = new Set(game.state.messages.map((x) => x.key));
       for (const o of m.pack.mission!.objectives)
         if (!o.optional) expect(said.has(m.pack.mission!.guide[o.id]!), `${m.pack.id} ${o.id}`).toBe(true);
@@ -330,6 +332,10 @@ describe('official content', () => {
       'breach.official.b02',
       'breach.official.b03',
     ]);
+    // Season series are listed apart from the campaign, each with its season missions.
+    expect(catalogSchema.parse(catalog).seasons).toContain('breach.season2');
+    const season = catalog.packs.find((p) => p.id === 'breach.season2');
+    expect(season?.missions).toEqual(['breach.season2.s01', 'breach.season2.s02', 'breach.season2.s03']);
     for (const f of files) expect(() => parsePack(JSON.parse(gunzipSync(f.bytes).toString()))).not.toThrow();
   });
 

@@ -1,0 +1,16 @@
+id: breach.season2.s03
+version: 0.1.0
+engine: ">=0.5 <1"
+kind: mission
+track: season
+requires: [breach.world.halcyon]
+title:
+  fr: "Saison 2 · 3. La question manquante"
+  en: "Season 2 · 3. The missing question"
+summary:
+  fr: "Côté défense : apprendre à la chaîne quels noms sont à Halcyon, et lui interdire de les prendre ailleurs. Puis la recherche de 2021 d'où vient la saison."
+  en: "Defence side: teach the chain which names belong to Halcyon, and forbid it from taking them elsewhere. Then the 2021 research this season comes from."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [defense, supply]

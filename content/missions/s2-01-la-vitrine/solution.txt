@@ -1,0 +1,7 @@
+# Season 2, mission 1: the shortest path, replayed by CI in every language.
+curl https://www.halcyon.test/customers
+curl https://www.halcyon.test/engineering
+curl https://ci.halcyon.test/
+curl https://ci.halcyon.test/builds/1042
+submit halcyon-telemetry
+answer b

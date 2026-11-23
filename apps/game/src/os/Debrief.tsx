@@ -143,7 +143,9 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
       )}
       {mission.side === 'defense' && <AttackerPath />}
       {!defense && mission.side !== 'defense' && (
-        <h3>{t(playKind() === 'community' ? 'debrief.soc.community' : 'debrief.soc')}</h3>
+        <h3>
+          {t(playKind() === 'community' || playKind() === 'season' ? 'debrief.soc.community' : 'debrief.soc')}
+        </h3>
       )}
       {defense || mission.side === 'defense' ? null : entries.length ? (
         <>
@@ -174,7 +176,7 @@ export function Debrief({ onNext, onClose }: { onNext(): void; onClose(): void }
           <p>{t('debrief.community.body')}</p>
         </>
       )}
-      {!next && playKind() === 'community' && series && (
+      {!next && (playKind() === 'community' || playKind() === 'season') && series && (
         <>
           <h3>{t('debrief.series.title')}</h3>
           <p>{t('debrief.series.body')}</p>

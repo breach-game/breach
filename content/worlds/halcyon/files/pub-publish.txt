@@ -1,0 +1,6 @@
+# Halcyon public mirror - what a publish needs
+# This mirror is open to anyone: no account, no review. (Set up by Halcyon for the audit.)
+# To publish a package, POST to /publish with:
+#   name     the package name
+#   version  the version
+#   proof    a line the build log will print, to show the package was installed

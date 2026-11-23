@@ -1,0 +1,16 @@
+id: breach.season2.s02
+version: 0.1.0
+engine: ">=0.5 <1"
+kind: mission
+track: season
+requires: [breach.world.halcyon]
+title:
+  fr: "Saison 2 · 2. La version la plus haute gagne"
+  en: "Season 2 · 2. Highest version wins"
+summary:
+  fr: "Confusion de dépendances. Tu n'entres nulle part : tu publies un paquet au bon nom, et la chaîne de Halcyon va le chercher toute seule."
+  en: "Dependency confusion. You break into nothing: you publish a package under the right name, and Halcyon's chain fetches it on its own."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [supply, web]

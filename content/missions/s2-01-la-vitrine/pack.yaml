@@ -1,0 +1,16 @@
+id: breach.season2.s01
+version: 0.1.0
+engine: ">=0.5 <1"
+kind: mission
+track: season
+requires: [breach.world.halcyon]
+title:
+  fr: "Saison 2 · 1. À livre ouvert"
+  en: "Season 2 · 1. In the open"
+summary:
+  fr: Reconnaissance. Halcyon montre fièrement sa chaîne de fabrication. Tu lis ce qu'elle raconte à qui veut bien regarder.
+  en: Reconnaissance. Halcyon proudly shows its build chain. You read what it tells anyone who cares to look.
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [recon, supply]

@@ -1,0 +1,12 @@
+[ci] build #1042 - vega-extension - branch main
+[ci] runner: runner-02
+[ci] step 1/4: checkout ............ ok
+[ci] step 2/4: install dependencies
+       source order: public-mirror, internal
+       rule: highest version wins
+       left-pad-lite      2.1.0  (public-mirror)
+       tiny-yaml          1.8.3  (public-mirror)
+       halcyon-telemetry  1.4.2  (internal)
+[ci] step 3/4: tests ............... ok (212 passed)
+[ci] step 4/4: package ............. ok
+[ci] done in 3m12s

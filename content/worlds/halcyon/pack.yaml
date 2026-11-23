@@ -1,0 +1,12 @@
+id: breach.world.halcyon
+version: 0.1.0
+engine: ">=0.5 <1"
+kind: world
+title:
+  fr: Halcyon
+  en: Halcyon
+summary:
+  fr: Le réseau de Halcyon, éditeur fictif de Vega, un assistant IA qui écrit du code chez des milliers de clients.
+  en: The network of Halcyon, the fictional maker of Vega, an AI assistant that writes code for thousands of customers.
+authors: [BREACH]
+locales: [fr, en]

@@ -1,0 +1,15 @@
+id: breach.season2
+version: 0.1.0
+engine: ">=0.5 <1"
+kind: series
+requires: [breach.world.halcyon]
+title:
+  fr: "Saison 2 : la chaîne de fabrication"
+  en: "Season 2: the build chain"
+summary:
+  fr: "Après NovaMind, Halcyon. Tu audites la chaîne qui fabrique Vega, un assistant de code livré chaque nuit à des milliers de clients : reconnaissance, confusion de dépendances, puis la défense. Inspirée d'une recherche publiée en 2021."
+  en: "After NovaMind, Halcyon. You audit the chain that builds Vega, a code assistant shipped nightly to thousands of customers: reconnaissance, dependency confusion, then the defence. Inspired by research published in 2021."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [supply, defense, recon]
