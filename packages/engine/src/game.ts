@@ -19,7 +19,16 @@ import { acceptWording, BrainError, type BrainIssue, type NpcBrain, splitReply }
 import { commands } from './commands/index.ts';
 import type { Chunk, Command, CommandCtx } from './commands/types.ts';
 import type { EventBody, GameEvent } from './events.ts';
-import { errorHtml, findRoute, formatUrl, pageHtml, parseUrl, type Url } from './http.ts';
+import {
+  errorHtml,
+  findRoute,
+  formatUrl,
+  pageHtml,
+  parseUrl,
+  type RequestExtras,
+  type Url,
+  variantMatches,
+} from './http.ts';
 import { engineStrings, interpolate } from './i18n.ts';
 import { resolveTarget } from './net.ts';
 import { acceptHearing, type Decision, decide, type Heard, vocabulary } from './npc.ts';
@@ -48,7 +57,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.5.0';
+export const ENGINE_VERSION = '0.6.0';
 
 export interface GameOptions {
   world: Pack;
@@ -272,6 +281,12 @@ export class Game {
   }
 
   /** Translate a key: mission pack, then world pack, then engine strings. */
+  /** The name of the company under audit: the title of the world, in the player's language. */
+  get target(): string {
+    const title = this.worldPack.title;
+    return title[this.state.locale] ?? title.fr ?? title.en ?? '';
+  }
+
   t(key: string, vars?: Record<string, string | number>): string {
     const locale = this.state.locale;
     const other: Locale = locale === 'fr' ? 'en' : 'fr';
@@ -279,14 +294,24 @@ export class Game {
     for (const loc of [locale, other]) {
       const text = mission?.i18n[loc]?.[key] ?? this.worldPack.i18n[loc]?.[key] ?? engineStrings[loc][key];
       if (text !== undefined)
-        return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
+        return interpolate(text, {
+          user: this.user,
+          mandate: this.world.mandate,
+          target: this.target,
+          ...vars,
+        });
     }
     // A message kept from an earlier mission (Ada's history, notes) still reads in that mission's words.
     for (const loc of [locale, other])
       for (const pack of this.missions.values()) {
         const text = pack.i18n[loc]?.[key];
         if (text !== undefined)
-          return interpolate(text, { user: this.user, mandate: this.world.mandate, ...vars });
+          return interpolate(text, {
+            user: this.user,
+            mandate: this.world.mandate,
+            target: this.target,
+            ...vars,
+          });
       }
     return key;
   }
@@ -392,6 +417,7 @@ export class Game {
       hintsUsed: 0,
       detections: 0,
       asked: {},
+      reviewed: {},
       mistakes: 0,
       level: null,
       notes: [],
@@ -476,6 +502,7 @@ export class Game {
         s.hintsUsed = 0;
         s.detections = 0;
         s.asked = {};
+        s.reviewed = {};
         s.mistakes = 0;
         s.level = null;
         s.fired = {};
@@ -557,6 +584,10 @@ export class Game {
       case 'Answered':
         if (e.correct) s.asked[e.question] = e.option;
         else s.mistakes++;
+        break;
+      case 'Reviewed':
+        if (!e.correct) s.mistakes++;
+        else if (!s.reviewed[e.review]?.includes(e.line)) (s.reviewed[e.review] ??= []).push(e.line);
         break;
       case 'HostRevealed':
         s.revealed[e.host] = true;
@@ -792,6 +823,31 @@ export class Game {
     return shuffled(question.options, `${this.state.mission ?? ''}/${question.id}`);
   }
 
+  /** The code review of the current mission that reads this file, if any. */
+  reviewOf(path: string) {
+    const abs = this.resolvePath(path);
+    const home = this.homeOf(this.world.player.host, this.world.player.user);
+    if (this.state.host !== this.world.player.host) return undefined;
+    return this.mission?.reviews.find((r) => `${home}/${r.file}` === abs);
+  }
+
+  /**
+   * Name a line of a reviewed file as faulty. The judge is the pack's list of lines, nothing else.
+   * Returns null when the file is not under review, or the review is over.
+   */
+  review(path: string, line: number): { correct: boolean; left: number; again: boolean } | null {
+    const review = this.reviewOf(path);
+    if (!review || this.state.missionDone) return null;
+    const found = this.state.reviewed[review.id] ?? [];
+    if (found.length >= review.lines.length) return null;
+    if (found.includes(line)) return { correct: true, left: review.lines.length - found.length, again: true };
+    const correct = review.lines.includes(line);
+    this.emit({ type: 'Reviewed', review: review.id, line, correct });
+    const left = review.lines.length - (this.state.reviewed[review.id]?.length ?? 0);
+    if (correct && left === 0 && review.objective) this.completeObjective(review.objective);
+    return { correct, left, again: false };
+  }
+
   /** Questions asked and not yet settled, in the order of the pack. */
   openQuestions() {
     return (this.mission?.questions ?? []).filter((q) => this.state.asked[q.id] === null);
@@ -981,17 +1037,23 @@ export class Game {
    * Answer a simulated HTTP request. The caller has already taken `host` through the scope gate.
    * Nothing here touches the network: the answer is read from the world pack.
    */
-  http(host: Host, url: Url, method: string, ua = 'curl/8.5.0'): HttpResponse {
+  http(host: Host, url: Url, method: string, ua = 'curl/8.5.0', extras: RequestExtras = {}): HttpResponse {
     const product = host.services.find((s) => s.port === url.port)?.product ?? 'nginx';
     const route = findRoute(host, url.path);
-    const status = route?.status ?? 404;
-    const body = !route
+    // A cookie or a header the request carries may get another answer from the same address.
+    const variant =
+      method === 'POST' && route?.chat !== undefined
+        ? undefined
+        : route?.variants.find((v) => variantMatches(v, extras) && this.holds(v.if));
+    const answer = variant ?? route;
+    const status = answer?.status ?? 404;
+    const body = !answer
       ? errorHtml(404, product)
-      : route.page
-        ? pageHtml(route.page, host, this.state.locale, (k) => this.t(k))
-        : route.bodyKey
-          ? this.t(route.bodyKey)
-          : (route.body ?? '');
+      : answer.page
+        ? pageHtml(answer.page, host, this.state.locale, (k) => this.t(k))
+        : answer.bodyKey
+          ? this.t(answer.bodyKey)
+          : (answer.body ?? '');
     // A chat endpoint answers what is posted to it: the log records the answer, not the 405 page.
     const chat = route?.chat !== undefined && method === 'POST';
     const bytes = chat ? undefined : new TextEncoder().encode(body).length;
@@ -1003,13 +1065,14 @@ export class Game {
       status: chat ? 200 : status,
       ua,
       ...(bytes === undefined ? {} : { bytes }),
+      ...(variant ? { variant: variant.id } : {}),
     });
     const headers = {
       server: product.replace(' ', '/'),
       date: this.date().unix,
       'content-type': 'text/html; charset=utf-8',
       'content-length': String(new TextEncoder().encode(body).length),
-      ...(route?.headers ?? {}),
+      ...(answer?.headers ?? {}),
     };
     return { status, headers, body, route };
   }

@@ -1,0 +1,15 @@
+id: breach.season3
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: series
+requires: [breach.world.pelican]
+title:
+  fr: "Saison 3 : la boutique"
+  en: "Season 3: the shop"
+summary:
+  fr: "Après Halcyon, Pélican. Tu audites une boutique en ligne avant ses soldes : ce qu'elle laisse voir, un guillemet de trop dans la recherche, un avis qui devient du code, la session du client d'à côté, puis un panier qui rend de l'argent. Le web classique, faille par faille, chacune avec sa parade."
+  en: "After Halcyon, Pélican. You audit an online shop before its sales: what it lets you see, one quote too many in the search, a review that turns into code, the session of the customer next door, then a cart that gives money back. The classic web, flaw by flaw, each with its defence."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, recon, llm, defense]

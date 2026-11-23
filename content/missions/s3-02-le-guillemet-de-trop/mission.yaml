@@ -1,0 +1,125 @@
+order: 1
+stage: web
+briefing: p2.briefing
+
+objectives:
+  - { id: search, text: p2.obj.search }
+  - { id: error, text: p2.obj.error }
+  - { id: query, text: p2.obj.query }
+  - { id: proof, text: p2.obj.proof }
+  - { id: why, text: p2.obj.why }
+
+flags:
+  - { id: proof, value: "FLAG{pelican-quote-9d42}", points: 200, objective: proof }
+
+questions:
+  - id: why
+    text: p2.q.why
+    objective: why
+    correct: code
+    options:
+      - { id: password, text: p2.q.why.password, why: p2.q.why.password.why }
+      - { id: code, text: p2.q.why.code }
+      - { id: debug, text: p2.q.why.debug, why: p2.q.why.debug.why }
+
+reveal: [shop]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p2.ada.brief
+  - on: { event: ChatReply, npc: search, intent: { in: [results, fallback] } }
+    do:
+      - objective.complete: search
+      - ada.say: p2.ada.search
+  - on: { event: ChatReply, npc: search, intent: sql-error }
+    do:
+      - objective.complete: search
+      - objective.complete: error
+      - noise.add: { points: 6, as: p2.soc.error }
+      - ada.say: p2.ada.error
+  - on: { event: HttpRequest, host: shop, path: /debug/last-query }
+    do:
+      - objective.complete: query
+      - ada.say: p2.ada.query
+  - on: { event: ChatReply, npc: search, intent: all-rows }
+    do:
+      - objective.complete: search
+      - objective.complete: error
+      - objective.complete: query
+      - noise.add: { points: 8, as: p2.soc.rows }
+      - ada.say: p2.ada.rows
+      - ada.guide: { key: p2.ada.g.submit, for: proof, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: p2.ada.flag
+      - ada.ask: why
+  - on: { event: ObjectiveCompleted, objective: why }
+    do:
+      - ada.say: p2.ada.why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p2.ada.done
+
+guide:
+  search: p2.ada.g.search
+  error: p2.ada.g.error
+  query: p2.ada.g.query
+  proof: p2.ada.g.proof
+  why: p2.ada.answer
+
+hints:
+  search: [p2.hint.search.1]
+  error: [p2.hint.error.1, p2.hint.error.2]
+  query: [p2.hint.query.1]
+  proof: [p2.hint.proof.1, p2.hint.proof.2, p2.hint.proof.3]
+
+defense:
+  intro: p2.def.intro
+  lesson: p2.def.lesson
+  find:
+    - { source: chat, where: { npc: search, intent: all-rows }, text: p2.def.find.rows }
+  rules:
+    - id: db-error
+      title: p2.def.rule.error.title
+      why: p2.def.rule.error.why
+      source: chat
+      where: { npc: search, intent: { in: [sql-error, all-rows] } }
+      correct: true
+    - id: every-search
+      title: p2.def.rule.every.title
+      why: p2.def.rule.every.why
+      source: chat
+      where: { npc: search }
+    - id: burst
+      title: p2.def.rule.burst.title
+      why: p2.def.rule.burst.why
+      source: chat
+      where: { npc: search }
+      count: { gte: 6, within: 10 }
+  fixes:
+    - id: parameterized
+      title: p2.def.fix.param.title
+      why: p2.def.fix.param.why
+      sets: { search.parameterized: true }
+      correct: true
+    - id: hide-errors
+      title: p2.def.fix.hide.title
+      why: p2.def.fix.hide.why
+      sets: { search.hide_errors: true }
+    - id: max-length
+      title: p2.def.fix.length.title
+      why: p2.def.fix.length.why
+      sets: { search.max_length: true }
+
+# An ordinary morning on the shop: customers looking for clothes, one of them with an apostrophe.
+background:
+  - { host: shop, source: chat, every: 3, offset: 1, fields: { form: true, src: 198.51.100.24, npc: search, intent: results, families: [none], msg: "veste" } }
+  - { host: shop, source: chat, every: 7, offset: 2, fields: { form: true, src: 203.0.113.80, npc: search, intent: results, families: [none], msg: "pull marin" } }
+  - { host: shop, source: chat, every: 11, offset: 5, fields: { form: true, src: 198.51.100.77, npc: search, intent: results, families: [none], msg: "veste d'été" } }
+
+debrief:
+  title: p2.debrief.title
+  lesson: p2.debrief.lesson
+  points: [p2.debrief.p1, p2.debrief.p2, p2.debrief.p3, p2.debrief.p4]
+  reference: "OWASP Top 10 · A03 Injection"

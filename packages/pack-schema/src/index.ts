@@ -82,20 +82,67 @@ const block = z.union([
   z.strictObject({ comment: text }),
   /** A live chat with a character. */
   z.strictObject({ chat: id }),
+  /**
+   * A one-field form of the application. What is typed is posted to the scripted character `to`,
+   * which stands for the application behind the form, and the answer is shown under the field.
+   */
+  z.strictObject({
+    form: z.strictObject({
+      to: id,
+      label: text,
+      button: text,
+      /** Name of the field in the HTML source and in `curl -d "name=value"`. */
+      name: z
+        .string()
+        .regex(/^[a-z][a-z0-9_]{0,19}$/)
+        .default('q'),
+      placeholder: text.optional(),
+    }),
+  }),
+  /** A table of plain cells, with one header row. */
+  z.strictObject({
+    table: z.strictObject({
+      head: z.array(text).min(1).max(8),
+      rows: z.array(z.array(text).min(1).max(8)).min(1).max(40),
+    }),
+  }),
   z.strictObject({ footer: text }),
 ]);
 export type Block = z.infer<typeof block>;
 const page = z.strictObject({ title: text, blocks: z.array(block).min(1).max(60) });
 export type Page = z.infer<typeof page>;
 
-const route = z.strictObject({
+const answer = {
   status: z.number().int().min(100).max(599).default(200),
   headers: z.record(z.string(), z.string()).default({}),
   body: z.string().max(64_000).optional(),
   bodyKey: i18nKey.optional(),
   page: page.optional(),
+};
+
+/**
+ * Another answer of a route, given when the request carries a cookie or a header, written exactly
+ * as `curl -b "name=value"` or `curl -H "Name: value"` sends it. The first variant that matches
+ * answers; a browser page load sends neither, so it always gets the route's own answer.
+ */
+const variant = z
+  .strictObject({
+    id,
+    cookie: z.string().min(3).max(200).optional(),
+    header: z.string().min(3).max(200).optional(),
+    /** Only while this holds: a fix can close the variant. */
+    if: z.lazy(() => condition).optional(),
+    ...answer,
+  })
+  .refine((v) => v.cookie !== undefined || v.header !== undefined, {
+    message: 'a variant needs `cookie` or `header`',
+  });
+
+const route = z.strictObject({
+  ...answer,
   /** A character answers what is posted here (`curl -d "message"`). */
   chat: id.optional(),
+  variants: z.array(variant).max(8).default([]),
 });
 
 const commit = z.strictObject({
@@ -272,6 +319,14 @@ export const FAMILIES = [
 ] as const;
 export type Family = (typeof FAMILIES)[number];
 
+/**
+ * Shapes of a raw input that an application may mistake for something else than text. They name a
+ * class of flaw, not an exploit: `quote` is a quote that is not part of a word, `markup` an HTML tag, `negative` a
+ * number below zero.
+ */
+export const INPUT_SHAPES = ['quote', 'markup', 'negative'] as const;
+export type InputShape = (typeof INPUT_SHAPES)[number];
+
 const intent = z.strictObject({
   id,
   /**
@@ -299,6 +354,11 @@ const intent = z.strictObject({
     .string()
     .regex(/^\d{1,6}(\.\d{1,6}){0,3}$/)
     .optional(),
+  /**
+   * Shapes the raw text must have, all of them: what an application's form does with its input.
+   * Read from what was typed only, never from a model.
+   */
+  input: z.array(z.enum(INPUT_SHAPES)).max(3).default([]),
   if: condition.optional(),
   /** Replies, used in turn when the intent comes back. The last one repeats. */
   reply: z.array(text).min(1).max(5),
@@ -584,6 +644,23 @@ const mission = z.strictObject({
       }),
     )
     .max(12)
+    .default([]),
+  /**
+   * Code reviews: the player reads a file of the workstation with `review <file>` and names the
+   * faulty lines with `review <file> <line>`. Finding them all completes the objective; a line that
+   * is not faulty costs points.
+   */
+  reviews: z
+    .array(
+      z.strictObject({
+        id,
+        /** Path of the file, relative to the player's home directory. */
+        file: z.string().min(1).max(200),
+        lines: z.array(z.number().int().min(1).max(400)).min(1).max(6),
+        objective: id.optional(),
+      }),
+    )
+    .max(6)
     .default([]),
   debrief: z.strictObject({
     title: i18nKey,

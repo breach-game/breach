@@ -4,6 +4,7 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useStat
 import { elapsed, touch, useGame } from '../session.ts';
 import { type UiKey, useT } from '../ui.ts';
 import { NpcChat } from './NpcChat.tsx';
+import { PageForm } from './PageForm.tsx';
 
 /** Render `code` spans. Anything else is plain text: content never becomes HTML. */
 function rich(text: string): ReactNode[] {
@@ -100,6 +101,28 @@ export function Browser({ url, nonce, active, onNavigate }: Props) {
     if ('nav' in b) return <nav key={i}>{b.nav.map((l, j) => link(l, j))}</nav>;
     if ('link' in b) return <p key={i}>{link(b.link)}</p>;
     if ('chat' in b) return <NpcChat key={i} npcId={b.chat} active={active} />;
+    if ('form' in b) return <PageForm key={i} form={b.form} />;
+    if ('table' in b)
+      return (
+        <table key={i}>
+          <thead>
+            <tr>
+              {b.table.head.map((cell, j) => (
+                <th key={j}>{rich(game.t(cell))}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {b.table.rows.map((row, j) => (
+              <tr key={j}>
+                {row.map((cell, k) => (
+                  <td key={k}>{rich(game.t(cell))}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
     if ('footer' in b) return <footer key={i}>{rich(game.t(b.footer))}</footer>;
     return null; // A comment only exists in the source.
   };

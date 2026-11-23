@@ -1,0 +1,17 @@
+id: breach.season3.s01
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: mission
+track: season
+requires: [breach.world.pelican]
+title:
+  fr: "Saison 3 · 1. Derrière la vitrine"
+  en: "Season 3 · 1. Behind the shop window"
+summary:
+  fr: "Reconnaissance d'une application web. Tu ne forces rien : tu lis ce que la boutique envoie à tout le monde, y compris ce qu'elle n'affiche pas."
+  en: "Reconnaissance of a web application. You force nothing: you read what the shop sends to everyone, including what it does not display."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [recon, web]
+minutes: 10

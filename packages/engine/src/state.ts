@@ -55,7 +55,9 @@ export interface GameState {
   detections: number;
   /** Questions Ada asked in this mission, with the option that settled each one. */
   asked: Record<string, string | null>;
-  /** Wrong answers given in this mission. */
+  /** Faulty lines found so far in each code review of this mission. */
+  reviewed: Record<string, number[]>;
+  /** Wrong answers given in this mission, and lines wrongly named in a review. */
   mistakes: number;
   /** Most helpful guidance level used in this mission. Null on saves made before levels were scored. */
   level: Guidance | null;

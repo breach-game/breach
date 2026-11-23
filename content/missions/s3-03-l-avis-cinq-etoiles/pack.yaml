@@ -1,0 +1,17 @@
+id: breach.season3.s03
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: mission
+track: season
+requires: [breach.world.pelican]
+title:
+  fr: "Saison 3 · 3. L'avis cinq étoiles"
+  en: "Season 3 · 3. The five-star review"
+summary:
+  fr: "Un avis client qui devient du code dans la page d'un autre, puis dans la réponse de l'assistant Plume. Deux portes, une seule faiblesse, et une configuration à réparer."
+  en: "A customer review that turns into code in someone else's page, then in the answer of the assistant Plume. Two doors, one weakness, and a configuration to repair."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, llm, defense]
+minutes: 15

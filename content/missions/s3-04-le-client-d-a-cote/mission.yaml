@@ -1,0 +1,125 @@
+order: 3
+stage: web
+briefing: p4.briefing
+
+files:
+  dossier/session.yml: { $file: files/session.yml }
+
+objectives:
+  - { id: mine, text: p4.obj.mine }
+  - { id: decode, text: p4.obj.decode }
+  - { id: next, text: p4.obj.next }
+  - { id: token, text: p4.obj.token }
+  - { id: form, text: p4.obj.form }
+  - { id: fix, text: p4.obj.fix }
+
+flags:
+  - { id: next, value: "FLAG{pelican-next-session-2f8c}", points: 200, objective: next }
+
+questions:
+  - id: token
+    text: p4.q.token
+    objective: token
+    correct: unsigned
+    options:
+      - { id: readable, text: p4.q.token.readable, why: p4.q.token.readable.why }
+      - { id: unsigned, text: p4.q.token.unsigned }
+      - { id: long, text: p4.q.token.long, why: p4.q.token.long.why }
+  - id: form
+    text: p4.q.form
+    objective: form
+    correct: origin
+    options:
+      - { id: https, text: p4.q.form.https, why: p4.q.form.https.why }
+      - { id: origin, text: p4.q.form.origin }
+      - { id: password, text: p4.q.form.password, why: p4.q.form.password.why }
+
+checks:
+  - id: random
+    text: p4.check.random
+    if: { file: "~/dossier/session.yml", contains: "session_id: random" }
+    objective: fix
+  - id: signed
+    text: p4.check.signed
+    if: { file: "~/dossier/session.yml", contains: "api_token_alg: hs256" }
+    objective: fix
+  - id: csrf
+    text: p4.check.csrf
+    if:
+      all:
+        - { file: "~/dossier/session.yml", contains: "csrf_token: on" }
+        - { file: "~/dossier/session.yml", lacks: "session_cookie_samesite: none" }
+    objective: fix
+  - id: works
+    text: p4.check.works
+    if: { file: "~/dossier/session.yml", contains: "session_lifetime_minutes: 30" }
+
+reveal: [shop]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p4.ada.brief
+  - on: { event: HttpRequest, host: shop, path: /account, status: 401 }
+    do:
+      - ada.guide: { key: p4.ada.nocookie, for: mine, step: 1 }
+  - on: { event: HttpRequest, host: shop, path: /account, variant: mine }
+    do:
+      - objective.complete: mine
+      - ada.say: p4.ada.mine
+  - on: { event: CommandRun, command: base64 }
+    do:
+      - objective.complete: decode
+      - ada.say: p4.ada.decode
+  - on: { event: HttpRequest, host: shop, path: /account, variant: other }
+    do:
+      - objective.complete: decode
+      - noise.add: { points: 8, as: p4.soc.other }
+      - ada.say: p4.ada.other
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: p4.ada.flag
+  - on: { event: CommandRun, command: jwt }
+    do:
+      - ada.say: p4.ada.jwt
+      - ada.ask: token
+  - on: { event: ObjectiveCompleted, objective: token }
+    do:
+      - ada.say: p4.ada.token
+  - on: { event: HttpRequest, host: shop, path: /account/address }
+    do:
+      - ada.say: p4.ada.address
+      - ada.ask: form
+  - on: { event: ObjectiveCompleted, objective: form }
+    do:
+      - ada.say: p4.ada.form
+  - on: { event: Verified }
+    if: { not: { objective: fix } }
+    once: false
+    do:
+      - ada.say: p4.ada.almost
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p4.ada.done
+
+guide:
+  mine: p4.ada.g.mine
+  decode: p4.ada.g.decode
+  next: p4.ada.g.next
+  token: p4.ada.g.token
+  form: p4.ada.g.form
+  fix: p4.ada.g.fix
+
+hints:
+  mine: [p4.hint.mine.1, p4.hint.mine.2]
+  decode: [p4.hint.decode.1]
+  next: [p4.hint.next.1, p4.hint.next.2, p4.hint.next.3]
+  token: [p4.hint.token.1, p4.hint.token.2]
+  form: [p4.hint.form.1]
+  fix: [p4.hint.fix.1, p4.hint.fix.2]
+
+debrief:
+  title: p4.debrief.title
+  lesson: p4.debrief.lesson
+  points: [p4.debrief.p1, p4.debrief.p2, p4.debrief.p3, p4.debrief.p4]
+  reference: "OWASP Top 10 · A07 Identification and Authentication Failures, A01 (CSRF)"

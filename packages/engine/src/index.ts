@@ -31,6 +31,7 @@ export {
   decide,
   detectFamilies,
   type Heard,
+  inputShapes,
   normalizeText,
   versionAbove,
   versionIn,

@@ -1,0 +1,86 @@
+order: 4
+stage: web
+briefing: p5.briefing
+
+files:
+  dossier/cart.txt: { $file: files/cart.txt }
+
+objectives:
+  - { id: cart, text: p5.obj.cart }
+  - { id: proof, text: p5.obj.proof }
+  - { id: review, text: p5.obj.review }
+  - { id: where, text: p5.obj.where }
+
+flags:
+  - { id: proof, value: "FLAG{pelican-free-cart-70ad}", points: 250, objective: proof }
+
+# Line 5 stores the quantity without checking it, line 14 adds the discount without checking it is new.
+reviews:
+  - { id: cart, file: dossier/cart.txt, lines: [5, 14], objective: review }
+
+questions:
+  - id: where
+    text: p5.q.where
+    objective: where
+    correct: server
+    options:
+      - { id: page, text: p5.q.where.page, why: p5.q.where.page.why }
+      - { id: server, text: p5.q.where.server }
+      - { id: waf, text: p5.q.where.waf, why: p5.q.where.waf.why }
+
+reveal: [shop]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p5.ada.brief
+  - on: { event: HttpRequest, host: shop, path: /cart }
+    do:
+      - objective.complete: cart
+      - ada.say: p5.ada.cart
+  - on: { event: ChatReply, npc: promo, intent: stacked }
+    do:
+      - objective.complete: cart
+      - ada.guide: { key: p5.ada.once, for: proof, step: 1 }
+  - on: { event: ChatReply, npc: quantity, intent: fallback }
+    do:
+      - objective.complete: cart
+      - ada.guide: { key: p5.ada.qty, for: proof, step: 1 }
+  - on: { event: ChatReply, npc: quantity, intent: below-zero }
+    do:
+      - objective.complete: cart
+      - noise.add: { points: 6, as: p5.soc.negative }
+      - ada.guide: { key: p5.ada.shown, for: proof, step: 2 }
+  - on: { event: FlagShown }
+    do:
+      - ada.guide: { key: p5.ada.shown, for: proof, step: 2 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: p5.ada.flag
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: p5.ada.review
+      - ada.ask: where
+  - on: { event: ObjectiveCompleted, objective: where }
+    do:
+      - ada.say: p5.ada.where
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p5.ada.done
+
+guide:
+  cart: p5.ada.g.cart
+  proof: p5.ada.g.proof
+  review: p5.ada.g.review
+  where: p5.ada.answer
+
+hints:
+  cart: [p5.hint.cart.1]
+  proof: [p5.hint.proof.1, p5.hint.proof.2, p5.hint.proof.3]
+  review: [p5.hint.review.1, p5.hint.review.2, p5.hint.review.3]
+
+debrief:
+  title: p5.debrief.title
+  lesson: p5.debrief.lesson
+  points: [p5.debrief.p1, p5.debrief.p2, p5.debrief.p3, p5.debrief.p4]
+  reference: "OWASP Top 10 · A04 Insecure Design · CWE-840 Business Logic Errors"

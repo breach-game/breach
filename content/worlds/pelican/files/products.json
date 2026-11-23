@@ -1,0 +1,17 @@
+{
+  "generated_by": "kiosk 2.3",
+  "count": 4,
+  "items": [
+    { "id": 41, "name": "Pull Marin", "price": 48.0, "published": true, "stock": 12 },
+    { "id": 42, "name": "Veste Héron", "price": 120.0, "published": true, "stock": 3 },
+    { "id": 43, "name": "Manteau Cormoran", "price": 165.0, "published": true, "stock": 1 },
+    {
+      "id": 44,
+      "name": "Veste Pélican édition soldes",
+      "price": 60.0,
+      "published": false,
+      "stock": 40,
+      "internal_note": "Ne pas afficher avant les soldes. Marge 12 %. Fournisseur: Atelier Nord. FLAG{pelican-hidden-field-3c1a}"
+    }
+  ]
+}

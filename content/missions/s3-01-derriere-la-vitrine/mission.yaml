@@ -1,0 +1,84 @@
+order: 0
+stage: recon
+briefing: p1.briefing
+
+objectives:
+  - { id: home, text: p1.obj.home }
+  - { id: headers, text: p1.obj.headers }
+  - { id: robots, text: p1.obj.robots }
+  - { id: preview, text: p1.obj.preview }
+  - { id: api, text: p1.obj.api }
+  - { id: why, text: p1.obj.why }
+
+flags:
+  - { id: api, value: "FLAG{pelican-hidden-field-3c1a}", points: 150, objective: api }
+
+questions:
+  - id: why
+    text: p1.q.why
+    objective: why
+    correct: sent
+    options:
+      - { id: robots, text: p1.q.why.robots, why: p1.q.why.robots.why }
+      - { id: sent, text: p1.q.why.sent }
+      - { id: jq, text: p1.q.why.jq, why: p1.q.why.jq.why }
+
+reveal: [shop]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p1.ada.brief
+  - on: { event: HttpRequest, host: shop, path: /, method: GET }
+    do:
+      - objective.complete: home
+      - ada.say: p1.ada.home
+  - on: { event: HttpRequest, host: shop, method: HEAD }
+    do:
+      - objective.complete: headers
+      - ada.say: p1.ada.headers
+  - on: { event: HttpRequest, host: shop, path: /robots.txt }
+    do:
+      - objective.complete: robots
+      - ada.say: p1.ada.robots
+  - on: { event: HttpRequest, host: shop, path: /staff-preview }
+    do:
+      - objective.complete: preview
+      - ada.say: p1.ada.preview
+  - on: { event: HttpRequest, host: shop, path: /api/products.json }
+    do:
+      - ada.guide: { key: p1.ada.json, for: api, step: 1 }
+  - on: { event: CommandRun, command: jq }
+    do:
+      - ada.guide: { key: p1.ada.jq, for: api, step: 2 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: p1.ada.flag
+      - ada.ask: why
+  - on: { event: ObjectiveCompleted, objective: why }
+    do:
+      - ada.say: p1.ada.why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p1.ada.done
+
+guide:
+  home: p1.ada.g.home
+  headers: p1.ada.g.headers
+  robots: p1.ada.g.robots
+  preview: p1.ada.g.preview
+  api: p1.ada.g.api
+  why: p1.ada.answer
+
+hints:
+  home: [p1.hint.home.1]
+  headers: [p1.hint.headers.1]
+  robots: [p1.hint.robots.1]
+  preview: [p1.hint.preview.1]
+  api: [p1.hint.api.1, p1.hint.api.2, p1.hint.api.3]
+
+debrief:
+  title: p1.debrief.title
+  lesson: p1.debrief.lesson
+  points: [p1.debrief.p1, p1.debrief.p2, p1.debrief.p3, p1.debrief.p4]
+  reference: "OWASP Top 10 · A05 Security Misconfiguration, A01 Broken Access Control"

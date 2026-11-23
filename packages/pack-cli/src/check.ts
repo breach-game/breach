@@ -90,7 +90,7 @@ function npcProblems(npc: Npc): string[] {
   for (const intent of npc.intents) {
     if (seen.has(intent.id)) problems.push(`character ${npc.id}: intent id ${intent.id} is used twice`);
     seen.add(intent.id);
-    if (!intent.words.length && !intent.families.length && !intent.if)
+    if (!intent.words.length && !intent.families.length && !intent.input.length && !intent.if)
       problems.push(`character ${npc.id}: intent ${intent.id} matches every message, use fallback instead`);
   }
   return problems;

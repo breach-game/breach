@@ -67,7 +67,7 @@ L'épilogue, après la mission 9, génère le rapport de pentest du joueur à pa
 ### Après la campagne
 
 - **Entraînements** : missions courtes, une technique chacune, toujours ouvertes (lire un journal, encodé n'est pas chiffré, le script modifié, le mail suspect).
-- **Saisons** : séries officielles dans de nouvelles entreprises. La campagne NovaMind est la saison 1. La saison 2 audite la chaîne de fabrication de Halcyon (reconnaissance, confusion de dépendances, défense).
+- **Saisons** : séries officielles dans de nouvelles entreprises. La campagne NovaMind est la saison 1. La saison 2 audite la chaîne de fabrication de Halcyon (reconnaissance, confusion de dépendances, défense). La saison 3 audite Pélican, une boutique en ligne, avant ses soldes : les failles classiques du web (ce qu'un site laisse voir, injection, balise enregistrée et assistant qui la recopie, sessions devinables, logique métier), chacune avec sa parade. Elle apporte les formulaires et tableaux dans les pages, les cookies de `curl`, les commandes `jq`, `jwt decode` et `review` (relecture de code : désigner les lignes fautives).
 - **Missions de la communauté** : packs du dépôt `breach-game/packs`, validés et signés. Les « Dossiers » y sont de courtes séries inspirées d'incidents réels documentés publiquement : entreprise fictive, joueur sous mandat, et une fiche finale sourcée « ce qui s'est vraiment passé » qui ne nomme jamais une personne privée.
 
 ### Types d'épreuve

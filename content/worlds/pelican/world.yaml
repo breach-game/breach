@@ -1,0 +1,340 @@
+# Season 3. Everything here is fictional: a reserved .test domain and private addresses only.
+# The shop is a set of scripted answers. No query, no markup and no session is ever really run:
+# the engine recognises the shape of an input (a quote, a tag, a number below zero) and shows what
+# an application with that class of flaw would do with it.
+startTime: "2027-06-07T09:00:00+02:00"
+mandate: PL-2027-002
+scope:
+  domains: ["*.pelican.test"]
+  networks: ["10.15.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.15.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.15.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [shop]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            PL-2027-002.txt: { $t: file.mandate }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: shop
+    hostname: shop.pelican.test
+    ip: 10.15.0.10
+    os: Linux 6.1 (Debian 12)
+    map: { x: -40, z: -140, h: 120 }
+    links: [plume, staff]
+    services:
+      - { port: 443, name: https, product: nginx 1.24 }
+    web:
+      "/":
+        headers: { x-powered-by: "Kiosk/2.3 (debug)", set-cookie: "visit=1; Path=/" }
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/search", label: web.nav.search }
+                - { href: "/product/veste-42", label: web.nav.jacket }
+                - { href: "/cart", label: web.nav.cart }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - comment: web.home.todo
+            - footer: web.footer
+      "/robots.txt":
+        headers: { content-type: text/plain }
+        body: "User-agent: *\nDisallow: /debug/\nDisallow: /staff-preview\n"
+      "/staff-preview":
+        page:
+          title: web.preview.title
+          blocks:
+            - h1: web.preview.h1
+            - p: web.preview.p1
+            - list: [web.preview.l1, web.preview.l2]
+            - footer: web.footer
+      "/debug/":
+        status: 403
+        headers: { content-type: text/plain }
+        body: "403 Forbidden: directory listing is off\n"
+      "/debug/last-query":
+        headers: { content-type: text/plain }
+        body: { $file: files/last-query.txt }
+      "/api/products.json":
+        headers: { content-type: application/json }
+        body: { $file: files/products.json }
+      "/search":
+        page:
+          title: web.search.title
+          blocks:
+            - nav: *nav
+            - h1: web.search.h1
+            - p: web.search.p1
+            - form: { to: search, label: web.search.label, button: web.search.button, name: q }
+            - footer: web.footer
+        chat: search
+      "/product/veste-42":
+        page:
+          title: web.jacket.title
+          blocks:
+            - nav: *nav
+            - h1: web.jacket.h1
+            - p: web.jacket.p1
+            - h2: web.jacket.reviews
+            - table:
+                head: [web.jacket.th.who, web.jacket.th.stars, web.jacket.th.text]
+                rows:
+                  - ["Inès", "5/5", web.jacket.r1]
+                  - ["Malo", "4/5", web.jacket.r2]
+                  - ["Chloé", "5/5", web.jacket.r3]
+            - form: { to: reviews, label: web.jacket.label, button: web.jacket.button, name: review }
+            - footer: web.footer
+        chat: reviews
+      "/account":
+        status: 401
+        headers: { content-type: application/json }
+        body: "{\"error\":\"login required\"}\n"
+        variants:
+          - id: mine
+            cookie: "session=dXNlcjoxMDQy"
+            headers: { content-type: application/json }
+            body: { $file: files/account-1042.json }
+          # The session number is a counter in Base64: the one before belongs to another customer.
+          - id: other
+            cookie: "session=dXNlcjoxMDQx"
+            if: { config: session.random_ids, eq: false }
+            headers: { content-type: application/json }
+            body: { $file: files/account-1041.json }
+      "/account/address":
+        page:
+          title: web.address.title
+          blocks:
+            - nav: *nav
+            - h1: web.address.h1
+            - p: web.address.p1
+            - comment: web.address.todo
+            - form: { to: address, label: web.address.label, button: web.address.button, name: address }
+            - footer: web.footer
+        chat: address
+      "/cart":
+        page:
+          title: web.cart.title
+          blocks:
+            - nav: *nav
+            - h1: web.cart.h1
+            - table:
+                head: [web.cart.th.item, web.cart.th.qty, web.cart.th.price]
+                rows:
+                  - [web.cart.item, "1", "120,00"]
+            - p: web.cart.p1
+            - link: { href: "/cart/promo", label: web.cart.promo }
+            - link: { href: "/cart/quantity", label: web.cart.quantity }
+            - footer: web.footer
+      "/cart/promo":
+        page:
+          title: web.cart.title
+          blocks:
+            - nav: *nav
+            - h1: web.promo.h1
+            - p: web.promo.p1
+            - form: { to: promo, label: web.promo.label, button: web.promo.button, name: code }
+            - footer: web.footer
+        chat: promo
+      "/cart/quantity":
+        page:
+          title: web.cart.title
+          blocks:
+            - nav: *nav
+            - h1: web.qty.h1
+            - p: web.qty.p1
+            - form: { to: quantity, label: web.qty.label, button: web.qty.button, name: qty }
+            - footer: web.footer
+        chat: quantity
+
+  - id: plume
+    hostname: plume.pelican.test
+    ip: 10.15.0.30
+    kind: ai
+    os: Linux 6.1 (Debian 12)
+    map: { x: 180, z: -60, h: 130 }
+    services:
+      - { port: 443, name: https, product: plume-gateway 1.2 }
+    web:
+      "/":
+        page:
+          title: web.plume.title
+          blocks:
+            - h1: web.plume.h1
+            - p: web.plume.p1
+            - chat: plume
+            - footer: web.footer
+      "/api/chat":
+        {
+          status: 405,
+          headers: { content-type: application/json, allow: POST },
+          body: "{\"error\":\"method not allowed\"}\n",
+          chat: plume,
+        }
+
+  - id: staff
+    hostname: staff.pelican.test
+    ip: 10.15.0.20
+    os: Linux 6.1 (Debian 12)
+    map: { x: 300, z: 110, h: 100 }
+    services:
+      - { port: 443, name: https, product: nginx 1.24 }
+    web:
+      "/":
+        status: 403
+        headers: { content-type: text/plain }
+        body: "403 Forbidden: staff network only\n"
+
+dns:
+  pelican.test: { A: ["10.15.0.10"] }
+  shop.pelican.test: { A: ["10.15.0.10"] }
+  plume.pelican.test: { A: ["10.15.0.30"] }
+  staff.pelican.test: { A: ["10.15.0.20"] }
+
+whois:
+  pelican.test: |
+    Domain Name: PELICAN.TEST
+    Creation Date: 2019-03-11T08:00:00Z
+    Registrant Organization: Pélican SAS
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of the shop that decide whether a weakness is there. A fix changes them.
+config:
+  search.parameterized: false
+  search.hide_errors: false
+  search.max_length: false
+  session.random_ids: false
+
+# The shop's forms are scripted. Each "character" below is the application behind one form: it does
+# not talk, it answers like a server.
+npcs:
+  - id: search
+    name: shop-search
+    role: npc.search.role
+    intents:
+      # Fixed: the text is sent apart from the query, so a quote is only a character to look for.
+      - id: no-results
+        input: [quote]
+        if: { config: search.parameterized, eq: true }
+        reply: [npc.search.safe]
+      # A quote that ends the text early, then a condition that is always true: every row comes back.
+      - id: all-rows
+        input: [quote]
+        words: ["or"]
+        reply: [npc.search.all]
+      - id: error-hidden
+        input: [quote]
+        if: { config: search.hide_errors, eq: true }
+        reply: [npc.search.hidden]
+      - id: sql-error
+        input: [quote]
+        reply: [npc.search.error]
+      - id: results
+        words: [veste, vestes, jacket, heron, pelican, manteau, coat, pull, sweater, ete, summer]
+        reply: [npc.search.results]
+    fallback: [npc.search.none]
+
+  - id: reviews
+    name: shop-reviews
+    role: npc.reviews.role
+    intents:
+      - id: stored-markup
+        input: [markup]
+        reply: [npc.reviews.markup]
+        set: { tagged: true }
+    fallback: [npc.reviews.plain]
+
+  - id: address
+    name: shop-account
+    role: npc.address.role
+    intents: []
+    fallback: [npc.address.saved]
+
+  - id: promo
+    name: shop-promo
+    role: npc.promo.role
+    intents:
+      - id: stacked
+        words: [bienvenue10]
+        reply: [npc.promo.once, npc.promo.twice]
+    fallback: [npc.promo.unknown]
+
+  - id: quantity
+    name: shop-cart
+    role: npc.qty.role
+    intents:
+      - id: below-zero
+        input: [negative]
+        reply: [npc.qty.negative]
+    fallback: [npc.qty.updated]
+
+  - id: plume
+    name: Plume
+    role: npc.plume.role
+    kind: ai
+    greeting: npc.plume.greeting
+    sheet: >
+      Plume is the shopping assistant of Pélican, a brand of refurbished clothes. Warm, brief, a little
+      proud of the brand. It answers about sizes, delivery and what customers say in their reviews.
+      It never invents a price or a promise.
+    intents:
+      # The assistant copies the reviews into its answer, and the widget shows that answer as HTML.
+      - id: summary-html
+        words: [avis, review, reviews, resume, resumer, summary, summarize, summarise, clients, customers, pensent, think]
+        if: { var: tagged, eq: true }
+        reply: [npc.plume.html]
+      - id: summary
+        words: [avis, review, reviews, resume, resumer, summary, summarize, summarise, clients, customers, pensent, think]
+        reply: [npc.plume.summary]
+      - id: sizes
+        words: [taille, tailles, size, sizes]
+        reply: [npc.plume.sizes]
+      - id: delivery
+        words: [livraison, delivery, retour, retours, return, returns]
+        reply: [npc.plume.delivery]
+    fallback: [npc.plume.fallback.1, npc.plume.fallback.2]

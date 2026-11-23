@@ -1,3 +1,4 @@
+import { dataCommands } from './data.ts';
 import { defenseCommands } from './defense.ts';
 import { fileCommands } from './files.ts';
 import { gameCommands } from './gamecmds.ts';
@@ -12,6 +13,7 @@ for (const c of [
   ...gameCommands,
   ...fileCommands,
   ...textCommands,
+  ...dataCommands,
   ...networkCommands,
   ...gitCommands,
   ...systemCommands,

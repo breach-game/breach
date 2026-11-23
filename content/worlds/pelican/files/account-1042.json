@@ -1,0 +1,8 @@
+{
+  "id": 1042,
+  "login": "kestrel-test",
+  "name": "Compte de test Ligne Rouge",
+  "address": "1 rue du Banc d'essai, 69000 Lyon",
+  "orders": [],
+  "api_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMDQyIiwibmFtZSI6Imtlc3RyZWwtdGVzdCIsInJvbGUiOiJjdXN0b21lciIsImlhdCI6MTgwNzAwMDAwMH0."
+}

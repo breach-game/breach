@@ -1,0 +1,12 @@
+id: breach.world.pelican
+version: 0.1.0
+engine: ">=0.6 <1"
+kind: world
+title:
+  fr: Pélican
+  en: Pélican
+summary:
+  fr: La boutique en ligne de Pélican, marque fictive de vêtements reconditionnés, et son assistant d'achat Plume.
+  en: The online shop of Pélican, a fictional brand of refurbished clothes, and its shopping assistant Plume.
+authors: [BREACH]
+locales: [fr, en]

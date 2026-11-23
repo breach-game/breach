@@ -185,7 +185,7 @@ function Detect({ lines, preview }: { lines: LogLine[]; preview: boolean }) {
               }}
             >
               <span className="def-title">{game.t(r.title)}</span>
-              <pre className="sigma">{sigmaText(r, game.t(r.title))}</pre>
+              <pre className="sigma">{sigmaText(r, game.t(r.title), game.world)}</pre>
               {result && (
                 <span className="def-hits">
                   <span className="caught">{t('defense.detect.caught', { n: result.caught })}</span>
@@ -216,7 +216,7 @@ function FixStep() {
   const [tried, setTried] = useState<string[]>([]);
   return (
     <div className="def-body">
-      <p className="def-ask">{t('defense.fix.ask')}</p>
+      <p className="def-ask">{t('defense.fix.ask', { target: game.target })}</p>
       <div className="def-cards fixes">
         {shuffled(defense.fixes, game.state.mission ?? '').map((f) => {
           const wrong = tried.includes(f.id) && !f.correct;

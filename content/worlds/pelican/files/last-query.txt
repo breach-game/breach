@@ -1,0 +1,6 @@
+# kiosk debug: last statement sent to the database by /search
+# (left on by mistake: debug=on in kiosk.conf)
+
+SELECT name, price FROM products WHERE published = 1 AND name LIKE '%veste%'
+
+# the text typed by the visitor is pasted between the two % signs, as is
