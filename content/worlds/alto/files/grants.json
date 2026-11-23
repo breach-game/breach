@@ -1,0 +1,13 @@
+{
+  "grants": [
+    { "app": "alto-mail", "publisher": "Alto SAS", "verified": true,
+      "user": "everyone", "granted": "2027-01-04",
+      "scopes": ["mail.send"] },
+    { "app": "planning-equipe", "publisher": "Nimbus Apps", "verified": true,
+      "user": "s.leroy", "granted": "2028-02-20",
+      "scopes": ["calendar.read"] },
+    { "app": "calsync", "publisher": "Alto Agenda Sync", "verified": false,
+      "user": "m.durand", "granted": "2028-05-18", "app_created": "2028-05-17",
+      "scopes": ["calendar.read", "files.read.all", "offline_access"] }
+  ]
+}

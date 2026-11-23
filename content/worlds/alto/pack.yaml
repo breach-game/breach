@@ -1,0 +1,12 @@
+id: breach.world.alto
+version: 0.1.0
+engine: ">=0.9 <1"
+kind: world
+title:
+  fr: Alto
+  en: Alto
+summary:
+  fr: Alto, start-up fictive d'albums photo, hébergée tout entière chez Nimbus, un fournisseur de cloud fictif lui aussi.
+  en: Alto, a fictional photo album start-up, hosted entirely at Nimbus, a cloud provider that is fictional too.
+authors: [BREACH]
+locales: [fr, en]

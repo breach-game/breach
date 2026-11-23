@@ -1,0 +1,7 @@
+{
+  "role": "auditor",
+  "used_by": "Ligne Rouge, this week",
+  "statements": [
+    { "effect": "allow", "actions": ["iam:read"], "resources": ["*"] }
+  ]
+}

@@ -1,6 +1,6 @@
 id: breach.world.selene
 version: 0.1.0
-engine: ">=0.8 <1"
+engine: ">=0.9 <1"
 kind: world
 title:
   fr: Sélène

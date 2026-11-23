@@ -1,0 +1,9 @@
+{
+  "bucket": "alto-backups",
+  "access": "public-read",
+  "note": "public-read since 2028-03-02, to send one file to the printer (ALT-117)",
+  "objects": [
+    { "key": "db-2028-05-12.sql.gz", "size": 50331648 },
+    { "key": "export-clients.csv", "size": 412 }
+  ]
+}

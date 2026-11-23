@@ -1,0 +1,215 @@
+# Season 6, mission 4: an employee gave an unknown application access to their account. The
+# "attacker" is a script of log lines: a consent on the sign-in service, then reads of the team's
+# documents with the application's own token. Changing the employee's password does not stop it.
+side: defense
+order: 3
+stage: response
+briefing: a4.briefing
+startTime: "2028-05-18T14:00:00+02:00"
+reveal: [www, storage, ci, iam, login]
+
+config:
+  oauth.calsync_granted: true
+
+files:
+  regles/consentement.yml: a4.file.rule
+
+objectives:
+  - { id: revoke, text: a4.obj.revoke }
+  - { id: contain, text: a4.obj.contain }
+  - { id: app, text: a4.obj.which }
+  - { id: user, text: a4.obj.user }
+  - { id: detect, text: a4.obj.detect }
+  - { id: scope, text: a4.obj.scope, optional: true }
+  - { id: consent, text: a4.obj.consent, optional: true }
+
+flags: []
+
+adversary:
+  id: calsync
+  name: Alto Agenda Sync
+  from: outsider
+  pace: 1
+  delay: 0
+  steps:
+    # The employee's click, as the sign-in service logs it. Nothing can block it: it is done.
+    - id: grant
+      host: login
+      source: access
+      fields: { src: 10.18.0.112, method: POST, path: "/consent/grant?app=calsync&verified=false", status: 302, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/141.0" }
+    - id: list
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: &cut
+        any:
+          - { config: oauth.calsync_revoked, eq: true }
+          - { config: net.outsider_blocked, eq: true }
+    - id: planning
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/planning.ods, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+    - id: charter
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/charte-graphique.pdf, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+    - id: chart
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/organigramme.pdf, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+    - id: prices
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/tarifs-2028.ods, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+    - id: contract
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/contrat-imprimeur.pdf, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+    - id: customers
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/clients-pro.ods, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+    - id: funding
+      host: storage
+      source: access
+      fields: { src: 10.18.0.200, method: GET, path: /alto-team/levee-de-fonds-2028.ods, status: 200, ua: "alto-agenda-sync/0.1" }
+      blockedIf: *cut
+
+containment:
+  - id: revoke-calsync
+    action: revoke
+    target: calsync
+    text: a4.contain.revoke
+    sets: { oauth.calsync_revoked: true }
+    impact: 0
+  - id: block-outsider
+    action: block
+    target: 10.18.0.200
+    text: a4.contain.block
+    sets: { net.outsider_blocked: true }
+    impact: 0
+  - id: reset-durand
+    action: reset
+    target: m.durand
+    text: a4.contain.reset
+    sets: { oauth.durand_reset: true }
+    impact: 3
+  - id: disable-consent
+    action: disable
+    target: user-consent
+    text: a4.contain.consent
+    sets: { oauth.user_consent_off: true }
+    impact: 1
+
+alerts:
+  - id: unverified
+    title: a4.alert.unverified
+    why: a4.alert.unverified.why
+    source: access
+    where: { path: { contains: "verified=false" } }
+  - id: agent
+    title: a4.alert.agent
+    why: a4.alert.agent.why
+    source: access
+    where: { ua: { contains: alto-agenda-sync } }
+
+investigation:
+  - { id: app, text: a4.q.which, value: calsync, points: 100, objective: app }
+  - { id: user, text: a4.q.user, value: m.durand, points: 100, objective: user }
+  - { id: scope, text: a4.q.scope, value: offline_access, points: 100, objective: scope }
+
+hunts:
+  - id: consent
+    file: regles/consentement.yml
+    catch: { source: access, where: { path: { contains: "verified=false" } } }
+    objective: detect
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: a4.ada.brief
+  - on: { event: AdversaryStep, step: grant }
+    do:
+      - var.set: { name: granted, value: true }
+      - ada.guide: { key: a4.ada.g.alerts, for: revoke, step: 1 }
+  - on: { event: CommandRun, command: soc, args: { contains: alerts } }
+    once: false
+    if: { var: granted, eq: true }
+    do:
+      - ada.guide: { key: a4.ada.g.grants, for: revoke, step: 2 }
+  - on: { event: HttpRequest, host: iam, path: /grants, variant: granted }
+    do:
+      - ada.say: a4.ada.grants
+      - ada.guide: { key: a4.ada.g.cut, for: revoke, step: 3 }
+  - on: { event: HttpRequest, host: login, path: /consent/calsync }
+    do:
+      - ada.say: a4.ada.page
+  - on: { event: AdversaryStep, step: list, blocked: false }
+    do:
+      - ada.warn: a4.ada.list
+  - on: { event: AdversaryStep, step: contract, blocked: false }
+    do:
+      - ada.warn: a4.ada.contract
+  - on: { event: AdversaryStep, step: funding, blocked: false }
+    do:
+      - mission.fail: a4.ada.fail
+  - on: { event: Contained, containment: reset-durand }
+    do:
+      - ada.say: a4.ada.reset
+  - on: { event: Contained, containment: block-outsider }
+    do:
+      - ada.say: a4.ada.block
+      - ada.guide: { key: a4.ada.g.again, for: revoke, step: 4 }
+  - on: { event: Contained, containment: revoke-calsync }
+    do:
+      - ada.say: a4.ada.revoke
+      - objective.complete: revoke
+  - on: { event: Contained, containment: disable-consent }
+    do:
+      - ada.say: a4.ada.consent
+      - objective.complete: consent
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: a4.ada.stopped
+      - objective.complete: contain
+  - on: { event: RuleTested, hunt: consent, passed: false, caught: { gte: 1 }, falsePositives: { gte: 1 } }
+    do:
+      - ada.guide: { key: a4.ada.g.false, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: consent, passed: false, falsePositives: 0, missed: { gte: 1 } }
+    do:
+      - ada.guide: { key: a4.ada.g.missed, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: consent, passed: true }
+    do:
+      - ada.say: a4.ada.detect
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: a4.ada.done
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: a4.ada.end
+
+guide:
+  revoke: a4.ada.g.start
+  contain: a4.ada.g.watch
+  app: a4.ada.g.which
+  user: a4.ada.g.user
+  detect: a4.ada.g.detect
+
+hints:
+  revoke: [a4.hint.revoke.1, a4.hint.revoke.2, a4.hint.revoke.3]
+  contain: [a4.hint.contain.1]
+  app: [a4.hint.which.1, a4.hint.which.2]
+  user: [a4.hint.user.1, a4.hint.user.2]
+  detect: [a4.hint.detect.1, a4.hint.detect.2, a4.hint.detect.3]
+
+debrief:
+  title: a4.debrief.title
+  lesson: a4.debrief.lesson
+  points: [a4.debrief.p1, a4.debrief.p2, a4.debrief.p3, a4.debrief.p4]
+  reference: "MITRE ATT&CK · T1528 Steal Application Access Token · consent phishing"

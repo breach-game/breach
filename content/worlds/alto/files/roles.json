@@ -1,0 +1,9 @@
+{
+  "account": "alto-prod",
+  "roles": [
+    { "name": "web-frontend", "used_by": "the website", "statements": 1 },
+    { "name": "ci-deployer", "used_by": "relay-ci", "statements": 1 },
+    { "name": "support-bot", "used_by": "the support chatbot", "statements": 1 },
+    { "name": "auditor", "used_by": "Ligne Rouge", "statements": 1 }
+  ]
+}

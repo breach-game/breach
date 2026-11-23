@@ -20,7 +20,7 @@ async function shop() {
       mandate: 'T-2',
       scope: { domains: ['*.shop.test'], networks: ['10.15.0.0/24'] },
       player: { host: 'me', user: 'kestrel' },
-      config: { 'session.random_ids': false },
+      config: { 'session.random_ids': false, 'bucket.private': false },
       hosts: [
         {
           id: 'me',
@@ -63,6 +63,17 @@ async function shop() {
                 ],
               },
               chat: 'search',
+            },
+            '/backup': {
+              body: 'rows\n',
+              variants: [
+                {
+                  id: 'denied',
+                  if: { config: 'bucket.private', eq: true },
+                  status: 403,
+                  page: { title: 'Denied', blocks: [{ p: 'AccessDenied' }] },
+                },
+              ],
             },
             '/account': {
               status: 401,
@@ -211,6 +222,22 @@ describe('route variants', () => {
     g.emit({ type: 'ConfigPatched', key: 'session.random_ids', value: true, by: 'test' });
     expect((await run(g, 'curl -b "session=bbb" https://www.shop.test/account')).out).toBe('sign in\n');
     expect((await run(g, 'curl -b "session=aaa" https://www.shop.test/account')).out).toBe('account 1042\n');
+  });
+});
+
+describe('a variant with only a condition', () => {
+  it('answers every request while the condition holds, in the browser too', async () => {
+    const g = await shop();
+    expect((await run(g, 'curl https://www.shop.test/backup')).out).toBe('rows\n');
+    g.emit({ type: 'ConfigPatched', key: 'bucket.private', value: true, by: 'test' });
+    expect((await run(g, 'curl https://www.shop.test/backup')).out).toContain('AccessDenied');
+    const page = g.browse('https://www.shop.test/backup');
+    expect(page).toMatchObject({ ok: true, status: 403, page: { title: 'Denied' } });
+    expect(g.log.filter((e) => e.type === 'HttpRequest').map((e) => e.variant)).toEqual([
+      undefined,
+      'denied',
+      'denied',
+    ]);
   });
 });
 

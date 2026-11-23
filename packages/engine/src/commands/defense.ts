@@ -254,7 +254,13 @@ const rule: Command = {
     yield wait(400);
     const r = ctx.game.testRule(file, parsed.rule);
     const selection = Object.entries(parsed.rule.where)
-      .map(([k, m]) => `${k}=${typeof m === 'object' ? JSON.stringify(m) : JSON.stringify(m)}`)
+      .map(([k, m]) => {
+        if (typeof m !== 'object') return `${k}=${JSON.stringify(m)}`;
+        if ('contains' in m) return `${k}~${JSON.stringify(m.contains)}`;
+        if ('glob' in m) return `${k}=${JSON.stringify(m.glob)}`;
+        if ('gte' in m) return `${k}>=${m.gte}`;
+        return `${k}=${JSON.stringify(m)}`;
+      })
       .join(' ');
     yield out(paint(ctx, style.dim, `rule: source=${parsed.rule.source} ${selection}`.trimEnd()));
     yield out(`alerts: ${r.alerts.length}  (attack: ${r.caught}, ordinary activity: ${r.falsePositives})`);

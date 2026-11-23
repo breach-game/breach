@@ -1,0 +1,12 @@
+# Season 6, mission 3: too many rights
+cat mandate/AL-2028-003.txt
+curl -H "Authorization: Bearer nmb_audit_91d0" https://iam.alto.test/roles
+curl -H "Authorization: Bearer nmb_audit_91d0" https://iam.alto.test/roles/ci-deployer
+curl -H "Authorization: Bearer nmb_audit_91d0" https://iam.alto.test/roles/support-bot
+submit support-bot
+sed -i "s/actions: everything/actions: storage:put/" dossier/ci-deployer.yml
+sed -i "s/resources: everything/resources: alto-site/" dossier/ci-deployer.yml
+sed -i "s/token_lifetime: never/token_lifetime: 15m/" dossier/ci-deployer.yml
+sed -i "s/token_storage: variable/token_storage: secret/" dossier/ci-deployer.yml
+verify
+answer role

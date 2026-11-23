@@ -1,0 +1,7 @@
+{
+  "role": "web-frontend",
+  "used_by": "the website",
+  "statements": [
+    { "effect": "allow", "actions": ["storage:get"], "resources": ["alto-site/*"] }
+  ]
+}

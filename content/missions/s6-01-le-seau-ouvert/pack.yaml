@@ -1,0 +1,17 @@
+id: breach.season6.s01
+version: 0.1.0
+engine: ">=0.9 <1"
+kind: mission
+track: season
+requires: [breach.world.alto]
+title:
+  fr: "Saison 6 · 1. Le seau ouvert"
+  en: "Season 6 · 1. The open bucket"
+summary:
+  fr: "Stockage cloud. Alto range ses fichiers dans des seaux loués chez Nimbus. L'un d'eux contient les sauvegardes, et son réglage dit « lecture publique ». Tu le trouves sans aucun mot de passe. Puis tu le refermes, côté défense."
+  en: "Cloud storage. Alto keeps its files in buckets rented from Nimbus. One of them holds the backups, and its setting says \"public read\". You find it without a single password. Then you close it, on the defence side."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [cloud, recon, defense]
+minutes: 12

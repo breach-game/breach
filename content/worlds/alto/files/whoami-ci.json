@@ -1,0 +1,6 @@
+{
+  "identity": "ci-deployer",
+  "kind": "service",
+  "role": "ci-deployer",
+  "token": { "created": "2026-01-09", "expires": "never", "last_rotated": "never" }
+}

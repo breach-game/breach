@@ -1,0 +1,17 @@
+relay-ci 2.8  build #412  branch main  runner ci.alto.test (10.18.0.30)
+[09:02:11] step 1/5  checkout                 ok
+[09:02:14] step 2/5  install                  ok
+[09:02:58] step 3/5  debug (added in #398 "why does deploy fail?")
++ env | sort
+CI=true
+DB_PASSWORD=***
+NIMBUS_ACCOUNT=alto-prod
+NIMBUS_ROLE=ci-deployer
+NIMBUS_TOKEN=nmb_ci_4c81e7
+PAYMENT_PROVIDER_KEY=***
+RELAY_BUILD=412
+[09:02:59] step 4/5  test                     ok   (212 passed)
+[09:03:40] step 5/5  deploy -> storage.alto.test/alto-site   ok
+build #412 succeeded in 1m29s
+# *** = variable registered as a secret.
+# NIMBUS_TOKEN was added by hand and never registered.

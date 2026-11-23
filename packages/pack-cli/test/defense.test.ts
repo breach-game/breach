@@ -399,3 +399,40 @@ describe('season 5: the guardrail is judged by the engine', () => {
     expect(game.state.objectives.guard).toBe(true);
   });
 });
+
+describe('season 6: an authorised application keeps its own access', () => {
+  const alto = packs.find((p) => p.pack.id === 'breach.world.alto')!.pack;
+  const last = packs.find((p) => p.pack.id === 'breach.season6.s04')!;
+
+  async function play(lines: string[]) {
+    const game = new Game({ world: alto, missions: [last.pack], locale: 'fr' });
+    game.startMission(last.pack.id);
+    for (const line of lines) for await (const _ of game.exec(line, 20_000)) void _;
+    return game;
+  }
+
+  it('is not stopped by resetting the password of the employee who clicked', async () => {
+    const game = await play(['soc sources', 'contain reset m.durand', 'soc alerts', 'soc alerts']);
+    expect(game.state.objectives.contain).toBe(false);
+    expect(game.state.config['oauth.durand_reset']).toBe(true);
+  });
+
+  it('is stopped by blocking its address, but the grant is still there', async () => {
+    const game = await play(['soc sources', 'contain block 10.18.0.200', 'soc alerts']);
+    expect(game.state.objectives.contain).toBe(true);
+    expect(game.state.objectives.revoke).toBe(false);
+  });
+
+  it('is stopped for good by revoking the grant', async () => {
+    const game = await play(['soc sources', 'contain revoke calsync', 'soc alerts']);
+    expect(game.state.objectives.contain).toBe(true);
+    expect(game.state.objectives.revoke).toBe(true);
+    expect(game.state.detections).toBe(0);
+  });
+
+  it('reads the funding file when nothing is cut in time', async () => {
+    const game = await play(Array.from({ length: 9 }, () => 'soc alerts'));
+    expect(game.state.detections).toBe(1);
+    expect(game.state.objectives.contain).toBe(false);
+  });
+});

@@ -1,0 +1,9 @@
+{
+  "role": "ci-deployer",
+  "used_by": "relay-ci, to publish the website",
+  "statements": [
+    { "effect": "allow", "actions": ["*"], "resources": ["*"] }
+  ],
+  "history": "storage:put on alto-site/* until 2026-01-09",
+  "note": "widened to * 'for now' to fix a failing deploy"
+}
