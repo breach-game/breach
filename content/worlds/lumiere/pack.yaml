@@ -1,0 +1,12 @@
+id: breach.world.lumiere
+version: 0.1.0
+engine: ">=0.10 <1"
+kind: world
+title:
+  fr: Lumière Noire
+  en: Lumière Noire
+summary:
+  fr: Lumière Noire, festival de musique fictif, sa billetterie en ligne et son programme de bug bounty.
+  en: Lumière Noire, a fictional music festival, its online ticket office and its bug bounty programme.
+authors: [BREACH]
+locales: [fr, en]

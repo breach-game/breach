@@ -1,0 +1,6 @@
+id,name,email,phone,shift,medical_note
+301,Benevole Test Un,benevole1@lumierenoire.test,0600000001,bar-nord,none
+302,Benevole Test Deux,benevole2@lumierenoire.test,0600000002,accueil,allergy (test value)
+303,Benevole Test Trois,benevole3@lumierenoire.test,0600000003,scene-2,none
+# 3 test rows of 412. The 409 others are real volunteers.
+# The programme rules forbid reading or copying them.

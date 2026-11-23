@@ -1,0 +1,9 @@
+{
+  "service": "ln-api",
+  "version": "2028.3",
+  "endpoints": [
+    "/v1/status",
+    "/v1/lineup",
+    "/v1/export/benevoles.csv"
+  ]
+}

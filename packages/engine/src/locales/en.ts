@@ -20,6 +20,9 @@ export const en: Record<string, string> = {
   'stage.rag': 'shared index',
   'stage.memory': 'memory poisoning',
   'stage.agents': 'agent impersonation',
+  'stage.logic': 'business logic',
+  'stage.disclosure': 'disclosure',
+  'stage.phishing': 'phishing',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',

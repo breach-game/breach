@@ -1,0 +1,17 @@
+id: breach.season7.s01
+version: 0.1.0
+engine: ">=0.10 <1"
+kind: mission
+track: season
+requires: [breach.world.lumiere]
+title:
+  fr: "Saison 7 · 1. Les règles du jeu"
+  en: "Season 7 · 1. The rules of the game"
+summary:
+  fr: "Bug bounty. Un festival t'invite à chercher des failles dans sa billetterie, avec un périmètre et des règles. Tu lis les règles avant de toucher à quoi que ce soit, tu trouves un billet qui se lit par son numéro, et tu t'arrêtes à la première preuve."
+  en: "Bug bounty. A festival invites you to look for flaws in its ticket office, with a scope and rules. You read the rules before touching anything, find a ticket that can be read by its number, and stop at the first proof."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [recon, web]
+minutes: 12

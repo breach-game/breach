@@ -1,0 +1,9 @@
+# Season 7, mission 1: the rules of the game
+curl https://www.lumierenoire.test/securite
+cat mandate/LN-BB-2028.txt
+curl -b "session=ln_k7_4f2a" https://billetterie.lumierenoire.test/compte
+curl -b "session=ln_k7_4f2a" https://billetterie.lumierenoire.test/billets/7102
+curl -b "session=ln_k7_4f2a" https://billetterie.lumierenoire.test/billets/7101
+submit FLAG{lumiere-other-ticket-4be1}
+answer owner
+answer leave

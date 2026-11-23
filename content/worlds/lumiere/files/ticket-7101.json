@@ -1,0 +1,10 @@
+{
+  "ticket": 7101,
+  "holder": "Festivalier Test Un",
+  "email": "test1@lumierenoire.test",
+  "pass": "3 days",
+  "price_eur": 89,
+  "status": "valid",
+  "audit_marker": "FLAG{lumiere-other-ticket-4be1}",
+  "note": "test ticket placed for the programme. The numbers below 7101 are real people."
+}

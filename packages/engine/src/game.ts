@@ -61,7 +61,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.9.0';
+export const ENGINE_VERSION = '0.10.0';
 
 export interface GameOptions {
   world: Pack;

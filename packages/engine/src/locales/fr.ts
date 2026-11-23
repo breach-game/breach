@@ -20,6 +20,9 @@ export const fr: Record<string, string> = {
   'stage.rag': 'index partagé',
   'stage.memory': 'mémoire empoisonnée',
   'stage.agents': "usurpation d'agent",
+  'stage.logic': 'logique métier',
+  'stage.disclosure': 'divulgation',
+  'stage.phishing': 'hameçonnage',
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",

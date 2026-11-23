@@ -1,0 +1,17 @@
+id: breach.season7.s04
+version: 0.1.0
+engine: ">=0.10 <1"
+kind: mission
+track: season
+requires: [breach.world.lumiere]
+title:
+  fr: "Saison 7 · 4. L'hameçon"
+  en: "Season 7 · 4. The hook"
+summary:
+  fr: "Côté défense. La veille de l'ouverture, des festivaliers reçoivent un message qui ressemble à ceux de la billetterie, à un tiret près. Certains ont déjà donné leur mot de passe, et leurs billets commencent à changer de main. Tu coupes le bon fil, tu nommes le faux domaine, et tu écris la règle qui le reconnaît."
+  en: "Defence side. The day before the gates open, festival-goers receive a message that looks like the ticket office's, give or take a hyphen. Some have already given their password, and their tickets are starting to change hands. You cut the right wire, name the fake domain, and write the rule that recognises it."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [social, logs, defense]
+minutes: 15

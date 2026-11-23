@@ -1,0 +1,20 @@
+# billetterie/tickets.py (extract handed over by Lumière Noire)
+
+def refund(account, ticket_id):
+    ticket = tickets.get(ticket_id)
+    if ticket.buyer != account:
+        return refuse("not your ticket")
+    if today() > REFUND_DEADLINE:
+        return refuse("too late")
+    payments.give_back(ticket.buyer, ticket.price)
+    ticket.status = "refunded"
+    return ok()
+
+def transfer(account, ticket_id, friend):
+    ticket = tickets.get(ticket_id)
+    if ticket.holder != account:
+        return refuse("not your ticket")
+    new = tickets.issue(holder=friend, price=ticket.price)
+    ticket.holder = friend
+    ticket.status = "transferred"
+    return ok(new.id)

@@ -1,0 +1,7 @@
+# Lumière Noire - security contact (fictional festival, BREACH season 7)
+Contact: https://www.lumierenoire.test/securite/triage
+Policy: https://www.lumierenoire.test/securite
+Preferred-Languages: fr, en
+Expires: 2028-12-31T23:00:00.000Z
+# In scope: www, billetterie, api. Everything else is out of scope,
+# the payment pages first (they belong to GuichetPay, not to us).
