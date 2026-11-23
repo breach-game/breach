@@ -752,6 +752,68 @@ export type CatalogEntry = Catalog['packs'][number];
 
 export const MAX_PACK_BYTES = 2_000_000;
 
+/**
+ * The catalogue entry of a pack. `packs` holds the packs published with it, so that a series without
+ * its own length estimate adds up its missions'.
+ */
+export function catalogEntry(
+  pack: Pack,
+  built: { file: string; sha256: string; size: number },
+  packs: ReadonlyMap<string, Pack>,
+  extra: { reviewed: boolean; added?: string; updated?: string },
+): CatalogEntry {
+  let minutes = pack.minutes;
+  if (!minutes && pack.series) {
+    const each = pack.series.missions.map((id) => packs.get(id)?.minutes);
+    if (each.every((m) => m !== undefined))
+      minutes = Math.min(
+        600,
+        each.reduce((a, b) => a + b, 0),
+      );
+  }
+  return {
+    id: pack.id,
+    version: pack.version,
+    kind: pack.kind,
+    engine: pack.engine,
+    requires: pack.requires,
+    title: pack.title,
+    summary: pack.summary,
+    authors: pack.authors,
+    order: pack.mission?.order,
+    ...(pack.kind === 'mission' ? { track: pack.track } : {}),
+    ...(pack.difficulty ? { difficulty: pack.difficulty } : {}),
+    ...(pack.skills.length ? { skills: pack.skills } : {}),
+    ...(pack.incident ? { incident: pack.incident } : {}),
+    ...(minutes ? { minutes } : {}),
+    ...(extra.added && extra.updated ? { added: extra.added, updated: extra.updated } : {}),
+    ...(pack.series ? { missions: pack.series.missions } : {}),
+    locales: pack.locales,
+    ...built,
+    reviewed: extra.reviewed,
+  };
+}
+
+/**
+ * A bundle gathers the packs of one author's work (a world, its missions, a series) with their
+ * solutions, so that a player can import it from a file. Gzipped JSON, like a `.breachpack`.
+ */
+export const BUNDLE_FORMAT = 'breach-bundle/1';
+export const MAX_BUNDLE_BYTES = 4_000_000;
+export const bundleSchema = z.strictObject({
+  format: z.literal(BUNDLE_FORMAT),
+  packs: z
+    .array(
+      z.strictObject({
+        pack: z.unknown(),
+        solution: z.array(z.string().max(2000)).max(400).nullable(),
+      }),
+    )
+    .min(1)
+    .max(30),
+});
+export type Bundle = z.infer<typeof bundleSchema>;
+
 export function parsePack(data: unknown): Pack {
   const result = packSchema.safeParse(data);
   if (!result.success) {

@@ -1,10 +1,12 @@
 import { LEVEL_BONUS } from '@breach/engine';
-import { type Catalog, SKILLS, type Skill } from '@breach/pack-schema';
+import { type Catalog, type CatalogEntry, SKILLS, type Skill } from '@breach/pack-schema';
 import { get, set } from 'idb-keyval';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMUNITY_CATALOG_URL, UNSIGNED_COMMUNITY_CATALOG } from '../community.ts';
+import { IMPORT_STEPS, ImportRefused, type ImportStep, localCatalog } from '../local.ts';
+import { importBundle, localBundles, removeBundle } from '../localStore.ts';
 import { engineSatisfies, loadCommunityCatalog, seriesMissions } from '../packs.ts';
-import { type StartMode, seriesProgress } from '../session.ts';
+import { localProgress, type StartMode, seriesProgress } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import {
   type Collection,
@@ -28,7 +30,7 @@ const LEVELS = ['guided', 'standard', 'expert'] as const;
 type Level = (typeof LEVELS)[number];
 const CREATE_URL = 'https://github.com/breach-game/packs#readme';
 const SEEN_KEY = 'community:seen';
-const COLLECTIONS: readonly (Collection | 'all')[] = ['all', 'real', 'players', 'examples'];
+const COLLECTIONS: readonly (Collection | 'all')[] = ['all', 'real', 'players', 'examples', 'local'];
 const STATUSES = ['any', 'todo', 'run', 'done'] as const;
 
 // Kept while the game runs, so coming back from a mission finds the list as the player left it.
@@ -52,7 +54,10 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
   const [view, setViewState] = useState(kept.view);
   const [railOpen, setRailOpen] = useState(false);
   const [opened, setOpened] = useState<Item | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [reload, setReload] = useState(0);
   const opener = useRef<HTMLElement | null>(null);
+  const openAfter = useRef<string | null>(null);
 
   const setFilters = (patch: Partial<Filters>) =>
     setFiltersState((f) => {
@@ -65,43 +70,72 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
     setViewState(v);
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` is the retry button
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` is the retry button, `reload` follows an import
   useEffect(() => {
     let live = true;
     setError(null);
+    const itemOf = async (
+      entry: CatalogEntry,
+      c: Catalog,
+      fresh: Item['fresh'],
+      bundle?: string,
+    ): Promise<Item> => {
+      const missions = entry.kind === 'series' ? seriesMissions(entry, c) : [entry];
+      const saved = bundle ? await localProgress(entry, bundle) : await seriesProgress(entry);
+      return {
+        entry,
+        catalog: c,
+        ...(bundle ? { bundle } : {}),
+        missions,
+        collection: collectionOf(entry, !!bundle),
+        ...progressOf(missions, saved),
+        fresh,
+        blocked:
+          !engineSatisfies(entry.engine) || !missions.length
+            ? 'engine'
+            : !entry.locales.includes(locale)
+              ? 'locale'
+              : null,
+      };
+    };
     (async () => {
-      const c = await loadCommunityCatalog();
-      const entries = listed(c);
-      const seen = await get<Record<string, string>>(SEEN_KEY).catch(() => undefined);
-      const { fresh, seen: nowSeen } = freshness(entries, seen);
       const built: Item[] = [];
-      for (const entry of entries) {
-        const missions = entry.kind === 'series' ? seriesMissions(entry, c) : [entry];
-        const saved = await seriesProgress(entry);
-        built.push({
-          entry,
-          missions,
-          collection: collectionOf(entry),
-          ...progressOf(missions, saved),
-          fresh: fresh[entry.id] ?? null,
-          blocked:
-            !engineSatisfies(entry.engine) || !missions.length
-              ? 'engine'
-              : !entry.locales.includes(locale)
-                ? 'locale'
-                : null,
-        });
+      // Missions imported on this computer are listed even when the catalogue cannot be reached.
+      for (const b of await localBundles()) {
+        const c = localCatalog(b);
+        for (const entry of listed(c)) built.push(await itemOf(entry, c, null, b.sha256));
+      }
+      let failure: string | null = null;
+      const c = await loadCommunityCatalog().catch((e: Error) => {
+        failure = e.message;
+        return null;
+      });
+      if (c) {
+        const entries = listed(c);
+        const seen = await get<Record<string, string>>(SEEN_KEY).catch(() => undefined);
+        const { fresh, seen: nowSeen } = freshness(entries, seen);
+        for (const entry of entries) built.push(await itemOf(entry, c, fresh[entry.id] ?? null));
+        // The badges stay for this visit; the next one only flags what arrives in between.
+        void set(SEEN_KEY, nowSeen).catch(() => {});
       }
       if (!live) return;
       setCatalog(c);
       setItems(built);
-      // The badges stay for this visit; the next one only flags what arrives in between.
-      void set(SEEN_KEY, nowSeen).catch(() => {});
-    })().catch((e: Error) => live && setError(e.message));
+      setError(failure);
+      return built;
+    })()
+      .then((built) => {
+        // After an import, open what was just added.
+        const id = openAfter.current;
+        openAfter.current = null;
+        const added = id && built?.find((i) => i.bundle && i.entry.id === id);
+        if (live && added) setOpened(added);
+      })
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
-  }, [attempt, locale]);
+  }, [attempt, reload, locale]);
 
   const skillLabel = (s: Skill) => t(`skill.${s}` as UiKey);
   const hays = useMemo(
@@ -134,12 +168,21 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
   };
   const play = (item: Item, restart: boolean, level?: Level) => {
     if (level) updateSettings({ guidance: level });
-    if (catalog) onStart({ community: item.entry, catalog, restart });
+    if (item.bundle) onStart({ local: item.entry.id, bundle: item.bundle, restart });
+    else onStart({ community: item.entry, catalog: item.catalog, restart });
+  };
+  const forget = async (item: Item) => {
+    if (!item.bundle) return;
+    await removeBundle(item.bundle);
+    setOpened(null);
+    setReload((r) => r + 1);
   };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && opened) close();
+      if (e.key !== 'Escape') return;
+      if (importing) setImporting(false);
+      else if (opened) close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -327,10 +370,23 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
                   </button>
                 ))}
               </div>
+              <button type="button" className="store-tool" onClick={() => setImporting(true)}>
+                <span aria-hidden="true">⤓</span> {t('store.import')}
+              </button>
             </div>
 
             <div className="store-scroll">
-              {error ? (
+              {error && items?.length ? (
+                <div className="store-warning" role="status">
+                  <span>
+                    {t('community.error')} {error}
+                  </span>
+                  <button type="button" className="btn" onClick={() => setAttempt((a) => a + 1)}>
+                    {t('title.retry')}
+                  </button>
+                </div>
+              ) : null}
+              {error && !items?.length ? (
                 <div className="store-state">
                   <div className="title-error">
                     {t('community.error')} {error}
@@ -440,15 +496,29 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
             </div>
           </section>
 
-          {opened && catalog && (
+          {opened && !importing && (
             <>
               <div className="store-scrim" onClick={close} aria-hidden="true" />
               <Detail
-                key={opened.entry.id}
+                key={`${opened.entry.id}@${opened.bundle ?? ''}`}
                 item={opened}
-                catalog={catalog}
                 onClose={close}
                 onPlay={(restart, level) => play(opened, restart, level)}
+                onForget={() => void forget(opened)}
+              />
+            </>
+          )}
+          {importing && (
+            <>
+              <div className="store-scrim" onClick={() => setImporting(false)} aria-hidden="true" />
+              <ImportDialog
+                onClose={() => setImporting(false)}
+                onDone={(id) => {
+                  openAfter.current = id;
+                  setImporting(false);
+                  setFilters({ collection: 'all' });
+                  setReload((r) => r + 1);
+                }}
               />
             </>
           )}
@@ -520,6 +590,8 @@ function Card({ item, onOpen }: { item: Item; onOpen: (el: HTMLElement) => void 
 
 function Badge({ item }: { item: Item }) {
   const t = useT();
+  if (item.bundle && item.status === 'todo')
+    return <span className="store-pill local">⚠ {t('store.local.badge')}</span>;
   if (item.status === 'done')
     return <span className="store-pill done">✓ {t('store.score', { score: item.score ?? 0 })}</span>;
   if (item.status === 'run')
@@ -568,21 +640,29 @@ function Trust({ item }: { item: Item }) {
   const t = useT();
   return (
     <p className="store-trust" data-collection={item.collection}>
-      <b>✓ {t('store.reviewed')}</b> {t('store.reviewed.detail')}
+      {item.bundle ? (
+        <>
+          <b>⚠ {t('store.local.trust')}</b> {t('store.local.trust.detail')}
+        </>
+      ) : (
+        <>
+          <b>✓ {t('store.reviewed')}</b> {t('store.reviewed.detail')}
+        </>
+      )}
     </p>
   );
 }
 
 function Detail({
   item,
-  catalog,
   onClose,
   onPlay,
+  onForget,
 }: {
   item: Item;
-  catalog: Catalog;
   onClose: () => void;
   onPlay: (restart: boolean, level?: Level) => void;
+  onForget: () => void;
 }) {
   const t = useT();
   const text = useText();
@@ -593,7 +673,7 @@ function Detail({
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
   const series = e.kind === 'series';
-  const missions = series ? seriesMissions(e, catalog) : [e];
+  const missions = series ? seriesMissions(e, item.catalog) : [e];
   const resume = item.status === 'run' && !restarting;
   const label: UiKey =
     item.status === 'todo'
@@ -717,7 +797,118 @@ function Detail({
             </div>
           </>
         ))}
+      {item.bundle && (
+        <div className="store-detail-actions">
+          <button type="button" className="btn" onClick={onForget}>
+            {t('store.local.remove')}
+          </button>
+          <a className="btn link" href={CREATE_URL} target="_blank" rel="noopener noreferrer">
+            {t('store.local.propose')} ↗
+          </a>
+        </div>
+      )}
     </aside>
+  );
+}
+
+function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: (id: string) => void }) {
+  const t = useT();
+  const [step, setStep] = useState<ImportStep | null>(null);
+  const [state, setState] = useState<'idle' | 'running' | 'done' | 'refused'>('idle');
+  const [problems, setProblems] = useState<string[]>([]);
+  const [failedAt, setFailedAt] = useState<ImportStep | null>(null);
+  const [added, setAdded] = useState<string | null>(null);
+  const pickRef = useRef<HTMLInputElement>(null);
+  useEffect(() => pickRef.current?.focus(), []);
+
+  const run = async (file: File) => {
+    setState('running');
+    setProblems([]);
+    setFailedAt(null);
+    let at: ImportStep = 'read';
+    try {
+      const bundle = await importBundle(file, (s) => {
+        at = s;
+        setStep(s);
+      });
+      const main =
+        bundle.packs.find((p) => p.kind === 'series') ?? bundle.packs.find((p) => p.kind === 'mission');
+      setAdded(main?.id ?? null);
+      setState('done');
+    } catch (error) {
+      setFailedAt(error instanceof ImportRefused ? error.step : at);
+      setProblems(error instanceof ImportRefused ? error.problems : [(error as Error).message]);
+      setState('refused');
+    }
+  };
+
+  const mark = (s: ImportStep) => {
+    const i = IMPORT_STEPS.indexOf(s);
+    const now = step ? IMPORT_STEPS.indexOf(step) : -1;
+    if (state === 'refused' && failedAt === s) return { icon: '✗', cls: 'fail' };
+    if (state === 'done' || i < now || (state === 'refused' && i < IMPORT_STEPS.indexOf(failedAt ?? 'read')))
+      return { icon: '✓', cls: 'ok' };
+    if (state === 'running' && i === now) return { icon: '…', cls: 'run' };
+    return { icon: '○', cls: '' };
+  };
+
+  return (
+    <div className="store-import" role="dialog" aria-modal="true" aria-labelledby="store-import-title">
+      <h2 id="store-import-title">{t('store.import.title')}</h2>
+      <p>{t('store.import.intro')}</p>
+      <label className={`store-drop${state === 'running' ? ' busy' : ''}`}>
+        <input
+          ref={pickRef}
+          type="file"
+          accept=".breachbundle"
+          disabled={state === 'running'}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) void run(file);
+          }}
+        />
+        <span className="btn">{t(state === 'idle' ? 'store.import.pick' : 'store.import.again')}</span>
+        <code>.breachbundle</code>
+      </label>
+      {state !== 'idle' && (
+        <ol className="store-steps">
+          {IMPORT_STEPS.map((s) => {
+            const m = mark(s);
+            return (
+              <li key={s} className={m.cls}>
+                <span aria-hidden="true">{m.icon}</span> {t(`store.import.step.${s}`)}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      {state === 'refused' && (
+        <div className="store-refused" role="alert">
+          <b>{t('store.import.refused')}</b>
+          <ul>
+            {problems.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {state === 'done' && (
+        <p className="store-trust" data-collection="local" role="status">
+          <b>⚠ {t('store.local.badge')}.</b> {t('store.import.ok')}
+        </p>
+      )}
+      <div className="store-detail-actions">
+        <button type="button" className="btn" onClick={onClose}>
+          {t('store.close')}
+        </button>
+        {state === 'done' && added && (
+          <button type="button" className="btn primary" autoFocus onClick={() => onDone(added)}>
+            {t('store.import.open')}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -193,6 +193,9 @@ importers:
       '@breach/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@breach/pack-cli':
+        specifier: workspace:*
+        version: link:../../packages/pack-cli
       '@breach/pack-schema':
         specifier: workspace:*
         version: link:../../packages/pack-schema

@@ -18,6 +18,10 @@ export interface Saved {
 
 export interface Item {
   entry: CatalogEntry;
+  /** The catalogue the entry comes from: the signed one, or the one an imported file makes. */
+  catalog: Catalog;
+  /** SHA-256 of the file an imported entry came from. */
+  bundle?: string;
   /** What the player plays, in order: the missions of a series, or the mission itself. */
   missions: CatalogEntry[];
   collection: Collection;

@@ -2,9 +2,10 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { verifySignature } from '@breach/pack-schema';
+import { isOfficialId, verifySignature } from '@breach/pack-schema';
 import {
   buildAll,
+  bundle,
   checkAll,
   generateKeys,
   type LoadedPack,
@@ -31,6 +32,9 @@ function usage(): never {
   breach-pack build <content-dir> --out <dir> [options]   check, then write .breachpack files and index.json
   breach-pack play  <content-dir> <mission-id> [fr|en] [options]
                                                           print the transcript of a mission's solution
+  breach-pack bundle <pack-dir>... --out <file.breachbundle> [options]
+                                                          check, then gather the packs and their
+                                                          solutions in one file players can import
   breach-pack keygen                                      print a new catalogue signing key pair
   breach-pack sign  <index.json>                          write <index.json>.sig with the key in
                                                           the BREACH_SIGNING_KEY environment variable
@@ -98,7 +102,9 @@ if (!command || !root) usage();
 let packs: LoadedPack[] = [];
 let dependencies: LoadedPack[] = [];
 try {
-  packs = loadAll(resolve(root));
+  // `bundle` takes several folders, so that a shell pattern can name a world, its missions and its series.
+  const roots = command === 'bundle' ? [root, ...rest] : [root];
+  packs = roots.flatMap((dir) => loadAll(resolve(dir)));
   dependencies = withDirs.flatMap((dir) => loadAll(resolve(dir)));
 } catch (error) {
   // A pack that does not even parse: show the schema's message, not a stack trace.
@@ -126,13 +132,27 @@ if (command === 'play') {
   process.exit(result.done ? 0 : 1);
 }
 
-if (command !== 'check' && command !== 'build') usage();
-const problems = await checkAll(packs, { dependencies, community });
+if (command !== 'check' && command !== 'build' && command !== 'bundle') usage();
+const problems = await checkAll(packs, { dependencies, community: community || command === 'bundle' });
+if (command === 'bundle') {
+  // The game resolves a bundle on its own: what it needs is inside it, or an official pack.
+  const inside = new Set(packs.map((p) => p.pack.id));
+  for (const { pack } of packs)
+    for (const dep of pack.requires)
+      if (!inside.has(dep) && !isOfficialId(dep))
+        problems.push(`${pack.id}: requires ${dep}, which must be in the bundle too`);
+}
 if (problems.length) {
   console.error(problems.map((p) => `  ✗ ${p}`).join('\n'));
   process.exit(1);
 }
 console.log(`${packs.length} packs valid, solutions replayed: ${packs.map((p) => p.pack.id).join(', ')}`);
+
+if (command === 'bundle') {
+  if (!out) usage();
+  writeFileSync(resolve(out), bundle(packs));
+  console.log(`Wrote ${resolve(out)}: import it in the game, Community missions > Import`);
+}
 
 if (command === 'build') {
   if (!out) usage();

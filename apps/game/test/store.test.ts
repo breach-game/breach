@@ -30,6 +30,7 @@ const entry = (id: string, more: Partial<CatalogEntry> = {}): CatalogEntry => ({
 
 const item = (e: CatalogEntry, more: Partial<Item> = {}): Item => ({
   entry: e,
+  catalog: { format: 0, generatedAt: '', campaign: [], training: [], seasons: [], packs: [e] },
   missions: [e],
   collection: collectionOf(e),
   status: 'todo',

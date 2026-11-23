@@ -15,9 +15,10 @@ import {
   type ResumePlan,
   type SaveData,
 } from '@breach/engine';
-import { type Catalog, type CatalogEntry, isOfficialId } from '@breach/pack-schema';
+import { type Catalog, type CatalogEntry, isOfficialId, type Pack } from '@breach/pack-schema';
 import { del, get, keys, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
+import { localSaveKey } from './local.ts';
 import {
   type Campaign,
   loadCampaign,
@@ -41,6 +42,8 @@ export type StartMode =
   | 'continue'
   | { replay: string }
   | { community: CatalogEntry; catalog: Catalog; restart?: boolean }
+  /** A mission or series imported from a file: its id, and the SHA-256 of that file. */
+  | { local: string; bundle: string; restart?: boolean }
   | { season: string; restart?: boolean };
 
 /** What is being played: the campaign, a season, a single mission, or one community mission. */
@@ -131,6 +134,11 @@ export function seriesProgress(series: CatalogEntry): Promise<CampaignProgress> 
   return savedProgress(`save:community:${series.id}@${series.version}`);
 }
 
+/** Progress of a mission or series imported from a file, read from its own save. */
+export function localProgress(entry: CatalogEntry, bundle: string): Promise<CampaignProgress> {
+  return savedProgress(localSaveKey(entry, bundle));
+}
+
 /** Progress of an official season, read from its own save. */
 export function seasonProgress(series: CatalogEntry): Promise<CampaignProgress> {
   return savedProgress(`save:season:${series.id}@${series.version}`);
@@ -151,6 +159,10 @@ export async function singleScores(entries: CatalogEntry[]): Promise<Record<stri
 async function missionsFor(mode: StartMode, onProgress?: (p: PackProgress) => void): Promise<Campaign> {
   if (typeof mode !== 'object') return prepare(onProgress);
   if ('community' in mode) return loadCommunityMission(mode.community, mode.catalog, onProgress);
+  if ('local' in mode) {
+    const { loadLocalMission } = await import('./localStore.ts');
+    return loadLocalMission(mode.local, mode.bundle, onProgress);
+  }
   if ('season' in mode) return loadSeason(mode.season, onProgress);
   const c = await prepare(onProgress);
   const mission = c.missions.find((m) => m.id === mode.replay);
@@ -190,7 +202,7 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
   kind =
     typeof mode !== 'object'
       ? 'campaign'
-      : 'community' in mode
+      : 'community' in mode || 'local' in mode
         ? 'community'
         : 'season' in mode
           ? 'season'
@@ -203,13 +215,24 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
     typeof mode === 'object' && 'season' in mode
       ? c.catalog.packs.find((p) => p.id === mode.season && p.kind === 'series')
       : undefined;
+  // An imported file plays like a community mission, saved apart under the file's fingerprint.
+  const local = typeof mode === 'object' && 'local' in mode ? mode : null;
+  const localPack = local && 'pack' in c ? (c as Campaign & { pack: Pack }).pack : undefined;
   const series =
-    (typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series') || !!seasonEntry;
+    (typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series') ||
+    !!seasonEntry ||
+    localPack?.kind === 'series';
   const saved =
     typeof mode === 'object' && 'community' in mode && mode.community.kind === 'series'
       ? mode.community
-      : (seasonEntry ?? single);
-  saveKey = kind === 'campaign' || !saved ? SAVE_KEY : `save:${kind}:${saved.id}@${saved.version}`;
+      : (seasonEntry ?? localPack ?? single);
+  saveKey =
+    kind === 'campaign' || !saved
+      ? SAVE_KEY
+      : local
+        ? localSaveKey(saved, local.bundle)
+        : `save:${kind}:${saved.id}@${saved.version}`;
+  const savePrefix = local ? `save:local:${single?.id}@` : `save:${kind}:${single?.id}@`;
   const alone = kind !== 'campaign' && !series;
   const options = {
     world: c.world,
@@ -225,8 +248,7 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
     if (alone && single) {
       const finished = plan.kind === 'replay' && plan.log.some((e) => e.type === 'MissionCompleted');
       const outdated =
-        plan.kind === 'carry' ||
-        (plan.kind === 'fresh' && (await outdatedSingleSave(`save:${kind}:${single.id}@`, saveKey)));
+        plan.kind === 'carry' || (plan.kind === 'fresh' && (await outdatedSingleSave(savePrefix, saveKey)));
       if (outdated) notice = 'save.mission.restart';
       if (finished || plan.kind === 'carry') plan = { kind: 'fresh' };
     }
