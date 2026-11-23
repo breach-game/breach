@@ -1,0 +1,126 @@
+# Finale, mission 2: the exam on detection. The "adversary" is Ada replaying the night's three log
+# lines on a test bench, so that the rules the player writes have something to catch. Nothing can
+# fail here. Two detection rules (judged by `rule test`), one agent guardrail (judged by
+# `eval run`), one account review (`review`).
+side: defense
+order: 1
+stage: defense
+briefing: z2.briefing
+startTime: "2029-03-20T09:00:00+01:00"
+reveal: [intranet, archives]
+
+files:
+  regles/compte-dormant.yml: z2.file.dormant
+  regles/sortie.yml: z2.file.out
+  garde-fous/greffe.yml: z2.file.guard
+  dossier/comptes.txt: { $file: files/comptes.txt }
+
+objectives:
+  - { id: dormant, text: z2.obj.dormant }
+  - { id: out, text: z2.obj.out }
+  - { id: guard, text: z2.obj.guard }
+  - { id: accounts, text: z2.obj.accounts }
+
+flags: []
+
+adversary:
+  id: replay
+  name: Mute
+  from: screen
+  pace: 1
+  delay: 0
+  steps:
+    - id: login
+      host: archives
+      source: auth
+      fields: { user: stagiaire-19, result: Accepted, method: password, src: 10.30.0.199 }
+    - id: out
+      host: archives
+      source: flow
+      fields: { src: 10.30.0.20, dst: 10.99.0.17, dport: 443, bytes: 48211904 }
+    - id: pack
+      host: archives
+      source: audit
+      fields: { user: stagiaire-19, exe: /usr/bin/tar, cmd: "tar -czf /tmp/.m/2029.tgz /srv/mandats/2029" }
+
+hunts:
+  - id: dormant
+    file: regles/compte-dormant.yml
+    catch: { source: auth, where: { user: stagiaire-19 } }
+    objective: dormant
+  - id: out
+    file: regles/sortie.yml
+    catch: { source: flow, where: { dst: 10.99.0.17 } }
+    objective: out
+
+# The guardrail of Greffe, the firm's archive agent, is tried against these tool calls. A call is
+# blocked when it meets every condition of the file. The engine counts; nothing else judges it.
+evals:
+  - id: greffe
+    file: garde-fous/greffe.yml
+    objective: guard
+    cases:
+      - { id: intern, text: z2.case.intern, fields: { tool: read_report, account: stagiaire-19, assigned: false, count: 8 }, expect: block }
+      - { id: curious, text: z2.case.curious, fields: { tool: read_report, account: kestrel, assigned: false, count: 1 }, expect: block }
+      - { id: own, text: z2.case.own, fields: { tool: read_report, account: kestrel, assigned: true, count: 1 }, expect: allow }
+      - { id: lead, text: z2.case.lead, fields: { tool: read_report, account: ada, assigned: true, count: 3 }, expect: allow }
+      - { id: list, text: z2.case.list, fields: { tool: list_mandates, account: kestrel, assigned: false, count: 8 }, expect: allow }
+
+reviews:
+  - { id: accounts, file: dossier/comptes.txt, lines: [6, 7], objective: accounts }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: z2.ada.brief
+  - on: { event: RuleTested, hunt: dormant, passed: false, caught: { gte: 1 }, falsePositives: { gte: 1 } }
+    do:
+      - ada.guide: { key: z2.ada.g.dormant2, for: dormant, step: 1 }
+  - on: { event: RuleTested, hunt: dormant, passed: false, falsePositives: 0, missed: { gte: 1 } }
+    do:
+      - ada.guide: { key: z2.ada.g.missed, for: dormant, step: 1 }
+  - on: { event: RuleTested, hunt: dormant, passed: true }
+    do:
+      - ada.say: z2.ada.dormant
+  - on: { event: RuleTested, hunt: out, passed: false, caught: { gte: 1 }, falsePositives: { gte: 1 } }
+    do:
+      - ada.guide: { key: z2.ada.g.out2, for: out, step: 1 }
+  - on: { event: RuleTested, hunt: out, passed: false, falsePositives: 0, missed: { gte: 1 } }
+    do:
+      - ada.guide: { key: z2.ada.g.missed, for: out, step: 1 }
+  - on: { event: RuleTested, hunt: out, passed: true }
+    do:
+      - ada.say: z2.ada.out
+  - on: { event: EvalRun, passed: false, wrongly: { gte: 1 } }
+    do:
+      - ada.guide: { key: z2.ada.g.guard2, for: guard, step: 1 }
+  - on: { event: EvalRun, passed: false, wrongly: 0 }
+    do:
+      - ada.say: z2.ada.guard.missed
+  - on: { event: ObjectiveCompleted, objective: guard }
+    do:
+      - ada.say: z2.ada.guard
+  - on: { event: ObjectiveCompleted, objective: accounts }
+    do:
+      - ada.say: z2.ada.accounts
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: z2.ada.done
+
+guide:
+  dormant: z2.ada.g.dormant
+  out: z2.ada.g.out
+  guard: z2.ada.g.guard
+  accounts: z2.ada.g.accounts
+
+hints:
+  dormant: [z2.hint.dormant.1, z2.hint.dormant.2, z2.hint.dormant.3]
+  out: [z2.hint.out.1, z2.hint.out.2, z2.hint.out.3]
+  guard: [z2.hint.guard.1, z2.hint.guard.2]
+  accounts: [z2.hint.accounts.1, z2.hint.accounts.2]
+
+debrief:
+  title: z2.debrief.title
+  lesson: z2.debrief.lesson
+  points: [z2.debrief.p1, z2.debrief.p2, z2.debrief.p3, z2.debrief.p4]
+  reference: "MITRE ATT&CK · T1078 Valid Accounts · OWASP LLM06 Excessive Agency"

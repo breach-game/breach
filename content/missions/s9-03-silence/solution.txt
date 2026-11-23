@@ -1,0 +1,10 @@
+# Finale, mission 3: silence
+cat rapports/LR-2029-000.yml
+sed -i "s/entry: unknown/entry: dormant-account/" rapports/LR-2029-000.yml
+sed -i "s/clients_exposed: 0/clients_exposed: 8/" rapports/LR-2029-000.yml
+sed -i "s/attribution: named-person/attribution: signature-only/" rapports/LR-2029-000.yml
+sed -i "s/evidence: deleted/evidence: preserved/" rapports/LR-2029-000.yml
+verify
+answer valid
+answer call
+curl https://intranet.lignerouge.test/m

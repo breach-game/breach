@@ -1,0 +1,207 @@
+# The finale. Everything here is fictional: a reserved .test domain and private addresses only.
+# Mute comes back, this time at Ligne Rouge itself, through an intern account nobody closed. The
+# player defends his own firm. The intruder is a script of log lines: nothing is stolen, no tool is
+# shipped. What is examined is everything the seasons taught: read, contain, detect, report.
+startTime: "2029-03-19T03:17:00+01:00"
+mandate: LR-2029-000
+scope:
+  domains: ["*.lignerouge.test"]
+  networks: ["10.30.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.30.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.30.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [intranet, archives]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            LR-2029-000.txt: { $t: file.mandate }
+          dossier:
+            traces:
+              s3-pelican.txt: { $t: file.trace.s3 }
+              s4-corbelle.txt: { $t: file.trace.s4 }
+              s5-selene.txt: { $t: file.trace.s5 }
+              s6-alto.txt: { $t: file.trace.s6 }
+              s7-lumiere.txt: { $t: file.trace.s7 }
+              s8-verdure.txt: { $t: file.trace.s8 }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: intranet
+    hostname: intranet.lignerouge.test
+    ip: 10.30.0.10
+    os: Linux 6.1 (Debian 12)
+    map: { x: -40, z: -150, h: 110 }
+    links: [archives]
+    services:
+      - { port: 443, name: https, product: nginx 1.24 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/mandats", label: web.nav.mandates }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - footer: web.footer
+      "/mandats":
+        page:
+          title: web.mandates.title
+          blocks:
+            - nav: *nav
+            - h1: web.mandates.h1
+            - p: web.mandates.p1
+            - table:
+                head: [web.mandates.col.id, web.mandates.col.client, web.mandates.col.year]
+                rows:
+                  - ["NM-2026-114", "NovaMind", "2026"]
+                  - ["HL-2027-001", "Halcyon", "2027"]
+                  - ["PL-2027-002", "Pélican", "2027"]
+                  - ["CB-2027-003", "Ville de Corbelle", "2027"]
+                  - ["SL-2028-001", "Sélène", "2028"]
+                  - ["AL-2028-003", "Alto", "2028"]
+                  - ["LN-BB-2028", "Festival Lumière Noire", "2028"]
+                  - ["VD-2029-02", "Verdure", "2029"]
+            - p: web.mandates.p2
+            - footer: web.footer
+      # The last card. It only exists once the account is closed (mission 3 reads it).
+      "/m":
+        status: 404
+        headers: { content-type: text/plain }
+        body: "404 Not Found\n"
+        variants:
+          - id: last
+            if: { config: lr.account_off, eq: true }
+            status: 200
+            page:
+              title: web.last.title
+              blocks:
+                - p: web.last.p1
+                - p: web.last.p2
+                - p: web.last.p3
+                - p: web.last.p4
+
+  # Where every report of every mandate is kept. The crown jewels of a pentest firm.
+  - id: archives
+    hostname: archives.lignerouge.test
+    ip: 10.30.0.20
+    os: Linux 6.1 (Debian 12)
+    map: { x: 160, z: -40, h: 140 }
+    services:
+      - { port: 22, name: ssh, product: OpenSSH 9.2p1 Debian }
+    users:
+      - { name: kestrel, home: /home/kestrel }
+      - { name: ada, home: /home/ada }
+      - { name: stagiaire-19, home: /home/stagiaire-19 }
+    ssh:
+      - { user: kestrel, from: [kestrel] }
+    fs:
+      etc:
+        hostname: "archives\n"
+        passwd: { $file: files/passwd.txt }
+        os-release: "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nID=debian\n"
+      home:
+        kestrel:
+          LISEZMOI.txt: { $t: file.archives.readme }
+        stagiaire-19:
+          m.txt: { $t: file.archives.note }
+      srv:
+        mandats:
+          "2026":
+            NM-2026-114-rapport.pdf: "(rapport archivé)\n"
+          "2027":
+            HL-2027-001-rapport.pdf: "(rapport archivé)\n"
+            PL-2027-002-rapport.pdf: "(rapport archivé)\n"
+            CB-2027-003-rapport.pdf: "(rapport archivé)\n"
+          "2028":
+            SL-2028-001-rapport.pdf: "(rapport archivé)\n"
+            AL-2028-003-rapport.pdf: "(rapport archivé)\n"
+            LN-BB-2028-rapport.pdf: "(rapport archivé)\n"
+          "2029":
+            VD-2029-02-rapport.pdf: "(rapport archivé)\n"
+
+  # The box behind the meeting room screen. Tonight's connections come from it. We unplug it, we
+  # do not attack it: what it holds is evidence.
+  - id: screen
+    hostname: ecran-reunion.lignerouge.test
+    ip: 10.30.0.199
+    hidden: true
+    os: unknown
+    map: { x: 400, z: -220, h: 50 }
+
+  # Where the reports would go. Not ours, never in scope.
+  - id: outside
+    hostname: depot.inconnu.test
+    ip: 10.99.0.17
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 440, z: 260, h: 60 }
+
+dns:
+  lignerouge.test: { A: ["10.30.0.10"] }
+  intranet.lignerouge.test: { A: ["10.30.0.10"] }
+  archives.lignerouge.test: { A: ["10.30.0.20"] }
+  ecran-reunion.lignerouge.test: { A: ["10.30.0.199"] }
+  depot.inconnu.test: { A: ["10.99.0.17"] }
+
+whois:
+  lignerouge.test: |
+    Domain Name: LIGNEROUGE.TEST
+    Creation Date: 2016-09-12T08:00:00Z
+    Registrant Organization: Ligne Rouge SARL
+    Registrant Country: FR
+
+# The player defends his own firm: nothing he does here is "noise".
+noise:
+  nmap: { base: 0 }
+  dig: 0
+  whois: 0
+  curl: 0
+  browse: 0
+  chat: 0
+  ssh: 0
+  ping: 0
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+
+config:
+  lr.account_off: false
+  lr.screen_blocked: false
+  lr.archives_isolated: false
+
+# An ordinary night and day at a small firm: keys only, a nightly copy, a few web pages.
+telemetry:
+  background:
+    - { host: archives, source: auth, every: 9, offset: 1, fields: { user: svc-index, result: Accepted, method: publickey, src: 10.30.0.10 } }
+    - { host: archives, source: auth, every: 13, offset: 4, fields: { user: svc-sonde, result: Accepted, method: publickey, src: 10.30.0.12 } }
+    - { host: archives, source: auth, every: 17, offset: 7, fields: { user: svc-copie, result: Accepted, method: publickey, src: 10.30.0.40 } }
+    - { host: archives, source: auth, every: 31, offset: 12, fields: { user: svc-sonde, result: Failed, method: publickey, src: 10.30.0.12 } }
+    - { host: archives, source: audit, every: 11, offset: 3, fields: { user: svc-index, exe: /usr/local/bin/index-rapports.sh, cmd: "index-rapports.sh --nouveaux" } }
+    - { host: archives, source: audit, every: 19, offset: 6, fields: { user: svc-copie, exe: /usr/local/bin/copie-nuit.sh, cmd: "copie-nuit.sh --verifier" } }
+    # The nightly copy to the backup box: large, but inside the firm and on port 22.
+    - { host: archives, source: flow, every: 15, offset: 2, fields: { src: 10.30.0.20, dst: 10.30.0.40, dport: 22, bytes: 52428800 } }
+    # Servers fetching their updates outside: port 443, small.
+    - { host: archives, source: flow, every: 7, offset: 5, fields: { src: 10.30.0.10, dst: 10.99.0.80, dport: 443, bytes: 18244 } }
+    - { host: archives, source: flow, every: 23, offset: 9, fields: { src: 10.30.0.20, dst: 10.99.0.80, dport: 443, bytes: 90112 } }
+    - { host: intranet, source: access, every: 5, offset: 0, fields: { src: 10.30.0.12, method: GET, path: /, status: 200, ua: "veille/1.2" } }

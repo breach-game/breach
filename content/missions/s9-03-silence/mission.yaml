@@ -1,0 +1,119 @@
+# Finale, mission 3: the report and the decision. The incident report is a file judged by `verify`:
+# the honest value on each line. Then a question on the technique, a decision on how to tell the
+# clients (no option is wrong, each has a price), and the last card Mute left on the intranet.
+side: defense
+order: 2
+stage: analysis
+briefing: z3.briefing
+startTime: "2029-03-23T09:00:00+01:00"
+reveal: [intranet, archives]
+
+# Played on its own (tests, replays), the account is already closed: mission 1 did it.
+config:
+  lr.account_off: true
+
+files:
+  rapports/LR-2029-000.yml: z3.file.report
+
+objectives:
+  - { id: report, text: z3.obj.report }
+  - { id: technique, text: z3.obj.technique }
+  - { id: notify, text: z3.obj.notify }
+  - { id: last, text: z3.obj.last }
+
+flags: []
+
+checks:
+  - id: entry
+    text: z3.check.entry
+    if: { file: "~/rapports/LR-2029-000.yml", contains: "entry: dormant-account" }
+    objective: report
+  - id: clients
+    text: z3.check.clients
+    if: { file: "~/rapports/LR-2029-000.yml", contains: "clients_exposed: 8" }
+    objective: report
+  - id: attribution
+    text: z3.check.attribution
+    if: { file: "~/rapports/LR-2029-000.yml", contains: "attribution: signature-only" }
+    objective: report
+  - id: evidence
+    text: z3.check.evidence
+    if: { file: "~/rapports/LR-2029-000.yml", contains: "evidence: preserved" }
+    objective: report
+  - id: kept
+    text: z3.check.kept
+    if:
+      all:
+        - { file: "~/rapports/LR-2029-000.yml", contains: "report: LR-2029-000" }
+        - { file: "~/rapports/LR-2029-000.yml", contains: "measures: 4" }
+
+questions:
+  - id: technique
+    text: z3.q.technique
+    objective: technique
+    correct: valid
+    options:
+      - { id: unknown, text: z3.q.technique.unknown, why: z3.q.technique.unknown.why }
+      - { id: valid, text: z3.q.technique.valid }
+      - { id: brute, text: z3.q.technique.brute, why: z3.q.technique.brute.why }
+  # A decision: no option is wrong, each has a price.
+  - id: notify
+    text: z3.q.notify
+    objective: notify
+    options:
+      - { id: call, text: z3.q.notify.call, why: z3.q.notify.call.why, impact: 4 }
+      - { id: letter, text: z3.q.notify.letter, why: z3.q.notify.letter.why, impact: 8 }
+      - { id: wait, text: z3.q.notify.wait, why: z3.q.notify.wait.why, impact: 14 }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: z3.ada.brief
+  - on: { event: ObjectiveCompleted, objective: report }
+    do:
+      - ada.say: z3.ada.report
+      - ada.ask: technique
+  - on: { event: ObjectiveCompleted, objective: technique }
+    do:
+      - ada.say: z3.ada.technique
+      - ada.ask: notify
+  - on: { event: Answered, question: notify }
+    if: { choice: notify, eq: call }
+    do:
+      - ada.say: z3.ada.notify.call
+  - on: { event: Answered, question: notify }
+    if: { choice: notify, eq: letter }
+    do:
+      - ada.say: z3.ada.notify.letter
+  - on: { event: Answered, question: notify }
+    if: { choice: notify, eq: wait }
+    do:
+      - ada.say: z3.ada.notify.wait
+  - on: { event: HttpRequest, host: intranet, path: /m, status: 200 }
+    do:
+      - ada.say: z3.ada.last
+      - objective.complete: last
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: z3.ada.done
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: z3.ada.end
+
+guide:
+  report: z3.ada.g.report
+  technique: z3.ada.g.technique
+  notify: z3.ada.g.notify
+  last: z3.ada.g.last
+
+hints:
+  report: [z3.hint.report.1, z3.hint.report.2, z3.hint.report.3]
+  technique: [z3.hint.technique.1]
+  notify: [z3.hint.notify.1]
+  last: [z3.hint.last.1]
+
+debrief:
+  title: z3.debrief.title
+  lesson: z3.debrief.lesson
+  points: [z3.debrief.p1, z3.debrief.p2, z3.debrief.p3, z3.debrief.p4]
+  reference: "MITRE ATT&CK · T1078 Valid Accounts · GDPR art. 33-34"

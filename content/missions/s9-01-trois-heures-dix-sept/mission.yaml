@@ -1,0 +1,214 @@
+# Finale, mission 1: Mute logs in to Ligne Rouge's archive server with an intern account from 2019.
+# The "attacker" is a script of log lines. Blocking his address or isolating the server stops him
+# for now; the account has to be closed. Then the six calling cards of seasons 3 to 8 are read
+# together: their parts spell the account name.
+side: defense
+order: 0
+stage: response
+briefing: z1.briefing
+startTime: "2029-03-19T03:17:00+01:00"
+reveal: [intranet, archives]
+
+objectives:
+  - { id: cut, text: z1.obj.cut }
+  - { id: stop, text: z1.obj.stop }
+  - { id: since, text: z1.obj.since }
+  - { id: word, text: z1.obj.word }
+  - { id: meaning, text: z1.obj.meaning }
+  - { id: ip, text: z1.obj.ip, optional: true }
+
+flags: []
+
+adversary:
+  id: mute
+  name: Mute
+  from: screen
+  pace: 1
+  delay: 0
+  steps:
+    - id: login
+      host: archives
+      source: auth
+      fields: { user: stagiaire-19, result: Accepted, method: password, src: 10.30.0.199 }
+    - id: list
+      host: archives
+      source: audit
+      fields: { user: stagiaire-19, exe: /usr/bin/ls, cmd: "ls -R /srv/mandats" }
+    - id: pack29
+      host: archives
+      source: audit
+      fields: { user: stagiaire-19, exe: /usr/bin/tar, cmd: "tar -czf /tmp/.m/2029.tgz /srv/mandats/2029" }
+      blockedIf: &cut
+        any:
+          - { config: lr.account_off, eq: true }
+          - { config: lr.screen_blocked, eq: true }
+          - { config: lr.archives_isolated, eq: true }
+    - id: pack28
+      host: archives
+      source: audit
+      fields: { user: stagiaire-19, exe: /usr/bin/tar, cmd: "tar -czf /tmp/.m/2028.tgz /srv/mandats/2028" }
+      blockedIf: *cut
+    - id: pack27
+      host: archives
+      source: audit
+      fields: { user: stagiaire-19, exe: /usr/bin/tar, cmd: "tar -czf /tmp/.m/2027.tgz /srv/mandats/2027" }
+      blockedIf: *cut
+    - id: pack26
+      host: archives
+      source: audit
+      fields: { user: stagiaire-19, exe: /usr/bin/tar, cmd: "tar -czf /tmp/.m/2026.tgz /srv/mandats/2026" }
+      blockedIf: *cut
+    - id: out1
+      host: archives
+      source: flow
+      fields: { src: 10.30.0.20, dst: 10.99.0.17, dport: 443, bytes: 48211904 }
+      blockedIf: *cut
+    - id: out2
+      host: archives
+      source: flow
+      fields: { src: 10.30.0.20, dst: 10.99.0.17, dport: 443, bytes: 96468992 }
+      blockedIf: *cut
+
+containment:
+  - id: disable-account
+    action: disable
+    target: stagiaire-19
+    text: z1.contain.account
+    sets: { lr.account_off: true }
+    impact: 0
+  - id: block-screen
+    action: block
+    target: 10.30.0.199
+    text: z1.contain.block
+    sets: { lr.screen_blocked: true }
+    impact: 0
+  - id: isolate-archives
+    action: isolate
+    target: archives
+    text: z1.contain.isolate
+    sets: { lr.archives_isolated: true }
+    impact: 25
+
+alerts:
+  - id: intern
+    title: z1.alert.intern
+    why: z1.alert.intern.why
+    source: auth
+    where: { user: { glob: "stagiaire-*" }, result: Accepted }
+  - id: pack
+    title: z1.alert.pack
+    why: z1.alert.pack.why
+    source: audit
+    where: { exe: /usr/bin/tar, cmd: { glob: "*/srv/mandats/*" } }
+  - id: out
+    title: z1.alert.out
+    why: z1.alert.out.why
+    source: flow
+    where: { dst: 10.99.0.17 }
+
+investigation:
+  - { id: since, text: z1.q.since, value: "2019", points: 100, objective: since }
+  - { id: word, text: z1.q.word, value: stagiaire-19, points: 100, objective: word }
+  - { id: ip, text: z1.q.ip, value: 10.30.0.199, points: 100, objective: ip }
+
+questions:
+  - id: meaning
+    text: z1.q.meaning
+    objective: meaning
+    correct: before
+    options:
+      - { id: tonight, text: z1.q.meaning.tonight, why: z1.q.meaning.tonight.why }
+      - { id: before, text: z1.q.meaning.before }
+      - { id: intern, text: z1.q.meaning.intern, why: z1.q.meaning.intern.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: z1.ada.brief
+  - on: { event: AdversaryStep, step: login }
+    do:
+      - var.set: { name: seen, value: true }
+      - ada.guide: { key: z1.ada.g.alerts, for: cut, step: 1 }
+  - on: { event: CommandRun, command: soc, args: { contains: alerts } }
+    once: false
+    if: { var: seen, eq: true }
+    do:
+      - ada.guide: { key: z1.ada.g.logs, for: cut, step: 2 }
+  - on: { event: CommandRun, command: soc, args: { contains: auth } }
+    if: { var: seen, eq: true }
+    do:
+      - ada.say: z1.ada.log
+      - ada.guide: { key: z1.ada.g.cut, for: cut, step: 3 }
+  - on: { event: AdversaryStep, step: pack29, blocked: false }
+    do:
+      - ada.warn: z1.ada.pack29
+  - on: { event: AdversaryStep, step: pack27, blocked: false }
+    do:
+      - ada.warn: z1.ada.pack27
+  - on: { event: AdversaryStep, step: pack26, blocked: false }
+    do:
+      - ada.warn: z1.ada.pack26
+  - on: { event: AdversaryStep, step: out1, blocked: false }
+    do:
+      - ada.warn: z1.ada.out1
+  - on: { event: AdversaryStep, step: out2, blocked: false }
+    do:
+      - mission.fail: z1.ada.fail
+  - on: { event: Contained, containment: block-screen }
+    do:
+      - ada.say: z1.ada.block
+      - ada.guide: { key: z1.ada.g.again, for: cut, step: 4 }
+  - on: { event: Contained, containment: isolate-archives }
+    do:
+      - ada.say: z1.ada.isolate
+      - ada.guide: { key: z1.ada.g.again, for: cut, step: 4 }
+  - on: { event: Contained, containment: disable-account }
+    do:
+      - ada.say: z1.ada.account
+      - objective.complete: cut
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: z1.ada.stopped
+      - objective.complete: stop
+  - on: { event: SessionOpened, host: archives }
+    do:
+      - ada.guide: { key: z1.ada.g.passwd, for: since, step: 1 }
+  - on: { event: FileRead, host: archives, path: /etc/passwd }
+    do:
+      - ada.guide: { key: z1.ada.g.year, for: since, step: 2 }
+  - on: { event: FileRead, host: archives, path: /home/stagiaire-19/m.txt }
+    do:
+      - ada.say: z1.ada.note
+  - on: { event: ObjectiveCompleted, objective: since }
+    do:
+      - ada.say: z1.ada.since
+  - on: { event: ObjectiveCompleted, objective: word }
+    do:
+      - ada.say: z1.ada.word
+      - ada.ask: meaning
+  - on: { event: ObjectiveCompleted, objective: meaning }
+    do:
+      - ada.say: z1.ada.meaning
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: z1.ada.done
+
+guide:
+  cut: z1.ada.g.start
+  stop: z1.ada.g.watch
+  since: z1.ada.g.since
+  word: z1.ada.g.word
+  meaning: z1.ada.g.meaning
+
+hints:
+  cut: [z1.hint.cut.1, z1.hint.cut.2, z1.hint.cut.3]
+  stop: [z1.hint.stop.1]
+  since: [z1.hint.since.1, z1.hint.since.2]
+  word: [z1.hint.word.1, z1.hint.word.2, z1.hint.word.3]
+  meaning: [z1.hint.meaning.1]
+
+debrief:
+  title: z1.debrief.title
+  lesson: z1.debrief.lesson
+  points: [z1.debrief.p1, z1.debrief.p2, z1.debrief.p3, z1.debrief.p4]
+  reference: "MITRE ATT&CK · T1078 Valid Accounts · T1560 Archive Collected Data"

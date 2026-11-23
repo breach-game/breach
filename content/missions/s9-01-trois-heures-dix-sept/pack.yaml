@@ -1,0 +1,17 @@
+id: breach.season9.s01
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.lignerouge]
+title:
+  fr: "Saison 9 · 1. Trois heures dix-sept"
+  en: "Season 9 · 1. Three seventeen"
+summary:
+  fr: "Côté défense, et cette fois chez toi. À 3 h 17, quelqu'un se connecte au serveur où Ligne Rouge garde les rapports de tous ses clients. Tu lis les journaux, tu coupes le bon fil avant que les rapports sortent, puis tu relis les six cartes de visite laissées chez tes clients. Elles disaient quelque chose."
+  en: "Defence side, and this time at home. At 3:17 a.m. someone logs in to the server where Ligne Rouge keeps every client's report. You read the logs, cut the right wire before the reports leave, then read again the six calling cards left at your clients'. They were saying something."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [logs, defense, linux]
+minutes: 15

@@ -534,3 +534,55 @@ describe('season 8: an intruder gives orders under the name of a sensor', () => 
     expect(game.state.objectives.stop).toBe(false);
   });
 });
+
+describe('season 9: Mute logs in at Ligne Rouge with an intern account nobody closed', () => {
+  const firm = packs.find((p) => p.pack.id === 'breach.world.lignerouge')!.pack;
+  const first = packs.find((p) => p.pack.id === 'breach.season9.s01')!;
+
+  async function play(lines: string[]) {
+    const game = new Game({ world: firm, missions: [first.pack], locale: 'fr' });
+    game.startMission(first.pack.id);
+    let out = '';
+    for (const line of lines)
+      for await (const c of game.exec(line, 20_000)) if (c.k === 'out' || c.k === 'err') out += c.text;
+    return { game, out };
+  }
+
+  it('shows the one accepted password among the keys of the night', async () => {
+    const { out } = await play(['soc sources', 'soc logs archives auth']);
+    expect(out).toMatch(/Accepted password for stagiaire-19 from 10\.30\.0\.199/);
+    expect(out.match(/Accepted password/g)).toHaveLength(1);
+  });
+
+  it('is stopped by blocking the address, but the account still works', async () => {
+    const { game } = await play(['soc sources', 'soc alerts', 'contain block 10.30.0.199', 'soc alerts']);
+    expect(game.state.objectives.stop).toBe(true);
+    expect(game.state.objectives.cut).toBe(false);
+  });
+
+  it('is stopped for good by closing the account, at no cost for the firm', async () => {
+    const { game } = await play(['soc sources', 'soc alerts', 'contain disable stagiaire-19', 'soc alerts']);
+    expect(game.state.objectives.stop).toBe(true);
+    expect(game.state.objectives.cut).toBe(true);
+    expect(game.state.impact).toBe(0);
+    expect(game.state.detections).toBe(0);
+  });
+
+  it('loses every report when nothing is cut in time', async () => {
+    const { game } = await play(Array.from({ length: 9 }, () => 'soc alerts'));
+    expect(game.state.detections).toBe(1);
+    expect(game.state.objectives.stop).toBe(false);
+  });
+
+  it('finds, in each world of seasons 3 to 8, a card whose parts spell the account', () => {
+    const worlds = ['pelican', 'corbelle', 'selene', 'alto', 'lumiere', 'verdure'];
+    const parts = worlds.map((name) => {
+      const world = packs.find((p) => p.pack.id === `breach.world.${name}`)!.pack;
+      const game = new Game({ world, missions: [], locale: 'fr' });
+      const body = game.world.hosts.map((h) => h.web?.['/m.txt']?.body).find(Boolean) ?? '';
+      expect(body).toContain('03:17');
+      return /part \d of 6: (\S+)/.exec(body)?.[1] ?? '';
+    });
+    expect(parts.join('')).toBe('stagiaire-19');
+  });
+});

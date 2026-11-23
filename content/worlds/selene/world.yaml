@@ -40,6 +40,10 @@ hosts:
     services:
       - { port: 443, name: https, product: nginx 1.26 }
     web:
+      # Mute's calling card: one per season, read again in the finale (parts spell an account name).
+      "/m.txt":
+        headers: { content-type: text/plain }
+        body: "03:17\npart 3 of 6: ia\n-- m.\n"
       "/":
         page:
           title: web.home.title

@@ -1,0 +1,12 @@
+id: breach.world.lignerouge
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: world
+title:
+  fr: Ligne Rouge
+  en: Ligne Rouge
+summary:
+  fr: "Ligne Rouge elle-même : l'intranet du cabinet, le serveur où dorment les rapports de tous ses clients, et un compte que tout le monde avait oublié."
+  en: "Ligne Rouge itself: the firm's intranet, the server where every client's report sleeps, and an account everyone had forgotten."
+authors: [BREACH]
+locales: [fr, en]

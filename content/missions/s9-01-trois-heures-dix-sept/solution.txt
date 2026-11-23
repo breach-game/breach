@@ -1,0 +1,14 @@
+# Finale, mission 1: three seventeen
+soc sources
+soc alerts
+soc logs archives auth
+contain disable stagiaire-19
+soc logs archives flow
+ssh kestrel@archives.lignerouge.test
+grep stagiaire /etc/passwd
+cat /home/stagiaire-19/m.txt
+answer since 2019
+exit
+grep -r part dossier/traces
+answer word stagiaire-19
+answer before

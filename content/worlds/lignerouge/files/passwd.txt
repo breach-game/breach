@@ -1,0 +1,7 @@
+root:x:0:0:root:/root:/bin/bash
+ada:x:1001:1001:Ada - senior:/home/ada:/bin/bash
+kestrel:x:1004:1004:Kestrel - lead:/home/kestrel:/bin/bash
+svc-copie:x:1010:1010:copie de nuit:/home/svc-copie:/usr/sbin/nologin
+svc-index:x:1011:1011:index des rapports:/home/svc-index:/usr/sbin/nologin
+svc-sonde:x:1012:1012:supervision:/home/svc-sonde:/usr/sbin/nologin
+stagiaire-19:x:1019:1019:stage ete 2019 - fin le 2019-08-30:/home/stagiaire-19:/bin/bash
