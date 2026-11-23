@@ -2,7 +2,7 @@
 head -3 training/access.log
 cut -d " " -f 1 training/access.log | sort | uniq -c | sort -rn | head -3
 grep "POST /login" training/access.log | cut -d " " -f 1 | sort | uniq -c
-answer b
+answer attacker
 grep 203.0.113.57 training/access.log | grep -v " 401 "
 submit c.morel
 echo "deny 203.0.113.57;" >> training/blocklist.conf

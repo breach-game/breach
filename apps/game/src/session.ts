@@ -3,6 +3,7 @@
  * through `useGame()`, which re-renders them whenever an event is appended to the log.
  */
 import {
+  type Completed,
   completedIn,
   ENGINE_VERSION,
   Game,
@@ -171,7 +172,7 @@ async function outdatedSingleSave(prefix: string, current: string): Promise<bool
 }
 
 /** The first event of a save whose finished missions were kept, but whose log could not replay. */
-const carried = (missions: Record<string, { score: number }>, source: 'update' | 'import'): GameEvent => ({
+const carried = (missions: Completed, source: 'update' | 'import'): GameEvent => ({
   type: 'ProgressCarried',
   missions,
   source,
@@ -277,7 +278,7 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
 /* ---------- progress file ---------- */
 
 /** Finished official missions of a save, by id, with their scores. */
-async function savedMissions(key: string): Promise<Record<string, { score: number }> | null> {
+async function savedMissions(key: string): Promise<Completed | null> {
   const save = await get<SaveData>(key).catch(() => undefined);
   if (!Array.isArray(save?.log)) return null;
   return Object.fromEntries(Object.entries(completedIn(save.log)).filter(([id]) => isOfficialId(id)));
@@ -298,7 +299,7 @@ export async function exportProgress(): Promise<ProgressFile | null> {
 }
 
 /** A save holding only finished missions: it replays on any world, nothing in it depends on a version. */
-const carriedSave = (missions: Record<string, { score: number }>): SaveData => ({
+const carriedSave = (missions: Completed): SaveData => ({
   engine: ENGINE_VERSION,
   world: { id: '', version: '' },
   locale: getSettings().locale,

@@ -2,4 +2,4 @@
 curl https://paquets.halcyon.test/mirror
 curl -d "name: halcyon-telemetry, version: 9.9.9" https://paquets.halcyon.test/publish
 submit FLAG{halcyon-confusion-7b3d}
-answer b
+answer trust

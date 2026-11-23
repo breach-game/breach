@@ -10,7 +10,7 @@ import type { Pack } from '@breach/pack-schema';
 import type { GameEvent } from './events.ts';
 
 /** Finished missions and their scores, by mission id. */
-export type Completed = Record<string, { score: number }>;
+export type Completed = Record<string, { score: number; defense?: number }>;
 
 /** What a save looks like on disk, as far as resuming needs to know. Older saves lack `missions`. */
 export interface SavedVersions {
@@ -46,10 +46,16 @@ export function completedIn(log: readonly unknown[]): Completed {
     if (!isEvent(e)) continue;
     if (e.type === 'ProgressCarried' && typeof e.missions === 'object' && e.missions !== null)
       for (const [id, m] of Object.entries(e.missions)) {
-        if (validScore(m?.score)) out[id] = { score: m.score };
+        if (validScore(m?.score))
+          out[id] = { score: m.score, ...(validScore(m.defense) ? { defense: m.defense } : {}) };
       }
     if (e.type === 'MissionCompleted' && typeof e.mission === 'string' && validScore(e.score))
       out[e.mission] = { score: e.score };
+    // The defence replay of a finished mission adds its own points, kept apart from its score.
+    if (e.type === 'DefenseCompleted' && typeof e.mission === 'string' && validScore(e.points)) {
+      const done = out[e.mission];
+      if (done) done.defense = e.points;
+    }
   }
   return out;
 }
@@ -157,9 +163,14 @@ export function parseProgressFile(text: string): ProgressFile {
     if (!MISSION_ID.test(id)) fail(`bad mission id`);
     if (typeof value !== 'object' || value === null || Array.isArray(value)) fail(`bad entry for ${id}`);
     const entry = value as Record<string, unknown>;
-    if (Object.keys(entry).some((k) => k !== 'score')) fail(`unexpected field in ${id}`);
+    if (Object.keys(entry).some((k) => k !== 'score' && k !== 'defense')) fail(`unexpected field in ${id}`);
     if (!validScore(entry.score) || entry.score > MAX_SCORE) fail(`bad score for ${id}`);
-    out[id] = { score: entry.score as number };
+    if (entry.defense !== undefined && (!validScore(entry.defense) || entry.defense > MAX_SCORE))
+      fail(`bad defence points for ${id}`);
+    out[id] = {
+      score: entry.score as number,
+      ...(entry.defense === undefined ? {} : { defense: entry.defense as number }),
+    };
   }
   return {
     format: PROGRESS_FORMAT,

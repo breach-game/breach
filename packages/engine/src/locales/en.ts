@@ -108,6 +108,8 @@ export const en: Record<string, string> = {
   'submit.usage': 'usage: submit FLAG{...}',
   'submit.wrong': 'That is not a flag of this mission.',
   'submit.already': 'Flag already validated.',
+  'submit.unseen':
+    'The target never showed you this flag. Get it to appear on your screen first, then submit it.',
   'submit.ok': 'FLAG VALIDATED',
   'engine.failed.line1': '[NovaMind SOC] The attacker reached its goal.',
   'engine.failed.line2': 'The attack got through. Back to the last checkpoint: contain it sooner.',

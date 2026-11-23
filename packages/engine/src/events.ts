@@ -70,6 +70,8 @@ export type EventBody =
   | { type: 'CommitViewed'; host: string; repo: string; commit: string }
   | { type: 'OutOfScope'; target: string; command: string }
   | { type: 'FlagSubmitted'; flag: string | null; correct: boolean }
+  /** A flag-shaped value appeared in an output, a page, a reply or a file the player opened. */
+  | { type: 'FlagShown'; value: string }
   | {
       type: 'NpcMessage';
       npc: string;
@@ -120,7 +122,11 @@ export type EventBody =
    * Missions finished in an earlier save, kept with their scores: the save could not be replayed
    * after an update changed its packs, or the player imported a progress file. Always the first event.
    */
-  | { type: 'ProgressCarried'; missions: Record<string, { score: number }>; source: 'update' | 'import' };
+  | {
+      type: 'ProgressCarried';
+      missions: Record<string, { score: number; defense?: number }>;
+      source: 'update' | 'import';
+    };
 
 export type GameEvent = EventBody & { seq: number; t: number };
 export type EventType = EventBody['type'];

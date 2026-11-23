@@ -247,7 +247,7 @@ export function Desktop({ onQuit }: { onQuit(): void }) {
         name={t('win.terminal')}
         subtitle={`${game.currentUser}@${game.currentHost.hostname.split('.')[0]}`}
         meta="lrsh"
-        tint="attack"
+        tint={game.mission?.side === 'defense' ? 'defense' : 'attack'}
         rect={rect('terminal')}
         z={z('terminal')}
         active={active === 'terminal'}
