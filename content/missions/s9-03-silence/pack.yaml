@@ -1,0 +1,17 @@
+id: breach.season9.s03
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.lignerouge]
+title:
+  fr: "Saison 9 · 3. Silence"
+  en: "Season 9 · 3. Silence"
+summary:
+  fr: "Vendredi. Il reste à écrire ce qui s'est passé, sans rien arranger : par où il est entré, combien de clients sont concernés, ce qu'on peut affirmer et ce qu'on ne peut pas. Puis à décider comment le dire aux huit clients. Et à lire la dernière carte."
+  en: "Friday. What is left is writing down what happened, with nothing tidied up: how he got in, how many clients are concerned, what can be stated and what cannot. Then deciding how to tell the eight clients. And reading the last card."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [defense, privacy, crisis]
+minutes: 10

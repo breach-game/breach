@@ -1,0 +1,15 @@
+id: breach.season9
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: series
+requires: [breach.world.lignerouge]
+title:
+  fr: "Saison 9 : Silence, la finale"
+  en: "Season 9: Silence, the finale"
+summary:
+  fr: "Depuis NovaMind, quelqu'un signe « m. » derrière chacun de tes mandats. Une nuit de mars, à 3 h 17, il se connecte chez Ligne Rouge. Tu défends ton propre cabinet avec tout ce que les saisons t'ont appris : lire les journaux, couper au plus près, écrire les règles, rendre un rapport honnête. Aucune commande nouvelle : c'est l'examen."
+  en: "Since NovaMind, someone has been signing \"m.\" behind each of your mandates. One night in March, at 3:17 a.m., he logs in at Ligne Rouge. You defend your own firm with everything the seasons taught you: read the logs, cut as close as possible, write the rules, hand in an honest report. No new command: this is the exam."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [defense, logs, crisis]

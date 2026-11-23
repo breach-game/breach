@@ -1,0 +1,10 @@
+# archives.lignerouge.test - account review, 2029-03-20
+# account       created     ends        last-login
+root            2016-09-12  -           2029-03-18
+ada             2016-09-12  -           2029-03-19
+svc-copie       2017-01-09  -           2029-03-20
+stagiaire-19    2019-06-03  2019-08-30  2029-03-19
+presta-audit    2021-02-01  2021-03-31  2021-03-30
+svc-index       2024-05-13  -           2029-03-20
+svc-sonde       2025-01-20  -           2029-03-20
+kestrel         2026-11-02  -           2029-03-20

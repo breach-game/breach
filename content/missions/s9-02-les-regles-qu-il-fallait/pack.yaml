@@ -1,0 +1,17 @@
+id: breach.season9.s02
+version: 0.1.0
+engine: ">=0.11 <1"
+kind: mission
+track: season
+requires: [breach.world.lignerouge]
+title:
+  fr: "Saison 9 · 2. Les règles qu'il fallait"
+  en: "Season 9 · 2. The rules we needed"
+summary:
+  fr: "Le lendemain. Ada rejoue les trois lignes de la nuit sur un banc d'essai, et tu écris ce qui aurait dû sonner : une règle pour le compte dormant, une pour les rapports qui sortent, un garde-fou pour l'agent d'archives, et la revue des comptes que personne ne faisait."
+  en: "The day after. Ada replays the three lines of the night on a test bench, and you write what should have rung: a rule for the dormant account, one for reports leaving, a guardrail for the archive agent, and the account review nobody did."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [logs, defense, llm]
+minutes: 15

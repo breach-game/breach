@@ -1,0 +1,14 @@
+# Finale, mission 2: the rules we needed
+cat regles/compte-dormant.yml
+rule test regles/compte-dormant.yml
+echo "method: password" >> regles/compte-dormant.yml
+rule test regles/compte-dormant.yml
+rule test regles/sortie.yml
+echo "bytes|gte: 1000000" >> regles/sortie.yml
+rule test regles/sortie.yml
+eval run garde-fous/greffe.yml
+echo "assigned: false" >> garde-fous/greffe.yml
+eval run garde-fous/greffe.yml
+review dossier/comptes.txt
+review dossier/comptes.txt 6
+review dossier/comptes.txt 7
