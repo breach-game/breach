@@ -33,7 +33,7 @@ The game is available in English and French.
 
 ## The campaign
 
-Seven missions, playable end to end in English and French. Each one ends with a Blue Team debrief: how to defend against what you just did, the OWASP reference, and the log of everything NovaMind's SOC saw of you.
+Ten missions, playable end to end in English and French: seven on the attacking side, then three where you defend. Each attack ends with a Blue Team debrief (how to defend against what you just did, the OWASP reference, the log of everything NovaMind's SOC saw of you) and a defence replay: find your own lines in the logs, pick the detection rule that would have caught you, then the fix, which the game checks by replaying your attack against it.
 
 | # | Mission | You learn |
 | --- | --- | --- |
@@ -44,8 +44,20 @@ Seven missions, playable end to end in English and French. Each one ends with a 
 | 4 | **The trapped CV** | Indirect prompt injection in a document read by an AI (LLM01, LLM06) |
 | 5 | **Too much power** | An AI agent with excessive agency (LLM06) |
 | 6 | **On Mute's trail** | Incident response: retrace an intruder's path without changing anything (MITRE ATT&CK) |
+| 7 | **Mute returns** | Blue Team: read the logs live and pick the narrowest containment before the data leaves |
+| 8 | **Atlas under influence** | Blue Team: an AI agent obeys an impostor; stop it, then undo what it already did |
+| 9 | **The partner's key** | Blue Team: a leaked API key, and why blocking one address is not enough |
 
-Three guidance levels: **Guided** (Ada gives every command), **Standard** (Ada gives the direction) and **Expert** (briefing and objectives only). The more you play on your own, the higher the score multiplier. Missions written by players appear under *Community missions* on the title screen.
+Three guidance levels: **Guided** (Ada gives every command), **Standard** (Ada gives the direction) and **Expert** (briefing and objectives only). The more you play on your own, the higher the score multiplier. A mission is not only flags: some are won by repairing a configuration file (`verify` judges the result) or by answering a question from Ada. A flag only counts once the target has shown it to you.
+
+## Beyond the campaign
+
+| From the title screen | What it is |
+| --- | --- |
+| **Trainings** | Four short missions, one technique each, always open: reading a log, encoding is not encryption, an altered install script, a suspicious email |
+| **Seasons** | Official series in new companies. Season 2 audits Halcyon's build chain: reconnaissance, dependency confusion, then the defence, with the 2021 research it comes from |
+| **Community missions** | Packs from [breach-game/packs](https://github.com/breach-game/packs), checked and signed. Among them the *case files*: nine short series, each inspired by a publicly documented incident (Codecov 2021, Twitter 2020, Uber 2022, Capital One 2019, xz Utils 2024, EchoLeak 2025 and others), played at a fictional company and closed by a sourced card of what really happened |
+| **Replay a mission** | Any finished campaign mission again, at any guidance level, without touching your campaign score |
 
 | | |
 | --- | --- |
@@ -102,7 +114,7 @@ Going live: [docs/deploy.md](docs/deploy.md). GitHub Pages publishes the game af
 | `packages/pack-schema` | pack format and content safety checks |
 | `packages/pack-cli` | pack validation and build |
 | `apps/game` | LR-OS interface |
-| `content/` | NovaMind world and missions |
+| `content/` | Official worlds (NovaMind, Halcyon), campaign and season missions, trainings |
 | `gateway/` | optional LLM gateway for free-form NPC dialogue (after v1) |
 
 A mission is a declarative pack with no code. Official missions live in `content/` (see `CLAUDE.md`). Missions written by players live in [breach-game/packs](https://github.com/breach-game/packs), which has the guide for writing one; the game lists them under *Community missions*.
