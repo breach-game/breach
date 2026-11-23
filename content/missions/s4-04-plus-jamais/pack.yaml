@@ -1,0 +1,17 @@
+id: breach.season4.s04
+version: 0.1.0
+engine: ">=0.7 <1"
+kind: mission
+track: season
+requires: [breach.world.corbelle]
+title:
+  fr: "Saison 4 · 4. Plus jamais"
+  en: "Season 4 · 4. Never again"
+summary:
+  fr: "La mairie a rouvert. Reste à faire en sorte que la même histoire ne puisse plus se répéter : écrire la règle qui aurait sonné lundi sans sonner chaque nuit, corriger le plan de sauvegarde, et voir ce que tes conseils à la maire ont donné."
+  en: "The town hall has reopened. What is left is making sure the same story cannot repeat itself: write the rule that would have rung on Monday without ringing every night, fix the backup plan, and see what your advice to the mayor led to."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [defense, logs, crisis]
+minutes: 12

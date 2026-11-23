@@ -1,0 +1,17 @@
+id: breach.season4.s03
+version: 0.1.0
+engine: ">=0.7 <1"
+kind: mission
+track: season
+requires: [breach.world.corbelle]
+title:
+  fr: "Saison 4 · 3. Restaurer sans réinfecter"
+  en: "Season 4 · 3. Restore without reinfecting"
+summary:
+  fr: "Sept sauvegardes, dont quatre piégées. Avant de remettre quoi que ce soit, trouve ce que l'intrus a laissé pour revenir, retire-le, puis choisis la sauvegarde qui date d'avant lui, pas seulement d'avant les dégâts."
+  en: "Seven backups, four of them booby-trapped. Before putting anything back, find what the intruder left behind to return, remove it, then choose the backup that predates him, not just the damage."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [crisis, linux, logs, defense]
+minutes: 15

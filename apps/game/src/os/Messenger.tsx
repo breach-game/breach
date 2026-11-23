@@ -93,7 +93,7 @@ function Questions({ hidden }: { hidden: boolean }) {
   if (!question) return null;
   return (
     <fieldset className="ask" hidden={hidden}>
-      <legend>{t('ask.title')}</legend>
+      <legend>{t(question.correct === undefined ? 'ask.decision' : 'ask.title')}</legend>
       <p>{rich(game.t(question.text))}</p>
       {game.optionsOf(question).map((o, i) => (
         <button

@@ -1,0 +1,15 @@
+id: breach.season4
+version: 0.1.0
+engine: ">=0.7 <1"
+kind: series
+requires: [breach.world.corbelle]
+title:
+  fr: "Saison 4 : la mairie"
+  en: "Season 4: the town hall"
+summary:
+  fr: "Cette fois, tu défends. Lundi, 6 h 12 : les dossiers de la mairie de Corbelle se verrouillent un par un. Contenir sans tout éteindre, conseiller une maire qui doit décider avant midi, restaurer sans réinfecter, puis faire en sorte que ça ne recommence pas. Tes choix ont un prix, et une suite."
+  en: "This time you defend. Monday, 6:12 am: the folders of Corbelle's town hall are locking one by one. Contain without switching everything off, advise a mayor who must decide before noon, restore without reinfecting, then make sure it does not happen again. Your choices have a price, and a sequel."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [crisis, defense, logs, linux]

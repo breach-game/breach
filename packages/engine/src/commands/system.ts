@@ -1,4 +1,5 @@
-import { type Command, err, out } from './types.ts';
+import { canRead, lookup } from '../vfs.ts';
+import { type Command, err, getopt, out } from './types.ts';
 
 const whoami: Command = {
   name: 'whoami',
@@ -42,6 +43,39 @@ const date: Command = {
   group: 'system',
   async *run(ctx) {
     yield out(ctx.game.date().unix);
+    return 0;
+  },
+};
+
+/**
+ * `crontab -l`: the scheduled jobs of an account, read from the host's spool. Read only: on a machine
+ * under investigation a job is evidence, and it is removed by a containment order, not by hand.
+ */
+const crontab: Command = {
+  name: 'crontab',
+  summary: 'cmd.crontab',
+  explain: 'explain.crontab',
+  group: 'system',
+  async *run(ctx) {
+    const { flags, values } = getopt(ctx.args, ['u']);
+    if (!flags.has('l')) {
+      yield err(flags.has('r') || flags.has('e') ? ctx.t('crontab.readonly') : 'usage: crontab [-u user] -l');
+      return 1;
+    }
+    const me = ctx.game.currentUser;
+    const user = values.u ?? me;
+    const node = lookup(ctx.state.fs, `/var/spool/cron/crontabs/${user}`);
+    // The investigation account may read every spool; anyone else only their own.
+    if (user !== me && me !== 'root' && !(node && canRead(node, me))) {
+      yield err('crontab: must be privileged to use -u');
+      return 1;
+    }
+    if (node?.t !== 'f') {
+      yield err(`no crontab for ${user}`);
+      return 1;
+    }
+    ctx.emit({ type: 'FileRead', host: ctx.state.host, path: `/var/spool/cron/crontabs/${user}` });
+    yield out(node.content.trimEnd());
     return 0;
   },
 };
@@ -114,6 +148,7 @@ export const systemCommands: Command[] = [
   hostname,
   date,
   uname,
+  crontab,
   clear,
   history,
   sudo,

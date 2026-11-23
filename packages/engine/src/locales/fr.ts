@@ -112,8 +112,7 @@ export const fr: Record<string, string> = {
     "La cible ne t'a jamais montré ce flag. Fais-le d'abord apparaître à l'écran, puis valide-le.",
   'submit.ok': 'FLAG VALIDÉ',
   'engine.failed.line1': "[SOC {target}] Objectif de l'attaquant atteint.",
-  'engine.failed.line2':
-    "L'attaque est passée. Retour au dernier point de sauvegarde : contiens-la plus tôt.",
+  'engine.failed.line2': "L'attaque est passée. Retour au dernier point de sauvegarde : reprends autrement.",
   'submit.revoked': 'Ce secret ne vaut plus rien : il a été révoqué côté cible.',
   'defense.replay.unseen':
     "(rejeu) Ce flag n'est jamais apparu pendant le rejeu : l'attaque ne l'obtient plus.",
@@ -172,6 +171,24 @@ export const fr: Record<string, string> = {
   'verify.failed': '{n} contrôle(s) en échec. Corrige le fichier, puis relance verify.',
   'answer.none': "Ada n'a pas de question en attente.",
   'answer.usage': 'Réponds avec sa lettre, par exemple : answer a',
+  'answer.decided': 'Décision prise.',
+  'cmd.crontab': "Liste les tâches planifiées d'un compte : crontab -l",
+  'explain.crontab':
+    "crontab -l affiche les tâches que le système relance à heure fixe pour ce compte. C'est un endroit classique où un intrus laisse de quoi revenir.",
+  'crontab.readonly':
+    "crontab : cette machine est sous enquête, on n'y modifie rien à la main. Une tâche se retire par une mesure de confinement (contain).",
+  'cmd.rule': 'Essayer une règle de détection écrite dans un fichier : rule test <fichier>',
+  'explain.rule':
+    "rule test lit ta règle (source, puis un champ par ligne) et la passe sur les journaux de la mission. Elle compte les alertes sur l'attaque et les fausses alertes sur l'activité ordinaire.",
+  'rule.usage':
+    'usage : rule test <fichier>\nUne règle : une ligne « source: auth », puis un champ par ligne (user: nom, src|startswith: 10.16.0.1, cmd|contains: mot).',
+  'rule.syntax': 'rule : ligne illisible : {line}',
+  'rule.nohunt': "Cette règle n'est pas attendue par la mission : résultat donné pour information.",
+  'rule.pass': "Règle validée : {n} ligne(s) de l'attaque détectée(s), aucune fausse alerte.",
+  'rule.false':
+    "{n} fausse(s) alerte(s) sur l'activité ordinaire (lignes marquées « ? »). Resserre la sélection.",
+  'rule.early': "Aucune ligne de l'attaque n'est encore dans les journaux : relance le test dans un instant.",
+  'rule.missed': "{n} ligne(s) de l'attaque à détecter échappe(nt) encore à la règle.",
   'answer.right': 'Exact.',
   'answer.wrong': 'Pas tout à fait. Essaie encore.',
   'explain.diff':

@@ -1,0 +1,17 @@
+id: breach.season4.s01
+version: 0.1.0
+engine: ">=0.7 <1"
+kind: mission
+track: season
+requires: [breach.world.corbelle]
+title:
+  fr: "Saison 4 · 1. Lundi, 6 h 12"
+  en: "Season 4 · 1. Monday, 6:12 am"
+summary:
+  fr: "Réponse à incident, en direct. Les dossiers de la mairie se verrouillent un par un. Lis les journaux, trouve d'où ça vient, et coupe au plus près avant que l'état civil n'y passe."
+  en: "Incident response, live. The town hall's folders are locking one by one. Read the logs, find where it comes from, and cut as close as you can before the civil registry goes too."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [defense, logs, crisis]
+minutes: 12

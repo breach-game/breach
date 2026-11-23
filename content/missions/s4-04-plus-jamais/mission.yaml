@@ -1,0 +1,162 @@
+# Season 4, mission 4: after the crisis. The "adversary" is Ada replaying Monday's two log lines on
+# a test bench, so that the rule the player writes has something to catch. Nothing can fail here.
+# The last messages depend on the decisions taken in mission 2 (condition `choice`).
+side: defense
+order: 3
+stage: lessons
+briefing: c4.briefing
+startTime: "2027-09-16T09:00:00+02:00"
+reveal: [intranet, fichiers, etatcivil, sauvegarde, accueil]
+
+files:
+  regles/compte-service.yml: c4.file.rule
+  dossier/plan-sauvegarde.yml: |
+    # Plan de sauvegarde - Ville de Corbelle (Y. Morel, 2019)
+    sauvegarde_nuit: "02:00"
+    copie_hors_ligne: hebdomadaire
+    test_restauration: jamais
+    compte_service:
+      connexion: mot-de-passe
+      origine: partout
+    messagerie:
+      second_facteur: non
+
+objectives:
+  - { id: detect, text: c4.obj.detect }
+  - { id: harden, text: c4.obj.harden }
+  - { id: lesson, text: c4.obj.lesson }
+
+flags: []
+
+adversary:
+  id: replay
+  name: Verrou
+  from: accueil
+  pace: 1
+  delay: 0
+  steps:
+    - id: login
+      host: fichiers
+      source: auth
+      fields: { user: svc-sauvegarde, result: Accepted, method: password, src: 10.16.0.101 }
+    - id: hop
+      host: etatcivil
+      source: auth
+      fields: { user: svc-sauvegarde, result: Accepted, method: password, src: 10.16.0.20 }
+
+hunts:
+  - id: svc
+    file: regles/compte-service.yml
+    catch: { source: auth, where: { user: svc-sauvegarde, method: password } }
+    objective: detect
+
+checks:
+  - id: key
+    text: c4.check.key
+    if: { file: "~/dossier/plan-sauvegarde.yml", contains: "connexion: cle", lacks: "mot-de-passe" }
+    objective: harden
+  - id: origin
+    text: c4.check.origin
+    if: { file: "~/dossier/plan-sauvegarde.yml", contains: "origine: sauvegarde.corbelle.test", lacks: "partout" }
+    objective: harden
+  - id: drill
+    text: c4.check.drill
+    if: { file: "~/dossier/plan-sauvegarde.yml", contains: "test_restauration: mensuel" }
+    objective: harden
+  - id: mfa
+    text: c4.check.mfa
+    if: { file: "~/dossier/plan-sauvegarde.yml", contains: "second_facteur: oui" }
+    objective: harden
+  - id: kept
+    text: c4.check.kept
+    if:
+      all:
+        - { file: "~/dossier/plan-sauvegarde.yml", contains: "sauvegarde_nuit:" }
+        - { file: "~/dossier/plan-sauvegarde.yml", contains: "copie_hors_ligne: hebdomadaire" }
+
+questions:
+  - id: lesson
+    text: c4.q.lesson
+    objective: lesson
+    correct: mfa
+    options:
+      - { id: mfa, text: c4.q.lesson.mfa }
+      - { id: antivirus, text: c4.q.lesson.antivirus, why: c4.q.lesson.antivirus.why }
+      - { id: forbid, text: c4.q.lesson.forbid, why: c4.q.lesson.forbid.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c4.ada.brief
+  - on: { event: RuleTested, hunt: svc, passed: false, caught: { gte: 1 }, falsePositives: { gte: 1 } }
+    do:
+      - ada.guide: { key: c4.ada.g.false, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: svc, passed: false, falsePositives: 0, missed: { gte: 1 } }
+    do:
+      - ada.guide: { key: c4.ada.g.missed, for: detect, step: 1 }
+  - on: { event: RuleTested, hunt: svc, passed: true }
+    do:
+      - ada.say: c4.ada.detect
+  - on: { event: ObjectiveCompleted, objective: harden }
+    do:
+      - ada.say: c4.ada.harden
+      - ada.ask: lesson
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c4.ada.done
+  # What became of the advice given to the mayor, when the season was played in order.
+  - on: { event: MissionCompleted }
+    if: { any: [{ choice: ransom, eq: pay }, { choice: ransom, eq: refuse }, { choice: ransom, eq: stall }] }
+    do:
+      - ada.say: c4.ada.echo
+  - on: { event: MissionCompleted }
+    if: { choice: ransom, eq: pay }
+    do:
+      - ada.say: c4.end.ransom.pay
+  - on: { event: MissionCompleted }
+    if: { choice: ransom, eq: refuse }
+    do:
+      - ada.say: c4.end.ransom.refuse
+  - on: { event: MissionCompleted }
+    if: { choice: ransom, eq: stall }
+    do:
+      - ada.say: c4.end.ransom.stall
+  - on: { event: MissionCompleted }
+    if: { choice: comms, eq: silence }
+    do:
+      - ada.say: c4.end.comms.silence
+  - on: { event: MissionCompleted }
+    if: { choice: comms, eq: plain }
+    do:
+      - ada.say: c4.end.comms.plain
+  - on: { event: MissionCompleted }
+    if: { choice: comms, eq: blame }
+    do:
+      - ada.say: c4.end.comms.blame
+  - on: { event: MissionCompleted }
+    if: { choice: notify, eq: now }
+    do:
+      - ada.say: c4.end.notify.now
+  - on: { event: MissionCompleted }
+    if: { choice: notify, eq: later }
+    do:
+      - ada.say: c4.end.notify.later
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c4.ada.end
+
+guide:
+  detect: c4.ada.g.detect
+  harden: c4.ada.g.harden
+  lesson: c4.ada.g.lesson
+
+hints:
+  detect: [c4.hint.detect.1, c4.hint.detect.2, c4.hint.detect.3]
+  harden: [c4.hint.harden.1, c4.hint.harden.2, c4.hint.harden.3]
+  lesson: [c4.hint.lesson.1]
+
+debrief:
+  title: c4.debrief.title
+  lesson: c4.debrief.lesson
+  points: [c4.debrief.p1, c4.debrief.p2, c4.debrief.p3, c4.debrief.p4]
+  reference: "ANSSI · Guide d'hygiène informatique · règle 3-2-1 des sauvegardes"

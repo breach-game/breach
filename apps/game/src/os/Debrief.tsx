@@ -80,7 +80,7 @@ export function Debrief({
           <b>{score}</b>
         </span>
         <span>
-          {t('debrief.detections')}
+          {t(mission.side === 'defense' ? 'debrief.retries' : 'debrief.detections')}
           <b>{game.state.detections}</b>
         </span>
         <span>
@@ -117,7 +117,8 @@ export function Debrief({
         )}
         {detail.detections > 0 && (
           <span>
-            {t('debrief.detections')} <b>−{detail.detections}</b>
+            {t(mission.side === 'defense' ? 'debrief.retries' : 'debrief.detections')}{' '}
+            <b>−{detail.detections}</b>
           </span>
         )}
         {detail.answers > 0 && (

@@ -1,0 +1,11 @@
+# Season 4, mission 4: never again
+cat regles/compte-service.yml
+rule test regles/compte-service.yml
+echo "method: password" >> regles/compte-service.yml
+rule test regles/compte-service.yml
+sed -i 's/connexion: mot-de-passe/connexion: cle/' dossier/plan-sauvegarde.yml
+sed -i 's/origine: partout/origine: sauvegarde.corbelle.test/' dossier/plan-sauvegarde.yml
+sed -i 's/test_restauration: jamais/test_restauration: mensuel/' dossier/plan-sauvegarde.yml
+sed -i 's/second_facteur: non/second_facteur: oui/' dossier/plan-sauvegarde.yml
+verify
+answer mfa

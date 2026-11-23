@@ -290,3 +290,73 @@ describe('pentest report', () => {
     expect(pentestReport(incident.game)).toContain('`contain block 10.13.0.99`');
   });
 });
+
+describe('season 4: decisions echo at the end of the season', () => {
+  const corbelle = packs.find((p) => p.pack.id === 'breach.world.corbelle')!.pack;
+  const season = packs.find((p) => p.pack.id === 'breach.season4')!.pack;
+  const missions = season.series!.missions.map((id) => packs.find((p) => p.pack.id === id)!);
+
+  async function play(choices: Record<string, string>) {
+    const game = new Game({ world: corbelle, missions: missions.map((m) => m.pack), locale: 'fr' });
+    for (const m of missions) {
+      game.startMission(m.pack.id);
+      for (const raw of m.solution!) {
+        // The solution's own choices are swapped for the ones under test.
+        const [cmd, pick] = raw.trim().split(/\s+/);
+        const decision = game.mission!.questions.find(
+          (q) => q.correct === undefined && q.options.some((o) => o.id === pick),
+        );
+        const line = cmd === 'answer' && decision ? `answer ${choices[decision.id] ?? pick}` : raw;
+        for await (const _ of game.exec(line, 20_000));
+      }
+      expect(game.state.missionDone).toBe(true);
+    }
+    const said = game.log.flatMap((e) => (e.type === 'NpcMessage' ? [e.key] : []));
+    return { game, said };
+  }
+
+  it('tells what each choice led to', async () => {
+    const { game, said } = await play({ ransom: 'pay', comms: 'blame', notify: 'later' });
+    expect(game.state.choices).toEqual({ ransom: 'pay', comms: 'blame', notify: 'later' });
+    expect(said).toEqual(
+      expect.arrayContaining(['c4.end.ransom.pay', 'c4.end.comms.blame', 'c4.end.notify.later']),
+    );
+    expect(said).not.toContain('c4.end.ransom.refuse');
+    // Costly choices weigh on the score of the mission they were taken in.
+    const careful = await play({ ransom: 'refuse', comms: 'plain', notify: 'now' });
+    expect(careful.said).toEqual(
+      expect.arrayContaining(['c4.end.ransom.refuse', 'c4.end.comms.plain', 'c4.end.notify.now']),
+    );
+    const id = 'breach.season4.s02';
+    expect(careful.game.state.completed[id]!.score).toBeGreaterThan(game.state.completed[id]!.score);
+  });
+
+  it('says nothing about choices when the last mission is replayed on its own', async () => {
+    const last = missions.at(-1)!;
+    const { game } = await replaySolution(corbelle, last.pack, last.solution!, 'fr');
+    const said = game.log.flatMap((e) => (e.type === 'NpcMessage' ? [e.key] : []));
+    expect(said).toContain('c4.ada.end');
+    expect(said.filter((k) => k.startsWith('c4.end.'))).toEqual([]);
+    expect(said).not.toContain('c4.ada.echo');
+  });
+
+  it('a backup taken after the intrusion sends the player back, and the right one does not', async () => {
+    const third = missions[2]!;
+    const game = new Game({ world: corbelle, missions: [third.pack], locale: 'fr' });
+    game.startMission(third.pack.id);
+    const run = async (line: string) => {
+      for await (const _ of game.exec(line, 20_000));
+    };
+    await run('contain restore ven-0910');
+    // Restoring before the scheduled job is removed fails too.
+    expect(game.state.detections).toBe(1);
+    await run('contain remove tache-verrou');
+    await run('contain restore hebdo-0912');
+    expect(game.state.detections).toBe(2);
+    expect(game.state.objectives.restore).toBe(false);
+    expect(game.state.objectives.clean).toBe(true);
+    await run('contain restore ven-0910');
+    expect(game.state.objectives.restore).toBe(true);
+    expect(game.state.detections).toBe(2);
+  });
+});

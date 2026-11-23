@@ -281,8 +281,8 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
         problems.push(`${pack.id}: adversary step ${step.id} names unknown host ${step.host}`);
     if (m.adversary && !hostIds.has(m.adversary.from))
       problems.push(`${pack.id}: the adversary comes from unknown host ${m.adversary.from}`);
-    if (m.side === 'defense' && !m.adversary)
-      problems.push(`${pack.id}: a defence mission needs an adversary`);
+    if (m.side === 'defense' && !m.adversary && !m.containment.length && !m.questions.length)
+      problems.push(`${pack.id}: a defence mission needs an adversary, containment orders or questions`);
     for (const npc of m.npcs) problems.push(...npcProblems(npc).map((p) => `${pack.id}: ${p}`));
     const objectiveIds = new Set(m.objectives.map((o) => o.id));
     for (const o of m.objectives)
@@ -316,6 +316,8 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
     for (const q of m.questions) {
       if (q.objective && !objectiveIds.has(q.objective))
         problems.push(`${pack.id}: question ${q.id} points to unknown objective ${q.objective}`);
+      // A decision has no right option: every one of its branches is replayed further down.
+      if (q.correct === undefined) continue;
       if (!q.options.some((o) => o.id === q.correct))
         problems.push(`${pack.id}: question ${q.id} has no option ${q.correct}`);
       // A right answer much longer than every wrong one is found without reading the question.
@@ -354,6 +356,27 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
         );
       } else if (m.defense && locale === pack.locales[0])
         problems.push(...(await defenseProblems(result.game)).map((p) => `${pack.id}: ${p}`));
+    }
+    // Every branch of a decision must lead to the end: the solution is replayed once per option,
+    // with that option in place of the one the solution takes.
+    for (const q of m.questions.filter((q) => q.correct === undefined)) {
+      const ids = q.options.map((o) => o.id);
+      const at = solution.findIndex((line) => {
+        const [cmd, pick] = line.trim().split(/\s+/);
+        return cmd === 'answer' && ids.includes(pick ?? '');
+      });
+      if (at < 0) {
+        problems.push(`${pack.id}: solution.txt never takes decision ${q.id} (answer <option id>)`);
+        continue;
+      }
+      for (const option of ids) {
+        const branch = solution.map((line, i) => (i === at ? `answer ${option}` : line));
+        const result = await replaySolution(world, pack, branch, pack.locales[0]!);
+        if (!result.done)
+          problems.push(
+            `${pack.id}: decision ${q.id}: the mission cannot be finished after choosing ${option}`,
+          );
+      }
     }
   }
   return problems;

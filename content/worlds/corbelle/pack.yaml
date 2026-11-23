@@ -1,0 +1,12 @@
+id: breach.world.corbelle
+version: 0.1.0
+engine: ">=0.7 <1"
+kind: world
+title:
+  fr: Ville de Corbelle
+  en: Town of Corbelle
+summary:
+  fr: Le réseau de la mairie de Corbelle, ville fictive de 14 000 habitants, un lundi matin où plus aucun dossier ne s'ouvre.
+  en: The network of the town hall of Corbelle, a fictional town of 14,000 people, on a Monday morning when no file will open any more.
+authors: [BREACH]
+locales: [fr, en]

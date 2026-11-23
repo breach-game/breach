@@ -55,10 +55,13 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
               </div>
               <span className="val">{Math.round(impact)} %</span>
             </div>
-            <div className="soc attacker" data-level={stopped ? 'stopped' : 'active'}>
-              <i />
-              <span>{t(stopped ? 'bar.attacker.stopped' : 'bar.attacker.active')}</span>
-            </div>
+            {/* Only an attacker the player can stop is reported on: a crisis mission has none on stage. */}
+            {pack?.mission?.adversary?.steps.some((step) => step.blockedIf) && (
+              <div className="soc attacker" data-level={stopped ? 'stopped' : 'active'}>
+                <i />
+                <span>{t(stopped ? 'bar.attacker.stopped' : 'bar.attacker.active')}</span>
+              </div>
+            )}
           </>
         ) : (
           <>

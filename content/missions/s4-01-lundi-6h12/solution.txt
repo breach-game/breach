@@ -1,0 +1,9 @@
+# Season 4, mission 1: Monday, 6:12 am
+soc sources
+soc alerts
+soc alerts
+soc logs accueil flow
+soc logs fichiers auth
+contain isolate poste-accueil.corbelle.test
+answer entry 10.16.0.101
+answer account svc-sauvegarde

@@ -22,6 +22,7 @@ export type EventBody =
   | { type: 'CwdChanged'; path: string }
   | { type: 'FileRead'; host: string; path: string }
   | { type: 'FileWritten'; host: string; path: string; content: string; append: boolean }
+  | { type: 'FileRemoved'; host: string; path: string }
   | { type: 'DnsQuery'; name: string; rtype: string; found: boolean }
   | { type: 'WhoisQuery'; domain: string }
   | { type: 'Scan'; target: string; intensity: number }
@@ -94,7 +95,16 @@ export type EventBody =
   | { type: 'HostRevealed'; host: string }
   /** Ada put a question of the mission to the player. */
   | { type: 'Asked'; question: string }
-  | { type: 'Answered'; question: string; option: string; correct: boolean }
+  /** `decision` marks a question with no right option; `impact` is what that choice costs. */
+  | { type: 'Answered'; question: string; option: string; correct: boolean; decision?: true; impact?: number }
+  | {
+      type: 'RuleTested';
+      hunt: string;
+      caught: number;
+      missed: number;
+      falsePositives: number;
+      passed: boolean;
+    }
   /** The player named a line of a code review as faulty. */
   | { type: 'Reviewed'; review: string; line: number; correct: boolean }
   /** `verify` ran: which of the mission's checks hold now. */
