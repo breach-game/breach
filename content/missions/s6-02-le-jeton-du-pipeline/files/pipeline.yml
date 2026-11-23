@@ -1,0 +1,16 @@
+# .relay-ci.yml - alto/site (extract handed over by Alto)
+pipeline: site
+on: [push]
+secrets:
+  - DB_PASSWORD
+  - PAYMENT_PROVIDER_KEY
+variables:
+  NIMBUS_ACCOUNT: alto-prod
+  NIMBUS_ROLE: ci-deployer
+  NIMBUS_TOKEN: from-runner-settings   # typed by hand, 2026-01-09
+steps:
+  - checkout
+  - run: pkg install --frozen
+  - run: env | sort                    # debug, added in #398
+  - run: pkg test
+  - run: nimbus storage sync dist/ alto-site/

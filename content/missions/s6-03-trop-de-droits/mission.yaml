@@ -1,0 +1,119 @@
+# Season 6, mission 3: roles that allow more than their job needs. No exploit here: the player
+# reads the account's roles with a read-only audit token, then writes the least-privilege version.
+order: 2
+stage: cloud
+briefing: a3.briefing
+startTime: "2028-05-17T09:00:00+02:00"
+
+files:
+  dossier/ci-deployer.yml: a3.file.role
+
+objectives:
+  - { id: roles, text: a3.obj.roles }
+  - { id: policy, text: a3.obj.policy }
+  - { id: role, text: a3.obj.role }
+  - { id: fix, text: a3.obj.fix }
+  - { id: lesson, text: a3.obj.lesson }
+
+# A plain answer: the name of the second role that reads more than its job needs.
+flags:
+  - { id: role, value: "support-bot", points: 150, objective: role }
+
+checks:
+  - id: actions
+    text: a3.check.actions
+    if: { file: "~/dossier/ci-deployer.yml", contains: "actions: storage:put" }
+    objective: fix
+  - id: resources
+    text: a3.check.resources
+    if: { file: "~/dossier/ci-deployer.yml", contains: "resources: alto-site" }
+    objective: fix
+  - id: lifetime
+    text: a3.check.lifetime
+    if: { file: "~/dossier/ci-deployer.yml", contains: "token_lifetime: 15m" }
+    objective: fix
+  - id: storage
+    text: a3.check.storage
+    if: { file: "~/dossier/ci-deployer.yml", contains: "token_storage: secret" }
+    objective: fix
+  - id: kept
+    text: a3.check.kept
+    if:
+      all:
+        - { file: "~/dossier/ci-deployer.yml", contains: "role: ci-deployer" }
+        - { file: "~/dossier/ci-deployer.yml", contains: "used_by: relay-ci" }
+
+questions:
+  - id: lesson
+    text: a3.q.lesson
+    objective: lesson
+    correct: role
+    options:
+      - { id: shape, text: a3.q.lesson.shape, why: a3.q.lesson.shape.why }
+      - { id: role, text: a3.q.lesson.role }
+      - { id: log, text: a3.q.lesson.log, why: a3.q.lesson.log.why }
+
+reveal: [www, storage, ci, iam]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: a3.ada.brief
+  - on: { event: HttpRequest, host: iam, status: 401 }
+    do:
+      - ada.guide: { key: a3.ada.g.token, for: roles, step: 1 }
+  - on: { event: HttpRequest, host: iam, path: /roles, variant: as-audit }
+    do:
+      - ada.say: a3.ada.roles
+      - objective.complete: roles
+  - on: { event: HttpRequest, host: iam, path: /roles/ci-deployer, variant: as-audit }
+    do:
+      - ada.say: a3.ada.policy
+      - objective.complete: policy
+  - on: { event: HttpRequest, host: iam, path: /roles/web-frontend, variant: as-audit }
+    do:
+      - ada.say: a3.ada.frontend
+  - on: { event: HttpRequest, host: iam, path: /roles/auditor, variant: as-audit }
+    do:
+      - ada.say: a3.ada.auditor
+  - on: { event: HttpRequest, host: iam, path: /roles/support-bot, variant: as-audit }
+    do:
+      - ada.say: a3.ada.bot
+      - ada.guide: { key: a3.ada.g.submit, for: role, step: 1 }
+  - on: { event: FlagSubmitted, flag: role }
+    do:
+      - ada.say: a3.ada.role
+  - on: { event: Verified }
+    if: { not: { objective: fix } }
+    once: false
+    do:
+      - ada.say: a3.ada.almost
+  - on: { event: ObjectiveCompleted, objective: fix }
+    do:
+      - ada.say: a3.ada.fix
+      - ada.ask: lesson
+  - on: { event: ObjectiveCompleted, objective: lesson }
+    do:
+      - ada.say: a3.ada.lesson
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: a3.ada.done
+
+guide:
+  roles: a3.ada.g.roles
+  policy: a3.ada.g.policy
+  role: a3.ada.g.role
+  fix: a3.ada.g.fix
+  lesson: a3.ada.answer
+
+hints:
+  roles: [a3.hint.roles.1, a3.hint.roles.2]
+  policy: [a3.hint.policy.1]
+  role: [a3.hint.role.1, a3.hint.role.2, a3.hint.role.3]
+  fix: [a3.hint.fix.1, a3.hint.fix.2, a3.hint.fix.3]
+
+debrief:
+  title: a3.debrief.title
+  lesson: a3.debrief.lesson
+  points: [a3.debrief.p1, a3.debrief.p2, a3.debrief.p3, a3.debrief.p4]
+  reference: "OWASP Top 10 · A01 Broken Access Control · CWE-269, CWE-732"

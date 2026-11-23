@@ -1,0 +1,12 @@
+# Season 6, mission 4: the consent
+soc sources
+soc alerts
+curl -H "Authorization: Bearer nmb_audit_91d0" https://iam.alto.test/grants
+contain revoke calsync
+soc logs storage flow
+answer app calsync
+answer user m.durand
+cat regles/consentement.yml
+rule test regles/consentement.yml
+echo "path|contains: verified=false" >> regles/consentement.yml
+rule test regles/consentement.yml

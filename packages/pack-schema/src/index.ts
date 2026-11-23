@@ -123,7 +123,8 @@ const answer = {
 /**
  * Another answer of a route, given when the request carries a cookie or a header, written exactly
  * as `curl -b "name=value"` or `curl -H "Name: value"` sends it. The first variant that matches
- * answers; a browser page load sends neither, so it always gets the route's own answer.
+ * answers. A variant with only `if` answers every request while its condition holds, in the browser
+ * too: a fix closes a door (403), something the player did shows on a page.
  */
 const variant = z
   .strictObject({
@@ -134,8 +135,8 @@ const variant = z
     if: z.lazy(() => condition).optional(),
     ...answer,
   })
-  .refine((v) => v.cookie !== undefined || v.header !== undefined, {
-    message: 'a variant needs `cookie` or `header`',
+  .refine((v) => v.cookie !== undefined || v.header !== undefined || v.if !== undefined, {
+    message: 'a variant needs `cookie`, `header` or `if`',
   });
 
 const route = z.strictObject({
@@ -844,6 +845,7 @@ export const SKILLS = [
   'supply',
   'defense',
   'crisis',
+  'cloud',
 ] as const;
 export type Skill = (typeof SKILLS)[number];
 

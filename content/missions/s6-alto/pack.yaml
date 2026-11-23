@@ -1,0 +1,15 @@
+id: breach.season6
+version: 0.1.0
+engine: ">=0.9 <1"
+kind: series
+requires: [breach.world.alto]
+title:
+  fr: "Saison 6 : la tête dans le nuage"
+  en: "Season 6: head in the cloud"
+summary:
+  fr: "Après Sélène, Alto. Une start-up d'albums photo qui n'a aucun serveur : tout vit dans un compte cloud. Un seau de sauvegardes ouvert à tous, un jeton oublié dans un journal de déploiement, un rôle qui a tous les droits, et pour finir une application inconnue qu'un employé a autorisée d'un clic."
+  en: "After Sélène, Alto. A photo album start-up with no server at all: everything lives in one cloud account. A backup bucket open to everyone, a token forgotten in a deployment log, a role allowed to do everything, and to finish an unknown application an employee authorised with one click."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [cloud, recon, defense]

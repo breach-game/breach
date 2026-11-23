@@ -1,0 +1,9 @@
+{
+  "role": "support-bot",
+  "used_by": "the support chatbot, to show a customer their album",
+  "statements": [
+    { "effect": "allow",
+      "actions": ["storage:get", "storage:list"],
+      "resources": ["alto-*"] }
+  ]
+}

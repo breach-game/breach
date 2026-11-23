@@ -61,7 +61,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.8.0';
+export const ENGINE_VERSION = '0.9.0';
 
 export interface GameOptions {
   world: Pack;
@@ -116,6 +116,8 @@ export interface HttpResponse {
   headers: Record<string, string>;
   body: string;
   route: Route | undefined;
+  /** The page that answered: the route's own, or the one of the variant that matched. */
+  page: Route['page'];
 }
 
 export type BrowseResult =
@@ -1196,7 +1198,7 @@ export class Game {
       'content-length': String(new TextEncoder().encode(body).length),
       ...(answer?.headers ?? {}),
     };
-    return { status, headers, body, route };
+    return { status, headers, body, route, page: answer?.page };
   }
 
   /** Open a page in the workstation's browser. `dt` is the real time since the player's last action. */
@@ -1222,7 +1224,7 @@ export class Game {
         url: shown,
         host,
         status: res.status,
-        page: res.route?.page ?? null,
+        page: res.page ?? null,
         source: res.body,
       };
     });

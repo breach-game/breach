@@ -1,0 +1,380 @@
+# Season 6. Everything here is fictional: a reserved .test domain, private addresses, and a cloud
+# provider, Nimbus, that does not exist. Its storage and identity services are scripted web routes.
+# No real cloud API, command or policy language is reproduced: what is shown is the class of
+# mistake (a public bucket, a token in a build log, a role that allows everything, a consent given
+# to an unknown application), never a way to use it elsewhere. Tokens are made-up strings.
+startTime: "2028-05-15T09:00:00+02:00"
+mandate: AL-2028-003
+scope:
+  domains: ["*.alto.test"]
+  networks: ["10.18.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.18.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.18.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [www]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            AL-2028-003.txt: { $t: file.mandate }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: www
+    hostname: www.alto.test
+    ip: 10.18.0.10
+    os: Linux 6.6 (Debian 13)
+    map: { x: -80, z: -150, h: 110 }
+    links: [storage, ci]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav:
+                - { href: "/", label: web.nav.home }
+                - { href: "/infra", label: web.nav.infra }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - comment: web.home.todo
+            - footer: web.footer
+      "/infra":
+        page:
+          title: web.infra.title
+          blocks:
+            - nav:
+                - { href: "/", label: web.nav.home }
+                - { href: "/infra", label: web.nav.infra }
+            - h1: web.infra.h1
+            - p: web.infra.p1
+            - table:
+                head: [web.infra.th.service, web.infra.th.address, web.infra.th.role]
+                rows:
+                  - [web.infra.storage, "`https://storage.alto.test/`", web.infra.storage.role]
+                  - [web.infra.iam, "`https://iam.alto.test/`", web.infra.iam.role]
+                  - [web.infra.ci, "`https://ci.alto.test/`", web.infra.ci.role]
+                  - [web.infra.login, "`https://login.alto.test/`", web.infra.login.role]
+            - footer: web.footer
+
+  # Nimbus object storage, as Alto's account answers. A bucket is a folder with an access setting.
+  - id: storage
+    hostname: storage.alto.test
+    ip: 10.18.0.20
+    os: Nimbus
+    map: { x: 170, z: -200, h: 150 }
+    links: [iam]
+    services:
+      - { port: 443, name: https, product: nimbus-storage 3.2 }
+    web:
+      "/":
+        headers: { content-type: application/json }
+        body: { $file: files/buckets.json }
+        variants:
+          - id: listing-off
+            if: { config: storage.listing_off, eq: true }
+            status: 403
+            headers: { content-type: application/json }
+            body: "{\"error\":\"AccessDenied\",\"detail\":\"listing the buckets of an account needs a signed request\"}\n"
+      "/alto-site":
+        headers: { content-type: application/json }
+        body: { $file: files/site-list.json }
+      "/alto-site/logo.svg":
+        headers: { content-type: text/plain }
+        body: "[image, 1840 bytes]\n"
+      "/alto-backups":
+        headers: { content-type: application/json }
+        body: { $file: files/backups-list.json }
+        variants:
+          - &private
+            id: private
+            if: { config: storage.backups_private, eq: true }
+            status: 403
+            headers: { content-type: application/json }
+            body: "{\"error\":\"AccessDenied\",\"detail\":\"bucket alto-backups is private\"}\n"
+      "/alto-backups/export-clients.csv":
+        headers: { content-type: text/csv }
+        body: { $file: files/export-clients.csv }
+        variants:
+          - *private
+      "/alto-backups/db-2028-05-12.sql.gz":
+        headers: { content-type: text/plain }
+        body: "[compressed database dump, 48 MB. Not downloaded: the mandate forbids copying customer data.]\n"
+        variants:
+          - *private
+      "/alto-secrets":
+        status: 403
+        headers: { content-type: application/json }
+        body: "{\"error\":\"AccessDenied\",\"detail\":\"bucket alto-secrets is private\"}\n"
+        variants:
+          - id: as-ci
+            header: "Authorization: Bearer nmb_ci_4c81e7"
+            if: { config: ci.token_revoked, eq: false }
+            headers: { content-type: application/json }
+            body: { $file: files/secrets-list.json }
+      # The team's shared documents. Private, and read through an employee's sign-in only.
+      "/alto-team":
+        status: 403
+        headers: { content-type: application/json }
+        body: "{\"error\":\"AccessDenied\",\"detail\":\"bucket alto-team is private\"}\n"
+      "/alto-secrets/deploy.env":
+        status: 403
+        headers: { content-type: application/json }
+        body: "{\"error\":\"AccessDenied\",\"detail\":\"bucket alto-secrets is private\"}\n"
+        variants:
+          - id: as-ci
+            header: "Authorization: Bearer nmb_ci_4c81e7"
+            if: { config: ci.token_revoked, eq: false }
+            headers: { content-type: text/plain }
+            body: { $file: files/deploy.env }
+
+  # Nimbus identity: who a token is, and what its role may do.
+  - id: iam
+    hostname: iam.alto.test
+    ip: 10.18.0.40
+    os: Nimbus
+    map: { x: 330, z: -40, h: 130 }
+    services:
+      - { port: 443, name: https, product: nimbus-iam 1.9 }
+    web:
+      "/whoami":
+        status: 401
+        headers: { content-type: application/json }
+        body: &unsigned "{\"error\":\"Unauthenticated\",\"detail\":\"send a token: Authorization: Bearer <token>\"}\n"
+        variants:
+          - id: as-ci
+            header: "Authorization: Bearer nmb_ci_4c81e7"
+            if: { config: ci.token_revoked, eq: false }
+            headers: { content-type: application/json }
+            body: { $file: files/whoami-ci.json }
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/whoami-audit.json }
+      "/roles":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/roles.json }
+      "/roles/ci-deployer":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/role-ci-deployer.json }
+      "/roles/support-bot":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/role-support-bot.json }
+      "/roles/web-frontend":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/role-web-frontend.json }
+      "/roles/auditor":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/role-auditor.json }
+      # The applications employees have given access to. The third one only exists on Thursday.
+      "/grants":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - id: revoked
+            header: "Authorization: Bearer nmb_audit_91d0"
+            if: { config: oauth.calsync_revoked, eq: true }
+            headers: { content-type: application/json }
+            body: { $file: files/grants-revoked.json }
+          - id: granted
+            header: "Authorization: Bearer nmb_audit_91d0"
+            if: { config: oauth.calsync_granted, eq: true }
+            headers: { content-type: application/json }
+            body: { $file: files/grants.json }
+          - id: as-audit
+            header: "Authorization: Bearer nmb_audit_91d0"
+            headers: { content-type: application/json }
+            body: { $file: files/grants-base.json }
+
+  - id: ci
+    hostname: ci.alto.test
+    ip: 10.18.0.30
+    os: Linux 6.6 (Debian 13)
+    map: { x: 60, z: 120, h: 100 }
+    links: [storage]
+    services:
+      - { port: 443, name: https, product: relay-ci 2.8 }
+    web:
+      "/":
+        page:
+          title: web.ci.title
+          blocks:
+            - h1: web.ci.h1
+            - p: web.ci.p1
+            - table:
+                head: [web.ci.th.build, web.ci.th.branch, web.ci.th.result, web.ci.th.log]
+                rows:
+                  - ["#412", "main", web.ci.ok, "`/builds/412/log`"]
+                  - ["#411", "fix-footer", web.ci.failed, "`/builds/411/log`"]
+            - comment: web.ci.todo
+            - footer: web.footer
+      "/builds/412/log":
+        headers: { content-type: text/plain }
+        body: { $file: files/build-412.log }
+        variants:
+          - &logs-private
+            id: logs-private
+            if: { config: ci.logs_private, eq: true }
+            status: 403
+            headers: { content-type: text/plain }
+            body: "403 Forbidden: build logs need a sign-in\n"
+      "/builds/411/log":
+        headers: { content-type: text/plain }
+        body: { $file: files/build-411.log }
+        variants:
+          - *logs-private
+
+  # The sign-in service, where an application asks an employee for access.
+  - id: login
+    hostname: login.alto.test
+    ip: 10.18.0.50
+    os: Nimbus
+    map: { x: 250, z: 150, h: 100 }
+    services:
+      - { port: 443, name: https, product: nimbus-login 2.1 }
+    web:
+      "/consent/calsync":
+        page:
+          title: web.consent.title
+          blocks:
+            - h1: web.consent.h1
+            - p: web.consent.p1
+            - table:
+                head: [web.consent.th.scope, web.consent.th.means]
+                rows:
+                  - ["`calendar.read`", web.consent.calendar]
+                  - ["`files.read.all`", web.consent.files]
+                  - ["`offline_access`", web.consent.offline]
+            - p: web.consent.p2
+            - footer: web.footer
+
+  # Where the application calls from. Outside Alto: it is looked at through Alto's logs only.
+  - id: outsider
+    hostname: inconnu.alto.test
+    ip: 10.18.0.200
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 430, z: 280, h: 50 }
+
+dns:
+  alto.test: { A: ["10.18.0.10"] }
+  www.alto.test: { A: ["10.18.0.10"] }
+  storage.alto.test: { A: ["10.18.0.20"] }
+  ci.alto.test: { A: ["10.18.0.30"] }
+  iam.alto.test: { A: ["10.18.0.40"] }
+  login.alto.test: { A: ["10.18.0.50"] }
+
+whois:
+  alto.test: |
+    Domain Name: ALTO.TEST
+    Creation Date: 2024-11-18T08:00:00Z
+    Registrant Organization: Alto SAS
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of Alto's cloud account that decide whether a weakness is there. A fix changes them.
+config:
+  storage.backups_private: false
+  storage.listing_off: false
+  www.note_removed: false
+  ci.token_revoked: false
+  ci.logs_private: false
+  ci.debug_removed: false
+  oauth.calsync_granted: false
+  oauth.calsync_revoked: false
+  oauth.user_consent_off: false
+  oauth.durand_reset: false
+  net.outsider_blocked: false
+
+# An ordinary day on Alto's account.
+telemetry:
+  background:
+    # Visitors loading the website's images.
+    - { host: storage, source: access, every: 3, offset: 1, fields: { src: 198.51.100.44, method: GET, path: /alto-site/logo.svg, status: 200, ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_2) Safari/619.1" } }
+    - { host: storage, source: access, every: 7, offset: 2, fields: { src: 203.0.113.61, method: GET, path: /alto-site/hero.jpg, status: 200, ua: "Mozilla/5.0 (X11; Linux x86_64) Firefox/149.0" } }
+    # The backup job writes, it never reads.
+    - { host: storage, source: access, every: 19, offset: 5, fields: { src: 10.18.0.30, method: PUT, path: /alto-backups/db-2028-05-12.sql.gz, status: 200, ua: "nimbus-cli/3.2" } }
+    # The team's shared documents, read from the office.
+    - { host: storage, source: access, every: 11, offset: 4, fields: { src: 10.18.0.104, method: GET, path: /alto-team/planning.ods, status: 200, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/141.0" } }
+    # A crawler knocking on a private bucket, refused.
+    - { host: storage, source: access, every: 23, offset: 9, fields: { src: 198.51.100.200, method: GET, path: /alto-secrets/, status: 403, ua: "curl/8.9.0" } }
+    # The pipeline asking who it is before a deploy.
+    - { host: iam, source: access, every: 13, offset: 6, fields: { src: 10.18.0.30, method: GET, path: /whoami, status: 200, ua: "nimbus-cli/3.2" } }
+    # Employees giving access to applications the company checked.
+    - { host: login, source: access, every: 17, offset: 8, fields: { src: 10.18.0.115, method: POST, path: "/consent/grant?app=planning-equipe&verified=true", status: 302, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/141.0" } }
+    - { host: login, source: access, every: 29, offset: 12, fields: { src: 10.18.0.107, method: POST, path: "/consent/grant?app=alto-mail&verified=true", status: 302, ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_2) Safari/619.1" } }
+    # The printing partner following releases in the public build logs.
+    - { host: ci, source: access, every: 9, offset: 3, fields: { src: 198.51.100.77, method: GET, path: /builds/412/log, status: 200, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/151.0" } }

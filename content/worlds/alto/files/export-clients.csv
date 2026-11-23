@@ -1,0 +1,6 @@
+id,name,email,city,last_album
+2041,Client Test Un,client1@alto.test,Annecy,Lofoten 2027
+2042,Client Test Deux,client2@alto.test,Brest,Naples en famille
+2043,Client Test Trois,client3@alto.test,Lyon,Premier hiver
+# audit marker placed by Alto in this export: FLAG{alto-open-bucket-52c8}
+# 3 rows of 18,204. The mandate forbids copying the rest.

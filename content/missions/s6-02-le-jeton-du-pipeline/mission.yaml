@@ -1,0 +1,119 @@
+# Season 6, mission 2: a deployment token printed in a public build log.
+order: 1
+stage: cloud
+briefing: a2.briefing
+startTime: "2028-05-16T09:00:00+02:00"
+
+files:
+  dossier/pipeline.yml: { $file: files/pipeline.yml }
+
+objectives:
+  - { id: builds, text: a2.obj.builds }
+  - { id: log, text: a2.obj.log }
+  - { id: whoami, text: a2.obj.whoami }
+  - { id: secret, text: a2.obj.secret }
+  - { id: review, text: a2.obj.review }
+
+flags:
+  - { id: secret, value: "FLAG{alto-ci-token-9a17}", points: 250, objective: secret }
+
+# Line 10 keeps the token as a plain variable instead of a registered secret, line 14 prints every
+# variable of the build into the log.
+reviews:
+  - { id: pipeline, file: dossier/pipeline.yml, lines: [10, 14], objective: review }
+
+reveal: [www, storage, ci]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: a2.ada.brief
+  - on: { event: HttpRequest, host: ci, path: / }
+    do:
+      - ada.say: a2.ada.builds
+      - objective.complete: builds
+  - on: { event: HttpRequest, host: ci, path: /builds/411/log }
+    do:
+      - ada.say: a2.ada.other
+  - on: { event: HttpRequest, host: ci, path: /builds/412/log }
+    do:
+      - ada.say: a2.ada.log
+      - objective.complete: log
+  - on: { event: HttpRequest, host: iam, path: /whoami, variant: as-ci }
+    do:
+      - ada.say: a2.ada.whoami
+      - objective.complete: whoami
+  - on: { event: HttpRequest, host: storage, path: { in: [/alto-secrets, /alto-secrets/] }, variant: as-ci }
+    do:
+      - ada.guide: { key: a2.ada.g.read, for: secret, step: 1 }
+  - on: { event: HttpRequest, host: storage, path: /alto-secrets/deploy.env, variant: as-ci }
+    do:
+      - noise.add: { points: 8, as: a2.soc.secret }
+      - ada.say: a2.ada.secret
+      - ada.guide: { key: a2.ada.g.submit, for: secret, step: 2 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: a2.ada.flag
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: a2.ada.review
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: a2.ada.done
+
+guide:
+  builds: a2.ada.g.builds
+  log: a2.ada.g.log
+  whoami: a2.ada.g.whoami
+  secret: a2.ada.g.secret
+  review: a2.ada.g.review
+
+hints:
+  builds: [a2.hint.builds.1]
+  log: [a2.hint.log.1, a2.hint.log.2]
+  whoami: [a2.hint.whoami.1, a2.hint.whoami.2]
+  secret: [a2.hint.secret.1, a2.hint.secret.2, a2.hint.secret.3]
+  review: [a2.hint.review.1, a2.hint.review.2, a2.hint.review.3]
+
+defense:
+  intro: a2.def.intro
+  lesson: a2.def.lesson
+  find:
+    - { source: access, where: { path: /alto-secrets/deploy.env, status: 200 }, text: a2.def.find.secret }
+  rules:
+    - id: secret-read
+      title: a2.def.rule.read.title
+      why: a2.def.rule.read.why
+      source: access
+      where: { path: { glob: "/alto-secrets/*" }, status: 200 }
+      correct: true
+    - id: log-read
+      title: a2.def.rule.log.title
+      why: a2.def.rule.log.why
+      source: access
+      where: { path: { glob: "/builds/*" } }
+    - id: denied
+      title: a2.def.rule.denied.title
+      why: a2.def.rule.denied.why
+      source: access
+      where: { path: { glob: "/alto-secrets/*" }, status: 403 }
+  fixes:
+    - id: revoke
+      title: a2.def.fix.revoke.title
+      why: a2.def.fix.revoke.why
+      sets: { ci.token_revoked: true }
+      correct: true
+    - id: logs
+      title: a2.def.fix.logs.title
+      why: a2.def.fix.logs.why
+      sets: { ci.logs_private: true }
+    - id: debug
+      title: a2.def.fix.debug.title
+      why: a2.def.fix.debug.why
+      sets: { ci.debug_removed: true }
+
+debrief:
+  title: a2.debrief.title
+  lesson: a2.debrief.lesson
+  points: [a2.debrief.p1, a2.debrief.p2, a2.debrief.p3, a2.debrief.p4]
+  reference: "OWASP CI/CD Top 10 · CICD-SEC-6 Insufficient Credential Hygiene · CWE-532"

@@ -1,0 +1,17 @@
+id: breach.season6.s03
+version: 0.1.0
+engine: ">=0.9 <1"
+kind: mission
+track: season
+requires: [breach.world.alto]
+title:
+  fr: "Saison 6 · 3. Trop de droits"
+  en: "Season 6 · 3. Too many rights"
+summary:
+  fr: "Identités et droits. Le jeton d'hier ouvrait tout, parce que le rôle derrière lui autorise tout. Avec un jeton d'audit en lecture seule, tu lis les rôles du compte, tu trouves le second qui voit trop large, et tu réécris le premier au plus juste."
+  en: "Identities and rights. Yesterday's token opened everything, because the role behind it allows everything. With a read-only audit token, you read the account's roles, find the second one that sees too wide, and rewrite the first with just enough."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [cloud, defense]
+minutes: 15

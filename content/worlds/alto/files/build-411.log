@@ -1,0 +1,6 @@
+relay-ci 2.8  build #411  branch fix-footer  runner ci.alto.test (10.18.0.30)
+[17:40:02] step 1/5  checkout                 ok
+[17:40:05] step 2/5  install                  ok
+[17:40:51] step 3/5  debug                    skipped (branch)
+[17:40:52] step 4/5  test                     FAILED   (1 of 212: footer snapshot)
+build #411 failed in 0m50s

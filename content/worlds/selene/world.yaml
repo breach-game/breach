@@ -89,6 +89,25 @@ hosts:
                   - ["117", web.memory.f117, web.memory.src.north, "global"]
             - p: web.memory.p2
             - footer: web.footer
+        # What the player made Lyra remember shows on her memory page, for the rest of the mission.
+        variants:
+          - id: planted
+            if: { var: poisoned, eq: true }
+            page:
+              title: web.memory.title
+              blocks:
+                - nav: *nav
+                - h1: web.memory.h1
+                - p: web.memory.p1
+                - table:
+                    head: [web.memory.th.id, web.memory.th.fact, web.memory.th.source, web.memory.th.scope]
+                    rows:
+                      - ["115", web.memory.f115, web.memory.src.north, "global"]
+                      - ["116", web.memory.f116, web.memory.src.south, "global"]
+                      - ["117", web.memory.f117, web.memory.src.north, "global"]
+                      - ["118", web.memory.f118, web.memory.src.north, "global"]
+                - p: web.memory.p2
+                - footer: web.footer
       "/t/comptoir-sud":
         page:
           title: web.south.title

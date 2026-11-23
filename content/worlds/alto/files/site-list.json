@@ -1,0 +1,9 @@
+{
+  "bucket": "alto-site",
+  "access": "public-read",
+  "objects": [
+    { "key": "logo.svg", "size": 1840 },
+    { "key": "hero.jpg", "size": 412066 },
+    { "key": "app.js", "size": 96113 }
+  ]
+}

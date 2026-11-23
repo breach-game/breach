@@ -1,0 +1,17 @@
+id: breach.season6.s02
+version: 0.1.0
+engine: ">=0.9 <1"
+kind: mission
+track: season
+requires: [breach.world.alto]
+title:
+  fr: "Saison 6 · 2. Le jeton du pipeline"
+  en: "Season 6 · 2. The pipeline's token"
+summary:
+  fr: "Chaîne de déploiement. Le robot qui publie le site d'Alto a son propre jeton, et une étape de débogage oubliée l'écrit en clair dans un journal public. Tu le ramasses, tu regardes ce qu'il ouvre, puis tu relis le pipeline et tu choisis la correction."
+  en: "Deployment pipeline. The robot that publishes Alto's website has its own token, and a forgotten debugging step writes it in clear in a public log. You pick it up, you look at what it opens, then you review the pipeline and choose the fix."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [cloud, supply, defense]
+minutes: 15

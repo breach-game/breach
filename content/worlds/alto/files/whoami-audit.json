@@ -1,0 +1,6 @@
+{
+  "identity": "audit-lignerouge",
+  "kind": "service",
+  "role": "auditor",
+  "token": { "created": "2028-05-15", "expires": "2028-05-19", "last_rotated": "n/a" }
+}

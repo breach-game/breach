@@ -1,0 +1,9 @@
+{
+  "account": "alto-prod",
+  "buckets": [
+    { "name": "alto-site", "access": "public-read", "objects": 3 },
+    { "name": "alto-backups", "access": "public-read", "objects": 2 },
+    { "name": "alto-secrets", "access": "private", "objects": 1 },
+    { "name": "alto-team", "access": "private", "objects": 4 }
+  ]
+}
