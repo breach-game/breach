@@ -357,6 +357,21 @@ describe('deploy, rollback and flags', () => {
     expect((await run(g, 'rollback checkout')).out).toContain('2.0.0 → 1.4.0');
     expect(g.state.config['checkout.v2']).toBe(false);
     expect((await run(g, 'rollback checkout')).status).toBe(1);
+    // With no deployment of its own, a rollback goes to the version listed before the running one.
+    const g2 = attack({
+      releases: [
+        {
+          service: 'checkout',
+          current: '2.0.0',
+          versions: [
+            { version: '1.4.0', sets: { 'checkout.v2': false } },
+            { version: '2.0.0', sets: { 'checkout.v2': true } },
+          ],
+        },
+      ],
+    });
+    expect((await run(g2, 'rollback checkout')).out).toContain('2.0.0 → 1.4.0');
+    expect(g2.state.config['checkout.v2']).toBe(false);
     expect((await run(g, 'flag list')).out).toMatch(/new-cart\s+on/);
     await run(g, 'flag set new-cart off');
     expect(g.state.config.miner).toBe(false);

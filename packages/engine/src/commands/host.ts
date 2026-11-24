@@ -221,9 +221,9 @@ const systemctl: Command = {
   },
 };
 
-/** A journal line: a program's own line carries its pid, the others are systemd's about the unit. */
+/** A journal line: a program's own line carries its pid, the kernel's has none, the others are systemd's. */
 const journalLine = (host: string, j: SystemView['journal'][number]) =>
-  `${j.at} ${host} ${j.pid ? `${j.unit}[${j.pid}]` : 'systemd[1]'}: ${j.text}`;
+  `${j.at} ${host} ${j.pid ? `${j.unit}[${j.pid}]` : j.unit === 'kernel' ? 'kernel' : 'systemd[1]'}: ${j.text}`;
 
 const journalctl: Command = {
   name: 'journalctl',
