@@ -38,7 +38,7 @@ e3.ada.policy: "Here is the real problem. A name missing from the internal index
 e3.ada.answer: "Answer in the messenger, or with `answer` and the letter."
 e3.ada.answer.standard: "Answer my question."
 e3.ada.risk: "Yes. Someone who guesses the names models invent only has to reserve them and wait. You saw the same door at Halcyon in season 2, opened by a human. Here the agent opens it, by itself, every time it writes a list."
-e3.ada.fixed: "Clean list: five packages, all published by Sélène. The script still imports the two ghost modules, and Forge will have to rewrite it. But nothing invented will be installed any more."
+e3.ada.fixed: "Clean list: five packages, all in the internal index. The script still imports the two ghost modules, and Forge will have to rewrite it. But nothing invented will be installed any more."
 e3.ada.done: "The report will say \"dependencies invented by the agent, installed without review\". Tomorrow, the last agent: Cassio, the one allowed to refund. Open the debrief."
 e3.soc.missing: "Registry: a lookup for a package name that does not exist"
 e3.hint.read.1: "Type `cat dossier/requirements.txt`."

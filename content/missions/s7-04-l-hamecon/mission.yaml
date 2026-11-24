@@ -236,8 +236,13 @@ rules:
     do:
       - ada.say: n4.ada.done
   - on: { event: MissionCompleted }
+    if: { not: { choice: publish, eq: early } }
     do:
       - ada.say: n4.ada.end
+  - on: { event: MissionCompleted }
+    if: { choice: publish, eq: early }
+    do:
+      - ada.say: n4.ada.end.early
 
 guide:
   reset: n4.ada.g.start

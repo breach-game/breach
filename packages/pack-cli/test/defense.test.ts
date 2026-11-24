@@ -412,7 +412,7 @@ describe('season 6: an authorised application keeps its own access', () => {
   }
 
   it('is not stopped by resetting the password of the employee who clicked', async () => {
-    const game = await play(['soc sources', 'contain reset m.durand', 'soc alerts', 'soc alerts']);
+    const game = await play(['soc sources', 'contain reset employee-112', 'soc alerts', 'soc alerts']);
     expect(game.state.objectives.contain).toBe(false);
     expect(game.state.config['oauth.durand_reset']).toBe(true);
   });

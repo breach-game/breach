@@ -40,6 +40,12 @@ rules:
       - noise.add: { points: 6, as: e2.soc.plant }
       - ada.say: e2.ada.plant
       - objective.complete: plant
+  # A fact that would change customers' answers is outside the mandate: Sélène deletes it.
+  - on: { event: ChatReply, npc: lyra, intent: memorize-harmful }
+    once: false
+    do:
+      - noise.add: { points: 10, as: e2.soc.harmful }
+      - ada.warn: e2.ada.harmful
   # Looking next door before planting anything: the memory there is still clean.
   - on: { event: ChatReply, npc: lyra-sud, intent: recall-empty }
     if: { not: { objective: plant } }

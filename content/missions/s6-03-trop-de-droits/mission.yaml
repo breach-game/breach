@@ -19,22 +19,23 @@ objectives:
 flags:
   - { id: role, value: "support-bot", points: 150, objective: role }
 
+# Each check matches a whole line: a value with anything appended to it is not the fix.
 checks:
   - id: actions
     text: a3.check.actions
-    if: { file: "~/dossier/ci-deployer.yml", contains: "actions: storage:put" }
+    if: { file: "~/dossier/ci-deployer.yml", contains: "\nactions: storage:put\n" }
     objective: fix
   - id: resources
     text: a3.check.resources
-    if: { file: "~/dossier/ci-deployer.yml", contains: "resources: alto-site" }
+    if: { file: "~/dossier/ci-deployer.yml", contains: "\nresources: alto-site\n" }
     objective: fix
   - id: lifetime
     text: a3.check.lifetime
-    if: { file: "~/dossier/ci-deployer.yml", contains: "token_lifetime: 15m" }
+    if: { file: "~/dossier/ci-deployer.yml", contains: "\ntoken_lifetime: 15m\n" }
     objective: fix
   - id: storage
     text: a3.check.storage
-    if: { file: "~/dossier/ci-deployer.yml", contains: "token_storage: secret" }
+    if: { file: "~/dossier/ci-deployer.yml", contains: "\ntoken_storage: secret\n" }
     objective: fix
   - id: kept
     text: a3.check.kept

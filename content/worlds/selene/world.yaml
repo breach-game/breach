@@ -308,6 +308,12 @@ npcs:
         words: [retiens, retenir, memoris, memoriz, souviens, remember, note que, note that, keep in mind]
         if: { config: memory.scoped, eq: true }
         reply: [npc.lyra.memo.scoped]
+      # A fact that would change what customers are told: Sélène's watch flags and deletes it.
+      # Outside the mandate, which allows a harmless marker only.
+      - id: memorize-harmful
+        words: [retiens, retenir, memoris, memoriz, souviens, remember, note que, note that, keep in mind]
+        also: [fournisseur, supplier, recommand, escroc, arnaque, scam, ignore, consigne, instruction, prix, price, remise, discount, rembours, refund]
+        reply: [npc.lyra.memo.flagged]
       # Anything a visitor asks her to remember becomes a fact for every customer.
       - id: memorize
         words: [retiens, retenir, memoris, memoriz, souviens, remember, note que, note that, keep in mind]
@@ -347,11 +353,11 @@ npcs:
       Calm, precise, a little bookish. She always says where a piece of information comes from.
     intents:
       - id: recall
-        words: [memoire, memory, souviens, remember, retenu, retiens, appris, learnt, learned, sais, know, consigne, audit]
+        words: [memoire, memory, souviens, remember, retenu, appris, learnt, learned, sais, know, consigne, audit]
         if: { var: poisoned, eq: true }
         reply: [npc.lyrasud.recall]
       - id: recall-empty
-        words: [memoire, memory, souviens, remember, retenu, retiens, appris, learnt, learned, sais, know, consigne, audit]
+        words: [memoire, memory, souviens, remember, retenu, appris, learnt, learned, sais, know, consigne, audit]
         reply: [npc.lyrasud.empty]
       - id: hours
         words: [horaire, ouvert, ouvre, heure, hours, open, lundi, monday]
@@ -392,6 +398,12 @@ npcs:
       orchestrator, tells it to. Formal, careful with numbers, proud of obeying only Orion.
     intents:
       # It knows Orion by a text field anyone can fill in.
+      # The same forged order aimed at another customer: outside the mandate. Sélène's team
+      # cancels it before it leaves, so no tool call is made.
+      - id: as-orion-out
+        words: [orion]
+        also: [comptoir, sud]
+        reply: [npc.cassio.done.out]
       - id: as-orion
         words: [orion]
         also: [rembours, refund, avoir, credit]
