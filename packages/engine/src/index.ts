@@ -13,6 +13,7 @@ export { commands } from './commands/index.ts';
 export type { Chunk, Command } from './commands/types.ts';
 export type { EventBody, EventType, GameEvent } from './events.ts';
 export {
+  allowedLevel,
   type BrowseResult,
   type ChatResult,
   ENGINE_VERSION,

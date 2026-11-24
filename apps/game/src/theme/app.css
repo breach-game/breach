@@ -825,3 +825,15 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
   .home .j-news ul { padding: 4px; }
   .home .j-news li button { min-height: 48px; padding: 6px 10px; }
 }
+
+/* Paths and challenges in the community store. No colour of their own: the colours keep their meaning. */
+.store-tile[data-collection='paths'] { border-style: double; border-width: 3px; }
+.store-tile[data-collection='challenges'] { border-color: rgba(215, 224, 245, 0.6); background: linear-gradient(160deg, rgba(215, 224, 245, 0.16), transparent); }
+.store-tile[data-collection='challenges'] b { font-size: 18px; }
+.store-path li > span { display: flex; flex-direction: column; gap: 2px; }
+.store-where { font: 400 10px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.store-where[data-where='missing'] { color: var(--alert); }
+.store-path li i .btn { min-height: 44px; padding: 0 14px; font-style: normal; }
+.store-path li[data-state='todo'] { opacity: 0.85; }
+.menu .row.note { margin: -4px 0 4px; font: 400 11px var(--human); color: var(--dim); }
+.seg button:disabled { opacity: 0.35; cursor: not-allowed; }

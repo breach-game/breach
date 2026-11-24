@@ -181,6 +181,25 @@ async function seriesProblems(pack: Pack, byId: Map<string, LoadedPack>): Promis
   return problems;
 }
 
+/**
+ * A path only points: every step is a mission or a series that exists, among the packs checked or
+ * the official ones they are checked with, and every note reads in every language of the path.
+ */
+function pathProblems(pack: Pack, byId: Map<string, LoadedPack>): string[] {
+  const problems: string[] = [];
+  for (const step of pack.path!.steps) {
+    const target = byId.get(step.ref)?.pack;
+    if (!target) problems.push(`${pack.id}: step ${step.ref} is not a known mission or series`);
+    else if (target.kind !== 'mission' && target.kind !== 'series')
+      problems.push(`${pack.id}: step ${step.ref} is a ${target.kind}, not a mission or a series`);
+    if (step.note)
+      for (const locale of pack.locales)
+        if (pack.i18n[locale]?.[step.note] === undefined)
+          problems.push(`${pack.id}: text key ${step.note} has no translation in ${locale}`);
+  }
+  return problems;
+}
+
 export interface CheckOptions {
   /**
    * Packs that are only there to resolve dependencies (the official world, for a community mission).
@@ -233,6 +252,7 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
     }
     if (pack.world) problems.push(...worldProblems(pack));
     if (pack.kind === 'series') problems.push(...(await seriesProblems(pack, byId)));
+    if (pack.kind === 'path') problems.push(...pathProblems(pack, byId));
     if (pack.kind !== 'mission') continue;
     const world = byId.get(pack.requires[0] ?? '')?.pack;
     if (!world?.world) {

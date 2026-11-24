@@ -5,8 +5,8 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMUNITY_CATALOG_URL, UNSIGNED_COMMUNITY_CATALOG } from '../community.ts';
 import { IMPORT_STEPS, ImportRefused, type ImportStep, localCatalog } from '../local.ts';
 import { importBundle, localBundles, removeBundle } from '../localStore.ts';
-import { engineSatisfies, loadCommunityCatalog, seriesMissions } from '../packs.ts';
-import { localProgress, type StartMode, seriesProgress } from '../session.ts';
+import { engineSatisfies, loadCatalog, loadCommunityCatalog, seriesMissions } from '../packs.ts';
+import { loadJourney, localProgress, type StartMode, seriesProgress, singleScores } from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import {
   type Collection,
@@ -19,18 +19,30 @@ import {
   listed,
   matches,
   NO_FILTERS,
+  type PathStep,
+  pathProgress,
   progressOf,
+  resolveSteps,
   SORTS,
   type Sort,
   sortItems,
 } from '../store.ts';
 import { translate, type UiKey, useT } from '../ui.ts';
+import type { Go } from './Journey.tsx';
 
 const LEVELS = ['guided', 'standard', 'expert'] as const;
 type Level = (typeof LEVELS)[number];
 const CREATE_URL = 'https://github.com/breach-game/packs#readme';
 const SEEN_KEY = 'community:seen';
-const COLLECTIONS: readonly (Collection | 'all')[] = ['all', 'real', 'players', 'examples', 'local'];
+const COLLECTIONS: readonly (Collection | 'all')[] = [
+  'all',
+  'paths',
+  'challenges',
+  'real',
+  'players',
+  'examples',
+  'local',
+];
 const STATUSES = ['any', 'todo', 'run', 'done'] as const;
 
 // Kept while the game runs, so coming back from a mission finds the list as the player left it.
@@ -42,7 +54,15 @@ let kept: { filters: Filters; view: 'grid' | 'list' } = { filters: NO_FILTERS, v
  * The catalogue is downloaded only when the player opens this screen; each mission or series is
  * played on its own, with its own save.
  */
-export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => void; onBack: () => void }) {
+export function Community({
+  onStart,
+  onBack,
+  go,
+}: {
+  onStart: (mode: StartMode) => void;
+  onBack: () => void;
+  go: (to: Go) => void;
+}) {
   const t = useT();
   const { locale } = useSettings();
   const text = useText();
@@ -114,9 +134,31 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
         const entries = listed(c);
         const seen = await get<Record<string, string>>(SEEN_KEY).catch(() => undefined);
         const { fresh, seen: nowSeen } = freshness(entries, seen);
-        for (const entry of entries) built.push(await itemOf(entry, c, fresh[entry.id] ?? null));
+        for (const entry of entries)
+          if (entry.kind !== 'path') built.push(await itemOf(entry, c, fresh[entry.id] ?? null));
         // The badges stay for this visit; the next one only flags what arrives in between.
         void set(SEEN_KEY, nowSeen).catch(() => {});
+        const paths = entries.filter((e) => e.kind === 'path');
+        if (paths.length) {
+          const { official, done } = await finished(built);
+          for (const entry of paths) {
+            const steps = resolveSteps(entry, official, c, done);
+            built.unshift({
+              entry,
+              catalog: c,
+              missions: [],
+              collection: collectionOf(entry),
+              ...pathProgress(steps),
+              fresh: fresh[entry.id] ?? null,
+              blocked: !engineSatisfies(entry.engine)
+                ? 'engine'
+                : !entry.locales.includes(locale)
+                  ? 'locale'
+                  : null,
+              steps,
+            });
+          }
+        }
       }
       if (!live) return;
       setCatalog(c);
@@ -154,7 +196,7 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
     locale,
   );
   const filtering = isFiltering(filters);
-  const running = (items ?? []).filter((i) => i.status === 'run' && !i.blocked);
+  const running = (items ?? []).filter((i) => i.status === 'run' && !i.blocked && !i.steps);
   const usedSkills = SKILLS.filter((s) => (items ?? []).some((i) => i.entry.skills?.includes(s)));
   const host = new URL(COMMUNITY_CATALOG_URL, location.href).host;
 
@@ -165,6 +207,19 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
   const close = () => {
     setOpened(null);
     requestAnimationFrame(() => opener.current?.focus());
+  };
+  /** A step of a path: open it where it lives, here in the store or in the official screens. */
+  const visit = (step: PathStep) => {
+    if (step.where === 'training') go({ screen: 'training' });
+    else if (step.where === 'campaign') go({ screen: 'missions' });
+    else if (step.where === 'season')
+      go({ screen: 'seasons', ...(step.season ? { open: step.season } : {}) });
+    else if (step.where === 'community') {
+      const target = (items ?? []).find(
+        (i) => !i.steps && (i.entry.id === step.ref || i.missions.some((m) => m.id === step.ref)),
+      );
+      if (target) setOpened(target);
+    }
   };
   const play = (item: Item, restart: boolean, level?: Level) => {
     if (level) updateSettings({ guidance: level });
@@ -499,13 +554,23 @@ export function Community({ onStart, onBack }: { onStart: (mode: StartMode) => v
           {opened && !importing && (
             <>
               <div className="store-scrim" onClick={close} aria-hidden="true" />
-              <Detail
-                key={`${opened.entry.id}@${opened.bundle ?? ''}`}
-                item={opened}
-                onClose={close}
-                onPlay={(restart, level) => play(opened, restart, level)}
-                onForget={() => void forget(opened)}
-              />
+              {opened.steps ? (
+                <PathDetail
+                  key={opened.entry.id}
+                  item={opened}
+                  steps={opened.steps}
+                  onClose={close}
+                  onVisit={visit}
+                />
+              ) : (
+                <Detail
+                  key={`${opened.entry.id}@${opened.bundle ?? ''}`}
+                  item={opened}
+                  onClose={close}
+                  onPlay={(restart, level) => play(opened, restart, level)}
+                  onForget={() => void forget(opened)}
+                />
+              )}
             </>
           )}
           {importing && (
@@ -570,7 +635,11 @@ function Card({ item, onOpen }: { item: Item; onOpen: (el: HTMLElement) => void 
       <SkillTags skills={e.skills ?? []} />
       <span className="store-meta">
         <span>
-          {item.missions.length > 1 ? t('store.missions', { n: item.missions.length }) : t('store.mission')}
+          {item.steps
+            ? t('store.steps', { n: item.steps.length })
+            : item.missions.length > 1
+              ? t('store.missions', { n: item.missions.length })
+              : t('store.mission')}
           {e.minutes ? ` · ${t('store.minutes', { n: e.minutes })}` : ''}
           {e.difficulty ? (
             <>
@@ -592,6 +661,13 @@ function Badge({ item }: { item: Item }) {
   const t = useT();
   if (item.bundle && item.status === 'todo')
     return <span className="store-pill local">⚠ {t('store.local.badge')}</span>;
+  if (item.steps && item.status !== 'todo')
+    return (
+      <span className={`store-pill ${item.status}`}>
+        {item.status === 'done' ? '✓' : '▶'}{' '}
+        {t('store.path.progress', { n: item.finished, total: item.steps.length })}
+      </span>
+    );
   if (item.status === 'done')
     return <span className="store-pill done">✓ {t('store.score', { score: item.score ?? 0 })}</span>;
   if (item.status === 'run')
@@ -607,13 +683,17 @@ function Badge({ item }: { item: Item }) {
 function Tile({ item }: { item: Item }) {
   const t = useT();
   const [big, small] =
-    item.collection === 'real'
-      ? [String(item.entry.incident), t('store.tile.real')]
-      : item.collection === 'examples'
-        ? ['EX', t('store.tile.examples')]
-        : item.collection === 'local'
-          ? ['⤓', t('store.tile.local')]
-          : [String(item.missions.length), t('store.tile.players')];
+    item.collection === 'paths'
+      ? [String(item.steps?.length ?? 0), t('store.tile.paths')]
+      : item.collection === 'challenges'
+        ? ['◆', t('store.tile.challenges')]
+        : item.collection === 'real'
+          ? [String(item.entry.incident), t('store.tile.real')]
+          : item.collection === 'examples'
+            ? ['EX', t('store.tile.examples')]
+            : item.collection === 'local'
+              ? ['⤓', t('store.tile.local')]
+              : [String(item.missions.length), t('store.tile.players')];
   return (
     <span className="store-tile" data-collection={item.collection} aria-hidden="true">
       <b>{big}</b>
@@ -668,7 +748,10 @@ function Detail({
   const text = useText();
   const { locale, guidance } = useSettings();
   const e = item.entry;
-  const [level, setLevel] = useState<Level>(guidance);
+  // A challenge allows only some levels: the picker offers those, and the setting stays the player's.
+  const allowed = LEVELS.filter((g) => !e.levels || e.levels.includes(g));
+  const locked = allowed.length < LEVELS.length;
+  const [level, setLevel] = useState<Level>(allowed.includes(guidance) ? guidance : allowed.at(-1)!);
   const [restarting, setRestarting] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => closeRef.current?.focus(), []);
@@ -778,19 +861,21 @@ function Detail({
           <>
             <h3 className="store-h">{t('store.level')}</h3>
             <div className="store-levels" role="group" aria-label={t('store.level')}>
-              {LEVELS.map((g) => (
+              {allowed.map((g) => (
                 <button key={g} type="button" aria-pressed={level === g} onClick={() => setLevel(g)}>
                   <b>{t(`guidance.${g}` as UiKey)}</b>
                   <small>{t('title.level.bonus', { factor: LEVEL_BONUS[g].toLocaleString(locale) })}</small>
                 </button>
               ))}
             </div>
-            <p className="store-level-desc">{t(`guidance.${level}.desc` as UiKey)}</p>
+            <p className="store-level-desc">
+              {locked ? t('store.level.locked') : t(`guidance.${level}.desc` as UiKey)}
+            </p>
             <div className="store-detail-actions">
               <button
                 type="button"
                 className="btn primary"
-                onClick={() => onPlay(item.status !== 'todo', level)}
+                onClick={() => onPlay(item.status !== 'todo', locked ? undefined : level)}
               >
                 {t(label)}
               </button>
@@ -807,6 +892,119 @@ function Detail({
           </a>
         </div>
       )}
+    </aside>
+  );
+}
+
+/**
+ * What the player has finished, whatever save it was played in: missions of the campaign and of each
+ * season, trainings and replays, community series and missions. Series and seasons finished whole
+ * count under their own id too, so that a path can name them.
+ */
+async function finished(items: Item[]): Promise<{ official: Catalog | null; done: Set<string> }> {
+  const done = new Set<string>();
+  for (const i of items) {
+    for (const id of Object.keys(i.completed)) done.add(id);
+    if (i.status === 'done') done.add(i.entry.id);
+  }
+  const official = await loadCatalog().catch(() => null);
+  if (!official) return { official, done };
+  const journey = await loadJourney().catch(() => null);
+  for (const season of journey?.seasons ?? []) {
+    for (const id of Object.keys(season.progress.completed)) done.add(id);
+    if (season.missions.length && season.missions.every((m) => m.id in season.progress.completed))
+      done.add(season.id);
+  }
+  const singles = official.packs.filter(
+    (p) => p.kind === 'mission' && (official.training.includes(p.id) || official.campaign.includes(p.id)),
+  );
+  for (const id of Object.keys(await singleScores(singles))) done.add(id);
+  return { official, done };
+}
+
+function PathDetail({
+  item,
+  steps,
+  onClose,
+  onVisit,
+}: {
+  item: Item;
+  steps: PathStep[];
+  onClose: () => void;
+  onVisit: (step: PathStep) => void;
+}) {
+  const t = useT();
+  const text = useText();
+  const e = item.entry;
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeRef.current?.focus(), []);
+  return (
+    <aside className="store-detail" aria-labelledby="store-detail-title" data-collection={item.collection}>
+      <button
+        ref={closeRef}
+        type="button"
+        className="store-close"
+        aria-label={t('store.close')}
+        onClick={onClose}
+      >
+        ✕
+      </button>
+      <div className="store-detail-head">
+        <Tile item={item} />
+        <small className="store-kicker">
+          {kicker(t, item)} · v{e.version}
+        </small>
+      </div>
+      <h2 id="store-detail-title">{text(e.title)}</h2>
+      <p className="store-detail-lead">{item.blocked ? t(`community.${item.blocked}`) : text(e.summary)}</p>
+      <SkillTags skills={e.skills ?? []} />
+      <h3 className="store-h">
+        {t('store.path.title')} · {t('store.path.progress', { n: item.finished, total: steps.length })}
+      </h3>
+      <p className="store-level-desc">{t('store.path.intro')}</p>
+      <ol className="store-missions store-path">
+        {steps.map((st, i) => (
+          <li key={st.ref} data-state={st.done ? 'done' : st.ref === item.next ? 'next' : 'todo'}>
+            <span className="store-missions-n" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span>
+              <b>{st.title ? text(st.title) : st.ref}</b>
+              {st.note && <span>{text(st.note)}</span>}
+              <small className="store-where" data-where={st.where}>
+                {st.where === 'missing'
+                  ? t('store.path.missing')
+                  : t(`store.path.where.${st.where}` as UiKey, { n: st.seasonNumber ?? 1 })}
+              </small>
+            </span>
+            <i>
+              {st.done ? (
+                `✓ ${t('store.path.done')}`
+              ) : st.where === 'missing' ? null : (
+                <button type="button" className="btn" onClick={() => onVisit(st)}>
+                  {t('store.path.open')}
+                </button>
+              )}
+            </i>
+          </li>
+        ))}
+      </ol>
+      <dl className="store-facts">
+        {e.minutes ? (
+          <>
+            <dt>{t('store.fact.minutes')}</dt>
+            <dd>{t('store.fact.minutes.value', { n: e.minutes })}</dd>
+          </>
+        ) : null}
+        <dt>{t('store.fact.locales')}</dt>
+        <dd>{e.locales.map((l) => l.toUpperCase()).join(' · ')}</dd>
+        {e.authors?.length ? (
+          <>
+            <dt>{t('store.fact.authors')}</dt>
+            <dd>{e.authors.join(', ')}</dd>
+          </>
+        ) : null}
+      </dl>
     </aside>
   );
 }

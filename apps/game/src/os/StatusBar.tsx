@@ -136,7 +136,8 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
                 <button
                   key={g}
                   type="button"
-                  aria-pressed={settings.guidance === g}
+                  aria-pressed={game.guidance === g}
+                  disabled={!!pack?.levels && !pack.levels.includes(g)}
                   onClick={() => updateSettings({ guidance: g })}
                 >
                   {t(`guidance.${g}` as UiKey)}
@@ -144,6 +145,7 @@ export function StatusBar({ noise, onResetLayout, onQuit, onBrain }: Props) {
               ))}
             </span>
           </div>
+          {pack?.levels && <p className="row note">{t('settings.guidance.locked')}</p>}
           <div className="row">
             {t('settings.effects')}
             <span className="seg">

@@ -69,6 +69,7 @@ function Screens() {
         <Community
           onStart={(mode) => setScreen({ name: 'boot', mode })}
           onBack={() => setScreen({ name: 'title' })}
+          go={go}
         />
       ) : screen.name === 'seasons' ? (
         <Seasons {...(screen.open ? { open: screen.open } : {})} go={go} />
