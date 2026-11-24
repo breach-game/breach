@@ -232,6 +232,7 @@ export const fr: Record<string, string> = {
   'explain.qr':
     "qr decode lit un QR code et dit ce qu'un téléphone en ferait : ouvrir quel site, rejoindre quel réseau Wi-Fi. qr show dessine le code. Ses adresses sont des noms réservés qui ne mènent nulle part.",
   'qr.usage': 'usage : qr decode <image> | qr show <image>',
+  'qr.viewer': "Ouvert dans la visionneuse d'images : {file}",
   'qr.shown': '(dessiné par le jeu ; son adresse est un nom réservé qui ne mène nulle part)',
   'cmd.sms': 'Lire les SMS du téléphone examiné : sms, puis sms <numéro>',
   'explain.sms':

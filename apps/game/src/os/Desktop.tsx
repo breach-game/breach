@@ -8,6 +8,7 @@ import { BrainSettings } from './BrainSettings.tsx';
 import { Browser } from './Browser.tsx';
 import { Debrief } from './Debrief.tsx';
 import { Editor } from './Editor.tsx';
+import { ImageViewer } from './ImageViewer.tsx';
 import { Messenger } from './Messenger.tsx';
 import { NetworkMap } from './NetworkMap.tsx';
 import { Notebook } from './Notebook.tsx';
@@ -15,7 +16,7 @@ import { StatusBar } from './StatusBar.tsx';
 import { Terminal } from './Terminal.tsx';
 import { type Rect, Window } from './Window.tsx';
 
-type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'editor' | 'debrief' | 'brain';
+type WinId = 'terminal' | 'ada' | 'notes' | 'browser' | 'editor' | 'viewer' | 'debrief' | 'brain';
 
 function defaultLayout(): Record<WinId, Rect> {
   const W = window.innerWidth;
@@ -34,6 +35,12 @@ function defaultLayout(): Record<WinId, Rect> {
       y: 132,
       w: Math.max(420, Math.min(760, bw)),
       h: Math.max(320, Math.min(520, H - 132 - 72)),
+    },
+    viewer: {
+      x: Math.max(28, termW - 380),
+      y: 96,
+      w: Math.min(440, W - 56),
+      h: Math.min(520, H - 96 - 72),
     },
     terminal: { x: 28, y: 68, w: termW, h: termH },
     ada: { x: W - side - 28, y: 68, w: side, h: adaH },
@@ -85,6 +92,7 @@ export function Desktop({ onQuit }: { onQuit(to?: Go): void }) {
     open: boolean;
   } | null>(null);
   const [editor, setEditor] = useState<{ path: string; nonce: number; open: boolean } | null>(null);
+  const [viewer, setViewer] = useState<{ path: string; nonce: number } | null>(null);
   const stage = useRef<HTMLDivElement>(null);
   const active = debrief ? 'debrief' : order[order.length - 1]!;
 
@@ -155,6 +163,10 @@ export function Desktop({ onQuit }: { onQuit(to?: Go): void }) {
       } else if (e.type === 'AppOpened' && e.app === 'editor') {
         setEditor((ed) => ({ path: e.url, nonce: (ed?.nonce ?? 0) + 1, open: true }));
         focus('editor');
+        playSfx('open');
+      } else if (e.type === 'AppOpened' && e.app === 'image') {
+        setViewer((v) => ({ path: e.url, nonce: (v?.nonce ?? 0) + 1 }));
+        focus('viewer');
         playSfx('open');
       } else if (e.type === 'AppOpened') {
         openBrowser(e.url);
@@ -348,6 +360,29 @@ export function Desktop({ onQuit }: { onQuit(to?: Go): void }) {
             nonce={editor.nonce}
             active={active === 'editor' && editor.open && !card}
           />
+        </Window>
+      )}
+
+      {viewer && (
+        <Window
+          id="viewer"
+          name={t('win.viewer')}
+          subtitle={viewer.path.split('/').pop()}
+          meta={viewer.path}
+          tint="defense"
+          rect={rect('viewer')}
+          z={z('viewer')}
+          active={active === 'viewer'}
+          onFocus={() => focus('viewer')}
+          onChange={change('viewer')}
+          onClose={() => {
+            setViewer(null);
+            setOrder((o) => (o.length > 1 ? o.filter((x) => x !== 'viewer') : o));
+            terminalBridge.focus?.();
+          }}
+          closeLabel={t('win.close')}
+        >
+          <ImageViewer key={viewer.nonce} path={viewer.path} />
         </Window>
       )}
 

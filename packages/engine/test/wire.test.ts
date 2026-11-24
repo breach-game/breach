@@ -262,8 +262,10 @@ describe('QR codes', () => {
     expect(lines[0]).toBe('█'.repeat(33));
     const g = cafe();
     const shown = await run(g, 'qr show parcmetre.png');
-    expect(shown.out).toContain('▀');
+    expect(shown.out).toContain('image viewer: parcmetre.png');
     expect(shown.out).toContain('leads nowhere');
+    expect(g.log.find((e) => e.type === 'AppOpened')).toMatchObject({ app: 'image' });
+    expect((await run(g, 'qr show parcmetre.png | cat')).out).toContain('▀');
     expect(readQr('not a picture')).toBeNull();
   });
 });

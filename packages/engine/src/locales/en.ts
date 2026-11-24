@@ -230,6 +230,7 @@ export const en: Record<string, string> = {
   'explain.qr':
     'qr decode reads a QR code and says what a phone would do with it: open which site, join which Wi-Fi network. qr show draws the code. Its addresses are reserved names that lead nowhere.',
   'qr.usage': 'usage: qr decode <image> | qr show <image>',
+  'qr.viewer': 'Opened in the image viewer: {file}',
   'qr.shown': '(drawn by the game; its address is a reserved name that leads nowhere)',
   'cmd.sms': 'Read the text messages of the phone under review: sms, then sms <number>',
   'explain.sms':
