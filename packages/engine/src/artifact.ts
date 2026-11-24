@@ -19,6 +19,16 @@ const fromUtf8 = (raw: string): string => {
   for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) & 0xff;
   return new TextDecoder().decode(bytes);
 };
+/** A member read back: text when its bytes are UTF-8, else the bytes as they are (a binary member). */
+const member = (raw: string): string => {
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i) & 0xff;
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return raw;
+  }
+};
 const u16 = (n: number) => String.fromCharCode(n & 0xff, (n >> 8) & 0xff);
 const u32 = (n: number) => u16(n & 0xffff) + u16((n >>> 16) & 0xffff);
 const readU16 = (s: string, i: number) => s.charCodeAt(i) | (s.charCodeAt(i + 1) << 8);
@@ -70,7 +80,7 @@ export interface ArchiveEntry {
 function archive(src: ArchiveSource, translate: (key: string) => string, mtime: number): string {
   const files = Object.entries(src.files).map(([path, v]) => ({
     path,
-    content: utf8(typeof v === 'string' ? v : translate(v.$t)),
+    content: typeof v === 'string' ? utf8(v) : '$binary' in v ? binary(v.$binary) : utf8(translate(v.$t)),
   }));
   if (src.format === 'zip') {
     let s = '';
@@ -119,7 +129,7 @@ export function readArchive(raw: string): { format: 'zip' | 'tar' | 'tgz'; entri
     i += 12;
     const path = fromUtf8(s.slice(i, i + nameLen));
     i += nameLen;
-    entries.push({ path, content: fromUtf8(s.slice(i, i + size)), mtime, mode });
+    entries.push({ path, content: member(s.slice(i, i + size)), mtime, mode });
     i += size;
     if (entries.length > 200) break;
   }

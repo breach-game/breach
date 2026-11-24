@@ -59,6 +59,7 @@ const fr = {
   'skill.cloud': 'cloud',
   'skill.privacy': 'vie privée',
   'skill.iot': 'objets connectés',
+  'skill.mobile': 'applis mobiles',
   'missions.title': 'Missions de la campagne',
   'missions.intro':
     'Rejoue une mission déjà atteinte, à un autre niveau ou pour faire mieux. Ta partie de campagne et son score ne changent pas.',
@@ -550,6 +551,7 @@ const en: typeof fr = {
   'skill.cloud': 'cloud',
   'skill.privacy': 'privacy',
   'skill.iot': 'connected devices',
+  'skill.mobile': 'mobile apps',
   'missions.title': 'Campaign missions',
   'missions.intro':
     'Replay a mission you have already reached, at another level or to do better. Your campaign and its score do not change.',

@@ -30,7 +30,7 @@ const i18nText = z
  * A file that is not plain text, described as data. The engine writes its bytes itself: a pack never
  * supplies raw bytes, so nothing in it can smuggle control characters or a real binary.
  * - `$binary`: an executable or firmware; `strings` finds the listed texts between filler bytes.
- * - `$archive`: a zip, tar or gzipped tar holding text files (`unzip`, `tar`).
+ * - `$archive`: a zip, tar or gzipped tar holding text files or `$binary` members (`unzip`, `tar`).
  * - `$cert`: an X.509 certificate in PEM form, read by `openssl x509`.
  */
 export interface BinarySource {
@@ -40,7 +40,7 @@ export interface BinarySource {
 }
 export interface ArchiveSource {
   format: 'zip' | 'tar' | 'tgz';
-  files: Record<string, string | { $t: string }>;
+  files: Record<string, string | { $t: string } | { $binary: BinarySource }>;
 }
 export interface CertSource {
   subject: string;
@@ -90,7 +90,11 @@ const archiveSource = z.strictObject({
           'relative path expected',
         )
         .max(200),
-      z.union([z.string().max(16_000), z.strictObject({ $t: i18nKey })]),
+      z.union([
+        z.string().max(16_000),
+        z.strictObject({ $t: i18nKey }),
+        z.strictObject({ $binary: binarySource }),
+      ]),
     )
     .refine((f) => Object.keys(f).length >= 1 && Object.keys(f).length <= 30, '1 to 30 files'),
 });
@@ -1170,6 +1174,7 @@ export const SKILLS = [
   'cloud',
   'privacy',
   'iot',
+  'mobile',
 ] as const;
 export type Skill = (typeof SKILLS)[number];
 

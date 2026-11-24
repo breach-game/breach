@@ -51,6 +51,17 @@ function lab() {
                 'agent.bin': {
                   $binary: { format: 'elf', strings: ['https://update.lab.test/beacon', 'KEY=lab-7f3a'] },
                 },
+                'app.apk': {
+                  $archive: {
+                    format: 'zip',
+                    files: {
+                      'assets/config.json': '{"api": "https://api.lab.test"}\n',
+                      'classes.dex': {
+                        $binary: { format: 'data', strings: ['/v1/hidden-admin', 'Bearer lab-77'] },
+                      },
+                    },
+                  },
+                },
                 'release.tar.gz': {
                   $archive: {
                     format: 'tgz',
@@ -201,6 +212,15 @@ describe('artifacts', () => {
     expect(g.readFile('/home/kestrel/x/notes.txt')).toBe('hello\n');
     expect(g.readFile('/home/kestrel/escape.txt')).toBe('');
     expect((await run(g, 'unzip agent.bin')).status).toBe(9);
+    // A binary member keeps its bytes: strings finds its texts, file calls it data.
+    expect((await run(g, 'unzip -p app.apk classes.dex | strings')).out).toBe(
+      '/v1/hidden-admin\nBearer lab-77\n',
+    );
+    expect((await run(g, 'unzip -p app.apk assets/config.json')).out).toContain('api.lab.test');
+    await run(g, 'unzip app.apk -d apk');
+    expect((await run(g, 'file apk/classes.dex apk/assets/config.json')).out).toBe(
+      'apk/classes.dex: data\napk/assets/config.json: JSON text data\n',
+    );
   });
 
   it('reads certificates and fingerprints like openssl', async () => {

@@ -277,7 +277,9 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
           typeof f === 'string'
             ? [f]
             : '$archive' in f
-              ? Object.values(f.$archive.files).map((v) => (typeof v === 'string' ? v : v.$t))
+              ? Object.values(f.$archive.files).flatMap((v) =>
+                  typeof v === 'string' ? [v] : '$t' in v ? [v.$t] : [],
+                )
               : [],
         )
         .filter(looksLikeKey),
