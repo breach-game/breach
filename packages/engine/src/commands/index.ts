@@ -12,6 +12,7 @@ import { personalCommands } from './personal.ts';
 import { systemCommands } from './system.ts';
 import { textCommands } from './text.ts';
 import type { Command } from './types.ts';
+import { wireCommands } from './wire.ts';
 
 export const commands = new Map<string, Command>();
 for (const c of [
@@ -28,5 +29,6 @@ for (const c of [
   ...defenseCommands,
   ...opsCommands,
   ...personalCommands,
+  ...wireCommands,
 ])
   commands.set(c.name, c);

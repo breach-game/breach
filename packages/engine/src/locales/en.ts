@@ -211,10 +211,26 @@ export const en: Record<string, string> = {
   'cmd.mailhdr': 'Read the headers of a message: sender, route, SPF, DKIM, DMARC: mailhdr <file.eml>',
   'explain.mailhdr':
     'mailhdr lays out what a mail client hides: the real return address, the servers the message went through (oldest first), and what SPF, DKIM and DMARC concluded about the sender.',
-  'cmd.nmcli': 'List the Wi-Fi networks in range: nmcli device wifi list',
+  'cmd.nmcli':
+    'Wi-Fi networks in range, and the ones this machine saved: nmcli device wifi list, nmcli connection show',
   'explain.nmcli':
     'nmcli device wifi list shows what every access point announces to anyone nearby: its name, channel, signal and the protection it asks for. It is the list your phone shows, nothing is captured. A network that is not yours stays out of scope, even when it is open.',
-  'nmcli.usage': 'usage: nmcli [-f FIELDS] device wifi list',
+  'nmcli.usage':
+    'usage: nmcli [-f FIELDS] device wifi list | nmcli [-f FIELDS] connection show | nmcli connection delete <name> | nmcli connection modify <name> connection.autoconnect yes|no',
+  'cmd.tshark': 'Read a capture file: tshark -r <file.pcap> [-Y filter] [-V] [-q -z conv,ip]',
+  'explain.tshark':
+    'tshark -r lists the packets of a capture someone already took: who talked to whom, the names asked to the DNS, the name in each TLS hello, and anything sent in plain HTTP. Encrypted records show only their size. -Y filters (dns, tls, http, ip.addr==…), -V unfolds each packet, -q -z conv,ip sums the conversations. The game never captures anything live.',
+  'tshark.live':
+    'tshark: live capture is not part of this game. Read a capture file instead: tshark -r <file.pcap>',
+  'tshark.usage': 'usage: tshark -r <file.pcap> [-Y <display filter>] [-V] [-q -z conv,ip|conv,tcp]',
+  'cmd.zbarimg': 'Read the QR code in a picture: zbarimg <image>',
+  'explain.zbarimg':
+    'zbarimg prints what a QR code holds, without opening it. A QR code is only a text: an address, a Wi-Fi network, a phone number. Read it before a phone acts on it.',
+  'cmd.qr': 'Look at a QR code: qr decode <image> (what it holds and where it leads), qr show <image>',
+  'explain.qr':
+    'qr decode reads a QR code and says what a phone would do with it: open which site, join which Wi-Fi network. qr show draws the code. Its addresses are reserved names that lead nowhere.',
+  'qr.usage': 'usage: qr decode <image> | qr show <image>',
+  'qr.shown': '(drawn by the game; its address is a reserved name that leads nowhere)',
   'cmd.sms': 'Read the text messages of the phone under review: sms, then sms <number>',
   'explain.sms':
     'sms lists the inbox, and sms <number> shows one message with what the phone hides: the kind of sender (a name is free text anyone can set) and the site each link really opens.',

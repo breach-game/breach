@@ -1,5 +1,5 @@
 import type { Advisory } from '@breach/pack-schema';
-import { isBinary, MAGIC, readArchive, readCert } from '../artifact.ts';
+import { isBinary, MAGIC, readArchive, readCert, readQr } from '../artifact.ts';
 import { canWrite, lookup } from '../vfs.ts';
 import { inputs, readFile } from './files.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
@@ -54,6 +54,17 @@ export function describe(content: string): string {
   if (content.startsWith(MAGIC.gzip))
     return 'gzip compressed data, from Unix, original size modulo 2^32 10240';
   if (content.startsWith(MAGIC.tar)) return 'POSIX tar archive';
+  if (content.startsWith(MAGIC.pcap))
+    return content.charCodeAt(20) === 105
+      ? 'pcap capture file, microsecond ts (little-endian) - version 2.4 (802.11, capture length 262144)'
+      : 'pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 262144)';
+  if (content.startsWith(MAGIC.png)) {
+    const qr = readQr(content);
+    const side = qr?.side ?? 290;
+    return qr?.style === 'fancy'
+      ? `PNG image data, ${side} x ${side}, 8-bit/color RGBA, non-interlaced`
+      : `PNG image data, ${side} x ${side}, 1-bit grayscale, non-interlaced`;
+  }
   if (isBinary(content)) return 'data';
   const head = content.slice(0, 400);
   if (head.startsWith('-----BEGIN CERTIFICATE-----')) return 'PEM certificate';

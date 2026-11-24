@@ -32,6 +32,9 @@ const i18nText = z
  * - `$binary`: an executable or firmware; `strings` finds the listed texts between filler bytes.
  * - `$archive`: a zip, tar or gzipped tar holding text files or `$binary` members (`unzip`, `tar`).
  * - `$cert`: an X.509 certificate in PEM form, read by `openssl x509`.
+ * - `$capture`: packets already captured on a network, read back by `tshark -r`. Encrypted payloads
+ *   are never described: only what an onlooker sees (names asked, names in the TLS hello, plain HTTP).
+ * - `$qr`: a picture of a QR code holding a text (an address, a Wi-Fi network), read by `zbarimg`.
  */
 export interface BinarySource {
   format: 'elf' | 'pe' | 'macho' | 'firmware' | 'data';
@@ -52,7 +55,39 @@ export interface CertSource {
   key?: string;
   sigalg?: string;
 }
-export type Artifact = { $binary: BinarySource } | { $archive: ArchiveSource } | { $cert: CertSource };
+interface PacketBase {
+  /** Seconds since the start of the capture. */
+  t: number;
+  src: string;
+  dst: string;
+}
+export type CapturePacket =
+  | (PacketBase & { proto: 'dns'; query: string; rtype?: 'A' | 'AAAA' | 'HTTPS'; answer?: string })
+  | (PacketBase & { proto: 'tls' | 'quic'; sni?: string; ech?: boolean; bytes?: number; records?: number })
+  | (PacketBase & {
+      proto: 'http';
+      method?: 'GET' | 'POST';
+      host: string;
+      path: string;
+      body?: string;
+      status?: number;
+    })
+  | (PacketBase & { proto: 'arp' | 'dhcp' | 'smb' | 'tcp' | 'udp'; dport?: number; info: string });
+export interface CaptureSource {
+  iface?: string;
+  packets: CapturePacket[];
+}
+export interface QrSource {
+  text: string;
+  /** A code dressed with colours and a logo: the same content, harder to tell apart. */
+  style?: 'plain' | 'fancy';
+}
+export type Artifact =
+  | { $binary: BinarySource }
+  | { $archive: ArchiveSource }
+  | { $cert: CertSource }
+  | { $capture: CaptureSource }
+  | { $qr: QrSource };
 
 export type FsSource =
   | string
@@ -108,11 +143,68 @@ const certSource = z.strictObject({
   key: z.string().max(40).optional(),
   sigalg: z.string().max(40).optional(),
 });
+const ipv4 = z.string().regex(/^\d{1,3}(\.\d{1,3}){3}$/, 'IPv4 address expected');
+const packetBase = { t: z.number().min(0).max(86_400), src: ipv4, dst: ipv4 };
+const packetName = z
+  .string()
+  .regex(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/i, 'host name expected')
+  .max(120);
+const capturePacket = z.union([
+  z.strictObject({
+    proto: z.literal('dns'),
+    ...packetBase,
+    query: packetName,
+    rtype: z.enum(['A', 'AAAA', 'HTTPS']).optional(),
+    answer: z.string().max(60).optional(),
+  }),
+  z.strictObject({
+    proto: z.enum(['tls', 'quic']),
+    ...packetBase,
+    /** The name in the hello, readable by anyone on the way. With `ech`, the outer, public name. */
+    sni: packetName.optional(),
+    ech: z.boolean().optional(),
+    bytes: z.number().int().min(60).max(10_000_000).optional(),
+    /** Encrypted records that follow the hello: shown as "Application Data", never their content. */
+    records: z.number().int().min(0).max(40).optional(),
+  }),
+  z.strictObject({
+    proto: z.literal('http'),
+    ...packetBase,
+    method: z.enum(['GET', 'POST']).optional(),
+    host: packetName,
+    path: z
+      .string()
+      .regex(/^\/[^\s]*$/)
+      .max(200),
+    /** What travels in clear: a form or a query, never a real secret. */
+    body: printable.optional(),
+    status: z.number().int().min(100).max(599).optional(),
+  }),
+  z.strictObject({
+    proto: z.enum(['arp', 'dhcp', 'smb', 'tcp', 'udp']),
+    ...packetBase,
+    dport: z.number().int().min(1).max(65535).optional(),
+    info: z.string().min(1).max(120),
+  }),
+]);
+const captureSource = z.strictObject({
+  iface: z
+    .string()
+    .regex(/^[a-z0-9]{2,15}$/)
+    .optional(),
+  packets: z.array(capturePacket).min(1).max(200),
+});
+const qrSource = z.strictObject({
+  text: z.string().min(1).max(160),
+  style: z.enum(['plain', 'fancy']).optional(),
+});
 /** A file that is not plain text: the engine builds its bytes (see `Artifact`). */
 export const artifact = z.union([
   z.strictObject({ $binary: binarySource, ...fsMeta }),
   z.strictObject({ $archive: archiveSource, ...fsMeta }),
   z.strictObject({ $cert: certSource, ...fsMeta }),
+  z.strictObject({ $capture: captureSource, ...fsMeta }),
+  z.strictObject({ $qr: qrSource, ...fsMeta }),
 ]);
 const fsSource: z.ZodType<FsSource> = z.lazy(() =>
   z.union([
@@ -671,6 +763,7 @@ export const LOG_SOURCES = [
   'mqtt', // message broker of connected devices
   'voice', // telephone exchange call records
   'ldap', // directory server (slapd)
+  'wlan', // wireless controller: access points heard and clients joined
 ] as const;
 export type LogSource = (typeof LOG_SOURCES)[number];
 
@@ -1036,7 +1129,13 @@ const mission = z.strictObject({
      * What the player can do at home with what the mission taught: a short list of concrete steps,
      * shown as its own card after the defence points.
      */
-    home: z.strictObject({ points: z.array(i18nKey).min(1).max(5) }).optional(),
+    home: z
+      .strictObject({
+        points: z.array(i18nKey).min(1).max(5),
+        /** `travel`: the card is titled for the road (public Wi-Fi, a QR code on a parking meter). */
+        kind: z.enum(['home', 'travel']).optional(),
+      })
+      .optional(),
   }),
   /** Settings of the target for this mission, over the world's. */
   config: z.record(id, scalar).default({}),

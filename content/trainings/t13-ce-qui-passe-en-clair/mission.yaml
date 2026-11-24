@@ -1,0 +1,85 @@
+order: 13
+stage: recon
+briefing: t13.briefing
+
+objectives:
+  - { id: seen, text: t13.obj.seen }
+  - { id: clear, text: t13.obj.clear }
+  - { id: fix, text: t13.obj.fix }
+
+flags:
+  - { id: card, value: "CANT-2207", points: 100, objective: clear }
+
+files:
+  captures/wifi-invites.pcap:
+    $capture:
+      iface: wlan0
+      packets:
+        - { proto: dhcp, t: 0.2, src: 10.13.9.41, dst: 10.13.9.1, dport: 67, info: "DHCP Request  - Transaction ID 0x5e21a9c3" }
+        - { proto: dns, t: 1.4, src: 10.13.9.41, dst: 10.13.9.1, query: mail.example, answer: 203.0.113.25 }
+        - { proto: tls, t: 1.5, src: 10.13.9.41, dst: 203.0.113.25, sni: mail.example, bytes: 48000, records: 4 }
+        - { proto: dns, t: 3.0, src: 10.13.9.52, dst: 10.13.9.1, query: banque-horizon.example, answer: 203.0.113.61 }
+        - { proto: tls, t: 3.1, src: 10.13.9.52, dst: 203.0.113.61, sni: banque-horizon.example, bytes: 15200, records: 4 }
+        - { proto: quic, t: 4.6, src: 10.13.9.41, dst: 203.0.113.90, sni: video.example, bytes: 9800000, records: 6 }
+        - { proto: dns, t: 6.2, src: 10.13.9.63, dst: 10.13.9.1, query: cantine-app.example, answer: 198.51.100.44 }
+        - { proto: http, t: 6.3, src: 10.13.9.63, dst: 198.51.100.44, method: POST, host: cantine-app.example, path: /api/v1/solde, body: "card=CANT-2207&device=android" }
+        - { proto: tls, t: 8.0, src: 10.13.9.52, dst: 203.0.113.80, sni: cdn-public.example, ech: true, bytes: 6100, records: 2 }
+        - { proto: arp, t: 9.1, src: 10.13.9.70, dst: 10.13.9.1, info: "Who has 10.13.9.1? Tell 10.13.9.70" }
+
+questions:
+  - id: seen
+    text: t13.q.seen
+    objective: seen
+    correct: names
+    options:
+      - { id: names, text: t13.q.seen.names }
+      - { id: password, text: t13.q.seen.password, why: t13.q.seen.password.why }
+      - { id: nothing, text: t13.q.seen.nothing, why: t13.q.seen.nothing.why }
+  - id: fix
+    text: t13.q.fix
+    objective: fix
+    correct: https
+    options:
+      - { id: https, text: t13.q.fix.https }
+      - { id: vpn, text: t13.q.fix.vpn, why: t13.q.fix.vpn.why }
+      - { id: ban, text: t13.q.fix.ban, why: t13.q.fix.ban.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t13.ada.brief
+  - on: { event: CaptureRead }
+    do:
+      - ada.guide: { key: t13.ada.read, for: seen, step: 1 }
+      - ada.ask: seen
+  - on: { event: CaptureRead, filter: { contains: http } }
+    do:
+      - ada.guide: { key: t13.ada.http, for: clear, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: seen }
+    do:
+      - ada.say: t13.ada.seen
+  - on: { event: ObjectiveCompleted, objective: clear }
+    do:
+      - ada.say: t13.ada.card
+      - ada.ask: fix
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t13.ada.done
+
+guide:
+  seen: t13.ada.list
+  clear: t13.ada.filter
+  fix: t13.ada.answer
+
+hints:
+  seen: [t13.hint.seen.1, t13.hint.seen.2]
+  clear: [t13.hint.clear.1, t13.hint.clear.2]
+
+debrief:
+  title: t13.debrief.title
+  lesson: t13.debrief.lesson
+  points: [t13.debrief.p1, t13.debrief.p2, t13.debrief.p3]
+  reference: "OWASP Mobile Top 10 · M5 Insecure Communication · RFC 9849 (ECH)"
+  home:
+    kind: travel
+    points: [t13.home.p1, t13.home.p2]

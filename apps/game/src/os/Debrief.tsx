@@ -170,8 +170,8 @@ export function Debrief({
         </>
       )}
       {mission.debrief.home && (
-        <div className="home-card">
-          <h3>{t('debrief.home')}</h3>
+        <div className="home-card" data-kind={mission.debrief.home.kind ?? 'home'}>
+          <h3>{t(mission.debrief.home.kind === 'travel' ? 'debrief.travel' : 'debrief.home')}</h3>
           <ul>
             {mission.debrief.home.points.map((p) => (
               <li key={p}>{game.t(p)}</li>

@@ -1,0 +1,6 @@
+# Training 13: what travels in clear
+tshark -r captures/wifi-invites.pcap
+answer names
+tshark -r captures/wifi-invites.pcap -Y http -V
+submit CANT-2207
+answer https
