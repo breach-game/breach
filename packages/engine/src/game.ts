@@ -1107,6 +1107,9 @@ export class Game {
     const target = release.versions.find((v) => v.version === to);
     if (!target) return 'version';
     if (to === from && version !== null) return 'same';
+    // Settings first, so that a rule reacting to `Deployed` sees the target as it now is.
+    for (const [key, value] of Object.entries(target.sets))
+      this.emit({ type: 'ConfigPatched', key, value, by: `deploy.${service}` });
     this.emit({
       type: 'Deployed',
       service,
@@ -1115,8 +1118,6 @@ export class Game {
       rollback: version === null,
       impact: target.impact,
     });
-    for (const [key, value] of Object.entries(target.sets))
-      this.emit({ type: 'ConfigPatched', key, value, by: `deploy.${service}` });
     return { from, to };
   }
 
@@ -1125,9 +1126,9 @@ export class Game {
     const toggle = this.mission?.toggles.find((t) => t.name === name);
     if (!toggle) return false;
     if (this.state.toggles[name] === value) return true;
-    this.emit({ type: 'ToggleSet', name, value, impact: toggle.impact });
     for (const [key, v] of Object.entries(toggle[value]))
       this.emit({ type: 'ConfigPatched', key, value: v, by: `flag.${name}` });
+    this.emit({ type: 'ToggleSet', name, value, impact: toggle.impact });
     return true;
   }
 

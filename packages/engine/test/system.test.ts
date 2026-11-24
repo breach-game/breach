@@ -378,6 +378,9 @@ describe('deploy, rollback and flags', () => {
     expect((await run(g, 'flag list')).out).toMatch(/new-cart\s+off/);
     expect((await run(g, 'flag set nope on')).status).toBe(1);
     expect(g.state.impact).toBe(5 + 2);
+    // The settings change before the event, so a rule on `ToggleSet` or `Deployed` sees the new state.
+    const types = g.log.map((e) => e.type);
+    expect(types.lastIndexOf('ConfigPatched')).toBeLessThan(types.lastIndexOf('ToggleSet'));
   });
 });
 
