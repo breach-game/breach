@@ -121,6 +121,13 @@ describe('eval run', () => {
     });
   });
 
+  it('names the fields of the tool calls when a guardrail uses one they do not have', async () => {
+    const game = start();
+    await run(game, 'echo "is_signed: false" >> guard/refund.yml');
+    const r = await run(game, 'eval run guard/refund.yml');
+    expect(r.out).toMatch(/No tool call has a field named is_signed\. Their fields: .*signed/);
+  });
+
   it('says when an attack still gets through', async () => {
     const game = start();
     await run(game, 'echo "amount|gte: 5000" >> guard/refund.yml');

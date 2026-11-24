@@ -121,6 +121,10 @@ describe('network commands', () => {
   it('answers dig and curl in the real formats', async () => {
     const g = await newGame();
     expect((await run(g, 'dig corp.test +short')).out).toBe('10.13.0.10\n');
+    expect((await run(g, 'dig shop.corp.test +short')).out).toBe('www.corp.test.\n10.13.0.10\n');
+    expect((await run(g, 'dig shop.corp.test')).out).toMatch(
+      /shop\.corp\.test\.\t\t300\tIN\tCNAME\twww\.corp\.test\.\nwww\.corp\.test\.\t\t300\tIN\tA\t10\.13\.0\.10/,
+    );
     expect((await run(g, 'dig corp.test MX')).out).toContain('corp.test.\t\t300\tIN\tMX\t10 mail.corp.test.');
     expect((await run(g, 'dig nope.corp.test')).out).toContain('status: NXDOMAIN');
     expect((await run(g, 'curl http://www.corp.test/')).out).toBe('<h1>hello</h1>\n');
@@ -186,5 +190,18 @@ describe('text tools', () => {
     expect((await run(g, 'cat a.txt')).out).toBe('alpha\nx/y\n');
     expect((await run(g, 'sed -i s/a/b/ /etc/shadow')).status).toBe(1);
     expect((await run(g, 'sed nope a.txt')).status).toBe(1);
+  });
+
+  it('reads basic regular expressions as grep and sed do, and extended ones with -E', async () => {
+    const g = await newGame();
+    expect((await run(g, 'grep "alpha\\|gamma" a.txt')).out).toBe('alpha\ngamma\n');
+    expect((await run(g, 'grep -E "alpha|gamma" a.txt')).out).toBe('alpha\ngamma\n');
+    expect((await run(g, 'grep "alpha|gamma" a.txt')).status).toBe(1);
+    await run(g, 'echo "user|contains: root" > r.yml');
+    await run(g, 'sed -i "s/user|contains/cmd|contains/" r.yml');
+    expect((await run(g, 'cat r.yml')).out).toBe('cmd|contains: root\n');
+    expect((await run(g, 'sed "s/\\(al\\)pha/\\1/; s/beta/B/" a.txt')).out).toBe('al\nB\ngamma\n');
+    expect((await run(g, 'sed "s/alpha/A/; s/beta/B/" a.txt')).out).toBe('A\nB\ngamma\n');
+    expect((await run(g, 'sed -E "s/(al)pha/X/" a.txt')).out).toBe('X\nbeta\ngamma\n');
   });
 });

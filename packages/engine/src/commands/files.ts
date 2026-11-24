@@ -1,4 +1,4 @@
-import { style } from '../util.ts';
+import { basicRegExp, style } from '../util.ts';
 import { canRead, type FsNode, globMatch, lookup, modeString } from '../vfs.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
 
@@ -194,7 +194,10 @@ const grep: Command = {
     let test: (line: string) => RegExpExecArray | null;
     const literal = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     try {
-      const re = new RegExp(flags.has('F') ? literal : pattern, flags.has('i') ? 'i' : '');
+      const re = new RegExp(
+        flags.has('F') ? literal : flags.has('E') || flags.has('P') ? pattern : basicRegExp(pattern),
+        flags.has('i') ? 'i' : '',
+      );
       test = (line) => re.exec(line);
     } catch {
       const re = new RegExp(literal, flags.has('i') ? 'i' : '');

@@ -185,6 +185,8 @@ export const fr: Record<string, string> = {
   'verify.ok': 'Tous les contrôles passent.',
   'verify.failed': '{n} contrôle(s) en échec. Corrige le fichier, puis relance verify.',
   'answer.none': "Ada n'a pas de question en attente.",
+  'answer.submit':
+    "Une valeur que demande la mission (une adresse, un nom, un chemin…) s'envoie avec submit <valeur>.",
   'answer.usage': 'Réponds avec sa lettre, par exemple : answer a',
   'answer.decided': 'Décision prise.',
   'cmd.strings': 'Afficher le texte lisible caché dans un fichier binaire : strings <fichier>',
@@ -259,6 +261,8 @@ export const fr: Record<string, string> = {
   'rule.usage':
     'usage : rule test <fichier>\nUne règle : une ligne « source: auth », puis un champ par ligne (user: nom, src|startswith: 10.16.0.1, cmd|contains: mot).',
   'rule.syntax': 'rule : ligne illisible : {line}',
+  'eval.field': "Aucun appel d'outil n'a de champ {name}. Leurs champs : {fields}.",
+  'rule.field': "Aucune ligne de cette source n'a de champ {name}. Ses champs : {fields}.",
   'rule.nohunt': "Cette règle n'est pas attendue par la mission : résultat donné pour information.",
   'rule.pass': "Règle validée : {n} ligne(s) de l'attaque détectée(s), aucune fausse alerte.",
   'rule.false':
@@ -355,10 +359,11 @@ export const fr: Record<string, string> = {
   'timeline.done': 'Cette chronologie est déjà dans le bon ordre.',
   'timeline.right': 'Chronologie dans le bon ordre.',
   'timeline.wrong': 'Pas encore : {placed} événements sur {total} à la bonne place. 10 points perdus.',
-  'cmd.path': 'Nomme les machines par où une attaque est passée : path <id> <hôte> <hôte>…',
+  'cmd.path':
+    "Nomme les machines d'un chemin, dans l'ordre (une attaque, une reprise…) : path <id> <hôte> <hôte>…",
   'path.none': "Il n'y a pas de chemin d'attaque à retracer dans cette mission.",
   'path.usage':
-    "usage : path <id> <hôte> <hôte>… dans l'ordre où l'attaque est passée (noms, noms courts ou adresses)",
+    "usage : path <id> <hôte> <hôte>… dans l'ordre que demande la question (noms, noms courts ou adresses)",
   'path.unknown': 'path : machines inconnues : {hosts}',
   'path.done': 'Ce chemin est déjà retracé.',
   'path.right': 'Chemin retracé.',

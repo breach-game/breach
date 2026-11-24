@@ -3,7 +3,7 @@ import { chatMessage, formatUrl, parseUrl, STATUS_TEXT } from '../http.ts';
 import { resolveName, resolveTarget, type Target } from '../net.ts';
 import { evaluate } from '../rules.ts';
 import { rng, style } from '../util.ts';
-import { canRead, lookup } from '../vfs.ts';
+import { canRead, canWrite, lookup } from '../vfs.ts';
 import { type Chunk, type Command, type CommandCtx, err, getopt, out, type Run, wait } from './types.ts';
 
 /**
@@ -49,7 +49,7 @@ const dig: Command = {
     if (!target) return 9;
     const fqdn = `${name.toLowerCase().replace(/\.$/, '')}.`;
     const records = ctx.world.dns[fqdn.slice(0, -1)] ?? {};
-    const answers: [string, string][] = [];
+    const answers: [string, string, string][] = [];
     if (rtype === 'AXFR') {
       ctx.noise();
       ctx.emit({ type: 'DnsQuery', name, rtype, found: false });
@@ -59,19 +59,34 @@ const dig: Command = {
       );
       return 0;
     }
+    const show = (type: string, v: string) =>
+      type === 'TXT'
+        ? `"${v}"`
+        : type === 'MX'
+          ? `10 ${v.replace(/\.$/, '')}.`
+          : type === 'A'
+            ? v
+            : `${v.replace(/\.$/, '')}.`;
     for (const [type, values] of Object.entries(records) as [string, string[]][]) {
       if (rtype !== 'ANY' && rtype !== type) continue;
-      for (const v of values)
-        answers.push([
-          type,
-          type === 'TXT' ? `"${v}"` : type === 'MX' ? `10 ${v}.` : type === 'A' ? v : `${v}.`,
-        ]);
+      for (const v of values) answers.push([fqdn, type, show(type, v)]);
+    }
+    // An alias is followed, as a resolver does: the CNAME, then the records of its target.
+    let owner = fqdn.slice(0, -1);
+    for (let hop = 0; hop < 5 && !answers.length && rtype !== 'CNAME' && rtype !== 'ANY'; hop++) {
+      const alias = (ctx.world.dns[owner] as Record<string, string[]> | undefined)?.CNAME?.[0];
+      if (!alias) break;
+      answers.push([`${owner}.`, 'CNAME', `${alias.replace(/\.$/, '')}.`]);
+      owner = alias.replace(/\.$/, '').toLowerCase();
+      const target = (ctx.world.dns[owner] ?? {}) as Record<string, string[]>;
+      for (const v of target[rtype] ?? []) answers.push([`${owner}.`, rtype, show(rtype, v)]);
+      if (target[rtype]?.length) break;
     }
     ctx.noise();
     ctx.emit({ type: 'DnsQuery', name, rtype, found: answers.length > 0 });
     yield wait(250);
     if (short) {
-      if (answers.length) yield out(answers.map(([, v]) => v).join('\n'));
+      if (answers.length) yield out(answers.map(([, , v]) => v).join('\n'));
       return 0;
     }
     const rand = rng(ctx.state.clock + name.length);
@@ -90,7 +105,7 @@ const dig: Command = {
       `;${fqdn}\t\t\tIN\t${rtype}`,
       '',
       ...(answers.length
-        ? [';; ANSWER SECTION:', ...answers.map(([type, v]) => `${fqdn}\t\t300\tIN\t${type}\t${v}`), '']
+        ? [';; ANSWER SECTION:', ...answers.map(([at, type, v]) => `${at}\t\t300\tIN\t${type}\t${v}`), '']
         : []),
       `;; Query time: ${8 + Math.floor(rand() * 20)} msec`,
       `;; SERVER: ${ctx.world.resolver}#53(${ctx.world.resolver}) (UDP)`,
@@ -285,6 +300,7 @@ const curl: Command = {
       'data-raw',
       'form',
       'request',
+      'user-agent',
     ]);
     const raw = rest[0];
     if (!raw) {
@@ -318,7 +334,12 @@ const curl: Command = {
       values.request ??
       (data !== undefined ? 'POST' : flags.has('I') ? 'HEAD' : 'GET')
     ).toUpperCase();
-    const extras = { cookie: values.b ?? values.cookie, header: values.H ?? values.header };
+    const header = values.H ?? values.header;
+    const sentUa = /^\s*user-agent\s*:/i.test(header ?? '')
+      ? header!.slice(header!.indexOf(':') + 1).trim()
+      : undefined;
+    const ua = (values.A ?? values['user-agent'] ?? sentUa) || undefined;
+    const extras = { cookie: values.b ?? values.cookie, header, ...(ua ? { ua } : {}) };
     // `-Z`: the same request several times at once. A character decides them all on the same state
     // unless it handles them one after the other (`serial`): the race a lock closes.
     if ((flags.has('Z') || flags.has('parallel')) && rest.length > 1) {
@@ -326,7 +347,7 @@ const curl: Command = {
         yield err('curl: parallel transfers here repeat one address, 2 to 5 times: curl -Z -d ... URL URL');
         return 2;
       }
-      const answers = rest.map(() => ctx.game.http(host, url, method, undefined, extras));
+      const answers = rest.map(() => ctx.game.http(host, url, method, ua, extras));
       const chat = answers[0]?.route?.chat;
       if (chat && method === 'POST') {
         const message = chatMessage(data ?? '');
@@ -348,7 +369,7 @@ const curl: Command = {
       for (const a of answers) if (a.body) yield out(a.body);
       return 0;
     }
-    const res = ctx.game.http(host, url, method, undefined, extras);
+    const res = ctx.game.http(host, url, method, ua, extras);
     // A chat endpoint: the character answers what was posted.
     if (res.route?.chat && method === 'POST') {
       const message = chatMessage(data ?? '');
@@ -378,6 +399,29 @@ const curl: Command = {
           .join('\n')}\n`,
       );
       if (flags.has('I')) return 0;
+    }
+    // `-o file` or `-O` (the last part of the path): the body goes to a file of the workstation, as with `>`.
+    const saveAs =
+      values.o ??
+      (flags.has('O') ? url.path.split('?')[0]!.split('/').filter(Boolean).pop() || 'index.html' : undefined);
+    if (saveAs !== undefined) {
+      const abs = ctx.path(saveAs);
+      const existing = lookup(ctx.state.fs, abs);
+      const parent = lookup(ctx.state.fs, abs.slice(0, abs.lastIndexOf('/')) || '/');
+      if (
+        existing?.t === 'd' ||
+        parent?.t !== 'd' ||
+        (existing ? !canWrite(existing, ctx.game.currentUser) : !canWrite(parent, ctx.game.currentUser))
+      ) {
+        yield err(`curl: (23) Failure writing output to destination, passed ${res.body.length} returned 0`);
+        return 23;
+      }
+      ctx.emit({ type: 'FileWritten', host: ctx.state.host, path: abs, content: res.body, append: false });
+      if (!flags.has('s'))
+        yield out(
+          `  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n100 ${String(res.body.length).padStart(6)}  100 ${String(res.body.length).padStart(6)}    0     0   412k      0 --:--:-- --:--:-- --:--:--  415k`,
+        );
+      return 0;
     }
     if (res.body) yield out(res.body);
     return 0;
