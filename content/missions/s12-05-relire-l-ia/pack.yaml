@@ -1,0 +1,17 @@
+id: breach.season12.s05
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: season
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 · 5. Relire ce que l'IA a écrit"
+  en: "Season 12 · 5. Review what the AI wrote"
+summary:
+  fr: "Une fonction écrite par l'assistant fait entrer un voisin dans un groupe. Elle marche, et elle a été mise en ligne sans relecture. Tu la relis comme le code d'un collègue et tu trouves les trois lignes qui laissent n'importe qui faire n'importe quoi."
+  en: "A function the assistant wrote lets a neighbour join a group. It works, and it went live without review. You read it like a colleague's code and find the three lines that let anyone do anything."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, llm, defense]
+minutes: 15

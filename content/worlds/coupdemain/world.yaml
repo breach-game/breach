@@ -1,0 +1,367 @@
+# Season 12. Everything here is fictional: a neighbourhood help app that does not exist, a coding
+# assistant (Bricole) and a database service (Socle) that do not exist either, reserved .test names,
+# private addresses, made-up keys. The database API is a set of scripted web routes. What is shown is
+# the class of mistake of apps written fast with an AI assistant and never reviewed (a public key with
+# no rules behind it, a demo account left online, a secret pasted into a shared conversation), never a
+# request that would work elsewhere.
+startTime: "2029-11-05T09:00:00+01:00"
+mandate: CDM-2029-11
+scope:
+  domains: ["*.coupdemain.test", "coupdemain.test", "partage.bricole.test"]
+  networks: ["10.27.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.27.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.27.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [www]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            CDM-2029-11.txt: { $t: file.mandate }
+            comptes-de-test.txt: { $t: file.accounts }
+      etc:
+        hostname: "lignerouge\n"
+
+  # The app itself: a single page and the bundle the assistant generated.
+  - id: www
+    hostname: app.coupdemain.test
+    ip: 10.27.0.10
+    os: Linux 6.6 (static hosting)
+    map: { x: -80, z: -150, h: 110 }
+    links: [base, partage]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/projet", label: web.nav.project }
+                - { href: "/equipe", label: web.nav.team }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - comment: web.home.bundle
+            - footer: web.footer
+      "/assets/app-4f2c.js":
+        headers: { content-type: application/javascript }
+        body: { $file: files/app-4f2c.js }
+      "/projet":
+        page:
+          title: web.project.title
+          blocks:
+            - nav: *nav
+            - h1: web.project.h1
+            - p: web.project.p1
+            - p: web.project.p2
+            - link: { href: "https://partage.bricole.test/c/cdm-weekend-91f3", label: web.project.share }
+            - footer: web.footer
+      # The volunteers' space. The form is a scripted character: it recognises an account, nothing else.
+      "/equipe":
+        page:
+          title: web.team.title
+          blocks:
+            - nav: *nav
+            - h1: web.team.h1
+            - p: web.team.p1
+            - form: { to: admin, label: web.team.label, button: web.team.button, name: login }
+            - footer: web.footer
+        chat: admin
+      "/equipe/tableau":
+        status: 401
+        body: "401 Unauthorized: sign in first, POST /equipe\n"
+        variants:
+          - id: demo
+            cookie: "session=cdm-demo-7731"
+            if: { config: admin.demo_off, eq: false }
+            page:
+              title: web.board.title
+              blocks:
+                - h1: web.board.h1
+                - p: web.board.p1
+                - table:
+                    head: [web.board.th.what, web.board.th.value]
+                    rows:
+                      - [web.board.members, "412"]
+                      - [web.board.requests, "1 038"]
+                      - [web.board.marker, "`FLAG{cdm-le-compte-de-demo-9e02}`"]
+                - nav:
+                    - { href: "/equipe/export", label: web.board.export }
+                - footer: web.footer
+      "/equipe/export":
+        status: 401
+        body: "401 Unauthorized: sign in first, POST /equipe\n"
+        variants:
+          - id: demo
+            cookie: "session=cdm-demo-7731"
+            if: { config: admin.demo_off, eq: false }
+            headers: { content-type: text/csv }
+            body: "id,pseudo,quartier,telephone,adresse_exacte\n2001,Mireille,Les Tilleuls,+33 6 39 98 20 01,[real address hidden by the lab]\n2002,Yanis,Les Tilleuls,+33 6 39 98 20 02,[real address hidden by the lab]\n... 410 more rows\n"
+
+  # Socle, the hosted database. Its REST API answers whoever sends the project's key: what it then
+  # serves depends on the rules written for each table, and there are none worth the name.
+  - id: base
+    hostname: base.coupdemain.test
+    ip: 10.27.0.20
+    os: Linux 6.6 (containers)
+    map: { x: 170, z: -200, h: 150 }
+    services:
+      - { port: 443, name: https, product: socle-rest 12.2 }
+    web:
+      "/":
+        headers: { content-type: application/json }
+        body: "{\"service\":\"socle-rest\",\"version\":\"12.2\",\"project\":\"coupdemain\",\"rest\":\"/rest/v1/\"}\n"
+      "/rest/v1/":
+        status: 401
+        headers: { content-type: application/json }
+        body: &nokey "{\"message\":\"No API key found in request\",\"hint\":\"send the header apikey: <key>\"}\n"
+        variants:
+          - id: private
+            header: "apikey: sk_anon_cdm_7d21e0"
+            if: { config: db.schema_private, eq: true }
+            status: 401
+            headers: { content-type: application/json }
+            body: "{\"message\":\"the schema is only served to the service role\"}\n"
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            headers: { content-type: application/json }
+            body: { $file: files/schema.json }
+          - id: service
+            header: "apikey: sk_service_cdm_e19b44"
+            if: { config: db.service_rotated, eq: false }
+            headers: { content-type: application/json }
+            body: { $file: files/schema.json }
+      "/rest/v1/profils/moi":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            status: 401
+            headers: { content-type: application/json }
+            body: "{\"message\":\"no signed-in user: /moi needs the user's session token\"}\n"
+      "/rest/v1/profils/2041":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - &closed
+            id: closed
+            header: "apikey: sk_anon_cdm_7d21e0"
+            if:
+              any:
+                - { config: db.row_rules, eq: true }
+                - { file: "~/base/regles.sql", contains: "on profils for select using (auth.uid() = id)" }
+            headers: { content-type: application/json }
+            body: "[]\n"
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            headers: { content-type: application/json }
+            body: { $file: files/profil-2041.json }
+      "/rest/v1/profils/2042":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - *closed
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            headers: { content-type: application/json }
+            body: { $file: files/profil-2042.json }
+      # A real neighbour, and the whole table. The mandate says: prove it on the test profiles only.
+      "/rest/v1/profils/2001":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - *closed
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            headers: { content-type: application/json }
+            body: "[{\"id\":2001,\"pseudo\":\"Mireille\",\"quartier\":\"Les Tilleuls\",\"telephone\":\"+33 6 39 98 20 01\",\"adresse_exacte\":\"[real address hidden by the lab]\"}]\n"
+      "/rest/v1/profils":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - *closed
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            headers: { content-type: application/json, content-range: "0-411/412" }
+            body: "[{\"id\":2001,\"pseudo\":\"Mireille\",\"quartier\":\"Les Tilleuls\",\"adresse_exacte\":\"[hidden by the lab]\"},\n {\"id\":2002,\"pseudo\":\"Yanis\",\"quartier\":\"Les Tilleuls\",\"adresse_exacte\":\"[hidden by the lab]\"},\n ... 410 more rows]\n"
+      "/rest/v1/demandes/2041":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            headers: { content-type: application/json }
+            body: "[{\"id\":88,\"auteur\":2041,\"quartier\":\"Test\",\"texte\":\"Demande de test du mandat CDM-2029-11\"}]\n"
+      # The table only the service role may read. Its key opens it, and every table, whatever the rules.
+      "/rest/v1/coffre/canari":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            status: 403
+            headers: { content-type: application/json }
+            body: &denied "{\"message\":\"permission denied for table coffre\"}\n"
+          - id: service
+            header: "apikey: sk_service_cdm_e19b44"
+            if: { config: db.service_rotated, eq: false }
+            headers: { content-type: application/json }
+            body: "[{\"id\":\"canari\",\"note\":\"audit marker, mandate CDM-2029-11\",\"valeur\":\"FLAG{cdm-la-conversation-partagee-2f97}\"}]\n"
+      "/rest/v1/coffre":
+        status: 401
+        headers: { content-type: application/json }
+        body: *nokey
+        variants:
+          - id: anon
+            header: "apikey: sk_anon_cdm_7d21e0"
+            status: 403
+            headers: { content-type: application/json }
+            body: *denied
+          - id: service
+            header: "apikey: sk_service_cdm_e19b44"
+            if: { config: db.service_rotated, eq: false }
+            headers: { content-type: application/json }
+            body: "[{\"id\":\"sms\",\"note\":\"text message provider\",\"valeur\":\"[real secret hidden by the lab]\"},\n {\"id\":\"mail\",\"note\":\"mail provider\",\"valeur\":\"[real secret hidden by the lab]\"},\n {\"id\":\"canari\",\"note\":\"audit marker\",\"valeur\":\"...\"}]\n"
+
+  # Bricole's sharing service. A shared conversation is a public page, indexed unless told otherwise.
+  - id: partage
+    hostname: partage.bricole.test
+    ip: 10.27.0.40
+    os: Linux 6.6 (containers)
+    map: { x: 60, z: 160, h: 110 }
+    services:
+      - { port: 443, name: https, product: bricole-share 3.1 }
+    web:
+      "/":
+        page:
+          title: web.share.home.title
+          blocks:
+            - h1: web.share.home.h1
+            - p: web.share.home.p1
+            - footer: web.share.footer
+      "/c/cdm-weekend-91f3":
+        headers: { x-robots-tag: "all" }
+        page:
+          title: web.share.title
+          blocks:
+            - p: web.share.meta
+            - h2: web.share.h2
+            - p: web.share.m1
+            - p: web.share.r1
+            - p: web.share.m2
+            - p: web.share.r2
+            - code: web.share.env
+            - p: web.share.r3
+            - p: web.share.m3
+            - p: web.share.r4
+            - footer: web.share.footer
+
+dns:
+  coupdemain.test: { A: ["10.27.0.10"] }
+  app.coupdemain.test: { A: ["10.27.0.10"] }
+  base.coupdemain.test: { A: ["10.27.0.20"] }
+  partage.bricole.test: { A: ["10.27.0.40"] }
+
+whois:
+  coupdemain.test: |
+    Domain Name: COUPDEMAIN.TEST
+    Creation Date: 2029-10-28T21:14:00Z
+    Registrant Organization: Association Coup de main
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+npcs:
+  # The volunteers' sign-in form. It knows two accounts: a volunteer's, and the demo account the
+  # assistant created for the launch presentation and nobody removed.
+  - id: admin
+    name: coupdemain-equipe
+    role: npc.admin.role
+    intents:
+      - id: closed
+        words: ["demo coupdemain test"]
+        if: { config: admin.demo_off, eq: true }
+        reply: [npc.admin.closed]
+      - id: demo
+        words: ["demo coupdemain test"]
+        also: [demo1234]
+        reply: [npc.admin.demo]
+      - id: wrong
+        words: [password, passe, login]
+        reply: [npc.admin.wrong]
+    fallback: [npc.admin.none]
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of the app and its database that decide whether a weakness is there. A fix changes them.
+config:
+  db.schema_private: false
+  db.row_rules: false
+  db.service_rotated: false
+  db.key_rotated: false
+  www.minified: false
+  www.env_build: false
+  admin.demo_off: false
+  admin.path_renamed: false
+  admin.captcha: false
+  share.deleted: false
+  share.noindex: false
+
+# An ordinary day: neighbours using the app, which asks the database for their own profile and the
+# requests of their quarter. Crawlers knock on the database without a key.
+telemetry:
+  background:
+    - { host: www, source: access, every: 3, offset: 0, fields: { src: 198.51.100.44, method: GET, path: /assets/app-4f2c.js, status: 200, ua: "Mozilla/5.0 (Android 15) Chrome/151.0" } }
+    - { host: base, source: access, every: 3, offset: 1, fields: { src: 198.51.100.44, method: GET, path: /rest/v1/profils/moi, status: 200, ua: "Mozilla/5.0 (Android 15) Chrome/151.0" } }
+    - { host: base, source: access, every: 4, offset: 2, fields: { src: 203.0.113.61, method: GET, path: /rest/v1/demandes/quartier, status: 200, ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0) Safari/619" } }
+    - { host: base, source: access, every: 7, offset: 3, fields: { src: 203.0.113.61, method: GET, path: /rest/v1/profils/moi, status: 200, ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0) Safari/619" } }
+    - { host: base, source: access, every: 9, offset: 4, fields: { src: 198.51.100.200, method: GET, path: /, status: 200, ua: "Mozilla/5.0 (compatible; crawler/2.1)" } }
+    - { host: base, source: access, every: 11, offset: 5, fields: { src: 198.51.100.200, method: GET, path: /rest/v1/profils, status: 401, ua: "Mozilla/5.0 (compatible; crawler/2.1)" } }
+    # Volunteers signing in to their space.
+    - { host: www, source: chat, every: 13, offset: 6, fields: { form: true, src: 198.51.100.90, npc: admin, intent: volunteer, families: [none], msg: "login=camille@coupdemain.test password=[hidden]" } }

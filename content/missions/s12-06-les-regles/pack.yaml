@@ -1,0 +1,17 @@
+id: breach.season12.s06
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: season
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 · 6. Écrire les règles"
+  en: "Season 12 · 6. Write the rules"
+summary:
+  fr: "Dernier jour. Tu écris les règles par ligne que l'assistant avait remises à plus tard, `verify` les juge, et tu vérifies que la base refuse enfin le profil d'Ada. Puis tu cherches dans le journal si quelqu'un est passé avant toi, et tu décides avec l'équipe comment prévenir les voisins."
+  en: "Last day. You write the row rules the assistant had put off, `verify` judges them, and you check the database finally refuses Ada's profile. Then you look in the log for anyone who came before you, and decide with the team how to tell the neighbours."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, logs, privacy, defense]
+minutes: 20

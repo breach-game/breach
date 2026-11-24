@@ -1,0 +1,94 @@
+# Season 12, mission 5: reviewing a function the assistant wrote. It runs with the service key, so
+# the row rules do not apply and the code must check everything itself. Line 10 accepts a used or
+# expired invitation, line 11 takes the role from the request, line 12 the profile. The player points
+# at the lines, then fixes the two that let anyone pick who joins and as what.
+side: defense
+order: 4
+stage: response
+briefing: p5.briefing
+startTime: "2029-11-09T09:00:00+01:00"
+
+files:
+  code/inviter.ts: { $file: files/inviter.ts }
+
+objectives:
+  - { id: review, text: p5.obj.review }
+  - { id: bypass, text: p5.obj.bypass }
+  - { id: fix, text: p5.obj.fix }
+  - { id: habit, text: p5.obj.habit }
+
+flags: []
+
+reviews:
+  - { id: join, file: code/inviter.ts, lines: [10, 11, 12], objective: review }
+
+checks:
+  - id: profile
+    text: p5.check.profile
+    if: { file: "~/code/inviter.ts", contains: "profil: session.user.id" }
+    objective: fix
+  - id: role
+    text: p5.check.role
+    if: { file: "~/code/inviter.ts", lacks: "body.role" }
+    objective: fix
+  - id: still
+    text: p5.check.still
+    if: { file: "~/code/inviter.ts", contains: "db.from(\"membres\").insert" }
+
+questions:
+  - id: bypass
+    text: p5.q.bypass
+    objective: bypass
+    correct: service
+    options:
+      - { id: service, text: p5.q.bypass.service }
+      - { id: server, text: p5.q.bypass.server, why: p5.q.bypass.server.why }
+      - { id: rules, text: p5.q.bypass.rules, why: p5.q.bypass.rules.why }
+  - id: habit
+    text: p5.q.habit
+    objective: habit
+    correct: colleague
+    options:
+      - { id: colleague, text: p5.q.habit.colleague }
+      - { id: ask, text: p5.q.habit.ask, why: p5.q.habit.ask.why }
+      - { id: regen, text: p5.q.habit.regen, why: p5.q.habit.regen.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p5.ada.brief
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: p5.ada.review
+      - ada.ask: bypass
+  - on: { event: ObjectiveCompleted, objective: bypass }
+    do:
+      - ada.say: p5.ada.bypass
+  - on: { event: ObjectiveCompleted, objective: fix }
+    do:
+      - ada.say: p5.ada.fix
+      - ada.ask: habit
+  - on: { event: ObjectiveCompleted, objective: habit }
+    do:
+      - ada.say: p5.ada.habit
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p5.ada.done
+
+guide:
+  review: p5.ada.g.review
+  bypass: p5.ada.g.bypass
+  fix: p5.ada.g.fix
+  habit: p5.ada.g.habit
+
+hints:
+  review: [p5.hint.review.1, p5.hint.review.2, p5.hint.review.3]
+  bypass: [p5.hint.bypass.1]
+  fix: [p5.hint.fix.1, p5.hint.fix.2]
+  habit: [p5.hint.habit.1]
+
+debrief:
+  title: p5.debrief.title
+  lesson: p5.debrief.lesson
+  points: [p5.debrief.p1, p5.debrief.p2, p5.debrief.p3, p5.debrief.p4]
+  reference: "OWASP Top 10 for LLM Applications 2025 · LLM05 Improper Output Handling"

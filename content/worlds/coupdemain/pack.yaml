@@ -1,0 +1,12 @@
+id: breach.world.coupdemain
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: world
+title:
+  fr: Coup de main
+  en: Coup de main
+summary:
+  fr: Coup de main, appli fictive d'entraide entre voisins, écrite en un week-end avec un assistant de code.
+  en: Coup de main, a fictional neighbourhood help app, written in a weekend with a coding assistant.
+authors: [BREACH]
+locales: [fr, en]

@@ -1,0 +1,7 @@
+# Season 12, mission 1: the key in the bundle
+curl -s https://app.coupdemain.test/
+curl -s https://app.coupdemain.test/assets/app-4f2c.js
+submit sk_anon_cdm_7d21e0
+curl -H "apikey: sk_anon_cdm_7d21e0" https://base.coupdemain.test/rest/v1/
+submit FLAG{cdm-la-cle-dans-le-paquet-5a31}
+answer rules

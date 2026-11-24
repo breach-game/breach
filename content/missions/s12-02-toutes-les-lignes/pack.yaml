@@ -1,0 +1,17 @@
+id: breach.season12.s02
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: season
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 · 2. Toutes les lignes à tout le monde"
+  en: "Season 12 · 2. Every row to everyone"
+summary:
+  fr: "Avec la seule clé publique, tu demandes le profil d'Ada : la base le donne, adresse comprise, parce qu'aucune règle ne dit à qui est une ligne. La preuve se fait sur les profils de test, jamais sur un vrai voisin."
+  en: "With the public key alone, you ask for Ada's profile: the database hands it over, address included, because no rule says whose row it is. The proof is made on the test profiles, never on a real neighbour."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, privacy, defense]
+minutes: 15

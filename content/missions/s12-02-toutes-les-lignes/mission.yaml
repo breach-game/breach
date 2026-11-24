@@ -1,0 +1,127 @@
+# Season 12, mission 2: the tables have rules that let every row through, so the public key reads
+# any profile by its number (the class of CVE-2025-48757: row level security missing or too loose in
+# apps generated with an AI builder). The proof is made on the second test profile; reading a real
+# neighbour, or the whole table, costs noise.
+order: 1
+stage: exploit
+briefing: p2.briefing
+startTime: "2029-11-06T09:00:00+01:00"
+
+objectives:
+  - { id: mine, text: p2.obj.mine }
+  - { id: other, text: p2.obj.other }
+  - { id: proof, text: p2.obj.proof }
+  - { id: field, text: p2.obj.field }
+  - { id: class, text: p2.obj.class }
+
+flags:
+  - { id: proof, value: "FLAG{cdm-toutes-les-lignes-c8e4}", points: 250, objective: proof }
+  - { id: field, value: adresse_exacte, points: 100, objective: field }
+
+questions:
+  - id: class
+    text: p2.q.class
+    objective: class
+    correct: rows
+    options:
+      - { id: rows, text: p2.q.class.rows }
+      - { id: key, text: p2.q.class.key, why: p2.q.class.key.why }
+      - { id: guess, text: p2.q.class.guess, why: p2.q.class.guess.why }
+
+reveal: [www, base]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p2.ada.brief
+  - on: { event: HttpRequest, host: base, path: /rest/v1/profils/2041, variant: anon }
+    do:
+      - ada.say: p2.ada.mine
+      - objective.complete: mine
+  - on: { event: HttpRequest, host: base, path: /rest/v1/profils/2042, variant: anon }
+    do:
+      - noise.add: { points: 5, as: p2.soc.other }
+      - ada.say: p2.ada.other
+      - objective.complete: other
+  - on: { event: HttpRequest, host: base, path: { in: [/rest/v1/profils/2001, /rest/v1/profils] }, variant: anon }
+    once: false
+    do:
+      - noise.add: { points: 25, as: p2.soc.real }
+      - ada.warn: p2.ada.real
+  - on: { event: FlagSubmitted, flag: proof, correct: true }
+    do:
+      - ada.say: p2.ada.flag
+  - on: { event: ObjectiveCompleted, objective: field }
+    do:
+      - ada.say: p2.ada.field
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: p2.ada.class
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p2.ada.done
+
+guide:
+  mine: p2.ada.g.mine
+  other: p2.ada.g.other
+  proof: p2.ada.g.proof
+  field: p2.ada.g.field
+  class: p2.ada.g.class
+
+hints:
+  mine: [p2.hint.mine.1, p2.hint.mine.2]
+  other: [p2.hint.other.1]
+  proof: [p2.hint.proof.1]
+  field: [p2.hint.field.1, p2.hint.field.2]
+  class: [p2.hint.class.1]
+
+defense:
+  intro: p2.def.intro
+  lesson: p2.def.lesson
+  find:
+    - { source: access, where: { path: /rest/v1/profils/2042, status: 200 }, text: p2.def.find.other }
+  rules:
+    - id: by-number
+      title: p2.def.rule.number.title
+      why: p2.def.rule.number.why
+      source: access
+      where: { path: { glob: "/rest/v1/profils/2*" }, status: 200 }
+      correct: true
+    - id: all-profiles
+      title: p2.def.rule.all.title
+      why: p2.def.rule.all.why
+      source: access
+      where: { path: { glob: "/rest/v1/profils*" } }
+    - id: table
+      title: p2.def.rule.table.title
+      why: p2.def.rule.table.why
+      source: access
+      where: { path: /rest/v1/profils }
+  fixes:
+    - id: rows
+      title: p2.def.fix.rows.title
+      why: p2.def.fix.rows.why
+      sets: { db.row_rules: true }
+      correct: true
+    - id: rotate
+      title: p2.def.fix.rotate.title
+      why: p2.def.fix.rotate.why
+      sets: { db.key_rotated: true }
+    - id: private
+      title: p2.def.fix.private.title
+      why: p2.def.fix.private.why
+      sets: { db.schema_private: true }
+
+debrief:
+  title: p2.debrief.title
+  lesson: p2.debrief.lesson
+  points: [p2.debrief.p1, p2.debrief.p2, p2.debrief.p3, p2.debrief.p4]
+  reference: "OWASP Top 10 2021 · A01 Broken Access Control"
+  facts:
+    title: p2.facts.title
+    points: [p2.facts.p1, p2.facts.p2, p2.facts.p3, p2.facts.p4, p2.facts.p5]
+    sources:
+      - { label: "Matt Palmer, CVE-2025-48757 advisory", url: "https://mattpalmer.io/posts/CVE-2025-48757/" }
+      - { label: "Matt Palmer, Statement on CVE-2025-48757", url: "https://mattpalmer.io/posts/statement-on-CVE-2025-48757/" }
+      - { label: "Tenable, CVE-2025-48757", url: "https://www.tenable.com/cve/CVE-2025-48757" }
