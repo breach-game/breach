@@ -612,6 +612,47 @@ const npc = z.strictObject({
 });
 export type Npc = z.infer<typeof npc>;
 
+/* ---------- the air around the player, and a phone's inbox ---------- */
+
+/**
+ * A Wi-Fi network that `nmcli device wifi list` sees from the workstation. The scan is passive: it
+ * lists what every access point announces, and nothing is captured or cracked. The hardware address
+ * must be a locally administered one, so that it can never be a real vendor's.
+ */
+const wifiNetwork = z.strictObject({
+  ssid: z.string().max(32),
+  bssid: z
+    .string()
+    .regex(/^[0-9A-F][26AE](:[0-9A-F]{2}){5}$/, 'locally administered address expected (02:…, 06:…)'),
+  channel: z.number().int().min(1).max(165),
+  /** Signal strength, 0 to 100. */
+  signal: z.number().int().min(0).max(100),
+  security: z.enum(['open', 'WEP', 'WPA1', 'WPA1 WPA2', 'WPA2', 'WPA2 WPA3', 'WPA3']),
+  /** The network the workstation is connected to. */
+  inUse: z.boolean().default(false),
+  if: when,
+});
+export type WifiNetwork = z.infer<typeof wifiNetwork>;
+
+/**
+ * A text message in the inbox that `sms` reads. The sender is a name (anyone can set one), a short
+ * code, or a number from the ranges set aside for fiction.
+ */
+const smsMessage = z.strictObject({
+  id,
+  from: z
+    .string()
+    .regex(
+      /^([A-Za-z][A-Za-z0-9 ]{2,10}|\d{5}|\+33 ?[1-5] ?99 ?00 ?\d{2} ?\d{2}|\+33 ?6 ?39 ?98 ?\d{2} ?\d{2}|\+1 ?\d{3} ?555 ?01\d{2})$/,
+      'sender name, short code or fictional number expected',
+    ),
+  /** When it arrived, as the phone shows it. */
+  at: z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/),
+  text: i18nKey,
+  if: when,
+});
+export type SmsMessage = z.infer<typeof smsMessage>;
+
 /* ---------- telemetry: what the target's logs record ---------- */
 
 /** Log sources the engine knows how to write, each in the format of the real tool. */
@@ -690,6 +731,10 @@ const world = z.strictObject({
   telemetry: telemetry.default({ background: [] }),
   /** Published weaknesses of components, for `sbom --vuln`. */
   advisories: z.array(advisory).max(40).default([]),
+  /** Wi-Fi networks in range of the workstation, for `nmcli device wifi list`. */
+  wifi: z.array(wifiNetwork).max(24).default([]),
+  /** Text messages of the phone the player is asked to look at, for `sms`. */
+  sms: z.array(smsMessage).max(24).default([]),
 });
 export type World = z.infer<typeof world>;
 export type Host = z.infer<typeof host>;
@@ -987,11 +1032,20 @@ const mission = z.strictObject({
           .max(6),
       })
       .optional(),
+    /**
+     * What the player can do at home with what the mission taught: a short list of concrete steps,
+     * shown as its own card after the defence points.
+     */
+    home: z.strictObject({ points: z.array(i18nKey).min(1).max(5) }).optional(),
   }),
   /** Settings of the target for this mission, over the world's. */
   config: z.record(id, scalar).default({}),
   /** Published weaknesses of components, added to the world's for `sbom --vuln`. */
   advisories: z.array(advisory).max(20).default([]),
+  /** Wi-Fi networks added to the world's for this mission. */
+  wifi: z.array(wifiNetwork).max(12).default([]),
+  /** Text messages added to the world's for this mission. */
+  sms: z.array(smsMessage).max(12).default([]),
   defense: defense.optional(),
   adversary: adversary.optional(),
   containment: z.array(containment).max(12).default([]),

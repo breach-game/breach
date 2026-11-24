@@ -211,6 +211,13 @@ export const en: Record<string, string> = {
   'cmd.mailhdr': 'Read the headers of a message: sender, route, SPF, DKIM, DMARC: mailhdr <file.eml>',
   'explain.mailhdr':
     'mailhdr lays out what a mail client hides: the real return address, the servers the message went through (oldest first), and what SPF, DKIM and DMARC concluded about the sender.',
+  'cmd.nmcli': 'List the Wi-Fi networks in range: nmcli device wifi list',
+  'explain.nmcli':
+    'nmcli device wifi list shows what every access point announces to anyone nearby: its name, channel, signal and the protection it asks for. It is the list your phone shows, nothing is captured. A network that is not yours stays out of scope, even when it is open.',
+  'nmcli.usage': 'usage: nmcli [-f FIELDS] device wifi list',
+  'cmd.sms': 'Read the text messages of the phone under review: sms, then sms <number>',
+  'explain.sms':
+    'sms lists the inbox, and sms <number> shows one message with what the phone hides: the kind of sender (a name is free text anyone can set) and the site each link really opens.',
   'cmd.call': 'Telephone someone: call <number> "<what you say>"',
   'explain.call':
     'call dials a number and says one sentence. Calling back a number you already know, never the one in the message, is how a fake request is checked. The exchange keeps a record of every call.',

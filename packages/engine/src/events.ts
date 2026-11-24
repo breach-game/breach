@@ -33,6 +33,10 @@ export type EventBody =
   | { type: 'FileRemoved'; host: string; path: string }
   /** `sbom --vuln` matched a project's components against the published advisories. */
   | { type: 'SbomScanned'; target: string; components: number; findings: string[] }
+  /** `nmcli device wifi list` listed the networks in range: a passive scan. */
+  | { type: 'WifiScanned'; networks: number }
+  /** `sms` read the inbox (`*`) or one message. */
+  | { type: 'SmsRead'; sms: string }
   | { type: 'DnsQuery'; name: string; rtype: string; found: boolean }
   | { type: 'WhoisQuery'; domain: string }
   | { type: 'Scan'; target: string; intensity: number }

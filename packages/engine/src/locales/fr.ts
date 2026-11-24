@@ -213,6 +213,13 @@ export const fr: Record<string, string> = {
     "Lire les en-têtes d'un message : expéditeur, trajet, SPF, DKIM, DMARC : mailhdr <fichier.eml>",
   'explain.mailhdr':
     "mailhdr étale ce que la messagerie cache : la vraie adresse de retour, les serveurs traversés (du plus ancien au plus récent), et ce que SPF, DKIM et DMARC ont conclu de l'expéditeur.",
+  'cmd.nmcli': 'Lister les réseaux Wi-Fi à portée : nmcli device wifi list',
+  'explain.nmcli':
+    "nmcli device wifi list montre ce que chaque borne annonce à qui passe : son nom, son canal, son signal et la protection demandée. C'est la liste de ton téléphone, rien n'est capturé. Un réseau qui n'est pas le tien reste hors périmètre, même ouvert.",
+  'nmcli.usage': 'usage : nmcli [-f CHAMPS] device wifi list',
+  'cmd.sms': 'Lire les SMS du téléphone examiné : sms, puis sms <numéro>',
+  'explain.sms':
+    "sms liste la boîte de réception, et sms <numéro> montre un message avec ce que le téléphone cache : le type d'expéditeur (un nom est un texte libre que n'importe qui choisit) et le site que chaque lien ouvre vraiment.",
   'cmd.call': 'Téléphoner : call <numéro> "<ce que tu dis>"',
   'explain.call':
     "call compose un numéro et dit une phrase. Rappeler un numéro qu'on connaît déjà, jamais celui du message, c'est ainsi qu'on vérifie une fausse demande. Le standard garde une trace de chaque appel.",

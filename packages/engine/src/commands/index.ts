@@ -8,6 +8,7 @@ import { infraCommands } from './infra.ts';
 import { inspectCommands } from './inspect.ts';
 import { networkCommands } from './network.ts';
 import { opsCommands } from './ops.ts';
+import { personalCommands } from './personal.ts';
 import { systemCommands } from './system.ts';
 import { textCommands } from './text.ts';
 import type { Command } from './types.ts';
@@ -26,5 +27,6 @@ for (const c of [
   ...hostCommands,
   ...defenseCommands,
   ...opsCommands,
+  ...personalCommands,
 ])
   commands.set(c.name, c);

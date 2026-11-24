@@ -72,7 +72,7 @@ describe('shell', () => {
     expect(g.complete('cat a').candidates).toEqual(['a.txt']);
     expect(g.complete('cat do').candidates).toEqual(['docs/']);
     expect(g.complete('cat docs/').candidates).toEqual(['docs/note.md']);
-    expect(g.complete('explain nm').candidates).toEqual(['nmap']);
+    expect(g.complete('explain nma').candidates).toEqual(['nmap']);
     expect(g.complete('git cl').candidates).toEqual(['clone']);
   });
 
