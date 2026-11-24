@@ -141,8 +141,43 @@ function withoutSourceUrls(mission: unknown): unknown {
   };
 }
 
+/**
+ * What a page puts on the clipboard (`copy` blocks) is the one text a player is told never to paste.
+ * It must stay a fictional tool of the world: no shell, no download, no encoded command, nothing
+ * that would run if someone did paste it in a real terminal.
+ */
+const REAL_COMMAND =
+  /powershell|pwsh|mshta|rundll32|regsvr32|certutil|bitsadmin|wscript|cscript|cmd(\.exe)?\s*\/[ck]|invoke-|\biex\b|-enc(odedcommand)?\b|frombase64|base64\s+-d|\b(curl|wget|nc|ncat|bash|sh|zsh|python3?|perl|osascript)\b|\|\s*\w|`|\$\(/i;
+
+function copyTexts(value: unknown, found: string[], depth = 0) {
+  if (depth > 40 || !value || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const v of value) copyTexts(v, found, depth + 1);
+    return;
+  }
+  for (const [k, v] of Object.entries(value)) {
+    if (k === 'copy' && v && typeof v === 'object' && typeof (v as { text?: unknown }).text === 'string')
+      found.push((v as { text: string }).text);
+    else copyTexts(v, found, depth + 1);
+  }
+}
+
+function checkCopies(pack: PackLike, problems: string[]) {
+  const texts: string[] = [];
+  copyTexts(pack.world, texts);
+  copyTexts(pack.mission, texts);
+  const i18n = (pack.i18n ?? {}) as Record<string, Record<string, unknown> | undefined>;
+  for (const text of texts)
+    for (const candidate of [text, ...Object.values(i18n).map((l) => l?.[text])])
+      if (typeof candidate === 'string' && REAL_COMMAND.test(candidate))
+        problems.push(
+          `copy block "${text.slice(0, 40)}": a copied text must be a fictional tool, not a real command`,
+        );
+}
+
 export function checkPackSafety(pack: PackLike): string[] {
   const problems: string[] = [];
+  checkCopies(pack, problems);
   const w = pack.world;
   if (w) {
     for (const d of w.scope.domains)

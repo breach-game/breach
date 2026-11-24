@@ -223,6 +223,14 @@ export const en: Record<string, string> = {
   'tshark.live':
     'tshark: live capture is not part of this game. Read a capture file instead: tshark -r <file.pcap>',
   'tshark.usage': 'usage: tshark -r <file.pcap> [-Y <display filter>] [-V] [-q -z conv,ip|conv,tcp]',
+  'cmd.exiftool': 'Read or remove the metadata of a photo: exiftool <photo>, exiftool -all= <photo>',
+  'explain.exiftool':
+    'exiftool shows what a camera or a phone wrote inside a photo: the device, the date, sometimes the exact place it was taken. `exiftool -all= photo.jpg` removes it all, `-gps:all=` only the position. Check before you publish.',
+  'cmd.clip': 'Show what is on the clipboard, without pasting it: clip',
+  'cmd.paste': 'Show what is on the clipboard (xclip -o, xsel -b -o, pbpaste, wl-paste)',
+  'explain.clip':
+    'A web page can put a text on your clipboard without showing it, then ask you to paste it somewhere. clip prints that text and runs nothing: read what you were about to paste.',
+  'engine.clip.empty': 'clip: the clipboard is empty',
   'cmd.zbarimg': 'Read the QR code in a picture: zbarimg <image>',
   'explain.zbarimg':
     'zbarimg prints what a QR code holds, without opening it. A QR code is only a text: an address, a Wi-Fi network, a phone number. Read it before a phone acts on it.',

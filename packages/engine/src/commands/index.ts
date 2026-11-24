@@ -6,6 +6,7 @@ import { gitCommands } from './git.ts';
 import { hostCommands } from './host.ts';
 import { infraCommands } from './infra.ts';
 import { inspectCommands } from './inspect.ts';
+import { mediaCommands } from './media.ts';
 import { networkCommands } from './network.ts';
 import { opsCommands } from './ops.ts';
 import { personalCommands } from './personal.ts';
@@ -30,5 +31,6 @@ for (const c of [
   ...opsCommands,
   ...personalCommands,
   ...wireCommands,
+  ...mediaCommands,
 ])
   commands.set(c.name, c);

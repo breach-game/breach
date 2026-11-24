@@ -93,6 +93,13 @@ export interface GameState {
   contained: Record<string, true>;
   answers: Record<string, true>;
   history: string[];
+  /** What a page last put on the workstation's clipboard. */
+  clipboard?: string;
+  /** Answers kept by a web cache, by host id then path. */
+  cache?: Record<
+    string,
+    Record<string, { status: number; body: string; headers: Record<string, string>; t: number }>
+  >;
 }
 
 export interface DefenseState {

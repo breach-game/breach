@@ -1,0 +1,6 @@
+# Training 14: what a photo says
+exiftool photos/balcon.jpg
+answer address
+exiftool -gps:all= photos/balcon.jpg
+exiftool photos/balcon.jpg
+answer camera

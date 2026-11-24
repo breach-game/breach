@@ -1,0 +1,75 @@
+order: 15
+stage: recon
+briefing: t15.briefing
+
+objectives:
+  - { id: found, text: t15.obj.found }
+  - { id: first, text: t15.obj.first }
+  - { id: share, text: t15.obj.share }
+
+flags:
+  - { id: key, value: "LR-BILL-5521-QX7", points: 100, objective: found }
+
+files:
+  canal/equipe-data.txt: t15.file.channel
+  partage/conversation.txt: t15.file.conversation
+  partage/recherche.txt: t15.file.search
+
+questions:
+  - id: first
+    text: t15.q.first
+    objective: first
+    correct: revoke
+    options:
+      - { id: revoke, text: t15.q.first.revoke }
+      - { id: unshare, text: t15.q.first.unshare, why: t15.q.first.unshare.why }
+      - { id: hush, text: t15.q.first.hush, why: t15.q.first.hush.why }
+  - id: share
+    text: t15.q.share
+    objective: share
+    correct: anyone
+    options:
+      - { id: anyone, text: t15.q.share.anyone }
+      - { id: team, text: t15.q.share.team, why: t15.q.share.team.why }
+      - { id: expire, text: t15.q.share.expire, why: t15.q.share.expire.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t15.ada.brief
+  - on: { event: FileRead, path: { glob: "*/partage/conversation.txt" } }
+    do:
+      - ada.guide: { key: t15.ada.read, for: found, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: found }
+    do:
+      - ada.say: t15.ada.found
+      - ada.ask: first
+  - on: { event: ObjectiveCompleted, objective: first }
+    do:
+      - ada.say: t15.ada.indexed
+      - ada.ask: share
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t15.ada.done
+
+guide:
+  found: t15.ada.open
+  first: t15.ada.answer
+  share: t15.ada.search
+
+hints:
+  found: [t15.hint.found.1, t15.hint.found.2]
+
+debrief:
+  title: t15.debrief.title
+  lesson: t15.debrief.lesson
+  points: [t15.debrief.p1, t15.debrief.p2, t15.debrief.p3]
+  reference: "OWASP LLM02:2025 Sensitive Information Disclosure"
+  facts:
+    title: t15.facts.title
+    points: [t15.facts.p1, t15.facts.p2]
+    sources:
+      - label: "Malwarebytes, OpenAI kills short-lived experiment where ChatGPT chats could be found on Google (1 Aug 2025)"
+        url: "https://www.malwarebytes.com/blog/news/2025/08/openai-kills-short-lived-experiment-where-chatgpt-chats-could-be-found-on-google"
+  home:
+    points: [t15.home.p1, t15.home.p2]
