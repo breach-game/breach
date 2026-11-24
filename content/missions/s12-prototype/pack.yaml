@@ -1,0 +1,15 @@
+id: breach.season12
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: series
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 : le prototype"
+  en: "Season 12: the prototype"
+summary:
+  fr: "Coup de main met en relation des voisins qui s'entraident. Trois bénévoles l'ont écrite en un week-end avec Bricole, un assistant de code, et quatre cents personnes s'y sont inscrites. Une semaine d'audit sur ce que l'assistant a fait vite et que personne n'a relu : une base ouverte derrière une clé publique, un compte de démo resté en ligne, une conversation partagée qui contient le secret de tout le reste. Puis on relit, on écrit les règles, et on prévient les voisins."
+  en: "Coup de main puts neighbours who help each other in touch. Three volunteers wrote it in a weekend with Bricole, a coding assistant, and four hundred people signed up. A week of audit on what the assistant did fast and nobody reviewed: a database open behind a public key, a demo account left online, a shared conversation holding the secret to everything else. Then you review, write the rules, and tell the neighbours."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, llm, privacy, defense]

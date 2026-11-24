@@ -1,0 +1,7 @@
+# Season 12, mission 4: the shared conversation
+curl -s https://app.coupdemain.test/projet
+curl -s https://partage.bricole.test/c/cdm-weekend-91f3
+submit sk_service_cdm_e19b44
+curl -H "apikey: sk_service_cdm_e19b44" https://base.coupdemain.test/rest/v1/coffre/canari
+submit FLAG{cdm-la-conversation-partagee-2f97}
+answer rotate

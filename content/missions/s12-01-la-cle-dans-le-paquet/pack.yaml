@@ -1,0 +1,17 @@
+id: breach.season12.s01
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: season
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 · 1. La clé dans le paquet"
+  en: "Season 12 · 1. The key in the bundle"
+summary:
+  fr: "Coup de main parle à sa base directement depuis le navigateur. Tu lis la source de la page, tu ouvres le paquet que l'assistant a généré, et tu y trouves l'adresse de la base et sa clé. Une clé publique n'est pas une faille. Reste à voir ce qu'elle ouvre."
+  en: "Coup de main talks to its database straight from the browser. You read the page source, open the bundle the assistant generated, and find the database address and its key there. A public key is not a flaw. What it opens is the question."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [recon, web, defense]
+minutes: 15

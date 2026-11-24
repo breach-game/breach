@@ -1,0 +1,97 @@
+# Season 12, mission 6: writing the row rules the assistant had put off, judged by `verify`; the
+# database follows the file (a world route variant reads it), so the retest refuses Ada's profile.
+# Then the access log shows someone downloaded the whole table before the audit, and the team decides
+# how to tell the neighbours.
+side: defense
+order: 5
+stage: response
+briefing: p6.briefing
+startTime: "2029-11-12T09:00:00+01:00"
+reveal: [www, base]
+
+files:
+  base/regles.sql: { $file: files/regles.sql }
+  journaux/base-access.log: { $file: files/base-access.log }
+
+objectives:
+  - { id: rules, text: p6.obj.rules }
+  - { id: retest, text: p6.obj.retest }
+  - { id: who, text: p6.obj.who }
+  - { id: tell, text: p6.obj.tell }
+
+flags: []
+
+investigation:
+  - { id: who, text: p6.q.who, value: 198.51.100.23, points: 150, objective: who }
+
+checks:
+  - id: own
+    text: p6.check.own
+    if: { file: "~/base/regles.sql", contains: "on profils for select using (auth.uid() = id)" }
+    objective: rules
+  - id: members
+    text: p6.check.members
+    if: { file: "~/base/regles.sql", contains: "on demandes for select using (auth.uid() is not null)" }
+    objective: rules
+  - id: author
+    text: p6.check.author
+    if: { file: "~/base/regles.sql", contains: "on demandes for insert with check (auth.uid() = auteur)" }
+    objective: rules
+  - id: open
+    text: p6.check.open
+    if: { file: "~/base/regles.sql", lacks: "(true)" }
+    objective: rules
+  - id: enabled
+    text: p6.check.enabled
+    if: { file: "~/base/regles.sql", contains: "alter table profils enable row level security" }
+
+questions:
+  # A decision: no option is wrong, each has a price.
+  - id: tell
+    text: p6.q.tell
+    objective: tell
+    options:
+      - { id: all, text: p6.q.tell.all, why: p6.q.tell.all.why, impact: 1 }
+      - { id: later, text: p6.q.tell.later, why: p6.q.tell.later.why, impact: 4 }
+      - { id: quiet, text: p6.q.tell.quiet, why: p6.q.tell.quiet.why, impact: 8 }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p6.ada.brief
+  - on: { event: ObjectiveCompleted, objective: rules }
+    do:
+      - ada.say: p6.ada.rules
+  - on: { event: HttpRequest, host: base, path: /rest/v1/profils/2042, variant: closed }
+    if: { objective: rules }
+    do:
+      - ada.say: p6.ada.retest
+      - objective.complete: retest
+  - on: { event: ObjectiveCompleted, objective: who }
+    do:
+      - ada.say: p6.ada.who
+      - ada.ask: tell
+  - on: { event: ObjectiveCompleted, objective: tell }
+    do:
+      - ada.say: p6.ada.tell
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p6.ada.done
+
+guide:
+  rules: p6.ada.g.rules
+  retest: p6.ada.g.retest
+  who: p6.ada.g.who
+  tell: p6.ada.g.tell
+
+hints:
+  rules: [p6.hint.rules.1, p6.hint.rules.2, p6.hint.rules.3]
+  retest: [p6.hint.retest.1]
+  who: [p6.hint.who.1, p6.hint.who.2]
+  tell: [p6.hint.tell.1]
+
+debrief:
+  title: p6.debrief.title
+  lesson: p6.debrief.lesson
+  points: [p6.debrief.p1, p6.debrief.p2, p6.debrief.p3, p6.debrief.p4]
+  reference: "OWASP Top 10 2021 · A01 Broken Access Control"

@@ -1,0 +1,17 @@
+id: breach.season12.s04
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: season
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 · 4. La conversation partagée"
+  en: "Season 12 · 4. The shared conversation"
+summary:
+  fr: "Par transparence, l'équipe a publié sa conversation avec l'assistant. Elle contient le fichier de configuration, et dedans la clé de service, celle qui ignore toutes les règles. Tu la trouves, tu prouves ce qu'elle ouvre sur une ligne de test, et tu dis quoi faire en premier."
+  en: "In the spirit of openness, the team published its conversation with the assistant. It holds the configuration file, and in it the service key, the one that ignores every rule. You find it, prove what it opens on a test row, and say what to do first."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [recon, llm, web, defense]
+minutes: 15

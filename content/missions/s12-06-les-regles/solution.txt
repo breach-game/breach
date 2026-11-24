@@ -1,0 +1,10 @@
+# Season 12, mission 6: write the rules
+cat base/regles.sql
+sed -i 's/on profils for select using .true./on profils for select using (auth.uid() = id)/' base/regles.sql
+sed -i 's/on demandes for select using .true./on demandes for select using (auth.uid() is not null)/' base/regles.sql
+sed -i 's/on demandes for insert with check .true./on demandes for insert with check (auth.uid() = auteur)/' base/regles.sql
+verify
+curl -H "apikey: sk_anon_cdm_7d21e0" https://base.coupdemain.test/rest/v1/profils/2042
+grep " 200 " journaux/base-access.log
+answer who 198.51.100.23
+answer all
