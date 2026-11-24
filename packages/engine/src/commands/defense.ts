@@ -188,6 +188,8 @@ export function parseRule(
   const needsSource = options.source ?? true;
   let source: LogSource | undefined;
   const where: Where = {};
+  // A threshold, as Sigma's `count() by field > n`: `count|gte: 5`, `within: 10` (minutes), `by: user`.
+  let count: { gte?: number; within?: number; by?: string } | undefined;
   for (const raw of text.split('\n')) {
     const line = raw.replace(/\s+#.*$/, '').trim();
     if (!line || line.startsWith('#')) continue;
@@ -205,6 +207,20 @@ export function parseRule(
       continue;
     }
     if (RULE_NOISE.has(key)) continue;
+    if (key === 'count|gte' || key === 'within' || key === 'by') {
+      count ??= {};
+      if (key === 'by') {
+        if (!/^[a-z_]{1,20}$/.test(value)) return { error: raw.trim() };
+        count.by = value;
+        continue;
+      }
+      const n = Number(value.replace(/\s*(m|min|minutes?)$/, ''));
+      const [min, max] = key === 'within' ? [1, 240] : [2, 50];
+      if (!Number.isInteger(n) || n < min || n > max) return { error: raw.trim() };
+      if (key === 'within') count.within = n;
+      else count.gte = n;
+      continue;
+    }
     const [name = '', modifier, ...more] = key.split('|');
     if (!/^[a-z_]{1,20}$/.test(name) || more.length || !value || Object.keys(where).length >= 8)
       return { error: raw.trim() };
@@ -223,7 +239,16 @@ export function parseRule(
     else return { error: raw.trim() };
   }
   if (!source && needsSource) return { error: 'source:' };
-  return { rule: { source: source ?? 'agent', where } };
+  if (count && count.gte === undefined) return { error: 'count|gte:' };
+  return {
+    rule: {
+      source: source ?? 'agent',
+      where,
+      ...(count
+        ? { count: { gte: count.gte!, within: count.within ?? 10, ...(count.by ? { by: count.by } : {}) } }
+        : {}),
+    },
+  };
 }
 
 /**
@@ -262,7 +287,9 @@ const rule: Command = {
         return `${k}=${JSON.stringify(m)}`;
       })
       .join(' ');
-    yield out(paint(ctx, style.dim, `rule: source=${parsed.rule.source} ${selection}`.trimEnd()));
+    const c = parsed.rule.count;
+    const threshold = c ? ` count>=${c.gte} within ${c.within}m by ${c.by ?? 'src'}` : '';
+    yield out(paint(ctx, style.dim, `rule: source=${parsed.rule.source} ${selection}${threshold}`.trimEnd()));
     yield out(`alerts: ${r.alerts.length}  (attack: ${r.caught}, ordinary activity: ${r.falsePositives})`);
     for (const l of r.alerts.slice(0, 4))
       yield out(`  ${l.actor === 'background' ? '?' : '!'} ${l.hostname}: ${l.text}`);

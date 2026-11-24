@@ -187,6 +187,35 @@ export const fr: Record<string, string> = {
   'answer.none': "Ada n'a pas de question en attente.",
   'answer.usage': 'Réponds avec sa lettre, par exemple : answer a',
   'answer.decided': 'Décision prise.',
+  'cmd.strings': 'Afficher le texte lisible caché dans un fichier binaire : strings <fichier>',
+  'explain.strings':
+    "strings affiche chaque suite d'au moins quatre caractères lisibles d'un fichier. Dans un programme ou un micrologiciel, il montre les adresses, clés et messages que le code transporte, sans rien exécuter.",
+  'cmd.file': "Dire quel genre de fichier c'est, d'après son contenu : file <fichier>",
+  'explain.file':
+    "file lit les premiers octets d'un fichier et dit ce qu'il est, quoi que dise son nom. Un « .pdf » qui est en fait un programme, c'est la première chose qu'un analyste veut savoir.",
+  'cmd.unzip': 'Lister ou extraire une archive zip : unzip -l <fichier>, unzip <fichier> -d <dossier>',
+  'explain.unzip':
+    "unzip -l liste une archive sans l'ouvrir, unzip -p affiche un membre, unzip l'extrait. Regarde d'abord la liste : un membre dont le chemin sort du dossier (../) est un piège classique.",
+  'cmd.tar': 'Lister ou extraire une archive tar : tar -tvf <fichier>, tar -xzf <fichier>',
+  'explain.tar':
+    "tar -t liste les membres d'une archive, tar -x les extrait, z pour un .tar.gz, v pour le détail. Une archive de version peut contenir des fichiers absents du dépôt dont elle dit venir.",
+  'cmd.openssl':
+    'Lire un certificat ou une empreinte : openssl x509 -in <cert> -noout -text, openssl dgst -sha256 <fichier>',
+  'explain.openssl':
+    "openssl x509 lit un certificat : qui il nomme (subject), qui l'a signé (issuer), ses dates et ses autres noms. openssl dgst calcule l'empreinte d'un fichier, pour la comparer à celle qui est publiée.",
+  'cmd.hashid': "Deviner quel algorithme a produit une empreinte, d'après sa forme : hashid <empreinte>",
+  'explain.hashid':
+    "hashid ne regarde que la forme d'une empreinte (longueur, préfixe) et liste les algorithmes qui ont pu la produire. Il ne casse rien : connaître l'algorithme dit au défenseur si les mots de passe stockés tiennent.",
+  'cmd.sbom': "Lister les composants d'un projet, et leurs failles connues : sbom <dossier> [--vuln]",
+  'explain.sbom':
+    "sbom lit les fichiers de verrouillage d'un projet et liste chaque composant qu'il installe vraiment, avec sa version exacte (une nomenclature logicielle). Avec --vuln, il les compare aux avis de sécurité publiés.",
+  'cmd.mailhdr':
+    "Lire les en-têtes d'un message : expéditeur, trajet, SPF, DKIM, DMARC : mailhdr <fichier.eml>",
+  'explain.mailhdr':
+    "mailhdr étale ce que la messagerie cache : la vraie adresse de retour, les serveurs traversés (du plus ancien au plus récent), et ce que SPF, DKIM et DMARC ont conclu de l'expéditeur.",
+  'cmd.call': 'Téléphoner : call <numéro> "<ce que tu dis>"',
+  'explain.call':
+    "call compose un numéro et dit une phrase. Rappeler un numéro qu'on connaît déjà, jamais celui du message, c'est ainsi qu'on vérifie une fausse demande. Le standard garde une trace de chaque appel.",
   'cmd.crontab': "Liste les tâches planifiées d'un compte : crontab -l",
   'explain.crontab':
     "crontab -l affiche les tâches que le système relance à heure fixe pour ce compte. C'est un endroit classique où un intrus laisse de quoi revenir.",

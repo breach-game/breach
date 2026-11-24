@@ -1,4 +1,5 @@
 import type { FsSource } from '@breach/pack-schema';
+import { buildArtifact, isArtifact } from './artifact.ts';
 
 export interface FsDir {
   t: 'd';
@@ -37,7 +38,13 @@ export function buildFs(
   owner = 'root',
 ): FsDir {
   const root = mkdir(owner);
-  if (source && typeof source === 'object' && !('$t' in source) && !('$content' in source)) {
+  if (
+    source &&
+    typeof source === 'object' &&
+    !('$t' in source) &&
+    !('$content' in source) &&
+    !isArtifact(source)
+  ) {
     for (const [name, child] of Object.entries(source))
       root.c[name] = buildNode(child as FsSource, translate, owner);
   }
@@ -46,6 +53,14 @@ export function buildFs(
 
 function buildNode(source: FsSource, translate: (key: string) => string, owner: string): FsNode {
   if (typeof source === 'string') return mkfile(source, owner);
+  if (isArtifact(source)) {
+    const meta = source as { $mode?: string; $owner?: string };
+    return mkfile(
+      buildArtifact(source, translate),
+      meta.$owner ?? owner,
+      meta.$mode ? Number.parseInt(meta.$mode, 8) : 0o644,
+    );
+  }
   if ('$t' in source || '$content' in source) {
     const meta = source as { $t?: string; $content?: string; $mode?: string; $owner?: string };
     const content = meta.$t !== undefined ? translate(meta.$t) : (meta.$content ?? '');

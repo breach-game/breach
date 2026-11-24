@@ -17,6 +17,7 @@ import type {
   World,
 } from '@breach/pack-schema';
 import { FAMILIES } from '@breach/pack-schema';
+import { buildArtifact } from './artifact.ts';
 import { acceptWording, BrainError, type BrainIssue, type NpcBrain, splitReply } from './brain.ts';
 import { commands } from './commands/index.ts';
 import type { Chunk, Command, CommandCtx } from './commands/types.ts';
@@ -61,7 +62,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.12.0';
+export const ENGINE_VERSION = '0.13.0';
 
 export interface GameOptions {
   world: Pack;
@@ -561,7 +562,11 @@ export class Game {
         for (const [rel, text] of Object.entries(mission?.files ?? {})) {
           const path = `${home}/${rel}`;
           mkdirp(s.fs, path.slice(0, path.lastIndexOf('/')), this.world.player.user);
-          writeFile(s.fs, path, this.t(text), this.world.player.user);
+          const content =
+            typeof text === 'string'
+              ? this.t(text)
+              : buildArtifact(text, (k) => this.t(k), this.world.startTime);
+          writeFile(s.fs, path, content, this.world.player.user);
         }
         break;
       }
@@ -603,8 +608,11 @@ export class Game {
       case 'FileWritten': {
         // An order may write on a machine the player never opened a session on.
         const fs = this.fsOf(s, e.host);
-        if (fs)
-          writeFile(fs, e.path, e.content, e.host === s.host ? s.user : this.world.player.user, e.append);
+        if (!fs) break;
+        const owner = e.host === s.host ? s.user : this.world.player.user;
+        // An archive extracted in place creates its own folders.
+        if (e.dirs) mkdirp(fs, e.path.slice(0, e.path.lastIndexOf('/')), owner);
+        writeFile(fs, e.path, e.content, owner, e.append);
         break;
       }
       case 'FileRemoved': {
@@ -1183,6 +1191,28 @@ export class Game {
     return this.mission?.npcs.find((n) => n.id === id) ?? this.world.npcs.find((n) => n.id === id);
   }
 
+  /** The character a telephone number reaches, mission characters first. Spaces do not count. */
+  phoneOf(number: string): Npc | undefined {
+    const digits = (p: string) => p.replace(/[\s.-]/g, '');
+    const wanted = digits(number);
+    if (!wanted) return undefined;
+    const all = [...(this.mission?.npcs ?? []), ...this.world.npcs];
+    return all.find((n) => n.phone && digits(n.phone) === wanted);
+  }
+
+  /**
+   * Telephone a character. It is a conversation like `chat`, decided by the same script; the
+   * exchange records a call (`voice` log) instead of a chat line.
+   */
+  call(number: string, message: string): ChatResult & { npc?: Npc } {
+    const npc = this.phoneOf(number);
+    if (!npc) return { ok: false, reply: '' };
+    const turn = this.openChat(npc.id, message, 'call', 0, undefined, npc.phone);
+    if (!turn) return { ok: false, reply: '', npc };
+    const reply = this.closeChat(turn);
+    return reply === null ? { ok: false, reply: '', npc } : { ok: true, reply, brain: 'scripted', npc };
+  }
+
   /**
    * Answer a simulated HTTP request. The caller has already taken `host` through the scope gate.
    * Nothing here touches the network: the answer is read from the world pack.
@@ -1201,9 +1231,11 @@ export class Game {
       ? errorHtml(404, product)
       : answer.page
         ? pageHtml(answer.page, host, this.state.locale, (k) => this.t(k))
-        : answer.bodyKey
-          ? this.t(answer.bodyKey)
-          : (answer.body ?? '');
+        : answer.artifact
+          ? buildArtifact(answer.artifact, (k) => this.t(k), this.world.startTime)
+          : answer.bodyKey
+            ? this.t(answer.bodyKey)
+            : (answer.body ?? '');
     // A chat endpoint answers what is posted to it: the log records the answer, not the 405 page.
     const chat = route?.chat !== undefined && (method === 'POST' || method === 'PUBLISH');
     const bytes = chat ? undefined : new TextEncoder().encode(body).length;
@@ -1376,9 +1408,10 @@ export class Game {
   private openChat(
     npcId: string,
     message: string,
-    via: 'browser' | 'api',
+    via: 'browser' | 'api' | 'call',
     dt: number,
     heard?: Heard,
+    to?: string,
   ): ChatTurn | null {
     const npc = this.npc(npcId);
     // A file posted through the API (a CV, a document) may be longer than a chat message.
@@ -1389,7 +1422,14 @@ export class Game {
     if (via === 'browser')
       this.addNoise(this.noiseCost('chat', [npcId]), `browser POST ${this.chatUrl(npcId)}`);
     return this.settle(() => {
-      this.emit({ type: 'ChatSent', npc: npcId, text, via, ...(heard ? { heard } : {}) });
+      this.emit({
+        type: 'ChatSent',
+        npc: npcId,
+        text,
+        via,
+        ...(to ? { to } : {}),
+        ...(heard ? { heard } : {}),
+      });
       const seq = this.log[this.log.length - 1]!.seq;
       const decision = decide(npc, text, this.state, heard);
       return { npc, text, seq, mission: this.state.mission, decision };

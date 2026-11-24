@@ -26,10 +26,39 @@ const i18nText = z
 
 /* ---------- virtual file system (source form) ---------- */
 
+/**
+ * A file that is not plain text, described as data. The engine writes its bytes itself: a pack never
+ * supplies raw bytes, so nothing in it can smuggle control characters or a real binary.
+ * - `$binary`: an executable or firmware; `strings` finds the listed texts between filler bytes.
+ * - `$archive`: a zip, tar or gzipped tar holding text files (`unzip`, `tar`).
+ * - `$cert`: an X.509 certificate in PEM form, read by `openssl x509`.
+ */
+export interface BinarySource {
+  format: 'elf' | 'pe' | 'macho' | 'firmware' | 'data';
+  arch?: string;
+  strings: string[];
+}
+export interface ArchiveSource {
+  format: 'zip' | 'tar' | 'tgz';
+  files: Record<string, string | { $t: string }>;
+}
+export interface CertSource {
+  subject: string;
+  issuer: string;
+  serial: string;
+  notBefore: string;
+  notAfter: string;
+  san?: string[];
+  key?: string;
+  sigalg?: string;
+}
+export type Artifact = { $binary: BinarySource } | { $archive: ArchiveSource } | { $cert: CertSource };
+
 export type FsSource =
   | string
   | { $t: string; $mode?: string; $owner?: string }
   | { $content: string; $mode?: string; $owner?: string }
+  | (Artifact & { $mode?: string; $owner?: string })
   | { [name: string]: FsSource };
 
 const fsMeta = {
@@ -39,11 +68,54 @@ const fsMeta = {
     .optional(),
   $owner: z.string().optional(),
 };
+const relPath = z
+  .string()
+  .regex(/^[a-zA-Z0-9_-][a-zA-Z0-9._-]*(\/[a-zA-Z0-9_-][a-zA-Z0-9._-]*)*$/, 'relative path expected')
+  .max(200);
+const printable = z.string().min(1).max(400);
+const binarySource = z.strictObject({
+  format: z.enum(['elf', 'pe', 'macho', 'firmware', 'data']),
+  arch: z.string().max(20).optional(),
+  strings: z.array(printable).min(1).max(80),
+});
+const archiveSource = z.strictObject({
+  format: z.enum(['zip', 'tar', 'tgz']),
+  files: z
+    .record(
+      // A member may climb out of the folder (`../`): `unzip` refuses it, which a mission can teach.
+      z
+        .string()
+        .regex(
+          /^(\.\.\/)*[a-zA-Z0-9_-][a-zA-Z0-9._-]*(\/[a-zA-Z0-9_-][a-zA-Z0-9._-]*)*$/,
+          'relative path expected',
+        )
+        .max(200),
+      z.union([z.string().max(16_000), z.strictObject({ $t: i18nKey })]),
+    )
+    .refine((f) => Object.keys(f).length >= 1 && Object.keys(f).length <= 30, '1 to 30 files'),
+});
+const certSource = z.strictObject({
+  subject: z.string().min(1).max(200),
+  issuer: z.string().min(1).max(200),
+  serial: z.string().regex(/^[0-9A-F]{2}(:[0-9A-F]{2}){0,19}$/, 'serial as AB:CD:…'),
+  notBefore: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/),
+  notAfter: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/),
+  san: z.array(z.string().max(120)).max(20).optional(),
+  key: z.string().max(40).optional(),
+  sigalg: z.string().max(40).optional(),
+});
+/** A file that is not plain text: the engine builds its bytes (see `Artifact`). */
+export const artifact = z.union([
+  z.strictObject({ $binary: binarySource, ...fsMeta }),
+  z.strictObject({ $archive: archiveSource, ...fsMeta }),
+  z.strictObject({ $cert: certSource, ...fsMeta }),
+]);
 const fsSource: z.ZodType<FsSource> = z.lazy(() =>
   z.union([
     z.string().max(64_000),
     z.strictObject({ $t: i18nKey, ...fsMeta }),
     z.strictObject({ $content: z.string().max(64_000), ...fsMeta }),
+    artifact,
     z.record(z.string().regex(/^[^/$\0][^/\0]*$/, 'invalid file name'), fsSource),
   ]),
 );
@@ -117,6 +189,8 @@ const answer = {
   headers: z.record(z.string(), z.string()).default({}),
   body: z.string().max(64_000).optional(),
   bodyKey: i18nKey.optional(),
+  /** A file served as is: an archive, a binary or a certificate (see `Artifact`). */
+  artifact: artifact.optional(),
   page: page.optional(),
 };
 
@@ -399,6 +473,17 @@ const npc = z.strictObject({
   fallback: z.array(text).min(1).max(6),
   /** Character sheet for language-model brains. Never shown to the player. */
   sheet: z.string().max(6000).optional(),
+  /**
+   * A number that `call` reaches: a short internal extension, or a number from a range set aside for
+   * fiction (French +33 1 99 00 …, North American 555-01xx). Never a real subscriber.
+   */
+  phone: z
+    .string()
+    .regex(
+      /^(\d{2,6}|\+33 ?[1-5] ?99 ?00 ?\d{2} ?\d{2}|\+33 ?6 ?39 ?98 ?\d{2} ?\d{2}|\+1 ?\d{3} ?555 ?01\d{2})$/,
+      'internal extension or fictional number expected',
+    )
+    .optional(),
 });
 export type Npc = z.infer<typeof npc>;
 
@@ -418,6 +503,7 @@ export const LOG_SOURCES = [
   'flow', // firewall flow log
   'mail', // inbound mail gateway
   'mqtt', // message broker of connected devices
+  'voice', // telephone exchange call records
 ] as const;
 export type LogSource = (typeof LOG_SOURCES)[number];
 
@@ -442,6 +528,20 @@ const background = z.strictObject({
 
 const telemetry = z.strictObject({ background: z.array(background).max(60).default([]) });
 
+/**
+ * A published weakness of a component, as a vulnerability database would list it. `sbom --vuln`
+ * matches a manifest's components against these: the ids are fictional, the versions exact.
+ */
+const advisory = z.strictObject({
+  id: z.string().regex(/^[A-Z][A-Z0-9]{1,9}-\d{4}-\d{3,6}$/, 'advisory id such as BRX-2027-0012'),
+  package: z.string().min(1).max(120),
+  versions: z.array(z.string().min(1).max(40)).min(1).max(30),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).default('high'),
+  summary: text,
+  fixed: z.string().max(40).optional(),
+});
+export type Advisory = z.infer<typeof advisory>;
+
 const world = z.strictObject({
   /** In-game start date, ISO 8601 with offset. */
   startTime: z.string(),
@@ -462,6 +562,8 @@ const world = z.strictObject({
    */
   config: z.record(id, scalar).default({}),
   telemetry: telemetry.default({ background: [] }),
+  /** Published weaknesses of components, for `sbom --vuln`. */
+  advisories: z.array(advisory).max(40).default([]),
 });
 export type World = z.infer<typeof world>;
 export type Host = z.infer<typeof host>;
@@ -489,7 +591,15 @@ const detection = z.strictObject({
   source: z.enum(LOG_SOURCES),
   where: where.default({}),
   count: z
-    .strictObject({ gte: z.number().int().min(2).max(50), within: z.number().min(1).max(240) })
+    .strictObject({
+      gte: z.number().int().min(2).max(50),
+      within: z.number().min(1).max(240),
+      /** The field that groups lines: the same source address by default, or the same account. */
+      by: z
+        .string()
+        .regex(/^[a-z_]{1,20}$/)
+        .optional(),
+    })
     .optional(),
   correct: z.boolean().default(false),
 });
@@ -639,15 +749,7 @@ const mission = z.strictObject({
    * Documents handed to the player when the mission starts, by path relative to the player's home
    * directory (`missions/cv-modele.txt`). The text is a translation key or the text itself.
    */
-  files: z
-    .record(
-      z
-        .string()
-        .regex(/^[a-zA-Z0-9_-][a-zA-Z0-9._-]*(\/[a-zA-Z0-9_-][a-zA-Z0-9._-]*)*$/, 'relative path expected')
-        .max(200),
-      z.string().min(1).max(16_000),
-    )
-    .default({}),
+  files: z.record(relPath, z.union([z.string().min(1).max(16_000), artifact])).default({}),
   rules: z.array(rule).max(100).default([]),
   noise: noiseTable.default({}),
   /** Characters for this mission. They replace the world's character with the same id. */
@@ -760,6 +862,8 @@ const mission = z.strictObject({
   }),
   /** Settings of the target for this mission, over the world's. */
   config: z.record(id, scalar).default({}),
+  /** Published weaknesses of components, added to the world's for `sbom --vuln`. */
+  advisories: z.array(advisory).max(20).default([]),
   defense: defense.optional(),
   adversary: adversary.optional(),
   containment: z.array(containment).max(12).default([]),

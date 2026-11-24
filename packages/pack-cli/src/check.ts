@@ -272,7 +272,15 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       ...Object.values(m.hints).flat(),
       ...Object.values(m.guide),
       ...m.npcs.flatMap(npcTexts).filter(looksLikeKey),
-      ...Object.values(m.files).filter(looksLikeKey),
+      ...Object.values(m.files)
+        .flatMap((f) =>
+          typeof f === 'string'
+            ? [f]
+            : '$archive' in f
+              ? Object.values(f.$archive.files).map((v) => (typeof v === 'string' ? v : v.$t))
+              : [],
+        )
+        .filter(looksLikeKey),
       ...(m.defense
         ? [
             m.defense.intro,
