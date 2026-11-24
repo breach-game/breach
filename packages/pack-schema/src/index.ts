@@ -823,7 +823,7 @@ export type Mission = z.infer<typeof mission>;
 
 /* ---------- pack ---------- */
 
-export const KINDS = ['world', 'mission', 'series'] as const;
+export const KINDS = ['world', 'mission', 'series', 'path'] as const;
 
 /**
  * A series chains missions of one world into a short campaign: they are played in the order listed,
@@ -833,6 +833,26 @@ const series = z.strictObject({
   missions: z.array(id).min(2).max(12),
 });
 export type Series = z.infer<typeof series>;
+
+/**
+ * A learning path: missions and series picked across the official game and the community catalogue,
+ * in a suggested order, around one theme (the OWASP Top 10, the SOC analyst...). It holds no
+ * mission of its own and needs no world: each step is played where it lives, with its own save.
+ */
+const path = z.strictObject({
+  steps: z
+    .array(
+      z.strictObject({
+        /** A mission or a series, official or from the community catalogue. */
+        ref: id,
+        /** Why this step is on the path, in a sentence. */
+        note: i18nKey.optional(),
+      }),
+    )
+    .min(3)
+    .max(20),
+});
+export type PathSpec = z.infer<typeof path>;
 
 /** `season`: a mission of an official series played after the campaign, listed only through its series. */
 export const TRACKS = ['campaign', 'training', 'season'] as const;
@@ -875,9 +895,20 @@ const packBase = z.strictObject({
   incident: z.number().int().min(1970).max(2100).optional(),
   /** The author's estimate of the playing time, in minutes (for a series: the whole series). */
   minutes: z.number().int().min(5).max(600).optional(),
+  /**
+   * The guidance levels the mission may be played at. Unset, all three. A challenge sets `[expert]`:
+   * no instruction from Ada, whatever the player's settings say.
+   */
+  levels: z
+    .array(z.enum(GUIDANCE_LEVELS))
+    .min(1)
+    .max(3)
+    .refine((l) => new Set(l).size === l.length, 'each level once')
+    .optional(),
   world: world.optional(),
   mission: mission.optional(),
   series: series.optional(),
+  path: path.optional(),
   i18n: z.partialRecord(z.enum(LOCALES), z.record(z.string(), z.string().max(8000))).default({}),
 });
 
@@ -894,6 +925,14 @@ export const packSchema = packBase.superRefine((pack, ctx) => {
     ctx.addIssue({ code: 'custom', message: 'a series pack must require its world pack' });
   if (pack.kind === 'series' && new Set(pack.series?.missions).size !== pack.series?.missions.length)
     ctx.addIssue({ code: 'custom', message: 'a series lists each mission once' });
+  if (pack.kind === 'path' && !pack.path)
+    ctx.addIssue({ code: 'custom', message: 'a path pack needs `path`' });
+  if (pack.kind === 'path' && pack.requires.length)
+    ctx.addIssue({ code: 'custom', message: 'a path requires nothing: its steps name what they play' });
+  if (pack.path && new Set(pack.path.steps.map((s) => s.ref)).size !== pack.path.steps.length)
+    ctx.addIssue({ code: 'custom', message: 'a path lists each step once' });
+  if (pack.levels && pack.kind !== 'mission' && pack.kind !== 'series')
+    ctx.addIssue({ code: 'custom', message: '`levels` is for a mission or a series' });
   for (const problem of checkPackSafety(pack)) ctx.addIssue({ code: 'custom', message: problem });
 });
 export type Pack = z.infer<typeof packSchema>;
@@ -933,6 +972,13 @@ export const catalogSchema = z.object({
       updated: day.optional(),
       /** For a series: its missions in playing order. */
       missions: z.array(id).max(12).optional(),
+      /** For a path: the missions and series it suggests, in order, each with why it is there. */
+      steps: z
+        .array(z.object({ ref: id, note: i18nText.optional() }))
+        .max(20)
+        .optional(),
+      /** The guidance levels it may be played at, when not all three. */
+      levels: z.array(z.enum(GUIDANCE_LEVELS)).max(3).optional(),
       locales: z.array(z.enum(LOCALES)),
       file: z.string().regex(/^[a-z0-9._-]+\.breachpack$/),
       sha256: z.string().regex(/^[0-9a-f]{64}$/),
@@ -982,6 +1028,22 @@ export function catalogEntry(
     ...(minutes ? { minutes } : {}),
     ...(extra.added && extra.updated ? { added: extra.added, updated: extra.updated } : {}),
     ...(pack.series ? { missions: pack.series.missions } : {}),
+    ...(pack.path
+      ? {
+          steps: pack.path.steps.map((s) => {
+            const note = s.note
+              ? Object.fromEntries(
+                  pack.locales.flatMap((l) => {
+                    const text = pack.i18n[l]?.[s.note!];
+                    return text === undefined ? [] : [[l, text]];
+                  }),
+                )
+              : undefined;
+            return note && Object.keys(note).length ? { ref: s.ref, note } : { ref: s.ref };
+          }),
+        }
+      : {}),
+    ...(pack.levels ? { levels: pack.levels } : {}),
     locales: pack.locales,
     ...built,
     reviewed: extra.reviewed,

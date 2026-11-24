@@ -25,6 +25,10 @@ export const en: Record<string, string> = {
   'stage.phishing': 'phishing',
   'stage.iot': 'connected devices',
   'stage.firmware': 'firmware',
+  'stage.web': 'web flaws',
+  'stage.decision': 'decision',
+  'stage.lessons': 'lessons learned',
+  'stage.recovery': 'recovery',
   'engine.flagHint': 'A code is validated with the submit command. Type: submit {flag}',
   'engine.restricted':
     'tool not installed on this training workstation (LR-OS). Type `help` to see what is available.',

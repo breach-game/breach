@@ -163,3 +163,87 @@ describe('catalogue signature', () => {
       expect(packSchema.safeParse(withSource('Post-mortem', bad)).success, bad).toBe(false);
   });
 });
+
+describe('paths and challenges', () => {
+  const path = (steps: { ref: string; note?: string }[], i18n = {}): LoadedPack => ({
+    dir: 'path',
+    solution: null,
+    pack: packSchema.parse({
+      format: 0,
+      id: 'example.first-steps',
+      version: '1.0.0',
+      engine: '>=0.12 <1',
+      kind: 'path',
+      title: { fr: 'Premiers pas', en: 'First steps' },
+      authors: ['test'],
+      locales: ['fr', 'en'],
+      path: { steps },
+      i18n,
+    }),
+  });
+
+  it('a path points to official and community missions and series', async () => {
+    const p = path(
+      [
+        { ref: 'breach.official.m01', note: 'why.m01' },
+        { ref: 'breach.season3' },
+        { ref: 'breach.season3.s02' },
+        { ref: 'example.atelier-pixel' },
+      ],
+      { fr: { 'why.m01': 'La reconnaissance.' }, en: { 'why.m01': 'Reconnaissance.' } },
+    );
+    expect(await checkAll([...community, p], { community: true, dependencies: official })).toEqual([]);
+    const { catalog } = buildAll([...community, p], new Date(0), { community: true });
+    const entry = catalogSchema.parse(catalog).packs.find((e) => e.id === p.pack.id)!;
+    expect(entry.kind).toBe('path');
+    expect(entry.steps?.[0]).toEqual({
+      ref: 'breach.official.m01',
+      note: { fr: 'La reconnaissance.', en: 'Reconnaissance.' },
+    });
+  });
+
+  it('refuses a step that does not exist, a world, or a note without translation', async () => {
+    const p = path([
+      { ref: 'breach.official.m01', note: 'why.x' },
+      { ref: 'jdoe.nothing' },
+      { ref: 'breach.world.novamind' },
+    ]);
+    const problems = (await checkAll([p], { community: true, dependencies: official })).join('\n');
+    expect(problems).toMatch(/step jdoe.nothing is not a known mission or series/);
+    expect(problems).toMatch(/step breach.world.novamind is a world/);
+    expect(problems).toMatch(/text key why.x has no translation/);
+  });
+
+  it('a path needs at least three steps and requires nothing', () => {
+    const base = {
+      format: 0,
+      id: 'example.p',
+      version: '1.0.0',
+      engine: '>=0.12',
+      kind: 'path',
+      title: { en: 'P' },
+      authors: ['t'],
+      locales: ['en'],
+    };
+    expect(packSchema.safeParse({ ...base, path: { steps: [{ ref: 'a' }, { ref: 'b' }] } }).success).toBe(
+      false,
+    );
+    expect(
+      packSchema.safeParse({
+        ...base,
+        requires: ['w'],
+        path: { steps: [{ ref: 'a' }, { ref: 'b' }, { ref: 'c' }] },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('a challenge keeps its levels in the catalogue', async () => {
+    const mission = community.find((p) => p.pack.kind === 'mission')!;
+    const challenge = variant(mission, { id: 'example.hard', levels: ['expert'] });
+    expect(
+      await checkAll([challenge], { community: true, dependencies: [...official, ...community] }),
+    ).toEqual([]);
+    const { catalog } = buildAll([challenge], new Date(0), { community: true });
+    expect(catalog.packs[0]?.levels).toEqual(['expert']);
+  });
+});

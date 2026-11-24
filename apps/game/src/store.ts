@@ -4,8 +4,11 @@
  */
 import type { Catalog, CatalogEntry, Locale, Skill } from '@breach/pack-schema';
 
-/** Where an entry belongs. `real` packs retell a real incident; `local` ones were imported from a file. */
-export type Collection = 'real' | 'players' | 'examples' | 'local';
+/**
+ * Where an entry belongs. `real` packs retell a real incident; `local` ones were imported from a file;
+ * `paths` suggest an order through missions; `challenges` are played at Expert only.
+ */
+export type Collection = 'paths' | 'challenges' | 'real' | 'players' | 'examples' | 'local';
 export type Status = 'todo' | 'run' | 'done';
 export type Sort = 'recommended' | 'newest' | 'title' | 'shortest' | 'incident';
 export const SORTS: readonly Sort[] = ['recommended', 'newest', 'title', 'shortest', 'incident'];
@@ -37,6 +40,23 @@ export interface Item {
   fresh: 'new' | 'updated' | null;
   /** Why it cannot be played in this game, if it cannot. */
   blocked: 'engine' | 'locale' | null;
+  /** A path: its steps, where each one is played and whether it is done. */
+  steps?: PathStep[];
+}
+
+/** Where a step of a path is played. */
+export type Where = 'campaign' | 'season' | 'training' | 'community' | 'missing';
+
+export interface PathStep {
+  ref: string;
+  note?: { fr?: string; en?: string };
+  where: Where;
+  title?: { fr?: string; en?: string };
+  done: boolean;
+  /** The season to open, for a step that is a season or one of its missions. */
+  season?: string;
+  /** Its number as players know it: the campaign is season 1, the catalogue's first season is 2. */
+  seasonNumber?: number;
 }
 
 export interface Filters {
@@ -62,6 +82,8 @@ export const isFiltering = (f: Filters) =>
 
 export function collectionOf(entry: CatalogEntry, local = false): Collection {
   if (local) return 'local';
+  if (entry.kind === 'path') return 'paths';
+  if (entry.levels?.length === 1 && entry.levels[0] === 'expert') return 'challenges';
   if (entry.incident) return 'real';
   if (entry.id.startsWith('example.')) return 'examples';
   return 'players';
@@ -70,11 +92,63 @@ export function collectionOf(entry: CatalogEntry, local = false): Collection {
 /** Lower case, without accents: "Défense" and "defense" match. */
 export const normalize = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-/** The entries the store lists: series first, and missions that belong to no series. */
+/** The entries the store lists: paths, series, and missions that belong to no series. */
 export function listed(catalog: Catalog): CatalogEntry[] {
   const series = catalog.packs.filter((p) => p.kind === 'series');
   const inSeries = new Set(series.flatMap((s) => s.missions ?? []));
-  return [...series, ...catalog.packs.filter((p) => p.kind === 'mission' && !inSeries.has(p.id))];
+  return [
+    ...catalog.packs.filter((p) => p.kind === 'path'),
+    ...series,
+    ...catalog.packs.filter((p) => p.kind === 'mission' && !inSeries.has(p.id)),
+  ];
+}
+
+/**
+ * The steps of a path: where each one is played, in the official game or in the community catalogue,
+ * and whether the player has done it. `done` holds the ids of every finished mission, and of every
+ * series or season finished whole, whatever save they were played in.
+ */
+export function resolveSteps(
+  path: CatalogEntry,
+  official: Catalog | null,
+  community: Catalog | null,
+  done: ReadonlySet<string>,
+): PathStep[] {
+  return (path.steps ?? []).map(({ ref, note }) => {
+    const base = { ref, ...(note ? { note } : {}), done: done.has(ref) };
+    const own = official?.packs.find((p) => p.id === ref && p.kind !== 'world');
+    if (official && own) {
+      if (official.campaign.includes(ref)) return { ...base, where: 'campaign', title: own.title };
+      if (official.training.includes(ref)) return { ...base, where: 'training', title: own.title };
+      const season = official.seasons.includes(ref)
+        ? ref
+        : official.packs.find((p) => official.seasons.includes(p.id) && p.missions?.includes(ref))?.id;
+      if (season)
+        return {
+          ...base,
+          where: 'season',
+          title: own.title,
+          season,
+          seasonNumber: official.seasons.indexOf(season) + 2,
+        };
+    }
+    const shared = community?.packs.find((p) => p.id === ref && p.kind !== 'world');
+    if (shared) return { ...base, where: 'community', title: shared.title };
+    return { ...base, where: 'missing' };
+  });
+}
+
+/** Progress of a path, from its steps: no score, the first step not done comes next. */
+export function pathProgress(steps: PathStep[]) {
+  const finished = steps.filter((s) => s.done).length;
+  const done = steps.length > 0 && finished === steps.length;
+  return {
+    completed: {},
+    finished,
+    status: (done ? 'done' : finished > 0 ? 'run' : 'todo') as Status,
+    score: null,
+    next: steps.find((s) => !s.done)?.ref ?? null,
+  };
 }
 
 /** Progress of an entry, from its save. */
@@ -121,6 +195,7 @@ export function haystack(item: Item, locale: Locale, label: (skill: Skill) => st
       ...(item.entry.skills ?? []).map(label),
       item.entry.incident ?? '',
       ...item.missions.flatMap((m) => [text(m.title), text(m.summary)]),
+      ...(item.steps ?? []).map((st) => text(st.title)),
     ].join(' '),
   );
 }
@@ -139,6 +214,7 @@ export function matches(item: Item, f: Filters, hay: string): boolean {
 /** What the player probably wants first: what they are playing, what is new, then the rest. */
 function rank(item: Item): number {
   if (item.blocked) return 6;
+  if (item.collection === 'paths' && item.status !== 'done') return 0;
   if (item.status === 'run') return 0;
   if (item.collection === 'local') return 1;
   if (item.fresh) return 2;

@@ -61,7 +61,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.11.0';
+export const ENGINE_VERSION = '0.12.0';
 
 export interface GameOptions {
   world: Pack;
@@ -158,6 +158,19 @@ function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
 export const LEVEL_BONUS: Record<Guidance, number> = { guided: 1, standard: 1.25, expert: 1.5 };
 const LEVEL_RANK: Record<Guidance, number> = { guided: 0, standard: 1, expert: 2 };
 
+/**
+ * The level a mission is played at: the one asked for when the mission allows it, otherwise the
+ * nearest allowed one, the less helpful on a tie. A challenge allowing only `expert` always gets it.
+ */
+export function allowedLevel(wanted: Guidance, levels: readonly Guidance[] | undefined): Guidance {
+  if (!levels?.length || levels.includes(wanted)) return wanted;
+  return [...levels].sort(
+    (a, b) =>
+      Math.abs(LEVEL_RANK[a] - LEVEL_RANK[wanted]) - Math.abs(LEVEL_RANK[b] - LEVEL_RANK[wanted]) ||
+      LEVEL_RANK[b] - LEVEL_RANK[a],
+  )[0]!;
+}
+
 export interface ScoreDetail {
   level: Guidance;
   flags: number;
@@ -201,6 +214,8 @@ export class Game {
   state: GameState;
   /** A player setting, not game state: it only decides which messages get emitted from now on. */
   guidance: Guidance;
+  /** The level the player asked for, kept to apply again when a mission without limits starts. */
+  private wanted: Guidance;
   log: GameEvent[] = [];
   private listeners = new Set<Listener>();
   private replaying = false;
@@ -218,10 +233,12 @@ export class Game {
     this.world = options.world.world;
     this.missions = new Map(options.missions.map((m) => [m.id, m]));
     this.guidance = options.guidance ?? 'guided';
+    this.wanted = this.guidance;
     this.sandbox = options.sandbox ?? false;
     this.state = this.initialState(options.locale);
     if (options.log?.length) {
       this.replay(options.log);
+      this.guidance = allowedLevel(this.wanted, this.levels);
       // A save resumed at a more helpful level counts at that level.
       if (this.state.level !== null) this.syncLevel();
     }
@@ -330,9 +347,18 @@ export class Game {
     );
   }
 
-  /** Change how much Ada helps. A player who asks for more help gets the pending instruction at once. */
+  /** The guidance levels the current mission may be played at: all three unless its pack says. */
+  get levels(): readonly Guidance[] | undefined {
+    return this.state.mission ? this.missions.get(this.state.mission)?.levels : undefined;
+  }
+
+  /**
+   * Change how much Ada helps. A player who asks for more help gets the pending instruction at once.
+   * A mission that allows only some levels (a challenge) keeps to them, whatever is asked.
+   */
   setGuidance(guidance: Guidance) {
-    this.guidance = guidance;
+    this.wanted = guidance;
+    this.guidance = allowedLevel(guidance, this.levels);
     this.syncLevel();
     this.nextStep();
   }
@@ -1686,7 +1712,10 @@ export class Game {
   /* ---------- missions ---------- */
 
   startMission(id: string) {
-    if (!this.missions.has(id)) throw new Error(`Unknown mission ${id}`);
+    const pack = this.missions.get(id);
+    if (!pack) throw new Error(`Unknown mission ${id}`);
+    // Before the event: its rules and Ada's first guidance already follow the mission's levels.
+    this.guidance = allowedLevel(this.wanted, pack.levels);
     this.emit({ type: 'MissionStarted', mission: id });
     this.syncLevel();
   }

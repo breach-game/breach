@@ -38,7 +38,7 @@ function include(value: unknown, dir: string): unknown {
 /** Read a pack's source directory and return the validated, compiled pack. */
 export function loadPack(dir: string): LoadedPack {
   const raw = readYaml(join(dir, 'pack.yaml')) as Record<string, unknown>;
-  for (const part of ['world', 'mission', 'series'] as const) {
+  for (const part of ['world', 'mission', 'series', 'path'] as const) {
     const file = join(dir, `${part}.yaml`);
     if (existsSync(file)) raw[part] = readYaml(file);
   }

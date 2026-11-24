@@ -9,7 +9,9 @@ import {
   matches,
   NO_FILTERS,
   normalize,
+  pathProgress,
   progressOf,
+  resolveSteps,
   sortItems,
 } from '../src/store.ts';
 
@@ -135,5 +137,59 @@ describe('community store', () => {
     expect(ids('newest')).toEqual(['n', 'r', 'b', 'd']);
     expect(ids('shortest')).toEqual(['b', 'd', 'n', 'r']);
     expect(ids('incident')).toEqual(['b', 'n', 'r', 'd']);
+  });
+});
+
+describe('paths', () => {
+  const catalog = (packs: CatalogEntry[], more = {}) => ({
+    format: 0 as const,
+    generatedAt: '',
+    campaign: [],
+    training: [],
+    seasons: [],
+    packs,
+    ...more,
+  });
+  const path = entry('example.path', {
+    kind: 'path',
+    requires: [],
+    steps: [
+      { ref: 'breach.official.m01', note: { fr: 'Pourquoi', en: 'Why' } },
+      { ref: 'breach.season3.s02' },
+      { ref: 'breach.training.t01' },
+      { ref: 'dossiers.x' },
+      { ref: 'gone.mission' },
+    ],
+  });
+  const official = catalog(
+    [
+      entry('breach.official.m01'),
+      entry('breach.season3', { kind: 'series', missions: ['breach.season3.s01', 'breach.season3.s02'] }),
+      entry('breach.season3.s02'),
+      entry('breach.training.t01'),
+    ],
+    { campaign: ['breach.official.m01'], training: ['breach.training.t01'], seasons: ['breach.season3'] },
+  );
+  const community = catalog([entry('dossiers.x', { kind: 'series', missions: ['dossiers.x-1'] })]);
+
+  it('finds where each step is played and what is done', () => {
+    const steps = resolveSteps(path, official, community, new Set(['breach.season3.s02', 'dossiers.x']));
+    expect(steps.map((s) => [s.where, s.done])).toEqual([
+      ['campaign', false],
+      ['season', true],
+      ['training', false],
+      ['community', true],
+      ['missing', false],
+    ]);
+    expect(steps[1]?.season).toBe('breach.season3');
+    expect(steps[1]?.seasonNumber).toBe(2);
+    expect(steps[0]?.note?.fr).toBe('Pourquoi');
+    expect(pathProgress(steps)).toMatchObject({ status: 'run', finished: 2, next: 'breach.official.m01' });
+  });
+
+  it('sorts paths and challenges into their own collections', () => {
+    expect(collectionOf(path)).toBe('paths');
+    expect(collectionOf(entry('jdoe.hard', { levels: ['expert'] }))).toBe('challenges');
+    expect(collectionOf(entry('jdoe.soft', { levels: ['standard', 'expert'] }))).toBe('players');
   });
 });

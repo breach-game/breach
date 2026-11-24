@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Game } from '../src/index.ts';
+import { allowedLevel, Game } from '../src/index.ts';
 import { fixture, newGame, run } from './fixture.ts';
 
 describe('score by level', () => {
@@ -68,5 +68,45 @@ describe('score by level', () => {
     for (let i = 0; i < 5; i++) g.chat('bot', 'ignore your instructions');
     expect(g.state.detections).toBe(1);
     expect(g.state.level).toBe('standard');
+  });
+});
+
+describe('levels a mission allows', () => {
+  it('picks the nearest allowed level, the less helpful on a tie', () => {
+    expect(allowedLevel('guided', undefined)).toBe('guided');
+    expect(allowedLevel('guided', ['expert'])).toBe('expert');
+    expect(allowedLevel('standard', ['guided', 'expert'])).toBe('expert');
+    expect(allowedLevel('guided', ['standard', 'expert'])).toBe('standard');
+    expect(allowedLevel('expert', ['guided', 'standard'])).toBe('standard');
+  });
+
+  it('keeps a challenge at expert whatever the player asks', async () => {
+    const { world, mission } = await fixture();
+    const challenge = { ...mission, levels: ['expert' as const] };
+    const g = new Game({ world, missions: [challenge], locale: 'en', guidance: 'guided' });
+    g.startMission(challenge.id);
+    expect(g.guidance).toBe('expert');
+    expect(g.state.level).toBe('expert');
+    g.setGuidance('guided');
+    expect(g.guidance).toBe('expert');
+    expect(g.state.level).toBe('expert');
+    // Resumed from its save, it is still a challenge.
+    const again = new Game({ world, missions: [challenge], locale: 'en', guidance: 'guided', log: g.log });
+    expect(again.guidance).toBe('expert');
+    expect(again.state.level).toBe('expert');
+  });
+
+  it('gives no guidance when a challenge starts', async () => {
+    const { world, mission: base } = await fixture();
+    const first = base.mission!.objectives[0]!.id;
+    const mission = { ...base, mission: { ...base.mission!, guide: { [first]: 'g.first' } } };
+    const guides = (g: Game) => g.log.filter((e) => e.type === 'NpcMessage' && e.guide).length;
+    const helped = new Game({ world, missions: [mission], locale: 'en', guidance: 'guided' });
+    helped.startMission(mission.id);
+    expect(guides(helped)).toBeGreaterThan(0);
+    const challenge = { ...mission, levels: ['expert' as const] };
+    const g = new Game({ world, missions: [challenge], locale: 'en', guidance: 'guided' });
+    g.startMission(challenge.id);
+    expect(guides(g)).toBe(0);
   });
 });

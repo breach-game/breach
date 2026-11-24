@@ -25,6 +25,10 @@ export const fr: Record<string, string> = {
   'stage.phishing': 'hameçonnage',
   'stage.iot': 'objets connectés',
   'stage.firmware': 'micrologiciel',
+  'stage.web': 'failles web',
+  'stage.decision': 'décision',
+  'stage.lessons': "retour d'expérience",
+  'stage.recovery': "reprise d'activité",
   'engine.flagHint': 'Un code se valide avec la commande submit. Tape : submit {flag}',
   'engine.restricted':
     "outil non installé sur ce poste d'entraînement (LR-OS). Tape `help` pour voir ce qui est disponible.",
