@@ -94,6 +94,8 @@ export function findRoute(host: Host, path: string): Route | undefined {
 export interface RequestExtras {
   cookie?: string;
   header?: string;
+  /** The client's User-Agent (`curl -A`), which a variant's `User-Agent:` header matches by content. */
+  ua?: string;
 }
 
 const cookiesOf = (raw: string) =>
@@ -109,7 +111,18 @@ const headerOf = (raw: string) => {
 /** True when the request carries the cookie and the header a variant asks for. */
 export function variantMatches(v: { cookie?: string; header?: string }, req: RequestExtras): boolean {
   if (v.cookie !== undefined && !cookiesOf(req.cookie ?? '').includes(v.cookie.trim())) return false;
-  if (v.header !== undefined && (!req.header || headerOf(req.header) !== headerOf(v.header))) return false;
+  if (v.header !== undefined) {
+    const wanted = headerOf(v.header);
+    // A User-Agent is matched by what it contains: `User-Agent: iPhone` matches any iPhone browser.
+    if (wanted?.startsWith('user-agent: ')) {
+      const sent =
+        req.header && headerOf(req.header)?.startsWith('user-agent: ')
+          ? headerOf(req.header)!.slice(12)
+          : req.ua;
+      return !!sent && sent.toLowerCase().includes(wanted.slice(12).toLowerCase());
+    }
+    if (!req.header || headerOf(req.header) !== wanted) return false;
+  }
   return true;
 }
 

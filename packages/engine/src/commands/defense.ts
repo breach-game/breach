@@ -356,6 +356,15 @@ const rule: Command = {
     const threshold = c ? ` count>=${c.gte} within ${c.within}m by ${c.by ?? 'src'}` : '';
     yield out(paint(ctx, style.dim, `rule: source=${parsed.rule.source} ${selection}${threshold}`.trimEnd()));
     yield out(`alerts: ${r.alerts.length}  (attack: ${r.caught}, ordinary activity: ${r.falsePositives})`);
+    // A field no line of the source carries selects nothing: say so, and name the fields there are.
+    const known = new Set(
+      ctx.game.socLines().flatMap((l) => (l.source === parsed.rule.source ? Object.keys(l.fields) : [])),
+    );
+    const named = [...Object.keys(parsed.rule.where), ...(c?.by ? [c.by] : [])];
+    for (const name of named.filter((n) => known.size > 0 && !known.has(n)))
+      yield out(
+        paint(ctx, style.yellow, ctx.t('rule.field', { name, fields: [...known].sort().join(', ') })),
+      );
     for (const l of r.alerts.slice(0, 4))
       yield out(`  ${l.actor === 'background' ? '?' : '!'} ${l.hostname}: ${l.text}`);
     if (r.alerts.length > 4) yield out(paint(ctx, style.dim, `  … ${r.alerts.length - 4} more`));
@@ -430,6 +439,11 @@ const evalCmd: Command = {
     yield out(
       `result: ${r.blocked}/${r.attacks} attacks blocked, ${r.wrongly}/${r.legit} legitimate requests blocked`,
     );
+    const known = new Set(r.cases.flatMap((c) => Object.keys(c.fields)));
+    for (const name of Object.keys(parsed.rule.where).filter((n) => known.size > 0 && !known.has(n)))
+      yield out(
+        paint(ctx, style.yellow, ctx.t('eval.field', { name, fields: [...known].sort().join(', ') })),
+      );
     if (r.passed) {
       yield out(paint(ctx, style.green, ctx.t('eval.pass')));
       return 0;

@@ -257,6 +257,8 @@ export const en: Record<string, string> = {
   'rule.usage':
     'usage: rule test <file>\nA rule: one line "source: auth", then one field per line (user: name, src|startswith: 10.16.0.1, cmd|contains: word).',
   'rule.syntax': 'rule: cannot read this line: {line}',
+  'eval.field': 'No tool call has a field named {name}. Their fields: {fields}.',
+  'rule.field': 'No line of this source has a field named {name}. Its fields: {fields}.',
   'rule.nohunt': 'The mission does not expect this rule: result given for information.',
   'rule.pass': 'Rule accepted: {n} line(s) of the attack detected, no false alert.',
   'rule.false': '{n} false alert(s) on ordinary activity (lines marked "?"). Tighten the selection.',
@@ -349,10 +351,10 @@ export const en: Record<string, string> = {
   'timeline.done': 'This timeline is already in order.',
   'timeline.right': 'Timeline in order.',
   'timeline.wrong': 'Not yet: {placed} of {total} events in the right place. 10 points lost.',
-  'cmd.path': 'Name the hosts an attack went through: path <id> <host> <host>…',
+  'cmd.path': 'Name the hosts of a path, in order (an attack, a recovery…): path <id> <host> <host>…',
   'path.none': 'There is no attack path to trace in this mission.',
   'path.usage':
-    'usage: path <id> <host> <host>… in the order the attack went (hostnames, short names or addresses)',
+    'usage: path <id> <host> <host>… in the order the question asks (hostnames, short names or addresses)',
   'path.unknown': 'path: unknown hosts: {hosts}',
   'path.done': 'This path is already traced.',
   'path.right': 'Path traced.',

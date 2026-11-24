@@ -102,3 +102,33 @@ export function shuffled<T>(items: readonly T[], seed: string): T[] {
   }
   return out;
 }
+
+/**
+ * A basic regular expression (grep and sed without -E) read as JavaScript: `\|`, `\(`, `\)`, `\{`, `\}`,
+ * `\+` and `\?` are the operators, and the same characters without a backslash are plain text.
+ */
+export function basicRegExp(source: string): string {
+  let outText = '';
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i]!;
+    if (c === '\\' && i + 1 < source.length) {
+      const next = source[++i]!;
+      outText += '|(){}+?'.includes(next) ? next : `\\${next}`;
+    } else outText += '|(){}+?'.includes(c) ? `\\${c}` : c;
+  }
+  return outText;
+}
+
+/**
+ * The digest of a file of the virtual disk. A file the engine built from a binary, an archive or a
+ * certificate holds one character per byte; any other text is hashed as UTF-8, as on disk.
+ */
+export async function digest(algo: 'SHA-256' | 'SHA-1' | 'SHA-512', content: string): Promise<string> {
+  const head = content.slice(0, 512);
+  const binary =
+    !/[^\x00-\xff]/.test(content) &&
+    (/[\x00-\x08\x0e-\x1a\x1c-\x1f]/.test(head) || /[\x80-\xff]{4}/.test(head));
+  const bytes = binary ? Uint8Array.from(content, (c) => c.charCodeAt(0)) : new TextEncoder().encode(content);
+  const d = await globalThis.crypto.subtle.digest(algo, bytes);
+  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}

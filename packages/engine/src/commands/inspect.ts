@@ -1,5 +1,6 @@
 import type { Advisory } from '@breach/pack-schema';
 import { isBinary, MAGIC, readArchive, readCert, readImage, readQr } from '../artifact.ts';
+import { digest } from '../util.ts';
 import { canWrite, lookup } from '../vfs.ts';
 import { inputs, readFile } from './files.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
@@ -10,14 +11,6 @@ import { type Command, type CommandCtx, err, getopt, out, type Run } from './typ
  */
 
 /** Digest of bytes held as code points 0 to 255 (`artifact.ts`), or of text as UTF-8. */
-async function digest(algo: 'SHA-256' | 'SHA-1' | 'SHA-512', content: string): Promise<string> {
-  const bytes = /[^\x00-\xff]/.test(content)
-    ? new TextEncoder().encode(content)
-    : Uint8Array.from(content, (c) => c.charCodeAt(0));
-  const d = await globalThis.crypto.subtle.digest(algo, bytes);
-  return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 /* ---------- strings ---------- */
 
 const strings: Command = {

@@ -332,6 +332,15 @@ describe('rule test', () => {
     });
   });
 
+  it('names the fields of the source when a rule names one no line has', async () => {
+    const game = start();
+    await run(game, 'pwd');
+    await run(game, 'pwd');
+    await run(game, 'echo "username: svc-backup" >> rules/svc.yml');
+    const r = await run(game, 'rule test rules/svc.yml');
+    expect(r.out).toMatch(/No line of this source has a field named username\. Its fields: .*user/);
+  });
+
   it('says what still escapes a rule that is too narrow', async () => {
     const game = start();
     await run(game, 'pwd');

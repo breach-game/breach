@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.19.0';
+export const ENGINE_VERSION = '0.19.1';
 
 export interface GameOptions {
   world: Pack;
@@ -860,7 +860,9 @@ export class Game {
     } finally {
       this.ruleDepth--;
     }
-    if (this.ruleDepth === 0) this.nextStep();
+    // During a command, the next guidance waits for the command's end: what the command caused is
+    // told first, then what to do next.
+    if (this.ruleDepth === 0 && !this.busy) this.nextStep();
   }
 
   /** Say a piece of guidance, in the form the player's level calls for. */
@@ -2083,6 +2085,7 @@ export class Game {
       return step.value;
     } finally {
       this.busy = false;
+      this.nextStep();
     }
   }
 
