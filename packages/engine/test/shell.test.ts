@@ -16,6 +16,9 @@ describe('shell', () => {
     const tree = (await run(g, 'ls -R')).out;
     expect(tree).toMatch(/^\.:\na\.txt {2}b\.txt {2}docs\n\n\.\/docs:\n/);
     expect((await run(g, 'echo x > docs')).err).toBe('lrsh: docs: Is a directory\n');
+    // 2>/dev/null hides errors, 2>&1 sends them with the output.
+    expect((await run(g, 'cat nope 2>/dev/null')).err).toBe('');
+    expect((await run(g, 'cat nope 2>&1 | wc -l')).out).toBe('1\n');
   });
 
   it('changes directory, with ~, - and ..', async () => {
