@@ -33,6 +33,7 @@ import {
   variantMatches,
 } from './http.ts';
 import { engineStrings, interpolate } from './i18n.ts';
+import { filterMatches, parseFilter, underBase } from './ldap.ts';
 import { resolveTarget } from './net.ts';
 import { acceptHearing, type Decision, decide, type Heard, vocabulary } from './npc.ts';
 import { evaluate, matches, triggerMatches } from './rules.ts';
@@ -207,6 +208,16 @@ type Listener = (event: GameEvent, game: Game) => void;
 const FLAG_SHAPE = /FLAG\{[^{}\s]{1,120}\}/gi;
 const MAX_DT = 5 * 60_000;
 const MAX_RULE_DEPTH = 8;
+
+type HostSystem = NonNullable<Host['system']>;
+/** What a host runs now, as `ps`, `ss`, `systemctl`, `journalctl` and `last` read it. */
+export interface SystemView {
+  processes: HostSystem['processes'];
+  sockets: HostSystem['sockets'];
+  services: HostSystem['services'];
+  journal: HostSystem['journal'];
+  logins: HostSystem['logins'];
+}
 
 export class Game {
   readonly world: World;
@@ -452,6 +463,10 @@ export class Game {
       asked: {},
       choices: {},
       reviewed: {},
+      deployed: {},
+      toggles: {},
+      ordered: {},
+      traced: {},
       mistakes: 0,
       level: null,
       notes: [],
@@ -537,6 +552,10 @@ export class Game {
         s.detections = 0;
         s.asked = {};
         s.reviewed = {};
+        s.deployed = Object.fromEntries((mission?.releases ?? []).map((r) => [r.service, [r.current]]));
+        s.toggles = Object.fromEntries((mission?.toggles ?? []).map((t) => [t.name, t.value]));
+        s.ordered = {};
+        s.traced = {};
         s.mistakes = 0;
         s.level = null;
         s.fired = {};
@@ -636,6 +655,26 @@ export class Game {
         else s.mistakes++;
         if (e.impact) s.impact = Math.min(100, s.impact + e.impact);
         if (e.decision) (s.choices ??= {})[e.question] = e.option;
+        break;
+      case 'Deployed': {
+        const history = (s.deployed[e.service] ??= []);
+        if (e.rollback) history.pop();
+        else history.push(e.version);
+        if (!history.length) history.push(e.version);
+        s.impact = Math.min(100, s.impact + e.impact);
+        break;
+      }
+      case 'ToggleSet':
+        s.toggles[e.name] = e.value;
+        s.impact = Math.min(100, s.impact + e.impact);
+        break;
+      case 'TimelineOrdered':
+        if (e.correct) s.ordered[e.timeline] = true;
+        else s.mistakes++;
+        break;
+      case 'PathTraced':
+        if (e.correct) s.traced[e.path] = true;
+        else s.mistakes++;
         break;
       case 'Reviewed':
         if (!e.correct) s.mistakes++;
@@ -988,6 +1027,146 @@ export class Game {
     const left = review.lines.length - (this.state.reviewed[review.id]?.length ?? 0);
     if (correct && left === 0 && review.objective) this.completeObjective(review.objective);
     return { correct, left, again: false };
+  }
+
+  /* ---------- what a host runs, directories, deployments ---------- */
+
+  /** What a host runs now: the world's entries and the mission's, those whose condition holds. */
+  systemOf(hostId: string): SystemView {
+    const parts = [this.host(hostId)?.system, this.mission?.systems[hostId]].filter(
+      (x): x is NonNullable<Host['system']> => x !== undefined,
+    );
+    const keep = <T extends { if?: Condition }>(list: T[]) => list.filter((x) => this.holds(x.if));
+    return {
+      processes: keep(parts.flatMap((p) => p.processes)),
+      sockets: keep(parts.flatMap((p) => p.sockets)),
+      services: keep(parts.flatMap((p) => p.services)),
+      journal: keep(parts.flatMap((p) => p.journal)),
+      logins: keep(parts.flatMap((p) => p.logins)),
+    };
+  }
+
+  /**
+   * Search a directory. A bind works only with a listed account and its password; without one, the
+   * search needs an anonymous directory. Returns null when the host has no directory.
+   */
+  ldapSearch(
+    hostId: string,
+    query: { base: string; filter: string; bind?: string; password?: string },
+  ):
+    | { ok: true; entries: NonNullable<Host['directory']>['entries'] }
+    | { ok: false; code: 32 | 49 | 50 }
+    | null {
+    const dir = this.host(hostId)?.directory;
+    if (!dir) return null;
+    const bind = query.bind ?? '';
+    let ok = true;
+    let code: 32 | 49 | 50 = 50;
+    if (bind) {
+      const account = dir.binds.find(
+        (b) => b.dn.toLowerCase() === bind.toLowerCase() && b.password === query.password && this.holds(b.if),
+      );
+      if (!account) {
+        ok = false;
+        code = 49;
+      }
+    } else if (!dir.anonymous) ok = false;
+    let entries: NonNullable<Host['directory']>['entries'] = [];
+    if (ok) {
+      const filter = parseFilter(query.filter);
+      if (!underBase(query.base, dir.base) && !underBase(dir.base, query.base)) {
+        ok = false;
+        code = 32;
+      } else
+        entries = dir.entries.filter(
+          (e) => this.holds(e.if) && underBase(e.dn, query.base) && filterMatches(e, filter),
+        );
+    }
+    this.emit({
+      type: 'LdapSearch',
+      host: hostId,
+      base: query.base,
+      filter: query.filter,
+      bind,
+      entries: entries.length,
+      ok,
+    });
+    return ok ? { ok, entries } : { ok, code };
+  }
+
+  /** Put a version of a service in production, or take the previous one back. */
+  deploy(service: string, version: string | null): { from: string; to: string } | string {
+    const release = this.mission?.releases.find((r) => r.service === service);
+    if (!release) return 'unknown';
+    const history = this.state.deployed[service] ?? [release.current];
+    const from = history.at(-1) ?? release.current;
+    const to = version ?? history.at(-2);
+    if (!to) return 'nothing';
+    const target = release.versions.find((v) => v.version === to);
+    if (!target) return 'version';
+    if (to === from && version !== null) return 'same';
+    this.emit({
+      type: 'Deployed',
+      service,
+      version: to,
+      from,
+      rollback: version === null,
+      impact: target.impact,
+    });
+    for (const [key, value] of Object.entries(target.sets))
+      this.emit({ type: 'ConfigPatched', key, value, by: `deploy.${service}` });
+    return { from, to };
+  }
+
+  /** Switch a feature flag of the target. */
+  setToggle(name: string, value: 'on' | 'off'): boolean {
+    const toggle = this.mission?.toggles.find((t) => t.name === name);
+    if (!toggle) return false;
+    if (this.state.toggles[name] === value) return true;
+    this.emit({ type: 'ToggleSet', name, value, impact: toggle.impact });
+    for (const [key, v] of Object.entries(toggle[value]))
+      this.emit({ type: 'ConfigPatched', key, value: v, by: `flag.${name}` });
+    return true;
+  }
+
+  /** The events of a timeline in the order the player sees them: never the right one. */
+  timelineEvents(id: string) {
+    const tl = this.mission?.timelines.find((t) => t.id === id);
+    if (!tl) return null;
+    let list = shuffled(tl.events, `${this.state.mission ?? ''}/${tl.id}`);
+    if (list.every((e, i) => e.id === tl.events[i]?.id)) list = [...list.slice(1), list[0]!];
+    return list;
+  }
+
+  /** Judge an order of a timeline's events. Null when there is no such timeline or it is done. */
+  orderTimeline(id: string, order: string[]): { correct: boolean; placed: number; total: number } | null {
+    const tl = this.mission?.timelines.find((t) => t.id === id);
+    if (!tl || this.state.ordered[id] || this.state.missionDone) return null;
+    const placed = tl.events.filter((e, i) => order[i] === e.id).length;
+    const correct = order.length === tl.events.length && placed === tl.events.length;
+    this.emit({ type: 'TimelineOrdered', timeline: id, correct, placed });
+    if (correct && tl.objective) this.completeObjective(tl.objective);
+    return { correct, placed, total: tl.events.length };
+  }
+
+  /** Judge the hosts named for an attack path, by id, hostname or address. */
+  tracePath(id: string, names: string[]): { correct: boolean; unknown: string[] } | null {
+    const path = this.mission?.paths.find((p) => p.id === id);
+    if (!path || this.state.traced[id] || this.state.missionDone) return null;
+    const unknown: string[] = [];
+    const ids = names.map((raw) => {
+      const n = raw.toLowerCase();
+      const host = this.world.hosts.find(
+        (h) => h.id === n || h.hostname === n || h.hostname.split('.')[0] === n || h.ip === n,
+      );
+      if (!host) unknown.push(raw);
+      return host?.id ?? '';
+    });
+    if (unknown.length) return { correct: false, unknown };
+    const correct = ids.length === path.hosts.length && ids.every((h, i) => h === path.hosts[i]);
+    this.emit({ type: 'PathTraced', path: id, correct });
+    if (correct && path.objective) this.completeObjective(path.objective);
+    return { correct, unknown };
   }
 
   /** Questions asked and not yet settled, in the order of the pack. */
@@ -1703,13 +1882,16 @@ export class Game {
     if (acted <= 0 || acted % adv.pace !== 0) return;
     const step = adv.steps[s.adversary.next];
     if (!step) return;
-    this.emit({
-      type: 'AdversaryStep',
-      actor: adv.id,
-      step: step.id,
-      host: step.host,
-      ...this.stepOutcome(step),
-    });
+    this.takeStep(adv.id, step);
+  }
+
+  /** The attacker's step, and what it changes on the target when it goes through. */
+  private takeStep(actor: string, step: NonNullable<Mission['adversary']>['steps'][number]) {
+    const outcome = this.stepOutcome(step);
+    this.emit({ type: 'AdversaryStep', actor, step: step.id, host: step.host, ...outcome });
+    if (!outcome.blocked)
+      for (const [key, value] of Object.entries(step.sets ?? {}))
+        this.emit({ type: 'ConfigPatched', key, value, by: step.id });
   }
 
   private stepOutcome(step: NonNullable<Mission['adversary']>['steps'][number]) {
@@ -1739,14 +1921,7 @@ export class Game {
       !s.missionDone &&
       !this.replaying
     )
-      if (evaluate(step.blockedIf, s))
-        this.emit({
-          type: 'AdversaryStep',
-          actor: adv.id,
-          step: step.id,
-          host: step.host,
-          ...this.stepOutcome(step),
-        });
+      if (evaluate(step.blockedIf, s)) this.takeStep(adv.id, step);
   }
 
   /* ---------- missions ---------- */

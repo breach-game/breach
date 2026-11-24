@@ -295,6 +295,8 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       ...m.alerts.flatMap((a) => [a.title, a.why]),
       ...m.checks.map((c) => c.text),
       ...m.evals.flatMap((e) => e.cases.map((c) => c.text)),
+      ...m.timelines.flatMap((t) => [t.text, ...t.events.map((e) => e.text)]),
+      ...m.paths.map((p) => p.text),
       ...m.questions.flatMap((q) => [
         q.text,
         ...q.options.flatMap((o) => (o.why ? [o.text, o.why] : [o.text])),
@@ -304,7 +306,25 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
     for (const fix of [...(m.defense?.fixes ?? []), ...m.containment])
       for (const key of Object.keys(fix.sets))
         if (!(key in settings)) problems.push(`${pack.id}: ${fix.id} sets ${key}, which no config declares`);
+    const setters: [string, Record<string, unknown>][] = [
+      ...(m.adversary?.steps ?? []).map((st): [string, Record<string, unknown>] => [st.id, st.sets ?? {}]),
+      ...m.releases.flatMap((r) =>
+        r.versions.map((v): [string, Record<string, unknown>] => [`${r.service} ${v.version}`, v.sets]),
+      ),
+      ...m.toggles.flatMap((t): [string, Record<string, unknown>][] => [
+        [`${t.name} on`, t.on],
+        [`${t.name} off`, t.off],
+      ]),
+    ];
+    for (const [who, sets] of setters)
+      for (const key of Object.keys(sets))
+        if (!(key in settings)) problems.push(`${pack.id}: ${who} sets ${key}, which no config declares`);
     const hostIds = new Set([...world.world.hosts.map((h) => h.id), 'dns', 'ids', 'fw']);
+    for (const p of m.paths)
+      for (const h of p.hosts)
+        if (!hostIds.has(h)) problems.push(`${pack.id}: path ${p.id} names unknown host ${h}`);
+    for (const h of Object.keys(m.systems))
+      if (!hostIds.has(h)) problems.push(`${pack.id}: systems names unknown host ${h}`);
     for (const step of m.adversary?.steps ?? [])
       if (!hostIds.has(step.host))
         problems.push(`${pack.id}: adversary step ${step.id} names unknown host ${step.host}`);
@@ -367,6 +387,9 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
     for (const e of m.evals)
       if (e.objective && !objectiveIds.has(e.objective))
         problems.push(`${pack.id}: eval ${e.id} points to unknown objective ${e.objective}`);
+    for (const x of [...m.timelines, ...m.paths])
+      if (x.objective && !objectiveIds.has(x.objective))
+        problems.push(`${pack.id}: ${x.id} points to unknown objective ${x.objective}`);
     for (const rule of m.rules)
       for (const effect of rule.do) {
         const asked = (effect as Record<string, unknown>)['ada.ask'];

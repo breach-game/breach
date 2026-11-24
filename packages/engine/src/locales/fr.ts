@@ -270,4 +270,65 @@ export const fr: Record<string, string> = {
     "jq lit du JSON et en sort ce que tu demandes : `.champ`, `.liste[0]`, `.liste[].nom`, `keys`, `length`. Une API renvoie souvent bien plus de champs que la page n'en affiche : jq sert à les voir.\n---\nCôté défense, la leçon est pour l'API : elle ne doit renvoyer que les champs dont la page a besoin. Ce qu'un navigateur ne montre pas n'est pas caché.",
   'explain.jwt':
     "jwt decode lit un jeton JWT. Ses deux premières parties sont du Base64 : n'importe qui peut les lire, sans clé. La troisième est la signature, qui prouve que le serveur a bien émis le jeton, à condition que le serveur la vérifie.\n---\nUn jeton ne doit rien contenir de secret, et le serveur doit refuser un jeton sans signature valide (jamais d'algorithme `none`). Le SOC surveille les jetons refusés en rafale.",
+  'cmd.ps': 'Liste les processus de la machine où tu es : ps aux, ps -ef',
+  'explain.ps':
+    "ps liste ce qui tourne sur la machine : propriétaire, numéro, parent, heure de départ et ligne de commande. Le programme d'un intrus se cache souvent derrière un nom banal : regarde son chemin, son propriétaire et quand il a démarré.",
+  'cmd.ss': 'Liste les connexions réseau : ss -tlnp (en écoute), ss -tnp (établies)',
+  'explain.ss':
+    "ss montre les ports sur lesquels la machine écoute et les connexions ouvertes, avec -p le processus derrière chacune. Un programme qui parle à une adresse inconnue, ou un port que personne n'a ouvert exprès, se voit ici.",
+  'cmd.systemctl': 'État des services : systemctl status <unité>, systemctl list-units',
+  'explain.systemctl':
+    "systemctl status dit si un service tourne, depuis quand, depuis quel fichier et avec quelle commande, puis montre ses dernières lignes de journal. Un service ajouté par un intrus revient à chaque redémarrage : c'est une façon classique de rester.",
+  'cmd.journalctl': 'Lit le journal du système : journalctl -u <unité> [-n 20] [-g mot]',
+  'explain.journalctl':
+    'journalctl lit ce que les services ont écrit dans le journal du système. -u garde un service, -n les dernières lignes, -g celles qui contiennent un mot.',
+  'cmd.last': 'Sessions passées et en cours sur cette machine : last [-n 10] [compte]',
+  'explain.last':
+    "last lit le registre des sessions ouvertes sur la machine : qui, d'où, quand, et combien de temps. Une session la nuit, depuis une adresse inhabituelle, mérite une question.",
+  'host.readonly':
+    "{command} : cette machine est sous enquête, on n'y modifie rien à la main. Un service s'arrête par une mesure de confinement (contain).",
+  'cmd.kubectl': 'Interroge un cluster Kubernetes : kubectl get|describe|logs … [-n espace]',
+  'explain.kubectl':
+    "kubectl demande au serveur d'API du cluster ce qui y tourne : pods, déploiements, comptes, droits. Chaque requête passe par le serveur d'API et finit dans son journal. Un jeton trouvé quelque part ne vaut que les droits de son compte : lis-les avant tout.",
+  'cmd.ldapsearch':
+    'Cherche dans un annuaire : ldapsearch -x -H ldap://<hôte> -b <base> "(filtre)" [attributs]',
+  'explain.ldapsearch':
+    "ldapsearch lit l'annuaire d'une entreprise : comptes, groupes, qui appartient à quel groupe. Les filtres ressemblent à (&(objectClass=user)(memberOf=cn=admins,…)). Un annuaire qui répond sans mot de passe raconte à n'importe qui comment l'entreprise est organisée.",
+  'cmd.flows': 'Résume le journal des flux du pare-feu : flows [--src ip] [--dst ip] [--port n]',
+  'explain.flows':
+    "flows regroupe le journal du pare-feu par conversation : qui a parlé à qui, sur quel port, combien de fois, combien d'octets. Une machine qui envoie bien plus qu'elle ne reçoit est un premier signe de fuite. Aucun paquet n'est capturé : seulement le journal que le pare-feu écrit.",
+  'cmd.deploy': "Met une version d'un service en production : deploy <service> <version>",
+  'explain.deploy':
+    "deploy met une version d'un service en production, rollback reprend la précédente. En crise, revenir à une version connue est souvent la réparation la plus rapide : c'est aussi un changement, avec son coût.",
+  'cmd.rollback': "Reprend la version précédente d'un service : rollback <service>",
+  'cmd.flag': 'Interrupteurs de fonctions de la cible : flag list, flag set <nom> on|off',
+  'explain.flag':
+    "Un interrupteur de fonction allume ou éteint une partie d'une application sans rien déployer. Éteindre une fonction fautive fait gagner du temps pendant qu'on écrit le vrai correctif.",
+  'deploy.none': "Il n'y a pas de chaîne de déploiement dans cette mission.",
+  'deploy.usage':
+    'usage : deploy <service> <version>  (rollback <service> reprend la précédente)\nServices et versions, celle qui tourne marquée * :',
+  'deploy.unknown': '{service} : service inconnu',
+  'deploy.version': '{service} : pas de version {version}',
+  'deploy.same': '{service} : la version {version} tourne déjà',
+  'deploy.nothing': '{service} : aucune version précédente à reprendre',
+  'flag.none': "Cette cible n'a pas d'interrupteurs de fonctions.",
+  'flag.unknown': 'interrupteur inconnu',
+  'cmd.timeline': "Remet des événements dans l'ordre : timeline <id> <événement> <événement>…",
+  'timeline.none': "Il n'y a pas de chronologie à reconstituer dans cette mission.",
+  'timeline.usage':
+    'usage : timeline <id> pour voir ses événements, puis timeline <id> <événement> <événement>… du plus ancien au plus récent',
+  'timeline.how':
+    'Donne-les du plus ancien au plus récent : timeline {id} <événement> <événement>… (un mauvais ordre coûte 10 points)',
+  'timeline.unknown': 'timeline : événements inconnus : {ids}',
+  'timeline.done': 'Cette chronologie est déjà dans le bon ordre.',
+  'timeline.right': 'Chronologie dans le bon ordre.',
+  'timeline.wrong': 'Pas encore : {placed} événements sur {total} à la bonne place. 10 points perdus.',
+  'cmd.path': 'Nomme les machines par où une attaque est passée : path <id> <hôte> <hôte>…',
+  'path.none': "Il n'y a pas de chemin d'attaque à retracer dans cette mission.",
+  'path.usage':
+    "usage : path <id> <hôte> <hôte>… dans l'ordre où l'attaque est passée (noms, noms courts ou adresses)",
+  'path.unknown': 'path : machines inconnues : {hosts}',
+  'path.done': 'Ce chemin est déjà retracé.',
+  'path.right': 'Chemin retracé.',
+  'path.wrong': 'Pas ce chemin. 10 points perdus.',
 };

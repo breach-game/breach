@@ -59,6 +59,13 @@ export interface GameState {
   choices: Record<string, string>;
   /** Faulty lines found so far in each code review of this mission. */
   reviewed: Record<string, number[]>;
+  /** Versions deployed of each service of the mission, the running one last. */
+  deployed: Record<string, string[]>;
+  /** Feature flags of the target, by name. */
+  toggles: Record<string, 'on' | 'off'>;
+  /** Timelines and attack paths the player got right in this mission. */
+  ordered: Record<string, true>;
+  traced: Record<string, true>;
   /** Wrong answers given in this mission, and lines wrongly named in a review. */
   mistakes: number;
   /** Most helpful guidance level used in this mission. Null on saves made before levels were scored. */

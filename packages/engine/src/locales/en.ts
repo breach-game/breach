@@ -265,4 +265,64 @@ export const en: Record<string, string> = {
     'jq reads JSON and prints what you ask for: `.field`, `.list[0]`, `.list[].name`, `keys`, `length`. An API often returns many more fields than the page shows: jq lets you see them.\n---\nFor the defender the lesson is about the API: it should only return the fields the page needs. What a browser does not show is not hidden.',
   'explain.jwt':
     'jwt decode reads a JWT. Its first two parts are Base64: anyone can read them, without a key. The third is the signature, which proves the server issued the token, provided the server checks it.\n---\nA token must hold nothing secret, and the server must refuse a token without a valid signature (never the `none` algorithm). The SOC watches for bursts of refused tokens.',
+  'cmd.ps': 'List the processes of the machine you are on: ps aux, ps -ef',
+  'explain.ps':
+    "ps lists what runs on the machine: owner, process number, parent, start time and command line. An intruder's program often hides behind an ordinary name: look at its path, its owner and when it started.",
+  'cmd.ss': 'List network sockets: ss -tlnp (listening), ss -tnp (connections)',
+  'explain.ss':
+    'ss shows which ports the machine listens on and which connections are open, with -p the process behind each one. A program that talks to an unknown address, or a port nobody opened on purpose, stands out here.',
+  'cmd.systemctl': 'State of the services: systemctl status <unit>, systemctl list-units',
+  'explain.systemctl':
+    'systemctl status tells whether a service runs, since when, from which file and with which command, then shows its last journal lines. A service added by an intruder comes back after every restart: it is a classic way to stay.',
+  'cmd.journalctl': 'Read the system journal: journalctl -u <unit> [-n 20] [-g word]',
+  'explain.journalctl':
+    'journalctl reads what services wrote in the system journal. -u keeps one service, -n the last lines, -g those that contain a word.',
+  'cmd.last': 'Past and current sessions on this machine: last [-n 10] [user]',
+  'explain.last':
+    'last reads the record of sessions opened on the machine: who, from where, when, and for how long. A session at night, from an unusual address, is worth a question.',
+  'host.readonly':
+    '{command}: this machine is under investigation, nothing is changed by hand here. A service is stopped by a containment order (contain).',
+  'cmd.kubectl': 'Ask a Kubernetes cluster: kubectl get|describe|logs … [-n namespace]',
+  'explain.kubectl':
+    "kubectl asks the cluster's API server what runs there: pods, deployments, accounts, rights. Every request goes through the API server and lands in its log. A token found somewhere is only worth the rights of its account: read them before anything else.",
+  'cmd.ldapsearch': 'Search a directory: ldapsearch -x -H ldap://<host> -b <base> "(filter)" [attributes]',
+  'explain.ldapsearch':
+    'ldapsearch reads a company directory: accounts, groups, who belongs to which group. Filters look like (&(objectClass=user)(memberOf=cn=admins,…)). A directory that answers without a password tells anyone how the company is organised.',
+  'cmd.flows': 'Sum up the firewall flow log: flows [--src ip] [--dst ip] [--port n]',
+  'explain.flows':
+    'flows groups the firewall log by conversation: who talked to whom, on which port, how many times, how many bytes. A machine that sends far more than it receives is a first sign of a leak. No packet is ever captured: only the log the firewall writes.',
+  'cmd.deploy': 'Put a version of a service in production: deploy <service> <version>',
+  'explain.deploy':
+    'deploy puts a version of a service in production, rollback takes the previous one back. In a crisis, going back to a known version is often the fastest repair: it is also a change, with its own cost.',
+  'cmd.rollback': 'Take back the previous version of a service: rollback <service>',
+  'cmd.flag': 'Feature flags of the target: flag list, flag set <name> on|off',
+  'explain.flag':
+    'A feature flag turns a part of an application on or off without deploying anything. Switching off a faulty feature buys time while the real fix is written.',
+  'deploy.none': 'There is no deployment pipeline in this mission.',
+  'deploy.usage':
+    'usage: deploy <service> <version>  (rollback <service> takes the previous one back)\nServices and versions, the running one marked *:',
+  'deploy.unknown': '{service}: no such service',
+  'deploy.version': '{service}: no version {version}',
+  'deploy.same': '{service}: version {version} already runs',
+  'deploy.nothing': '{service}: no previous version to go back to',
+  'flag.none': 'This target has no feature flags.',
+  'flag.unknown': 'no such feature flag',
+  'cmd.timeline': 'Put events back in order: timeline <id> <event> <event>…',
+  'timeline.none': 'There is no timeline to rebuild in this mission.',
+  'timeline.usage':
+    'usage: timeline <id> to see its events, then timeline <id> <event> <event>… from the oldest to the newest',
+  'timeline.how':
+    'Give them from the oldest to the newest: timeline {id} <event> <event>… (a wrong order costs 10 points)',
+  'timeline.unknown': 'timeline: unknown events: {ids}',
+  'timeline.done': 'This timeline is already in order.',
+  'timeline.right': 'Timeline in order.',
+  'timeline.wrong': 'Not yet: {placed} of {total} events in the right place. 10 points lost.',
+  'cmd.path': 'Name the hosts an attack went through: path <id> <host> <host>…',
+  'path.none': 'There is no attack path to trace in this mission.',
+  'path.usage':
+    'usage: path <id> <host> <host>… in the order the attack went (hostnames, short names or addresses)',
+  'path.unknown': 'path: unknown hosts: {hosts}',
+  'path.done': 'This path is already traced.',
+  'path.right': 'Path traced.',
+  'path.wrong': 'Not this path. 10 points lost.',
 };
