@@ -1,0 +1,17 @@
+id: breach.season11.s03
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 · 3. Quatre chiffres"
+  en: "Season 11 · 3. Four digits"
+summary:
+  fr: "Côté défense. À 2 h 10, quelqu'un essaie des codes SMS sur le compte d'un client, un essai par adresse. Dix mille codes possibles, et rien ne compte les essais. Tu trouves le compte visé, tu arrêtes la série sans couper la banque, tu allumes la limite, et tu écris la règle qui compte par compte."
+  en: "Defence side. At 2.10 am someone is trying text-message codes on a customer's account, one try per address. Ten thousand possible codes, and nothing counts the tries. You find the targeted account, stop the run without cutting the bank off, switch the limit on, and write the rule that counts per account."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [logs, defense, web]
+minutes: 15

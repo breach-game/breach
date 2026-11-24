@@ -1,0 +1,9 @@
+# comptoir-auth 1.7 - configuration of the consent server
+issuer: https://auth.comptoir.test
+clients_file: /etc/auth/clients.json
+code_single_use: true
+code_ttl_seconds: 60
+redirect_uri_match: contains      # exact | prefix | contains
+require_state: false              # value the partner sends and gets back
+require_pkce: true
+token_ttl_seconds: 900

@@ -1,0 +1,175 @@
+# Season 11, finale: abuse of a business flow (OWASP API6:2023 Unrestricted Access to Sensitive
+# Business Flows). Nothing is broken: each sign-up and each claim is a valid request. The
+# "attacker" is a script of gateway log lines. A captcha does not stop it, switching the
+# programme off stops everyone, a daily cap per sponsor stops only the run.
+side: defense
+order: 5
+stage: response
+briefing: c6.briefing
+startTime: "2029-09-22T02:32:00+02:00"
+reveal: [api, auth]
+
+files:
+  dossier/parrain.txt: { $file: files/parrain.txt }
+
+objectives:
+  - { id: code, text: c6.obj.code }
+  - { id: cut, text: c6.obj.cut }
+  - { id: class, text: c6.obj.class }
+  - { id: story, text: c6.obj.story }
+  - { id: money, text: c6.obj.money }
+
+flags: []
+
+adversary:
+  id: farm
+  name: unknown
+  from: outsider
+  pace: 1
+  delay: 0
+  steps:
+    - { id: s1, host: api, source: access, fields: { src: 203.0.113.21, method: POST, path: /v2/signup, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - { id: c1, host: api, source: access, fields: { src: 203.0.113.21, method: POST, path: /v2/referrals/LUNE42/claim, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - { id: s2, host: api, source: access, fields: { src: 198.51.100.150, method: POST, path: /v2/signup, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - id: c2
+      host: api
+      source: access
+      fields: { src: 198.51.100.150, method: POST, path: /v2/referrals/LUNE42/claim, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" }
+      blockedIf: &cut
+        any:
+          - { config: ref.cap, eq: true }
+          - { config: ref.off, eq: true }
+    - { id: s3, host: api, source: access, fields: { src: 192.0.2.77, method: POST, path: /v2/signup, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: c3, host: api, source: access, fields: { src: 192.0.2.77, method: POST, path: /v2/referrals/LUNE42/claim, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: s4, host: api, source: access, fields: { src: 203.0.113.118, method: POST, path: /v2/signup, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: c4, host: api, source: access, fields: { src: 203.0.113.118, method: POST, path: /v2/referrals/LUNE42/claim, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: s5, host: api, source: access, fields: { src: 198.51.100.9, method: POST, path: /v2/signup, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: c5, host: api, source: access, fields: { src: 198.51.100.9, method: POST, path: /v2/referrals/LUNE42/claim, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: s6, host: api, source: access, fields: { src: 192.0.2.201, method: POST, path: /v2/signup, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: out, host: api, source: access, fields: { src: 203.0.113.64, method: POST, path: /v2/transfers, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+
+# The night's real referrals: a friend now and then, each on a different code.
+background:
+  - { host: api, source: access, every: 9, offset: 2, fields: { src: 198.51.100.44, method: POST, path: /v2/referrals/MARIE7/claim, status: 200, ua: "comptoir-ios/3.2.0" } }
+  - { host: api, source: access, every: 14, offset: 5, fields: { src: 203.0.113.61, method: POST, path: /v2/referrals/TOM33/claim, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+  - { host: api, source: access, every: 8, offset: 3, fields: { src: 198.51.100.131, method: POST, path: /v2/signup, status: 201, ua: "comptoir-ios/3.2.0" } }
+
+toggles:
+  - name: parrainage.plafond-jour
+    value: "off"
+    on: { ref.cap: true }
+    off: { ref.cap: false }
+    impact: 1
+  - name: parrainage.actif
+    value: "on"
+    on: { ref.off: false }
+    off: { ref.off: true }
+    impact: 12
+  - name: inscription.captcha
+    value: "off"
+    on: { ref.captcha: true }
+    off: { ref.captcha: false }
+    impact: 4
+
+alerts:
+  - id: claims
+    title: c6.alert.claims
+    why: c6.alert.claims.why
+    source: access
+    where: { path: /v2/referrals/LUNE42/claim }
+    count: { gte: 2, within: 10, by: path }
+
+investigation:
+  - { id: code, text: c6.q.code, value: LUNE42, points: 100, objective: code }
+
+timelines:
+  - id: nuit
+    text: c6.tl.text
+    objective: story
+    events:
+      - { id: opened, text: c6.tl.opened }
+      - { id: tested, text: c6.tl.tested }
+      - { id: run, text: c6.tl.run }
+      - { id: transfer, text: c6.tl.transfer }
+
+questions:
+  - id: class
+    text: c6.q.class
+    objective: class
+    correct: flow
+    options:
+      - { id: flow, text: c6.q.class.flow }
+      - { id: request, text: c6.q.class.request, why: c6.q.class.request.why }
+      - { id: password, text: c6.q.class.password, why: c6.q.class.password.why }
+  # A decision: no option is wrong, each has a price.
+  - id: money
+    text: c6.q.money
+    objective: money
+    options:
+      - { id: hold, text: c6.q.money.hold, why: c6.q.money.hold.why, impact: 1 }
+      - { id: sweep, text: c6.q.money.sweep, why: c6.q.money.sweep.why, impact: 4 }
+      - { id: absorb, text: c6.q.money.absorb, why: c6.q.money.absorb.why, impact: 9 }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c6.ada.brief
+  - on: { event: ObjectiveCompleted, objective: code }
+    do:
+      - ada.say: c6.ada.code
+  - on: { event: AdversaryStep, step: c3, blocked: false }
+    do:
+      - ada.warn: c6.ada.c3
+  - on: { event: AdversaryStep, step: s6, blocked: false }
+    do:
+      - ada.warn: c6.ada.s6
+  - on: { event: AdversaryStep, step: out, blocked: false }
+    do:
+      - mission.fail: c6.ada.fail
+  - on: { event: ToggleSet, name: inscription.captcha, value: "on" }
+    do:
+      - ada.say: c6.ada.captcha
+  - on: { event: ToggleSet, name: parrainage.actif, value: "off" }
+    do:
+      - ada.say: c6.ada.off
+  - on: { event: ToggleSet, name: parrainage.plafond-jour, value: "on" }
+    do:
+      - ada.say: c6.ada.cap
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: c6.ada.stopped
+      - objective.complete: cut
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: c6.ada.class
+  - on: { event: ObjectiveCompleted, objective: story }
+    do:
+      - ada.say: c6.ada.story
+      - ada.ask: money
+  - on: { event: ObjectiveCompleted, objective: money }
+    do:
+      - ada.say: c6.ada.money
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c6.ada.done
+
+guide:
+  code: c6.ada.g.code
+  cut: c6.ada.g.cut
+  class: c6.ada.g.class
+  story: c6.ada.g.story
+  money: c6.ada.g.money
+
+hints:
+  code: [c6.hint.code.1, c6.hint.code.2]
+  cut: [c6.hint.cut.1, c6.hint.cut.2]
+  class: [c6.hint.class.1]
+  story: [c6.hint.story.1, c6.hint.story.2]
+  money: [c6.hint.money.1]
+
+debrief:
+  title: c6.debrief.title
+  lesson: c6.debrief.lesson
+  points: [c6.debrief.p1, c6.debrief.p2, c6.debrief.p3, c6.debrief.p4]
+  reference: "OWASP API Top 10 2023 · API6 Unrestricted Access to Sensitive Business Flows"

@@ -1,0 +1,11 @@
+# Season 11, mission 1: the app in your pocket
+curl https://www.comptoir.test/developpeurs
+curl -s https://www.comptoir.test/comptoir-3.2.0.apk > comptoir.apk
+unzip -l comptoir.apk
+unzip -d appli comptoir.apk
+strings appli/classes.dex
+curl https://api.comptoir.test/
+curl https://api.comptoir.test/v1/
+curl https://api.comptoir.test/v1/health
+submit FLAG{comptoir-v1-encore-debout-3e71}
+answer inventory

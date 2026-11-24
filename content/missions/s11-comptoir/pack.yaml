@@ -1,0 +1,15 @@
+id: breach.season11
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: series
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 : le comptoir"
+  en: "Season 11: the counter"
+summary:
+  fr: "Comptoir est une banque sans guichet : une appli, une API, des partenaires. Une semaine d'audit sur les erreurs les plus courantes des API : une vieille version jamais éteinte, un compte servi sans vérifier à qui il est, un code SMS que personne ne compte, un serveur qui va chercher n'importe quelle adresse, un accord renvoyé à la mauvaise adresse, et un programme de parrainage pris d'assaut par des requêtes parfaitement valides."
+  en: "Comptoir is a bank with no counter: an app, an API, partners. A week of audit on the most common API mistakes: an old version never switched off, an account served without checking whose it is, a text-message code nobody counts, a server that fetches any address, a consent sent back to the wrong address, and a referral programme stormed by perfectly valid requests."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, mobile, defense]

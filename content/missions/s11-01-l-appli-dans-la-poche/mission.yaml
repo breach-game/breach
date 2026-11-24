@@ -1,0 +1,123 @@
+# Season 11, mission 1: inventory. The website says v1 is retired; the mobile app still knows its
+# address, and it still answers. OWASP API9:2023 Improper Inventory Management.
+order: 0
+stage: recon
+briefing: c1.briefing
+startTime: "2029-09-17T09:00:00+02:00"
+
+objectives:
+  - { id: page, text: c1.obj.page }
+  - { id: pkg, text: c1.obj.pkg }
+  - { id: old, text: c1.obj.old }
+  - { id: proof, text: c1.obj.proof }
+  - { id: class, text: c1.obj.class }
+
+flags:
+  - { id: proof, value: "FLAG{comptoir-v1-encore-debout-3e71}", points: 200, objective: proof }
+
+questions:
+  - id: class
+    text: c1.q.class
+    objective: class
+    correct: inventory
+    options:
+      - { id: inventory, text: c1.q.class.inventory }
+      - { id: crypto, text: c1.q.class.crypto, why: c1.q.class.crypto.why }
+      - { id: leak, text: c1.q.class.leak, why: c1.q.class.leak.why }
+
+reveal: [www]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c1.ada.brief
+  - on: { event: HttpRequest, host: www, path: /developpeurs }
+    do:
+      - ada.say: c1.ada.page
+      - objective.complete: page
+  - on: { event: HttpRequest, host: www, path: /comptoir-3.2.0.apk }
+    do:
+      - ada.guide: { key: c1.ada.g.list, for: pkg, step: 1 }
+  - on: { event: CommandRun, command: unzip }
+    do:
+      - ada.say: c1.ada.pkg
+      - objective.complete: pkg
+  - on: { event: CommandRun, command: strings }
+    do:
+      - host.reveal: api
+      - ada.say: c1.ada.strings
+  - on: { event: HttpRequest, host: api, path: /v1/ }
+    do:
+      - ada.say: c1.ada.old
+      - objective.complete: old
+  - on: { event: HttpRequest, host: api, path: /v1/health }
+    do:
+      - noise.add: { points: 4, as: c1.soc.health }
+      - ada.guide: { key: c1.ada.g.submit, for: proof, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: c1.ada.flag
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: c1.ada.class
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c1.ada.done
+
+guide:
+  page: c1.ada.g.page
+  pkg: c1.ada.g.pkg
+  old: c1.ada.g.old
+  proof: c1.ada.g.proof
+  class: c1.ada.g.class
+
+hints:
+  page: [c1.hint.page.1]
+  pkg: [c1.hint.pkg.1, c1.hint.pkg.2]
+  old: [c1.hint.old.1, c1.hint.old.2, c1.hint.old.3]
+  proof: [c1.hint.proof.1, c1.hint.proof.2]
+  class: [c1.hint.class.1]
+
+defense:
+  intro: c1.def.intro
+  lesson: c1.def.lesson
+  find:
+    - { source: access, where: { path: /v1/health, status: 200 }, text: c1.def.find.health }
+  rules:
+    - id: health
+      title: c1.def.rule.health.title
+      why: c1.def.rule.health.why
+      source: access
+      where: { path: /v1/health }
+      correct: true
+    - id: all-v1
+      title: c1.def.rule.all.title
+      why: c1.def.rule.all.why
+      source: access
+      where: { path: { glob: "/v1/*" } }
+    - id: gone
+      title: c1.def.rule.gone.title
+      why: c1.def.rule.gone.why
+      source: access
+      where: { path: { glob: "/v1/*" }, status: 410 }
+  fixes:
+    - id: retire
+      title: c1.def.fix.retire.title
+      why: c1.def.fix.retire.why
+      sets: { api.v1_off: true }
+      correct: true
+    - id: hide
+      title: c1.def.fix.hide.title
+      why: c1.def.fix.hide.why
+      sets: { api.v1_docs_hidden: true }
+    - id: rate
+      title: c1.def.fix.rate.title
+      why: c1.def.fix.rate.why
+      sets: { api.rate_limit: true }
+
+debrief:
+  title: c1.debrief.title
+  lesson: c1.debrief.lesson
+  points: [c1.debrief.p1, c1.debrief.p2, c1.debrief.p3, c1.debrief.p4]
+  reference: "OWASP API Security Top 10 2023 · API9 Improper Inventory Management"

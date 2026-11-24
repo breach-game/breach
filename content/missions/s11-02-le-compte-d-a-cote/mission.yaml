@@ -1,0 +1,130 @@
+# Season 11, mission 2: v1 serves an account without checking whose token asks (OWASP API1:2023
+# Broken Object Level Authorization), and sends every column it has (API3:2023). The proof is made
+# on the second test account; reading the real customer costs noise.
+order: 1
+stage: exploit
+briefing: c2.briefing
+startTime: "2029-09-18T09:00:00+02:00"
+
+objectives:
+  - { id: mine, text: c2.obj.mine }
+  - { id: refused, text: c2.obj.refused }
+  - { id: other, text: c2.obj.other }
+  - { id: proof, text: c2.obj.proof }
+  - { id: extra, text: c2.obj.extra }
+  - { id: class, text: c2.obj.class }
+
+flags:
+  - { id: proof, value: "FLAG{comptoir-le-compte-d-a-cote-8b20}", points: 250, objective: proof }
+  - { id: extra, value: internal_risk_score, points: 100, objective: extra }
+
+questions:
+  - id: class
+    text: c2.q.class
+    objective: class
+    correct: owner
+    options:
+      - { id: owner, text: c2.q.class.owner }
+      - { id: token, text: c2.q.class.token, why: c2.q.class.token.why }
+      - { id: guess, text: c2.q.class.guess, why: c2.q.class.guess.why }
+
+reveal: [www, api]
+
+# A closed account the app of its former holder still asks for: an ordinary refusal, every day.
+background:
+  - { host: api, source: access, every: 6, offset: 2, fields: { src: 198.51.100.131, method: GET, path: /v2/accounts/2210, status: 403, ua: "comptoir-ios/3.1.4" } }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c2.ada.brief
+  - on: { event: HttpRequest, host: api, path: { in: [/v2/accounts/me, /v2/accounts/1042] }, variant: as-test }
+    do:
+      - ada.say: c2.ada.mine
+      - objective.complete: mine
+  - on: { event: HttpRequest, host: api, path: /v2/accounts/1043, status: 403 }
+    do:
+      - ada.say: c2.ada.refused
+      - objective.complete: refused
+  - on: { event: HttpRequest, host: api, path: /v1/accounts/1043, variant: as-test }
+    do:
+      - noise.add: { points: 6, as: c2.soc.other }
+      - ada.say: c2.ada.other
+      - objective.complete: other
+  - on: { event: HttpRequest, host: api, path: { glob: "/v*/accounts/1001" } }
+    once: false
+    do:
+      - noise.add: { points: 25, as: c2.soc.real }
+      - ada.warn: c2.ada.real
+  - on: { event: FlagSubmitted, flag: proof, correct: true }
+    do:
+      - ada.say: c2.ada.flag
+  - on: { event: ObjectiveCompleted, objective: extra }
+    do:
+      - ada.say: c2.ada.extra
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: c2.ada.class
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c2.ada.done
+
+guide:
+  mine: c2.ada.g.mine
+  refused: c2.ada.g.refused
+  other: c2.ada.g.other
+  proof: c2.ada.g.proof
+  extra: c2.ada.g.extra
+  class: c2.ada.g.class
+
+hints:
+  mine: [c2.hint.mine.1, c2.hint.mine.2]
+  refused: [c2.hint.refused.1]
+  other: [c2.hint.other.1, c2.hint.other.2]
+  proof: [c2.hint.proof.1]
+  extra: [c2.hint.extra.1, c2.hint.extra.2]
+  class: [c2.hint.class.1]
+
+defense:
+  intro: c2.def.intro
+  lesson: c2.def.lesson
+  find:
+    - { source: access, where: { path: /v1/accounts/1043, status: 200 }, text: c2.def.find.other }
+  rules:
+    - id: by-number
+      title: c2.def.rule.number.title
+      why: c2.def.rule.number.why
+      source: access
+      where: { path: { glob: "/v1/accounts/1*" }, status: 200 }
+      correct: true
+    - id: refused
+      title: c2.def.rule.refused.title
+      why: c2.def.rule.refused.why
+      source: access
+      where: { path: { glob: "/v2/accounts/*" }, status: 403 }
+    - id: me
+      title: c2.def.rule.me.title
+      why: c2.def.rule.me.why
+      source: access
+      where: { path: /v1/accounts/me }
+  fixes:
+    - id: owner
+      title: c2.def.fix.owner.title
+      why: c2.def.fix.owner.why
+      sets: { api.v1_owner_check: true }
+      correct: true
+    - id: trim
+      title: c2.def.fix.trim.title
+      why: c2.def.fix.trim.why
+      sets: { api.fields_trimmed: true }
+    - id: rate
+      title: c2.def.fix.rate.title
+      why: c2.def.fix.rate.why
+      sets: { api.rate_limit: true }
+
+debrief:
+  title: c2.debrief.title
+  lesson: c2.debrief.lesson
+  points: [c2.debrief.p1, c2.debrief.p2, c2.debrief.p3, c2.debrief.p4]
+  reference: "OWASP API Top 10 2023 · API1 and API3 (object and property authorization)"

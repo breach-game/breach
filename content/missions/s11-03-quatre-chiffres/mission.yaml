@@ -1,0 +1,175 @@
+# Season 11, mission 3: sign-in by a four-digit code, with nothing counting the attempts
+# (OWASP API2:2023 Broken Authentication, API4:2023 Unrestricted Resource Consumption). The
+# "attacker" is a script of gateway log lines, one address per try. Blocking an address does
+# nothing; freezing the customer's sign-in or switching the attempt limit on stops the run.
+side: defense
+order: 2
+stage: response
+briefing: c3.briefing
+startTime: "2029-09-19T02:10:00+02:00"
+reveal: [api, auth]
+
+files:
+  regles/otp.yml: c3.file.rule
+
+objectives:
+  - { id: target, text: c3.obj.target }
+  - { id: cut, text: c3.obj.cut }
+  - { id: limit, text: c3.obj.limit }
+  - { id: rule, text: c3.obj.rule }
+  - { id: why, text: c3.obj.why }
+
+flags: []
+
+adversary:
+  id: guesser
+  name: unknown
+  from: outsider
+  pace: 1
+  delay: 0
+  steps:
+    - { id: t1, host: api, source: access, fields: { src: 203.0.113.21, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - { id: t2, host: api, source: access, fields: { src: 198.51.100.150, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - { id: t3, host: api, source: access, fields: { src: 192.0.2.77, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - id: t4
+      host: api
+      source: access
+      fields: { src: 203.0.113.118, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" }
+      blockedIf: &cut
+        any:
+          - { config: otp.limit, eq: true }
+          - { config: otp.frozen, eq: true }
+          - { config: api.isolated, eq: true }
+    - { id: t5, host: api, source: access, fields: { src: 198.51.100.9, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: t6, host: api, source: access, fields: { src: 192.0.2.201, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: t7, host: api, source: access, fields: { src: 203.0.113.64, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: t8, host: api, source: access, fields: { src: 198.51.100.212, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: t9, host: api, source: access, fields: { src: 192.0.2.14, method: POST, path: /v2/otp/1017, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+    - { id: t10, host: api, source: access, fields: { src: 203.0.113.177, method: POST, path: /v2/otp/1017, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" }, blockedIf: *cut }
+
+# The night's customers: a code mistyped once now and then, each on their own account.
+background:
+  - { host: api, source: access, every: 7, offset: 1, fields: { src: 198.51.100.44, method: POST, path: /v2/otp/2291, status: 401, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+  - { host: api, source: access, every: 7, offset: 2, fields: { src: 198.51.100.44, method: POST, path: /v2/otp/2291, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+  - { host: api, source: access, every: 11, offset: 4, fields: { src: 203.0.113.61, method: POST, path: /v2/otp/3050, status: 200, ua: "comptoir-ios/3.2.0" } }
+  - { host: api, source: access, every: 13, offset: 6, fields: { src: 198.51.100.90, method: POST, path: /v2/otp/1820, status: 401, ua: "comptoir-ios/3.2.0" } }
+
+containment:
+  - id: block-address
+    action: block
+    target: 203.0.113.21
+    text: c3.contain.address
+    sets: { otp.ip_blocked: true }
+    impact: 0
+  - id: freeze
+    action: disable
+    target: connexion-1017
+    text: c3.contain.freeze
+    sets: { otp.frozen: true }
+    impact: 2
+  - id: isolate-api
+    action: isolate
+    target: api
+    text: c3.contain.api
+    sets: { api.isolated: true }
+    impact: 40
+
+toggles:
+  - name: otp.essais-max
+    value: "off"
+    on: { otp.limit: true }
+    off: { otp.limit: false }
+
+alerts:
+  - id: failures
+    title: c3.alert.failures
+    why: c3.alert.failures.why
+    source: access
+    where: { path: /v2/otp/1017, status: 401 }
+
+investigation:
+  - { id: customer, text: c3.q.customer, value: "1017", points: 100, objective: target }
+
+hunts:
+  - id: otp
+    file: regles/otp.yml
+    catch: { source: access, where: { path: /v2/otp/1017, status: 401 } }
+    objective: rule
+
+questions:
+  - id: why
+    text: c3.q.why
+    objective: why
+    correct: account
+    options:
+      - { id: account, text: c3.q.why.account }
+      - { id: privacy, text: c3.q.why.privacy, why: c3.q.why.privacy.why }
+      - { id: cost, text: c3.q.why.cost, why: c3.q.why.cost.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c3.ada.brief
+  - on: { event: ObjectiveCompleted, objective: target }
+    do:
+      - ada.say: c3.ada.target
+  - on: { event: AdversaryStep, step: t5, blocked: false }
+    do:
+      - ada.warn: c3.ada.t5
+  - on: { event: AdversaryStep, step: t8, blocked: false }
+    do:
+      - ada.warn: c3.ada.t8
+  - on: { event: AdversaryStep, step: t10, blocked: false }
+    do:
+      - mission.fail: c3.ada.fail
+  - on: { event: Contained, containment: block-address }
+    do:
+      - ada.say: c3.ada.address
+  - on: { event: Contained, containment: freeze }
+    do:
+      - ada.say: c3.ada.freeze
+  - on: { event: Contained, containment: isolate-api }
+    do:
+      - ada.say: c3.ada.api
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: c3.ada.stopped
+      - objective.complete: cut
+  - on: { event: ToggleSet, name: otp.essais-max, value: "on" }
+    do:
+      - ada.say: c3.ada.limit
+      - objective.complete: limit
+  - on: { event: RuleTested, passed: false }
+    once: false
+    do:
+      - ada.guide: { key: c3.ada.g.count, for: rule, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: rule }
+    do:
+      - ada.say: c3.ada.rule
+      - ada.ask: why
+  - on: { event: ObjectiveCompleted, objective: why }
+    do:
+      - ada.say: c3.ada.why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c3.ada.done
+
+guide:
+  target: c3.ada.g.target
+  cut: c3.ada.g.cut
+  limit: c3.ada.g.limit
+  rule: c3.ada.g.rule
+  why: c3.ada.g.why
+
+hints:
+  target: [c3.hint.target.1, c3.hint.target.2]
+  cut: [c3.hint.cut.1, c3.hint.cut.2]
+  limit: [c3.hint.limit.1, c3.hint.limit.2]
+  rule: [c3.hint.rule.1, c3.hint.rule.2, c3.hint.rule.3]
+  why: [c3.hint.why.1]
+
+debrief:
+  title: c3.debrief.title
+  lesson: c3.debrief.lesson
+  points: [c3.debrief.p1, c3.debrief.p2, c3.debrief.p3, c3.debrief.p4]
+  reference: "OWASP API Top 10 2023 · API2 Broken Authentication · API4 Resource Consumption"
