@@ -1174,6 +1174,7 @@ export const SKILLS = [
   'cloud',
   'privacy',
   'iot',
+  'mobile',
 ] as const;
 export type Skill = (typeof SKILLS)[number];
 
