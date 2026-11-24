@@ -150,10 +150,18 @@ rules:
   - on: { event: AdversaryStep, step: export, blocked: false }
     do:
       - mission.fail: b3.ada.fail
+  # The closing lines must be true: only a revoked key is dead.
   - on: { event: AdversaryStep, stop: true }
     do:
-      - ada.say: b3.ada.stopped
       - objective.complete: contain
+  - on: { event: AdversaryStep, stop: true }
+    if: { config: b3.key_revoked, eq: true }
+    do:
+      - ada.say: b3.ada.stopped
+  - on: { event: AdversaryStep, stop: true }
+    if: { not: { config: b3.key_revoked, eq: true } }
+    do:
+      - ada.say: b3.ada.stopped.other
   - on: { event: Contained, containment: api-down }
     do:
       - ada.say: b3.ada.costly
@@ -161,8 +169,13 @@ rules:
     do:
       - ada.say: b3.ada.range
   - on: { event: MissionCompleted }
+    if: { config: b3.key_revoked, eq: true }
     do:
       - ada.say: b3.ada.done
+  - on: { event: MissionCompleted }
+    if: { not: { config: b3.key_revoked, eq: true } }
+    do:
+      - ada.say: b3.ada.done.other
 
 guide:
   contain: b3.ada.start
