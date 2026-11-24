@@ -1,0 +1,3 @@
+verdure/serre/0/lampe/state on
+verdure/serre/0/mesures/capteur-00 {"temp":19.8,"hum":61}
+verdure/serre/0/note test bench of the workshop - nothing grows here

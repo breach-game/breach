@@ -1,6 +1,6 @@
 t11.briefing: "Corbelle town hall opened read-only access to its file server for a check. A simple question: does any account have a scheduled job it should not have? It is the first thing to look at after an intrusion, because that is often how the intruder comes back."
 t11.obj.login: "Log in to the file server"
-t11.obj.job: "Find the scheduled job that does not belong"
+t11.obj.job: "Find the scheduled job that does not belong (its program, full path, with `submit`)"
 t11.obj.why: "Say what gives it away"
 t11.ada.brief: "Eleventh training. You have a read-only `ir` account on `fichiers.corbelle.test`. Each account's jobs are in its crontab."
 t11.ada.login: "Log in: `ssh ir@fichiers.corbelle.test`."

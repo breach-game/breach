@@ -12,5 +12,5 @@ contain revoke session-9c2
 contain reset mot-de-passe
 cat vigicam/partages.json
 answer who manon.b@courriel.example
-contain revoke partage-manon
+contain revoke partage-oublie
 answer code

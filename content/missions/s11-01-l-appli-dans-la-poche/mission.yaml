@@ -50,6 +50,16 @@ rules:
     do:
       - ada.say: c1.ada.old
       - objective.complete: old
+  - on: { event: HttpRequest, host: api, path: /v1/ }
+    if: { not: { objective: proof } }
+    do:
+      - ada.say: c1.ada.old.next
+  # Straight to a path read in the code: the old version is found all the same.
+  - on: { event: HttpRequest, host: api, path: /v1/health }
+    if: { not: { objective: old } }
+    do:
+      - ada.say: c1.ada.old.direct
+      - objective.complete: old
   - on: { event: HttpRequest, host: api, path: /v1/health }
     do:
       - noise.add: { points: 4, as: c1.soc.health }

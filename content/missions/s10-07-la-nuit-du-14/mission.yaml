@@ -183,7 +183,14 @@ rules:
     do:
       - ada.say: h7.ada.wifi
       - objective.complete: cut
-  - on: { event: AdversaryStep, stop: true }
+  # Checking is the player's own step: the flow log read after the plug is cut.
+  - on: { event: CommandRun, command: soc, args: { contains: flow } }
+    if: { all: [{ objective: cut }, { not: { objective: stop } }] }
+    do:
+      - ada.say: h7.ada.stopped
+      - objective.complete: stop
+  - on: { event: CommandRun, command: flows }
+    if: { all: [{ objective: cut }, { not: { objective: stop } }] }
     do:
       - ada.say: h7.ada.stopped
       - objective.complete: stop

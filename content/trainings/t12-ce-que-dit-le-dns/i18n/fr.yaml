@@ -1,5 +1,5 @@
 t12.briefing: "Un domaine publie dans le DNS bien plus que des adresses : des enregistrements TXT, lisibles par n'importe qui, qui disent qui a le droit d'envoyer ses mails, prouvent la propriété du domaine, et parfois en disent trop. Lis ceux de NovaMind."
-t12.obj.txt: "Trouver le nom interne que publie le DNS"
+t12.obj.txt: "Trouver le nom interne que publie le DNS (à envoyer avec `submit`)"
 t12.obj.spf: "Comprendre l'enregistrement SPF"
 t12.obj.dmarc: "Remarquer ce qui manque pour protéger les mails"
 t12.ada.brief: "Douzième entraînement. Tout ce que tu vas lire est public : c'est de la reconnaissance passive, la cible ne voit rien."
