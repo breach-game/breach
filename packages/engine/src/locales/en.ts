@@ -184,6 +184,7 @@ export const en: Record<string, string> = {
   'verify.ok': 'All checks pass.',
   'verify.failed': '{n} check(s) still fail. Fix the file, then run verify again.',
   'answer.none': 'Ada has no open question.',
+  'answer.submit': 'A value the mission asks for (an address, a name, a path…) is sent with submit <value>.',
   'answer.usage': 'Answer with its letter, for example: answer a',
   'answer.decided': 'Decision made.',
   'cmd.strings': 'Print the readable text hidden in a binary file: strings <file>',

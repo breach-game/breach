@@ -759,7 +759,9 @@ const call: Command = {
   explain: 'explain.call',
   group: 'network',
   async *run(ctx): Run {
-    const [number, ...words] = ctx.args;
+    let [number, ...words] = ctx.args;
+    // A number copied as a contact list prints it, with spaces: the digit groups that follow belong to it.
+    while (number && words.length > 1 && /^\d{1,4}$/.test(words[0]!)) number += ` ${words.shift()}`;
     if (!number) {
       yield err('usage: call <number> "<what you say>"');
       return 2;

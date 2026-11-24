@@ -1,5 +1,5 @@
 import { FAMILIES, type Family, type InputShape, type Intent, type Npc } from '@breach/pack-schema';
-import { evaluate } from './rules.ts';
+import { evaluate, type Places } from './rules.ts';
 import type { GameState, Scalar } from './state.ts';
 
 /** Lower case, no accents, no punctuation: what the scripted characters actually read. */
@@ -165,6 +165,7 @@ function intentMatches(
   state: GameState,
   heard: Heard | undefined,
   message: string,
+  places?: Places,
 ): boolean {
   const any = (groups: string[]) =>
     groups.some((g) => groupMatches(g, words) || groupHeard(g, intent, heard));
@@ -179,7 +180,7 @@ function intentMatches(
     const given = versionIn(message);
     if (!given || !versionAbove(given, intent.above.split('.').map(Number))) return false;
   }
-  return evaluate(intent.if, state);
+  return evaluate(intent.if, state, places);
 }
 
 export interface Decision {
@@ -196,13 +197,19 @@ export interface Decision {
  * and it alone decides what a character gives away, whatever writes the final wording. `heard`,
  * when a model interpreted the message, only adds words and families the player could have typed.
  */
-export function decide(npc: Npc, message: string, state: GameState, heard?: Heard): Decision {
+export function decide(
+  npc: Npc,
+  message: string,
+  state: GameState,
+  heard?: Heard,
+  places?: Places,
+): Decision {
   const words = normalizeText(message).split(' ').filter(Boolean);
   const detected = detectFamilies(message);
   const families = [...new Set([...detected, ...(heard?.families ?? [])])];
   const said = (id: string) =>
     (state.chats[npc.id] ?? []).filter((l) => l.from === 'npc' && l.intent === id).length;
-  const intent = npc.intents.find((i) => intentMatches(i, words, families, state, heard, message));
+  const intent = npc.intents.find((i) => intentMatches(i, words, families, state, heard, message, places));
   if (!intent) {
     const key = npc.fallback[said('fallback') % npc.fallback.length]!;
     return { intent: 'fallback', key, families, set: {} };

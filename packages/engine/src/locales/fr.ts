@@ -185,6 +185,8 @@ export const fr: Record<string, string> = {
   'verify.ok': 'Tous les contrôles passent.',
   'verify.failed': '{n} contrôle(s) en échec. Corrige le fichier, puis relance verify.',
   'answer.none': "Ada n'a pas de question en attente.",
+  'answer.submit':
+    "Une valeur que demande la mission (une adresse, un nom, un chemin…) s'envoie avec submit <valeur>.",
   'answer.usage': 'Réponds avec sa lettre, par exemple : answer a',
   'answer.decided': 'Décision prise.',
   'cmd.strings': 'Afficher le texte lisible caché dans un fichier binaire : strings <fichier>',

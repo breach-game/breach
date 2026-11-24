@@ -204,7 +204,9 @@ const answer: Command = {
     const question = open[0];
     if (!question) {
       yield out(ctx.t('answer.none'));
-      return 0;
+      // An objective answered by a value (an address, a name, a path) takes `submit`, not `answer`.
+      if (ctx.game.mission?.flags.length) yield out(paint(ctx, style.dim, ctx.t('answer.submit')));
+      return ctx.args.length ? 1 : 0;
     }
     const letter = (i: number) => String.fromCharCode(97 + i);
     const pick = (ctx.args[0] ?? '').toLowerCase();

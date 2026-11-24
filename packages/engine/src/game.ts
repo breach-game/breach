@@ -894,7 +894,12 @@ export class Game {
 
   /** Whether a condition of a pack holds now. */
   holds(cond: Condition | undefined): boolean {
-    return evaluate(cond, this.state, { playerHost: this.world.player.host, home: this.playerHome });
+    return evaluate(cond, this.state, this.places);
+  }
+
+  /** Where `~` and the player's machine are, for the file conditions of a pack. */
+  private get places() {
+    return { playerHost: this.world.player.host, home: this.playerHome };
   }
 
   private get playerHome(): string {
@@ -1698,7 +1703,7 @@ export class Game {
         ...(heard ? { heard } : {}),
       });
       const seq = this.log[this.log.length - 1]!.seq;
-      const decision = decide(npc, text, this.state, heard);
+      const decision = decide(npc, text, this.state, heard, this.places);
       return { npc, text, seq, mission: this.state.mission, decision };
     });
   }
@@ -1983,7 +1988,7 @@ export class Game {
   }
 
   private stepOutcome(step: NonNullable<Mission['adversary']>['steps'][number]) {
-    const blocked = step.blockedIf ? evaluate(step.blockedIf, this.state) : false;
+    const blocked = step.blockedIf ? evaluate(step.blockedIf, this.state, this.places) : false;
     return { blocked, stop: blocked && !step.continueIfBlocked };
   }
 
@@ -2009,7 +2014,7 @@ export class Game {
       !s.missionDone &&
       !this.replaying
     )
-      if (evaluate(step.blockedIf, s)) this.takeStep(adv.id, step);
+      if (evaluate(step.blockedIf, s, this.places)) this.takeStep(adv.id, step);
   }
 
   /* ---------- missions ---------- */
