@@ -1,0 +1,65 @@
+side: defense
+order: 9
+stage: defense
+briefing: t9.briefing
+
+files:
+  garde-fous/atlas.yml: "# Atlas guardrail: a tool call that meets every condition below is blocked.\ntool: create_account\n"
+
+objectives:
+  - { id: guard, text: t9.obj.guard }
+  - { id: why, text: t9.obj.why }
+
+evals:
+  - id: atlas
+    file: garde-fous/atlas.yml
+    objective: guard
+    cases:
+      - { id: injected, text: t9.case.injected, fields: { tool: create_account, role: admin, confirmed: false, asked_by: ticket }, expect: block }
+      - { id: hurry, text: t9.case.hurry, fields: { tool: create_account, role: admin, confirmed: false, asked_by: employee }, expect: block }
+      - { id: approved, text: t9.case.approved, fields: { tool: create_account, role: admin, confirmed: true, asked_by: employee }, expect: allow }
+      - { id: intern, text: t9.case.intern, fields: { tool: create_account, role: user, confirmed: false, asked_by: employee }, expect: allow }
+      - { id: services, text: t9.case.services, fields: { tool: list_services, role: user, confirmed: false, asked_by: employee }, expect: allow }
+
+questions:
+  - id: why
+    text: t9.q.why
+    objective: why
+    correct: model
+    options:
+      - { id: prompt, text: t9.q.why.prompt, why: t9.q.why.prompt.why }
+      - { id: model, text: t9.q.why.model }
+      - { id: all, text: t9.q.why.all, why: t9.q.why.all.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t9.ada.brief
+  - on: { event: EvalRun, passed: false, wrongly: { gte: 1 } }
+    once: false
+    do:
+      - ada.guide: { key: t9.ada.toomuch, for: guard, step: 1 }
+  - on: { event: EvalRun, passed: false, wrongly: 0 }
+    once: false
+    do:
+      - ada.guide: { key: t9.ada.toolittle, for: guard, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: guard }
+    do:
+      - ada.say: t9.ada.passed
+      - ada.ask: why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t9.ada.done
+
+guide:
+  guard: t9.ada.guard
+  why: t9.ada.answer
+
+hints:
+  guard: [t9.hint.guard.1, t9.hint.guard.2, t9.hint.guard.3]
+
+debrief:
+  title: t9.debrief.title
+  lesson: t9.debrief.lesson
+  points: [t9.debrief.p1, t9.debrief.p2, t9.debrief.p3]
+  reference: "OWASP Top 10 for LLM applications · LLM06 Excessive Agency"

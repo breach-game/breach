@@ -1,0 +1,63 @@
+order: 12
+stage: recon
+briefing: t12.briefing
+
+objectives:
+  - { id: txt, text: t12.obj.txt }
+  - { id: spf, text: t12.obj.spf }
+  - { id: dmarc, text: t12.obj.dmarc }
+
+flags:
+  - { id: forge, value: "git.novamind.test", points: 100, objective: txt }
+
+questions:
+  - id: spf
+    text: t12.q.spf
+    objective: spf
+    correct: mx
+    options:
+      - { id: mx, text: t12.q.spf.mx }
+      - { id: all, text: t12.q.spf.all, why: t12.q.spf.all.why }
+      - { id: crypt, text: t12.q.spf.crypt, why: t12.q.spf.crypt.why }
+  - id: dmarc
+    text: t12.q.dmarc
+    objective: dmarc
+    correct: policy
+    options:
+      - { id: fine, text: t12.q.dmarc.fine, why: t12.q.dmarc.fine.why }
+      - { id: policy, text: t12.q.dmarc.policy }
+      - { id: hide, text: t12.q.dmarc.hide, why: t12.q.dmarc.hide.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t12.ada.brief
+  - on: { event: DnsQuery, name: novamind.test, rtype: TXT }
+    do:
+      - ada.guide: { key: t12.ada.leak, for: txt, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: txt }
+    do:
+      - ada.say: t12.ada.found
+      - ada.ask: spf
+  - on: { event: DnsQuery, name: _dmarc.novamind.test }
+    do:
+      - ada.say: t12.ada.nodmarc
+      - ada.ask: dmarc
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t12.ada.done
+
+guide:
+  txt: t12.ada.dig
+  spf: t12.ada.answer
+  dmarc: t12.ada.dmarc
+
+hints:
+  txt: [t12.hint.txt.1, t12.hint.txt.2]
+  dmarc: [t12.hint.dmarc.1]
+
+debrief:
+  title: t12.debrief.title
+  lesson: t12.debrief.lesson
+  points: [t12.debrief.p1, t12.debrief.p2, t12.debrief.p3]
+  reference: "OWASP Top 10 · A05 Security Misconfiguration · RFC 7208, RFC 7489"

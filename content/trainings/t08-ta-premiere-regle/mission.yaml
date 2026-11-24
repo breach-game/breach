@@ -1,0 +1,87 @@
+side: defense
+order: 8
+stage: defense
+briefing: t8.briefing
+reveal: [git]
+
+files:
+  regles/essais.yml: "title: Password guessing on the forge\nsource: auth\n"
+
+objectives:
+  - { id: read, text: t8.obj.read }
+  - { id: rule, text: t8.obj.rule }
+  - { id: next, text: t8.obj.next }
+
+# Somebody outside tries one common password on several accounts: nothing can fail, it is a training.
+adversary:
+  id: spray
+  name: "203.0.113.66"
+  from: unk
+  pace: 1
+  delay: 0
+  steps:
+    - { id: try1, host: git, source: auth, fields: { user: cmorel, result: Failed, method: password, src: 203.0.113.66 } }
+    - { id: try2, host: git, source: auth, fields: { user: lpetit, result: Failed, method: password, src: 203.0.113.66 } }
+    - { id: try3, host: git, source: auth, fields: { user: jroux, result: Failed, method: password, src: 203.0.113.66 } }
+    - { id: try4, host: git, source: auth, fields: { user: sbernard, result: Failed, method: password, src: 203.0.113.66 } }
+
+# The office: developers by key, and one colleague who mistypes their password now and then.
+background:
+  - { host: git, source: auth, every: 3, offset: 0, fields: { user: cmorel, result: Accepted, method: publickey, src: 10.13.0.31 } }
+  - { host: git, source: auth, every: 5, offset: 1, fields: { user: lpetit, result: Accepted, method: publickey, src: 10.13.0.33 } }
+  - { host: git, source: auth, every: 7, offset: 2, fields: { user: jroux, result: Failed, method: password, src: 10.13.0.12 } }
+  - { host: git, source: auth, every: 7, offset: 3, fields: { user: jroux, result: Accepted, method: password, src: 10.13.0.12 } }
+
+investigation:
+  - { id: source, text: t8.q.source, value: "203.0.113.66", points: 100, objective: read }
+
+hunts:
+  - id: spray
+    file: regles/essais.yml
+    catch: { source: auth, where: { src: 203.0.113.66 } }
+    objective: rule
+
+questions:
+  - id: next
+    text: t8.q.next
+    objective: next
+    correct: lock
+    options:
+      - { id: lock, text: t8.q.next.lock }
+      - { id: block, text: t8.q.next.block, why: t8.q.next.block.why }
+      - { id: rename, text: t8.q.next.rename, why: t8.q.next.rename.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t8.ada.brief
+  - on: { event: RuleTested, passed: false, falsePositives: { gte: 1 } }
+    once: false
+    do:
+      - ada.guide: { key: t8.ada.noisy, for: rule, step: 1 }
+  - on: { event: RuleTested, passed: false, falsePositives: 0 }
+    once: false
+    do:
+      - ada.guide: { key: t8.ada.missed, for: rule, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: rule }
+    do:
+      - ada.say: t8.ada.passed
+      - ada.ask: next
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t8.ada.done
+
+guide:
+  read: t8.ada.read
+  rule: t8.ada.rule
+  next: t8.ada.answer
+
+hints:
+  read: [t8.hint.read.1, t8.hint.read.2]
+  rule: [t8.hint.rule.1, t8.hint.rule.2, t8.hint.rule.3]
+
+debrief:
+  title: t8.debrief.title
+  lesson: t8.debrief.lesson
+  points: [t8.debrief.p1, t8.debrief.p2, t8.debrief.p3]
+  reference: "OWASP Top 10 · A09 Logging and Monitoring Failures"

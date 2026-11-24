@@ -1,0 +1,6 @@
+# Training 11: scheduled jobs
+ssh ir@fichiers.corbelle.test
+cat /etc/passwd
+crontab -l -u svc-sauvegarde
+submit /var/tmp/.cache/verrou
+answer place

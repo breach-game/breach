@@ -1,0 +1,10 @@
+# Training 8: your first rule
+soc logs git auth
+soc search Failed
+answer source 203.0.113.66
+cat regles/essais.yml
+echo "result: Failed" >> regles/essais.yml
+rule test regles/essais.yml
+echo "src|startswith: 203.0.113." >> regles/essais.yml
+rule test regles/essais.yml
+answer lock

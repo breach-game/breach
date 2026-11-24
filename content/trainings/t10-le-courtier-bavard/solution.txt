@@ -1,0 +1,5 @@
+# Training 10: the chatty broker
+mqtt sub -h broker.verdure.test -t "verdure/serre/#"
+submit capteur-11
+mqtt pub -h broker.verdure.test -t verdure/serre/0/lampe/set -m on
+answer accounts

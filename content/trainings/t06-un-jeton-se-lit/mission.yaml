@@ -1,0 +1,69 @@
+order: 6
+stage: analysis
+briefing: t6.briefing
+
+files:
+  training/session.txt: "# Cookie of the test account kestrel-test on app.novamind.test, copied from the browser\nnm_session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJrZXN0cmVsLXRlc3QiLCJyb2xlIjoiY2xpZW50IiwiY2xpbmlxdWUiOiJ0ZXN0LTA0IiwiaWF0IjoxNzYzNDUyODAwLCJleHAiOjE3NjM1MzkyMDAsImRlYnVnIjoiRkxBR3tqd3Qtc2UtbGl0LXNhbnMtY2xlLTJjOWZ9In0.q3Vt0dX1b2Jr8fYkPq7c2mLw9sZ4hA6nEoRj1TgKxWu\n"
+
+objectives:
+  - { id: decode, text: t6.obj.decode }
+  - { id: forge, text: t6.obj.forge }
+  - { id: content, text: t6.obj.content }
+
+flags:
+  - { id: debug, value: "FLAG{jwt-se-lit-sans-cle-2c9f}", points: 100, objective: decode }
+
+questions:
+  - id: forge
+    text: t6.q.forge
+    objective: forge
+    correct: signature
+    options:
+      - { id: base64, text: t6.q.forge.base64, why: t6.q.forge.base64.why }
+      - { id: signature, text: t6.q.forge.signature }
+      - { id: exp, text: t6.q.forge.exp, why: t6.q.forge.exp.why }
+      - { id: https, text: t6.q.forge.https, why: t6.q.forge.https.why }
+  - id: content
+    text: t6.q.content
+    objective: content
+    correct: nothing
+    options:
+      - { id: nothing, text: t6.q.content.nothing }
+      - { id: encrypted, text: t6.q.content.encrypted, why: t6.q.content.encrypted.why }
+      - { id: short, text: t6.q.content.short, why: t6.q.content.short.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t6.ada.brief
+  - on: { event: FileRead, path: { glob: "*session.txt" } }
+    do:
+      - ada.guide: { key: t6.ada.shape, for: decode, step: 1 }
+  - on: { event: CommandRun, command: jwt }
+    do:
+      - ada.guide: { key: t6.ada.submit, for: decode, step: 2 }
+  - on: { event: ObjectiveCompleted, objective: decode }
+    do:
+      - ada.say: t6.ada.decoded
+      - ada.ask: forge
+  - on: { event: ObjectiveCompleted, objective: forge }
+    do:
+      - ada.say: t6.ada.signed
+      - ada.ask: content
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t6.ada.done
+
+guide:
+  decode: t6.ada.read
+  forge: t6.ada.answer
+  content: t6.ada.answer
+
+hints:
+  decode: [t6.hint.decode.1, t6.hint.decode.2]
+
+debrief:
+  title: t6.debrief.title
+  lesson: t6.debrief.lesson
+  points: [t6.debrief.p1, t6.debrief.p2, t6.debrief.p3]
+  reference: "OWASP Top 10 · A02 Cryptographic Failures · A07"

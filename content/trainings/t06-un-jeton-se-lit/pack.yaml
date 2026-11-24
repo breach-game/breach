@@ -1,0 +1,16 @@
+id: breach.training.t06
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [crypto, web]
+requires: [breach.world.novamind]
+title:
+  fr: Un jeton, ça se lit
+  en: A token can be read
+summary:
+  fr: Le cookie de session de ton compte de test est un JWT. Lis ce qu'il transporte sans aucune clé, puis comprends ce qui empêche, ou pas, de le modifier.
+  en: The session cookie of your test account is a JWT. Read what it carries without any key, then work out what stops someone from changing it, or not.
+authors: [BREACH]
+locales: [fr, en]

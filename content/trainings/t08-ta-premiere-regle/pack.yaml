@@ -1,0 +1,16 @@
+id: breach.training.t08
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 2
+skills: [logs, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Ta première règle
+  en: Your first rule
+summary:
+  fr: Quelqu'un essaie des mots de passe sur la forge. Écris la règle de détection qui l'attrape, sans réveiller l'équipe à chaque faute de frappe d'un collègue.
+  en: Someone is trying passwords on the code forge. Write the detection rule that catches them, without waking the team at every typo of a colleague.
+authors: [BREACH]
+locales: [fr, en]

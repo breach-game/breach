@@ -1,0 +1,62 @@
+order: 5
+stage: analysis
+briefing: t5.briefing
+
+files:
+  training/comptes.json: t5.file.export
+
+objectives:
+  - { id: admin, text: t5.obj.admin }
+  - { id: token, text: t5.obj.token }
+  - { id: next, text: t5.obj.next }
+
+flags:
+  - { id: admin, value: "migration", points: 100, objective: admin }
+  - { id: token, value: "FLAG{jq-un-jeton-dans-l-export-5e1a}", points: 100, objective: token }
+
+questions:
+  - id: next
+    text: t5.q.next
+    objective: next
+    correct: both
+    options:
+      - { id: mfa, text: t5.q.next.mfa, why: t5.q.next.mfa.why }
+      - { id: both, text: t5.q.next.both }
+      - { id: rename, text: t5.q.next.rename, why: t5.q.next.rename.why }
+      - { id: hide, text: t5.q.next.hide, why: t5.q.next.hide.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t5.ada.brief
+  - on: { event: FileRead, path: { glob: "*comptes.json" } }
+    do:
+      - ada.guide: { key: t5.ada.oneline, for: admin, step: 1 }
+  - on: { event: CommandRun, command: jq, line: { contains: keys } }
+    do:
+      - ada.guide: { key: t5.ada.keys, for: admin, step: 2 }
+  - on: { event: ObjectiveCompleted, objective: admin }
+    do:
+      - ada.say: t5.ada.found
+  - on: { event: ObjectiveCompleted, objective: token }
+    do:
+      - ada.say: t5.ada.token
+      - ada.ask: next
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t5.ada.done
+
+guide:
+  admin: t5.ada.read
+  token: t5.ada.integrations
+  next: t5.ada.next
+
+hints:
+  admin: [t5.hint.admin.1, t5.hint.admin.2]
+  token: [t5.hint.token.1, t5.hint.token.2]
+
+debrief:
+  title: t5.debrief.title
+  lesson: t5.debrief.lesson
+  points: [t5.debrief.p1, t5.debrief.p2, t5.debrief.p3]
+  reference: "OWASP Top 10 · A07 Identification and Authentication Failures"

@@ -1,0 +1,7 @@
+# Training 9: a guardrail for the agent
+cat garde-fous/atlas.yml
+eval run garde-fous/atlas.yml
+echo "role: admin" >> garde-fous/atlas.yml
+echo "confirmed: false" >> garde-fous/atlas.yml
+eval run garde-fous/atlas.yml
+answer model
