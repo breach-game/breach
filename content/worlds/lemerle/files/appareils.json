@@ -1,0 +1,16 @@
+[
+  {"name": "telephone-elise", "ip": "10.24.0.11", "mac": "02:11:00:00:00:11", "link": "wifi", "last_seen": "2029-05-12T09:58"},
+  {"name": "telephone-karim", "ip": "10.24.0.12", "mac": "02:11:00:00:00:12", "link": "wifi", "last_seen": "2029-05-12T09:57"},
+  {"name": "telephone-lea", "ip": "10.24.0.13", "mac": "02:11:00:00:00:13", "link": "wifi", "last_seen": "2029-05-12T09:59"},
+  {"name": "portable-elise", "ip": "10.24.0.14", "mac": "02:11:00:00:00:14", "link": "wifi", "last_seen": "2029-05-12T09:41"},
+  {"name": "portable-karim", "ip": "10.24.0.15", "mac": "02:11:00:00:00:15", "link": "wifi", "last_seen": "2029-05-11T23:10"},
+  {"name": "ordi-lea", "ip": "10.24.0.16", "mac": "02:11:00:00:00:16", "link": "wifi", "last_seen": "2029-05-12T01:32"},
+  {"name": "console-lea", "ip": "10.24.0.17", "mac": "02:11:00:00:00:17", "link": "ethernet", "last_seen": "2029-05-12T01:30"},
+  {"name": "cam-salon", "ip": "10.24.0.20", "mac": "02:20:00:00:00:20", "link": "wifi", "last_seen": "2029-05-12T09:59"},
+  {"name": "hub-domia", "ip": "10.24.0.30", "mac": "02:30:00:00:00:30", "link": "ethernet", "last_seen": "2029-05-12T09:59"},
+  {"name": "tablette-salon", "ip": "10.24.0.41", "mac": "02:41:00:00:00:41", "link": "wifi", "last_seen": "2029-05-12T08:02"},
+  {"name": "tele-salon", "ip": "10.24.0.45", "mac": "02:45:00:00:00:45", "link": "wifi", "last_seen": "2029-05-12T09:59"},
+  {"name": "imprimante", "ip": "10.24.0.48", "mac": "02:48:00:00:00:48", "link": "wifi", "last_seen": "2029-05-12T09:12"},
+  {"name": "ESP-7C41", "ip": "10.24.0.52", "mac": "02:7C:41:00:00:52", "link": "wifi", "last_seen": "2029-05-12T09:59"},
+  {"name": "lignerouge", "ip": "10.24.0.66", "mac": "02:66:00:00:00:66", "link": "wifi", "last_seen": "2029-05-12T10:00"}
+]

@@ -1,0 +1,16 @@
+# Season 10, mission 4: the hub
+nmap hub.lemerle.test
+mqtt sub -h hub.lemerle.test -t "#"
+mqtt sub -h hub.lemerle.test -t "maison/zigbee/#"
+answer bulb ampoule-9f2c
+contain
+contain disable appairage
+contain remove ampoule-9f2c
+answer s2
+contain reset serrure-entree
+mqtt sub -h hub.lemerle.test -t "maison/zwave/#"
+cat hub/mosquitto.conf
+sed -i "s/allow_anonymous true/allow_anonymous false/" hub/mosquitto.conf
+sed -i "s/# password_file/password_file/" hub/mosquitto.conf
+verify
+mqtt sub -h hub.lemerle.test -t "#"

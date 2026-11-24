@@ -1,0 +1,16 @@
+# Season 10, mission 3: the living-room camera
+cat vigicam/courriel.txt
+jq -r ".[].ip" vigicam/connexions.json | sort | uniq -c
+answer ip 203.0.113.77
+grep 203.0.113.77 vigicam/connexions.json
+answer since 2029-04-30
+cat fuites/avis-pelican.txt
+cat vigicam/compte.json
+answer reuse
+contain
+contain revoke session-9c2
+contain reset mot-de-passe
+cat vigicam/partages.json
+answer who manon.b@courriel.example
+contain revoke partage-manon
+answer code

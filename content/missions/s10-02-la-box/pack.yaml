@@ -1,0 +1,17 @@
+id: breach.season10.s02
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 2. La box"
+  en: "Season 10 · 2. The router"
+summary:
+  fr: "Tout passe par la box, et la sienne a gardé ses réglages d'usine. Tu entres avec le mot de passe de la notice, tu lis ce qu'elle ouvre vers Internet sans le dire, puis tu corriges ses réglages un par un : mot de passe, WPA3, WPS, UPnP, réseau invité, mises à jour."
+  en: "Everything goes through the router, and this one kept its factory settings. You get in with the password from the manual, read what it opens to the Internet without saying so, then fix its settings one by one: password, WPA3, WPS, UPnP, guest network, updates."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [iot, web, defense]
+minutes: 20

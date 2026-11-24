@@ -1,0 +1,10 @@
+account,login,password,second_factor,recovery
+messagerie,elise@lemerle.test,A,none,old-phone-number
+banque,elise@lemerle.test,B,sms,bank-branch
+vigicam,elise@lemerle.test,C,app,messagerie
+pelican,elise@lemerle.test,A,none,messagerie
+impots,elise@lemerle.test,A,none,messagerie
+reseau-social,elise@lemerle.test,A,none,messagerie
+streaming,elise@lemerle.test,A,none,messagerie
+assurance-sante,elise@lemerle.test,D,none,messagerie
+ecole-lea,elise@lemerle.test,A,none,messagerie

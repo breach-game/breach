@@ -1,0 +1,153 @@
+# Season 10, mission 6: personal accounts. The password that opened the camera also opened the
+# mailbox, where the intruder left a forwarding rule: a copy of every message, password-reset links
+# included. No attacker script: the player reads the account's own security page, removes the rule,
+# closes the sessions, and writes a plan judged by `verify` (second factor, recovery, backup codes,
+# password manager, one account per person).
+side: defense
+order: 5
+stage: response
+briefing: h6.briefing
+startTime: "2029-05-13T18:30:00+02:00"
+reveal: [box]
+
+files:
+  comptes/inventaire.csv: { $file: files/inventaire.csv }
+  comptes/messagerie-securite.json: { $file: files/messagerie-securite.json }
+  comptes/plan.yml: { $file: files/plan.yml }
+
+objectives:
+  - { id: reuse, text: h6.obj.reuse }
+  - { id: first, text: h6.obj.first }
+  - { id: forward, text: h6.obj.forward }
+  - { id: clean, text: h6.obj.clean }
+  - { id: plan, text: h6.obj.plan }
+
+flags: []
+
+investigation:
+  - { id: reuse, text: h6.q.reuse, value: "6", points: 100, objective: reuse }
+  - { id: forward, text: h6.q.forward, value: archive.elise@boite-rapide.example, points: 150, objective: forward }
+
+containment:
+  - id: remove-forward
+    action: remove
+    target: transfert
+    text: h6.contain.forward
+    sets: { mail.forward_removed: true }
+    impact: 0
+  - id: close-sessions
+    action: revoke
+    target: sessions
+    text: h6.contain.sessions
+    sets: { mail.sessions_closed: true }
+    impact: 0
+  - id: reset-mail
+    action: reset
+    target: mot-de-passe
+    text: h6.contain.password
+    sets: { mail.password_reset: true }
+    impact: 1
+
+checks:
+  - id: factor
+    text: h6.check.factor
+    if:
+      any:
+        - { file: "~/comptes/plan.yml", contains: "mailbox_second_factor: passkey" }
+        - { file: "~/comptes/plan.yml", contains: "mailbox_second_factor: app" }
+    objective: plan
+  - id: phone
+    text: h6.check.phone
+    if: { file: "~/comptes/plan.yml", contains: "recovery_phone: current-number" }
+    objective: plan
+  - id: codes
+    text: h6.check.codes
+    if: { file: "~/comptes/plan.yml", contains: "backup_codes: printed" }
+    objective: plan
+  - id: vault
+    text: h6.check.vault
+    if: { file: "~/comptes/plan.yml", contains: "password_manager: family-vault" }
+    objective: plan
+  - id: replaced
+    text: h6.check.replaced
+    if: { file: "~/comptes/plan.yml", contains: "reused_password: replaced" }
+    objective: plan
+  - id: lea
+    text: h6.check.lea
+    if: { file: "~/comptes/plan.yml", contains: "lea_account: own-account" }
+    objective: plan
+
+questions:
+  - id: order
+    text: h6.q.order
+    objective: first
+    correct: mailbox
+    options:
+      - { id: mailbox, text: h6.q.order.mailbox }
+      - { id: bank, text: h6.q.order.bank, why: h6.q.order.bank.why }
+      - { id: social, text: h6.q.order.social, why: h6.q.order.social.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h6.ada.brief
+  - on: { event: ObjectiveCompleted, objective: reuse }
+    do:
+      - ada.say: h6.ada.reuse
+      - ada.ask: order
+  - on: { event: ObjectiveCompleted, objective: first }
+    do:
+      - ada.say: h6.ada.first
+  - on: { event: ObjectiveCompleted, objective: forward }
+    do:
+      - ada.say: h6.ada.forward
+  - on: { event: Contained, containment: reset-mail }
+    if: { config: mail.forward_removed, eq: false }
+    do:
+      - ada.say: h6.ada.reset.first
+  - id: clean-a
+    on: { event: Contained, containment: remove-forward }
+    if: { all: [{ config: mail.sessions_closed, eq: true }, { config: mail.password_reset, eq: true }] }
+    do:
+      - objective.complete: clean
+  - id: clean-b
+    on: { event: Contained, containment: close-sessions }
+    if: { all: [{ config: mail.forward_removed, eq: true }, { config: mail.password_reset, eq: true }] }
+    do:
+      - objective.complete: clean
+  - id: clean-c
+    on: { event: Contained, containment: reset-mail }
+    if: { all: [{ config: mail.forward_removed, eq: true }, { config: mail.sessions_closed, eq: true }] }
+    do:
+      - objective.complete: clean
+  - on: { event: ObjectiveCompleted, objective: clean }
+    do:
+      - ada.say: h6.ada.clean
+  - on: { event: ObjectiveCompleted, objective: plan }
+    do:
+      - ada.say: h6.ada.plan
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h6.ada.done
+
+guide:
+  reuse: h6.ada.g.reuse
+  first: h6.ada.g.first
+  forward: h6.ada.g.forward
+  clean: h6.ada.g.clean
+  plan: h6.ada.g.plan
+
+hints:
+  reuse: [h6.hint.reuse.1, h6.hint.reuse.2]
+  first: [h6.hint.first.1]
+  forward: [h6.hint.forward.1, h6.hint.forward.2]
+  clean: [h6.hint.clean.1, h6.hint.clean.2]
+  plan: [h6.hint.plan.1, h6.hint.plan.2, h6.hint.plan.3]
+
+debrief:
+  title: h6.debrief.title
+  lesson: h6.debrief.lesson
+  points: [h6.debrief.p1, h6.debrief.p2, h6.debrief.p3, h6.debrief.p4]
+  reference: "NIST SP 800-63B · authenticators and account recovery"
+  home:
+    points: [h6.home.p1, h6.home.p2, h6.home.p3, h6.home.p4, h6.home.p5]

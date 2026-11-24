@@ -1,0 +1,7 @@
+maison/zigbee/pont/info {"version":"2.4.0","network":"zigbee 3.0","permit_join":true,"permit_join_since":"2028-11-02T15:10","devices":6}
+maison/zigbee/pont/appareils/capteur-porte-entree {"type":"contact","room":"entree","joined":"2028-11-02T15:14"}
+maison/zigbee/pont/appareils/capteur-fenetre-lea {"type":"contact","room":"chambre-lea","joined":"2028-11-02T15:21"}
+maison/zigbee/pont/appareils/ampoule-salon {"type":"bulb","room":"salon","joined":"2028-11-02T15:30"}
+maison/zigbee/pont/appareils/ampoule-couloir {"type":"bulb","room":"couloir","joined":"2028-11-02T15:33"}
+maison/zigbee/pont/appareils/detecteur-fumee {"type":"smoke","room":"couloir","joined":"2028-11-09T10:02"}
+maison/zigbee/pont/appareils/ampoule-9f2c {"type":"bulb","room":"","joined":"2029-04-21T22:41"}

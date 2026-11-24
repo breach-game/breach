@@ -1,0 +1,291 @@
+# Season 10. Everything here is fictional: reserved .test domains, private addresses, made-up
+# brands (Nordbox, Vigicam, Domia) and hardware addresses that no vendor owns. The Lemerle family
+# asks Ligne Rouge to look at its connected home. What is shown is the class of mistake (a default
+# password, a pairing window left open, a reused password, a device nobody remembers buying) and
+# the setting that closes it, never a technique against a real device: the Wi-Fi list is the one a
+# phone shows, nothing is captured or cracked, and the neighbours' networks stay out of scope.
+startTime: "2029-05-12T10:00:00+02:00"
+mandate: LM-2029-05
+scope:
+  domains: ["*.lemerle.test"]
+  networks: ["10.24.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.24.0.1
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.24.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -340, z: 60, h: 70 }
+    links: [box]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            LM-2029-05.txt: { $t: file.mandate }
+          maison:
+            appareils-connus.txt: { $file: files/appareils-connus.txt }
+            notice-nordbox.txt: { $t: file.notice }
+      etc:
+        hostname: "lignerouge\n"
+
+  # The home router. Its device list and its port mappings answer anyone on the home network.
+  - id: box
+    hostname: box.lemerle.test
+    ip: 10.24.0.1
+    os: Nordbox OS 3.2
+    map: { x: -120, z: -40, h: 130 }
+    links: [cam, hub, tv, imprimante, tablette, prise]
+    services:
+      - { port: 53, name: domain, product: dnsmasq 2.89 }
+      - { port: 80, name: http, product: Nordbox webadmin 3.2 }
+    web:
+      "/":
+        page:
+          title: web.box.title
+          blocks:
+            - h1: web.box.h1
+            - p: web.box.p1
+            - form: { to: boxlogin, label: web.box.label, button: web.box.button, name: password }
+            - comment: web.box.comment
+            - footer: web.box.footer
+        chat: boxlogin
+      "/appareils":
+        headers: { content-type: application/json }
+        body: { $file: files/appareils.json }
+      "/upnp":
+        headers: { content-type: application/json }
+        body: { $file: files/upnp.json }
+        variants:
+          - id: closed
+            if: { file: "~/box/reglages.conf", contains: "upnp: off" }
+            headers: { content-type: application/json }
+            body: "[]\n"
+
+  - id: cam
+    hostname: cam-salon.lemerle.test
+    ip: 10.24.0.20
+    os: Vigicam V2 (firmware 1.0.8)
+    map: { x: 60, z: -190, h: 90 }
+    services:
+      - { port: 80, name: http, product: Vigicam web 1.0.8 }
+      - { port: 554, name: rtsp, product: Vigicam RTSP }
+    web:
+      "/":
+        headers: { content-type: text/plain }
+        body: "Vigicam V2 - firmware 1.0.8 (2023-03). Sign in with the Vigicam app.\n"
+
+  # The smart-home hub: a radio bridge (Zigbee, Z-Wave) in front of a message broker. Its routes
+  # are topics, as in season 8.
+  - id: hub
+    hostname: hub.lemerle.test
+    ip: 10.24.0.30
+    os: Domia Hub 2 (Linux 6.1)
+    map: { x: 120, z: 20, h: 120 }
+    services:
+      - { port: 1883, name: mqtt, product: Mosquitto 2.0.18 }
+    web:
+      "/#": &all
+        body: { $file: files/topics-all.txt }
+        variants:
+          - id: closed
+            if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
+            status: 401
+            body: ""
+          - id: clean
+            if:
+              all:
+                - { config: hub.join_closed, eq: true }
+                - { config: hub.bulb_removed, eq: true }
+                - { config: lock.s2, eq: true }
+            body: { $file: files/topics-clean.txt }
+      "/maison/#": *all
+      "/maison/zigbee/#": &zigbee
+        body: { $file: files/topics-zigbee.txt }
+        variants:
+          - id: closed
+            if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
+            status: 401
+            body: ""
+          - id: clean
+            if:
+              all:
+                - { config: hub.join_closed, eq: true }
+                - { config: hub.bulb_removed, eq: true }
+            body: { $file: files/topics-zigbee-clean.txt }
+      "/maison/zigbee/pont/#": *zigbee
+      "/maison/zwave/#":
+        body: { $file: files/topics-zwave.txt }
+        variants:
+          - id: closed
+            if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
+            status: 401
+            body: ""
+          - id: clean
+            if: { config: lock.s2, eq: true }
+            body: { $file: files/topics-zwave-clean.txt }
+
+  - id: tv
+    hostname: tele-salon.lemerle.test
+    ip: 10.24.0.45
+    os: unknown
+    map: { x: 260, z: -150, h: 70 }
+
+  - id: imprimante
+    hostname: imprimante.lemerle.test
+    ip: 10.24.0.48
+    os: unknown
+    map: { x: 300, z: 60, h: 60 }
+    services:
+      - { port: 631, name: ipp, product: CUPS 2.4 }
+
+  - id: tablette
+    hostname: tablette-salon.lemerle.test
+    ip: 10.24.0.41
+    os: Android 9 (last update 2021)
+    map: { x: -20, z: 170, h: 60 }
+
+  # A smart plug bought on a marketplace. Nobody wrote it on the family's list.
+  - id: prise
+    hostname: esp-7c41.lemerle.test
+    ip: 10.24.0.52
+    os: unknown
+    map: { x: 200, z: 200, h: 60 }
+    services:
+      - { port: 80, name: http, product: lwIP httpd }
+    web:
+      "/":
+        headers: { content-type: text/plain }
+        body: "SmartPlug setup - fw 0.9.2-beta\n"
+
+  # The neighbours' camera, on the neighbours' network. Not the family's, so not in the mandate.
+  - id: voisin
+    hostname: cam.dupre.test
+    ip: 10.25.0.20
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 440, z: -260, h: 50 }
+
+dns:
+  box.lemerle.test: { A: ["10.24.0.1"] }
+  cam-salon.lemerle.test: { A: ["10.24.0.20"] }
+  hub.lemerle.test: { A: ["10.24.0.30"] }
+  tele-salon.lemerle.test: { A: ["10.24.0.45"] }
+  imprimante.lemerle.test: { A: ["10.24.0.48"] }
+  tablette-salon.lemerle.test: { A: ["10.24.0.41"] }
+  esp-7c41.lemerle.test: { A: ["10.24.0.52"] }
+  cam.dupre.test: { A: ["10.25.0.20"] }
+
+# What the workstation's Wi-Fi card hears from the living room. A passive list, nothing more.
+wifi:
+  - ssid: Lemerle-Maison
+    bssid: "02:4C:10:24:00:01"
+    channel: 6
+    signal: 86
+    security: WPA2
+    inUse: true
+    if: { not: &wpa3 { any: [{ file: "~/box/reglages.conf", contains: "wifi_security: WPA3" }, { file: "~/box/reglages.conf", contains: "wifi_security: WPA2+WPA3" }] } }
+  - ssid: Lemerle-Maison
+    bssid: "02:4C:10:24:00:01"
+    channel: 6
+    signal: 86
+    security: WPA2 WPA3
+    inUse: true
+    if: *wpa3
+  - ssid: Lemerle-Invites
+    bssid: "06:4C:10:24:00:01"
+    channel: 6
+    signal: 85
+    security: WPA2 WPA3
+    if: { file: "~/box/reglages.conf", contains: "guest_network: on" }
+  - ssid: ESP-7C41
+    bssid: "02:7C:41:00:00:52"
+    channel: 6
+    signal: 78
+    security: open
+    if: { config: plug.gone, eq: false }
+  - ssid: Dupre-Wifi
+    bssid: "06:D0:25:00:00:01"
+    channel: 11
+    signal: 54
+    security: open
+  - ssid: Nordbox-A41F
+    bssid: "0A:A4:1F:00:00:01"
+    channel: 1
+    signal: 31
+    security: WPA2
+
+noise:
+  nmap:
+    base: 0
+  dig: 0
+  whois: 0
+  curl: 0
+  browse: 0
+  chat: 0
+  mqtt: 0
+  ssh: 0
+  ping: 0
+
+npcs:
+  # The sign-in form of the router. It answers like a server, and accepts the password printed in
+  # its manual until someone changes it.
+  - id: boxlogin
+    name: nordbox
+    role: npc.box.role
+    intents:
+      - id: changed
+        words: [admin]
+        literal: true
+        if: { file: "~/box/reglages.conf", lacks: "admin_password: admin\n" }
+        reply: [npc.box.denied]
+      - id: default
+        words: [admin]
+        literal: true
+        reply: [npc.box.ok]
+    fallback: [npc.box.denied]
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+
+# Settings of the house that decide whether a weakness is there. A measure changes them.
+config:
+  cam.session_revoked: false
+  cam.password_reset: false
+  cam.share_revoked: false
+  cam.unplugged: false
+  hub.join_closed: false
+  hub.bulb_removed: false
+  lock.s2: false
+  hub.off: false
+  sms.blocked: false
+  mail.forward_removed: false
+  mail.sessions_closed: false
+  mail.password_reset: false
+  plug.isolated: false
+  plug.gone: false
+  net.c2_blocked: false
+  wifi.off: false
+
+# An ordinary evening, seen from the router: phones look at the camera, the hub switches the plug,
+# the plug and the television call their makers.
+telemetry:
+  background:
+    - { host: box, source: flow, every: 3, offset: 0, fields: { src: 10.24.0.12, dst: 10.24.0.20, dport: 554, bytes: 482113 } }
+    - { host: box, source: flow, every: 4, offset: 1, fields: { src: 10.24.0.30, dst: 10.24.0.52, dport: 80, bytes: 212 } }
+    - { host: box, source: flow, every: 5, offset: 2, fields: { src: 10.24.0.52, dst: 198.51.100.20, dport: 443, bytes: 1840 } }
+    - { host: box, source: flow, every: 6, offset: 3, fields: { src: 10.24.0.45, dst: 203.0.113.80, dport: 443, bytes: 9120044 } }
+    - { host: box, source: flow, every: 7, offset: 4, fields: { src: 10.24.0.20, dst: 198.51.100.61, dport: 443, bytes: 30112 } }
+    - { host: box, source: flow, every: 9, offset: 5, fields: { src: 10.24.0.14, dst: 10.24.0.48, dport: 631, bytes: 88201 } }

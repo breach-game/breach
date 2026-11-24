@@ -1,0 +1,14 @@
+# Season 10, mission 5: the parcel and the voice
+sms
+sms 2
+answer link colisplus-suivi.example
+sms 4
+cat odile/messagerie-vocale.txt
+cat odile/contacts.txt
+call +33639982016 "Léa, c'est toi qui as écrit à mamie ?"
+answer known
+sms 3
+cat odile/facture-nordtel.txt
+call +33199001023 "une demande de carte SIM ?"
+call +33199001023 "Ce n'est pas elle, annulez cette demande"
+contain block numero-inconnu

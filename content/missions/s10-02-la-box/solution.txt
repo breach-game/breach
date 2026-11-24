@@ -1,0 +1,16 @@
+# Season 10, mission 2: the router
+cat maison/notice-nordbox.txt
+curl -d "password=admin" http://box.lemerle.test/
+curl http://box.lemerle.test/upnp
+answer port 554
+cat box/reglages.conf
+sed -i "s/admin_password: admin/admin_password: tournesol-gare-violet-42/" box/reglages.conf
+sed -i "s/wifi_security: WPA2/wifi_security: WPA2+WPA3/" box/reglages.conf
+sed -i "s/wps: on/wps: off/" box/reglages.conf
+sed -i "s/upnp: on/upnp: off/" box/reglages.conf
+sed -i "s/guest_network: off/guest_network: on/" box/reglages.conf
+sed -i "s/auto_update: off/auto_update: on/" box/reglages.conf
+verify
+answer phrase
+answer manual
+nmcli device wifi list

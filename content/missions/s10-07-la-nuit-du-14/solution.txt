@@ -1,0 +1,14 @@
+# Season 10, mission 7: the night of the 14th
+soc sources
+soc alerts
+flows --src 10.24.0.52
+contain
+contain isolate prise-bureau
+soc logs box flow
+answer night 198.51.100.94
+cat regles/prise.yml
+rule test regles/prise.yml
+echo "dst|startswith: 10.24.0." >> regles/prise.yml
+rule test regles/prise.yml
+cat maison/commande.txt
+answer return

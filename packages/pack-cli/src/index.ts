@@ -166,7 +166,8 @@ export function buildAll(
         : packs
             .filter((p) => p.pack.kind === 'series')
             .map((p) => p.pack.id)
-            .sort(),
+            // Numeric order: season 10 comes after season 9, not before season 2.
+            .sort((a, b) => a.localeCompare(b, 'en', { numeric: true })),
       packs: entries,
     },
     files,

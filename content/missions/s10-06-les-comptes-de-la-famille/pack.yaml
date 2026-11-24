@@ -1,0 +1,17 @@
+id: breach.season10.s06
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 6. Les comptes de la famille"
+  en: "Season 10 · 6. The family's accounts"
+summary:
+  fr: "Le mot de passe volé d'Élise ouvrait aussi sa messagerie, et la messagerie permet de réinitialiser tout le reste. Tu comptes les comptes qui partagent ce mot de passe, tu trouves la règle de transfert que l'intrus a laissée, tu le sors, puis tu écris avec la famille un plan que `verify` contrôle."
+  en: "Élise's stolen password also opened her mailbox, and the mailbox can reset everything else. You count the accounts that share that password, find the forwarding rule the intruder left, get them out, then write with the family a plan that `verify` checks."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [privacy, logs, defense]
+minutes: 20

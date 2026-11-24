@@ -1,0 +1,15 @@
+id: breach.season10
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: series
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 : la maison"
+  en: "Season 10: the house"
+summary:
+  fr: "Pas d'entreprise cette fois : une famille, sa box, sa caméra, ses ampoules et sa serrure connectées, le téléphone de la grand-mère et les comptes de tout le monde. Élise Lemerle t'invite un week-end pour savoir qui regarde chez elle. Tu inventories, tu répares, tu expliques, et chaque débrief se termine par ce que tu peux refaire chez toi le soir même."
+  en: "No company this time: a family, their router, their camera, their smart bulbs and lock, the grandmother's phone and everybody's accounts. Élise Lemerle invites you for a weekend to find out who is watching her home. You take stock, repair, explain, and each debrief ends with what you can do again at home that same evening."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, privacy, defense]

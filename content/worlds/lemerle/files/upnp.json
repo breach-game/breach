@@ -1,0 +1,4 @@
+[
+  {"external_port": 554, "internal_ip": "10.24.0.20", "internal_port": 554, "proto": "tcp", "asked_by": "cam-salon", "since": "2027-12-25"},
+  {"external_port": 3074, "internal_ip": "10.24.0.17", "internal_port": 3074, "proto": "udp", "asked_by": "console-lea", "since": "2028-09-02"}
+]

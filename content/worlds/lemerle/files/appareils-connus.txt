@@ -1,0 +1,14 @@
+# Devices we know about - written by Elise for the audit, 11 May 2029
+box
+telephone-elise
+telephone-karim
+telephone-lea
+portable-elise
+portable-karim
+ordi-lea
+tablette-salon
+tele-salon
+imprimante
+cam-salon
+hub-domia
+console-lea

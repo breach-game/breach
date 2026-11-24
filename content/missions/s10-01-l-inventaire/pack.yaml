@@ -1,0 +1,17 @@
+id: breach.season10.s01
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 1. L'inventaire"
+  en: "Season 10 · 1. The inventory"
+summary:
+  fr: "La maison. Élise et Karim Lemerle te demandent de regarder leur maison connectée. Avant de régler quoi que ce soit, tu comptes : les réseaux Wi-Fi à portée, les appareils que la box voit, et celui que personne n'a noté sur la liste."
+  en: "The house. Élise and Karim Lemerle ask you to look at their connected home. Before fixing anything, you count: the Wi-Fi networks in range, the devices the router sees, and the one nobody wrote on the list."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [iot, recon, defense]
+minutes: 15

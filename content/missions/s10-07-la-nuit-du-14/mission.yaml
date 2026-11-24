@@ -1,0 +1,224 @@
+# Season 10, finale: the night. The "attacker" is a script of router flow lines: the cheap smart
+# plug calls an address it never calls by day, then opens connections to the camera, the hub, the
+# printer and the tablet. A plug never has a reason to start a conversation with another device at
+# home: that is the whole detection. Blocking the outside address holds for one step (the plug knows
+# a second one); switching the Wi-Fi off works and costs the family everything else.
+side: defense
+order: 6
+stage: response
+briefing: h7.briefing
+startTime: "2029-05-14T03:02:00+02:00"
+reveal: [box, cam, hub, prise]
+
+files:
+  regles/prise.yml: h7.file.rule
+  maison/commande.txt: h7.file.order
+
+objectives:
+  - { id: cut, text: h7.obj.cut }
+  - { id: stop, text: h7.obj.stop }
+  - { id: night, text: h7.obj.night }
+  - { id: rule, text: h7.obj.rule }
+  - { id: fate, text: h7.obj.fate }
+
+flags: []
+
+adversary:
+  id: plug
+  name: ESP-7C41
+  from: prise
+  pace: 1
+  delay: 0
+  steps:
+    - id: wake
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 198.51.100.94, dport: 8443, bytes: 412 }
+    - id: look-cam
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.20, dport: 554, bytes: 1204 }
+      blockedIf: &cut
+        any:
+          - { config: plug.isolated, eq: true }
+          - { config: wifi.off, eq: true }
+    - id: look-hub
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.30, dport: 1883, bytes: 880 }
+      blockedIf: *cut
+    - id: look-printer
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.48, dport: 631, bytes: 640 }
+      blockedIf: *cut
+    - id: look-tablet
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.41, dport: 80, bytes: 702 }
+      blockedIf: *cut
+    - id: report
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 198.51.100.94, dport: 8443, bytes: 2210 }
+      blockedIf:
+        any:
+          - { config: plug.isolated, eq: true }
+          - { config: wifi.off, eq: true }
+          - { config: net.c2_blocked, eq: true }
+      continueIfBlocked: true
+    - id: report2
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 198.51.100.95, dport: 8443, bytes: 2210 }
+      blockedIf: *cut
+    - id: pull
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.20, dport: 554, bytes: 2400512 }
+      blockedIf: *cut
+    - id: out1
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 198.51.100.95, dport: 8443, bytes: 2381004 }
+      blockedIf: *cut
+    - id: talk-hub
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.30, dport: 1883, bytes: 96 }
+      blockedIf: *cut
+    - id: pull2
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 10.24.0.20, dport: 554, bytes: 9120330 }
+      blockedIf: *cut
+    - id: out2
+      host: box
+      source: flow
+      fields: { src: 10.24.0.52, dst: 198.51.100.95, dport: 8443, bytes: 9101872 }
+      blockedIf: *cut
+
+containment:
+  - id: isolate-plug
+    action: isolate
+    target: prise-bureau
+    text: h7.contain.plug
+    sets: { plug.isolated: true }
+    impact: 0
+  - id: block-address
+    action: block
+    target: 198.51.100.94
+    text: h7.contain.address
+    sets: { net.c2_blocked: true }
+    impact: 0
+  - id: wifi-off
+    action: disable
+    target: wifi
+    text: h7.contain.wifi
+    sets: { wifi.off: true }
+    impact: 20
+
+alerts:
+  - id: inside
+    title: h7.alert.inside
+    why: h7.alert.inside.why
+    source: flow
+    where: { src: 10.24.0.52, dst: { glob: "10.24.0.*" } }
+  - id: outside
+    title: h7.alert.outside
+    why: h7.alert.outside.why
+    source: flow
+    where: { src: 10.24.0.52, dport: 8443 }
+
+investigation:
+  - { id: night, text: h7.q.night, value: 198.51.100.94, points: 150, objective: night }
+
+hunts:
+  - id: plug
+    file: regles/prise.yml
+    catch: { source: flow, where: { src: 10.24.0.52, dst: { glob: "10.24.0.*" } } }
+    objective: rule
+
+questions:
+  # A decision: no option is wrong, each has a price.
+  - id: fate
+    text: h7.q.fate
+    objective: fate
+    options:
+      - { id: return, text: h7.q.fate.return, why: h7.q.fate.return.why, impact: 0, sets: { plug.gone: true } }
+      - { id: recycle, text: h7.q.fate.recycle, why: h7.q.fate.recycle.why, impact: 1, sets: { plug.gone: true } }
+      - { id: guest, text: h7.q.fate.guest, why: h7.q.fate.guest.why, impact: 6 }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h7.ada.brief
+  - on: { event: AdversaryStep, step: look-hub, blocked: false }
+    do:
+      - ada.warn: h7.ada.look
+  - on: { event: AdversaryStep, step: look-tablet, blocked: false }
+    do:
+      - ada.warn: h7.ada.tablet
+  - on: { event: AdversaryStep, step: report2, blocked: false }
+    if: { config: net.c2_blocked, eq: true }
+    do:
+      - ada.warn: h7.ada.second
+  - on: { event: AdversaryStep, step: pull, blocked: false }
+    do:
+      - ada.warn: h7.ada.pull
+  - on: { event: AdversaryStep, step: talk-hub, blocked: false }
+    do:
+      - ada.warn: h7.ada.talk
+  - on: { event: AdversaryStep, step: out2, blocked: false }
+    do:
+      - mission.fail: h7.ada.fail
+  - on: { event: Contained, containment: block-address }
+    do:
+      - ada.say: h7.ada.address
+  - on: { event: Contained, containment: isolate-plug }
+    do:
+      - ada.say: h7.ada.plug
+      - objective.complete: cut
+  - on: { event: Contained, containment: wifi-off }
+    do:
+      - ada.say: h7.ada.wifi
+      - objective.complete: cut
+  - on: { event: AdversaryStep, stop: true }
+    do:
+      - ada.say: h7.ada.stopped
+      - objective.complete: stop
+  - on: { event: ObjectiveCompleted, objective: night }
+    do:
+      - ada.say: h7.ada.night
+  - on: { event: ObjectiveCompleted, objective: rule }
+    do:
+      - ada.say: h7.ada.rule
+      - ada.ask: fate
+  - on: { event: ObjectiveCompleted, objective: fate }
+    do:
+      - ada.say: h7.ada.fate
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h7.ada.done
+
+guide:
+  cut: h7.ada.g.cut
+  stop: h7.ada.g.stop
+  night: h7.ada.g.night
+  rule: h7.ada.g.rule
+  fate: h7.ada.g.fate
+
+hints:
+  cut: [h7.hint.cut.1, h7.hint.cut.2, h7.hint.cut.3]
+  stop: [h7.hint.stop.1]
+  night: [h7.hint.night.1, h7.hint.night.2]
+  rule: [h7.hint.rule.1, h7.hint.rule.2, h7.hint.rule.3]
+  fate: [h7.hint.fate.1]
+
+debrief:
+  title: h7.debrief.title
+  lesson: h7.debrief.lesson
+  points: [h7.debrief.p1, h7.debrief.p2, h7.debrief.p3, h7.debrief.p4]
+  reference: "ETSI EN 303 645 · consumer IoT security · OWASP IoT Top 10"
+  home:
+    points: [h7.home.p1, h7.home.p2, h7.home.p3, h7.home.p4, h7.home.p5]
