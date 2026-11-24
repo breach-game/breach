@@ -1,0 +1,7 @@
+# Training 15: a share link is public
+cat canal/equipe-data.txt
+cat partage/conversation.txt
+submit LR-BILL-5521-QX7
+answer revoke
+cat partage/recherche.txt
+answer anyone

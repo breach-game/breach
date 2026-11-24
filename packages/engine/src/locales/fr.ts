@@ -225,6 +225,14 @@ export const fr: Record<string, string> = {
   'tshark.live':
     'tshark : la capture en direct ne fait pas partie du jeu. Lis plutôt un fichier de capture : tshark -r <fichier.pcap>',
   'tshark.usage': 'usage : tshark -r <fichier.pcap> [-Y <filtre>] [-V] [-q -z conv,ip|conv,tcp]',
+  'cmd.exiftool': "Lire ou retirer les métadonnées d'une photo : exiftool <photo>, exiftool -all= <photo>",
+  'explain.exiftool':
+    "exiftool montre ce qu'un appareil photo ou un téléphone a écrit dans une photo : l'appareil, la date, parfois l'endroit exact de la prise. `exiftool -all= photo.jpg` retire tout, `-gps:all=` seulement la position. À vérifier avant de publier.",
+  'cmd.clip': 'Afficher le presse-papiers sans le coller : clip',
+  'cmd.paste': 'Afficher le presse-papiers (xclip -o, xsel -b -o, pbpaste, wl-paste)',
+  'explain.clip':
+    "Une page web peut mettre un texte dans ton presse-papiers sans le montrer, puis te demander de le coller quelque part. clip affiche ce texte et n'exécute rien : lis ce que tu allais coller.",
+  'engine.clip.empty': 'clip : le presse-papiers est vide',
   'cmd.zbarimg': "Lire le QR code d'une image : zbarimg <image>",
   'explain.zbarimg':
     "zbarimg affiche ce que contient un QR code, sans l'ouvrir. Un QR code n'est qu'un texte : une adresse, un réseau Wi-Fi, un numéro. Lis-le avant qu'un téléphone n'agisse.",

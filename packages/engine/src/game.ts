@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.18.0';
+export const ENGINE_VERSION = '0.19.0';
 
 export interface GameOptions {
   world: Pack;
@@ -574,6 +574,7 @@ export class Game {
         s.impact = 0;
         s.contained = {};
         s.answers = {};
+        s.cache = {};
         for (const id of mission?.reveal ?? []) s.revealed[id] = true;
         // A mission starts on the workstation, with its documents in the player's home directory.
         this.leaveSessions(s);
@@ -738,6 +739,13 @@ export class Game {
         break;
       case 'VarSet':
         s.vars[e.name] = e.value;
+        break;
+      case 'ClipboardSet':
+        s.clipboard = e.text;
+        break;
+      case 'CacheStored':
+        s.cache ??= {};
+        (s.cache[e.host] ??= {})[e.path] = { status: e.status, body: e.body, headers: e.headers, t: s.clock };
         break;
       case 'RuleFired':
         s.fired[e.rule] = true;
@@ -1401,7 +1409,32 @@ export class Game {
    */
   http(host: Host, url: Url, method: string, ua = 'curl/8.5.0', extras: RequestExtras = {}): HttpResponse {
     const product = host.services.find((s) => s.port === url.port)?.product ?? 'nginx';
-    const route = findRoute(host, url.path);
+    // A cache in front of the server answers first with what it kept, whoever asks.
+    const cdn = host.cdn && this.holds(host.cdn.if) ? host.cdn : undefined;
+    const ext = /\.([a-z0-9]{1,5})$/i.exec(url.path)?.[1]?.toLowerCase();
+    const cacheable = !!cdn && !!ext && cdn.ext.includes(ext) && (method === 'GET' || method === 'HEAD');
+    const kept = cacheable ? this.state.cache?.[host.id]?.[url.path] : undefined;
+    if (kept) {
+      const age = Math.max(1, Math.round((this.state.clock - kept.t) / 1000));
+      this.emit({
+        type: 'HttpRequest',
+        host: host.id,
+        path: url.path,
+        method,
+        status: kept.status,
+        ua,
+        bytes: new TextEncoder().encode(kept.body).length,
+        variant: 'cache-hit',
+      });
+      return {
+        status: kept.status,
+        headers: { ...kept.headers, age: String(age), 'x-cache': 'HIT' },
+        body: kept.body,
+        route: undefined,
+        page: undefined,
+      };
+    }
+    const route = findRoute(host, url.path) ?? this.looseRoute(host, url.path);
     // A cookie or a header the request carries may get another answer from the same address.
     const variant =
       (method === 'POST' || method === 'PUBLISH') && route?.chat !== undefined
@@ -1431,14 +1464,41 @@ export class Game {
       ...(bytes === undefined ? {} : { bytes }),
       ...(variant ? { variant: variant.id } : {}),
     });
-    const headers = {
+    const headers: Record<string, string> = {
       server: product.replace(' ', '/'),
       date: this.date().unix,
       'content-type': 'text/html; charset=utf-8',
       'content-length': String(new TextEncoder().encode(body).length),
       ...(answer?.headers ?? {}),
     };
+    if (cdn) {
+      const control = Object.entries(headers).find(([k]) => k.toLowerCase() === 'cache-control')?.[1] ?? '';
+      const store = cacheable && status === 200 && !/no-store|private/i.test(control);
+      headers['x-cache'] = cacheable ? 'MISS' : 'BYPASS';
+      if (store)
+        this.emit({
+          type: 'CacheStored',
+          host: host.id,
+          path: url.path,
+          status,
+          body,
+          headers: { ...headers },
+        });
+    }
     return { status, headers, body, route, page: answer?.page };
+  }
+
+  /** A route that answers any path below its own (`/account/x.css`), while its `loose` holds. */
+  private looseRoute(host: Host, path: string): Route | undefined {
+    for (let cut = path.lastIndexOf('/'); cut > 0; cut = path.lastIndexOf('/', cut - 1)) {
+      const route = host.web?.[path.slice(0, cut)];
+      if (
+        route?.loose === true ||
+        (route?.loose !== undefined && route.loose !== false && this.holds(route.loose))
+      )
+        return route;
+    }
+    return undefined;
   }
 
   /** Open a page in the workstation's browser. `dt` is the real time since the player's last action. */
@@ -1487,6 +1547,29 @@ export class Game {
     if (!turn) return { ok: false, reply: '' };
     const reply = this.closeChat(turn);
     return reply === null ? { ok: false, reply: '' } : { ok: true, reply, brain: 'scripted' };
+  }
+
+  /**
+   * Requests sent to a character at the same time (`curl -Z`). Unless the character handles them one
+   * after the other (`serial`), each is decided on the state they all found: two refunds checked
+   * against the same balance both go through. Returns one result per message, in order.
+   */
+  chatBurst(npcId: string, messages: string[]): ChatResult[] {
+    const npc = this.npc(npcId);
+    if (!npc || (npc.serial && this.holds(npc.serial)))
+      return messages.map((m) => this.chat(npcId, m, 'api'));
+    const turns = messages.map((m) => this.openChat(npcId, m, 'api', 0));
+    return turns.map((turn) => {
+      const reply = turn ? this.closeChat(turn) : null;
+      return reply === null ? { ok: false, reply: '' } : { ok: true, reply, brain: 'scripted' };
+    });
+  }
+
+  /** A page's `copy` button: the text goes on the workstation's clipboard, never the real one. */
+  copy(text: string, url: string) {
+    const value = this.t(text).trim();
+    if (!value) return;
+    this.settle(() => this.emit({ type: 'ClipboardSet', text: value, url }));
   }
 
   /**

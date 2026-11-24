@@ -11,6 +11,37 @@ function rich(text: string): ReactNode[] {
   return text.split('`').map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part));
 }
 
+/**
+ * A page button that writes to the clipboard, as a page script would. Only the game's own clipboard
+ * receives the text (`game.copy`): the player's real clipboard is never touched.
+ */
+function CopyButton({ copy, url }: { copy: { button: string; text: string; note?: string }; url: string }) {
+  const game = useGame();
+  const t = useT();
+  const [done, setDone] = useState(false);
+  return (
+    <section className="page-copy">
+      {copy.note ? <p>{rich(game.t(copy.note))}</p> : null}
+      <button
+        type="button"
+        className="btn"
+        onClick={() => {
+          game.copy(copy.text, url);
+          touch();
+          setDone(true);
+        }}
+      >
+        {rich(game.t(copy.button))}
+      </button>
+      {done ? (
+        <p className="page-copy-done" role="status">
+          {rich(t('browser.copied'))}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 interface Props {
   /** Address to show. Changing `nonce` loads it again (the `open` command, the dock). */
   url: string;
@@ -124,6 +155,7 @@ export function Browser({ url, nonce, active, onNavigate }: Props) {
         </table>
       );
     if ('footer' in b) return <footer key={i}>{rich(game.t(b.footer))}</footer>;
+    if ('copy' in b) return <CopyButton key={i} copy={b.copy} url={result?.url ?? address} />;
     return null; // A comment only exists in the source.
   };
 

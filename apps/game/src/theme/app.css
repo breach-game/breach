@@ -259,6 +259,9 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .page table { border-collapse: collapse; width: 100%; font: 400 13.5px/1.45 var(--human); }
 .page th, .page td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .page th { font: 500 11px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.page-copy { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(7, 9, 15, 0.5); }
+.page-copy .btn { min-height: 44px; }
+.page-copy-done { margin: 0; font: 500 12px/1.4 var(--human); color: var(--amber); }
 .page-form { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: rgba(7, 9, 15, 0.5); }
 .page-form form { display: flex; gap: 8px; align-items: flex-end; }
 .page-form label { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; font: 500 12px/1.3 var(--human); color: var(--dim); }
