@@ -847,3 +847,31 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .debrief .home-card { border: 1px solid rgba(45, 226, 255, 0.35); border-radius: 10px; padding: 4px 16px 10px; background: rgba(45, 226, 255, 0.05); }
 .debrief .home-card h3::before { content: '⌂ '; color: var(--defense); }
 .debrief .home-card[data-kind='travel'] h3::before { content: '⇢ '; }
+
+/* Career grades: neutral white, never a role colour. The pips say the rank by shape as well. */
+.grade-pips { display: inline-flex; gap: 3px; align-items: flex-end; }
+.grade-pips i { width: 4px; height: 10px; border-radius: 1px; border: 1px solid rgba(215, 224, 245, 0.45); }
+.grade-pips i:nth-child(2) { height: 12px; }
+.grade-pips i:nth-child(3) { height: 14px; }
+.grade-pips i:nth-child(4) { height: 16px; }
+.grade-pips i.on { background: #eef2ff; border-color: #eef2ff; }
+.grade-chip { display: inline-flex; align-items: center; gap: 7px; margin-left: 4px; padding: 3px 9px 3px 7px; border: 1px solid var(--line); border-radius: 6px; font: 500 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #eef2ff; }
+.bar .os .grade-chip { font-weight: 500; }
+.career { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 10px; background: rgba(14, 19, 32, 0.6); animation: fadein 600ms 1500ms both; }
+.career .grade-pips { transform: scale(1.4); transform-origin: left center; margin-right: 8px; }
+.career > div { display: flex; flex-direction: column; gap: 4px; }
+.career-kicker { font: 500 10.5px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.career-grade { font: 700 18px/1.1 var(--human); letter-spacing: 0.08em; color: #fff; }
+.career-meta { font: 400 13px/1.4 var(--human); color: var(--dim); }
+.community .career { align-self: stretch; margin-bottom: 8px; animation: none; }
+.home-option.looks { flex-wrap: wrap; row-gap: 8px; }
+.home-option.looks .seg button { display: inline-flex; align-items: center; gap: 5px; }
+.career-note { margin: 0; font: 400 12px/1.5 var(--human); color: var(--dim); max-width: 46ch; }
+.promotion { display: flex; gap: 18px; align-items: flex-start; padding: 16px 18px; border: 1px solid rgba(238, 242, 255, 0.35); border-radius: 10px; background: rgba(238, 242, 255, 0.04); }
+.promotion .grade-pips { transform: scale(1.6); transform-origin: left top; margin: 6px 14px 0 2px; }
+.promotion h3 { margin: 6px 0 6px; font: 700 20px/1.2 var(--human); color: #fff; }
+.promotion p { margin: 0 0 12px; max-width: 62ch; }
+.promotion .btn { height: 44px; }
+/* Terminal looks: only the glass behind the text changes. */
+.term[data-look='slate'] { background: rgba(4, 6, 11, 0.92); border-radius: 8px; inset: 8px; padding: 4px 6px 4px 10px; }
+.term[data-look='frost'] { background: linear-gradient(180deg, rgba(215, 224, 245, 0.06), rgba(215, 224, 245, 0.015)); border-radius: 8px; inset: 8px; padding: 4px 6px 4px 10px; }

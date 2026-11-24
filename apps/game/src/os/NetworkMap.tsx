@@ -1,6 +1,7 @@
 import type { Game } from '@breach/engine';
 import { useEffect, useRef } from 'react';
-import { currentGame, liveNoise, onGameEvent } from '../session.ts';
+import { allowedMap, type MapStyle } from '../career.ts';
+import { currentGame, currentGrade, liveNoise, onGameEvent } from '../session.ts';
 import { getSettings } from '../settings.ts';
 
 const KIND: Record<string, string> = {
@@ -247,32 +248,7 @@ export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boo
         n.vis = shown ? Math.min(1, n.vis + dt / (effects ? 700 : 1)) : 0;
       }
       cx.lineWidth = 1;
-      for (let r = 120; r <= 600; r += 120) {
-        cx.beginPath();
-        for (let i = 0; i <= 64; i++) {
-          const a = (i / 64) * Math.PI * 2;
-          const p = proj(Math.cos(a) * r, 0, Math.sin(a) * r);
-          if (i) cx.lineTo(p.x, p.y);
-          else cx.moveTo(p.x, p.y);
-        }
-        cx.strokeStyle = isBlue ? 'rgba(45,226,255,0.10)' : 'rgba(125,139,170,0.08)';
-        cx.stroke();
-      }
-      cx.strokeStyle = 'rgba(125,139,170,0.045)';
-      for (let k = -600; k <= 600; k += 100) {
-        let a = proj(k, 0, -600);
-        let b = proj(k, 0, 600);
-        cx.beginPath();
-        cx.moveTo(a.x, a.y);
-        cx.lineTo(b.x, b.y);
-        cx.stroke();
-        a = proj(-600, 0, k);
-        b = proj(600, 0, k);
-        cx.beginPath();
-        cx.moveTo(a.x, a.y);
-        cx.lineTo(b.x, b.y);
-        cx.stroke();
-      }
+      drawFloor(cx, proj, allowedMap(getSettings().mapStyle, currentGrade()), isBlue);
       // Radar sweep: its colour follows the noise gauge.
       const sw = (effects ? (now / 4000) % 1 : 0.1) * Math.PI * 2;
       const c0 = proj(0, 0, 0);
@@ -400,4 +376,69 @@ export function NetworkMap({ blue, focus = false }: { blue: boolean; focus?: boo
   }, []);
 
   return <canvas ref={ref} className="map" role="img" aria-label="Network map" />;
+}
+
+type Project = (x: number, y: number, z: number) => { x: number; y: number; s: number };
+
+/** A closed line on the floor, radius given by angle. */
+function loop(cx: CanvasRenderingContext2D, proj: Project, radius: (a: number) => number) {
+  cx.beginPath();
+  for (let i = 0; i <= 96; i++) {
+    const a = (i / 96) * Math.PI * 2;
+    const r = radius(a);
+    const p = proj(Math.cos(a) * r, 0, Math.sin(a) * r);
+    if (i) cx.lineTo(p.x, p.y);
+    else cx.moveTo(p.x, p.y);
+  }
+  cx.stroke();
+}
+
+function line(cx: CanvasRenderingContext2D, proj: Project, x0: number, z0: number, x1: number, z1: number) {
+  const a = proj(x0, 0, z0);
+  const b = proj(x1, 0, z1);
+  cx.beginPath();
+  cx.moveTo(a.x, a.y);
+  cx.lineTo(b.x, b.y);
+  cx.stroke();
+}
+
+/**
+ * The floor under the machines: a look unlocked by career grades. Only its pattern changes; its
+ * colour stays neutral grey, or cyan in the defence replay, as before.
+ */
+function drawFloor(cx: CanvasRenderingContext2D, proj: Project, style: MapStyle, isBlue: boolean) {
+  const ring = isBlue ? 'rgba(45,226,255,0.10)' : 'rgba(125,139,170,0.08)';
+  const faint = 'rgba(125,139,170,0.045)';
+  if (style === 'grid') {
+    cx.strokeStyle = ring;
+    for (let r = 120; r <= 600; r += 120) loop(cx, proj, () => r);
+    cx.strokeStyle = faint;
+    for (let k = -600; k <= 600; k += 100) {
+      line(cx, proj, k, -600, k, 600);
+      line(cx, proj, -600, k, 600, k);
+    }
+  } else if (style === 'sonar') {
+    cx.strokeStyle = ring;
+    for (let r = 60; r <= 600; r += 60) loop(cx, proj, () => r);
+    cx.strokeStyle = faint;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      line(cx, proj, Math.cos(a) * 60, Math.sin(a) * 60, Math.cos(a) * 600, Math.sin(a) * 600);
+    }
+  } else if (style === 'stars') {
+    cx.strokeStyle = faint;
+    loop(cx, proj, () => 600);
+    cx.fillStyle = isBlue ? 'rgba(45,226,255,0.28)' : 'rgba(170,182,210,0.22)';
+    for (let x = -600; x <= 600; x += 60)
+      for (let z = -600; z <= 600; z += 60) {
+        if (x * x + z * z > 600 * 600) continue;
+        const p = proj(x, 0, z);
+        cx.fillRect(p.x - 0.75, p.y - 0.75, 1.5, 1.5);
+      }
+  } else {
+    // Relief: contour lines, like a survey map of the network.
+    cx.strokeStyle = ring;
+    for (let r = 70; r <= 600; r += 55)
+      loop(cx, proj, (a) => r + Math.sin(a * 3 + r / 90) * 14 + Math.cos(a * 5 - r / 70) * 7);
+  }
 }

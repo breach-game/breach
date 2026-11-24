@@ -1,6 +1,7 @@
 import { LEVEL_BONUS } from '@breach/engine';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Wordmark } from '../brand.tsx';
+import type { Career } from '../career.ts';
 import {
   findNews,
   initialSeen,
@@ -11,9 +12,19 @@ import {
   seasonState,
   settleSeen,
 } from '../journey.ts';
-import { eraseSave, hasSave, loadJourney, markSeen, readSeen, singleScores, writeSeen } from '../session.ts';
+import {
+  eraseSave,
+  hasSave,
+  loadJourney,
+  markSeen,
+  readSeen,
+  settleCareer,
+  singleScores,
+  writeSeen,
+} from '../session.ts';
 import { updateSettings, useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
+import { CareerCard, LooksPicker } from './Career.tsx';
 import { type Go, NewsPanel, StepCard } from './Journey.tsx';
 import { ProgressFile } from './ProgressFile.tsx';
 
@@ -31,6 +42,7 @@ export function Title({ go, picking: initialPicking = false }: { go: (to: Go) =>
   const [wide, setWide] = useState(window.innerWidth >= MIN_WIDTH);
   const [panel, setPanel] = useState<'progress' | 'settings' | null>(null);
   const [trainingsDone, setTrainingsDone] = useState(0);
+  const [career, setCareer] = useState<Career | null>(null);
 
   // Every save, read at once: what comes next, and what is new since the last visit. Read again
   // after a progress file was imported.
@@ -42,6 +54,7 @@ export function Title({ go, picking: initialPicking = false }: { go: (to: Go) =>
       if (seen !== stored) await writeSeen(seen);
       setJourney(j);
       setNews(findNews(j, seen));
+      setCareer(await settleCareer(j.seasons));
       setTrainingsDone(Object.keys(await singleScores(j.trainings)).length);
     } catch {
       setJourney(null);
@@ -169,7 +182,10 @@ export function Title({ go, picking: initialPicking = false }: { go: (to: Go) =>
           {!ready ? (
             <div className="j-step pending" aria-busy="true" />
           ) : journey ? (
-            <StepCard step={nextStep(journey.seasons)} seasons={journey.seasons} news={news} go={follow} />
+            <>
+              <StepCard step={nextStep(journey.seasons)} seasons={journey.seasons} news={news} go={follow} />
+              {career && <CareerCard career={career} />}
+            </>
           ) : (
             // The catalogue could not be read: the campaign can still start or resume.
             <button
@@ -203,7 +219,10 @@ export function Title({ go, picking: initialPicking = false }: { go: (to: Go) =>
             </div>
           ) : panel === 'settings' ? (
             <div className="home-panel">
-              <div className="home-options">{options}</div>
+              <div className="home-options">
+                {options}
+                <LooksPicker />
+              </div>
               <button type="button" className="btn" autoFocus onClick={() => setPanel(null)}>
                 ← {t('community.back')}
               </button>
