@@ -1,5 +1,5 @@
 t8.briefing: "Le SOC de NovaMind reçoit les journaux de connexion de sa forge de code, mais aucune règle ne les lit. Cette nuit, quelqu'un a essayé des mots de passe. Ta mission : écrire la première règle de détection, qui l'attrape lui et personne d'autre."
-t8.obj.read: "Trouver l'adresse qui essaie des mots de passe"
+t8.obj.read: "Trouver l'adresse qui essaie des mots de passe (`answer source`)"
 t8.obj.rule: "Écrire une règle qui l'attrape, sans fausse alerte"
 t8.obj.next: "Dire quoi faire ensuite"
 t8.ada.brief: "Huitième entraînement. Tu es côté défense : rien ne peut casser, mais tout ce que tu tapes fait avancer le temps."

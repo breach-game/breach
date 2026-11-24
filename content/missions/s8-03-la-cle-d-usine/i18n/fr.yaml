@@ -18,7 +18,7 @@ v3.ada.g.strings: "Lis ce fichier : `curl http://maj.verdure.test/firmware/capte
 v3.ada.g.strings.standard: "Un des fichiers n'est pas un micrologiciel. Lis-le."
 v3.ada.manifest: "Regarde `signature: none`. Chaque nuit, les capteurs téléchargent ce fichier en clair et installent ce qu'il désigne, sans vérifier qui l'a écrit. Quelqu'un qui se placerait entre eux et le serveur pourrait leur faire installer autre chose. On le note pour le rapport, et on ne le fait pas."
 v3.ada.bin: "Le micrologiciel lui-même n'est pas dans la copie d'audit, et on n'en a pas besoin. Ce qui nous intéresse est à côté."
-v3.ada.strings: "Tout est là. `mqtt_user=capteur`, `mqtt_pass=vd-factory-2019` : un compte écrit en dur dans le programme, donc le même dans les quarante capteurs, et dans tous ceux que ce fabricant a vendus cette année-là. Et `update_verify_signature=0`, qui confirme le manifeste."
+v3.ada.strings: "Tout est là. `mqtt_user=capteur`, `mqtt_pass=vd-factory-2019` : un compte écrit en dur dans le programme, donc le même dans les quarante capteurs, et dans tous ceux que ce fabricant a vendus cette année-là. Et `update_verify_signature=0` : le capteur n'a jamais vérifié qui a écrit sa mise à jour."
 v3.ada.g.account: "Le courtier garde des sujets de maintenance, fermés à qui n'a pas de compte d'appareil. Tu en as un maintenant : `mqtt sub -h broker.verdure.test -t \"verdure/maintenance/#\" -u capteur -P vd-factory-2019`."
 v3.ada.g.account.standard: "Le courtier garde des sujets de maintenance pour les comptes d'appareils. Tu viens d'en trouver un : sers-t'en avec `-u` et `-P`."
 v3.ada.g.denied: "Refusé : ces sujets demandent un compte d'appareil. Celui du micrologiciel fera l'affaire : ajoute `-u capteur -P vd-factory-2019`."

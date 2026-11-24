@@ -3,7 +3,7 @@ t4.briefing: "Théo, le stagiaire de NovaMind, vient de transférer un mail au s
 t4.obj.origin: "Trouver le domaine qui a réellement envoyé le mail"
 t4.obj.verdict: "Dire ce qui trahit ce mail"
 t4.obj.action: "Conseiller Théo"
-t4.ada.brief: "Quatrième entraînement. Tu as joué l'attaquant face à Théo ; cette fois tu es de son côté. Le fichier est `~/training/mail.eml` : un mail tel que le serveur l'a reçu, avec ses en-têtes."
+t4.ada.brief: "Quatrième entraînement. Ici, tu es du côté de Théo, celui qui reçoit. Le fichier est `~/training/mail.eml` : un mail tel que le serveur l'a reçu, avec ses en-têtes."
 t4.ada.read: "Lis-le en entier : `cat training/mail.eml`. Ce que le logiciel de messagerie affiche, c'est `From` et `Subject`. Tout le reste est caché à l'utilisateur, et c'est là que ça se passe."
 t4.ada.read.standard: "Lis `training/mail.eml`, en-têtes compris. Ce que voit l'utilisateur n'est qu'une petite partie du mail."
 t4.ada.headers: "`From` est écrit par l'expéditeur : il y met ce qu'il veut. Trois lignes sont plus dures à maquiller : `Return-Path`, `Received` et `Authentication-Results`, ajoutées par les serveurs. Isole-les : `grep -i -E \"from|reply-to|spf|return-path\" training/mail.eml`. Puis donne-moi le vrai domaine d'envoi avec `submit`."

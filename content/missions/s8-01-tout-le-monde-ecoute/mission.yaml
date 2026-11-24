@@ -30,7 +30,11 @@ rules:
   - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: /verdure/serre/0/# }
     do:
       - ada.guide: { key: v1.ada.g.wider, for: listen, step: 1 }
-  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: { in: ["/#", "/verdure/#", "/verdure/serre/#"] }, status: 200 }
+  # The front desk screen's subscription: the growing rooms only, not the audit marker.
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: /verdure/serre/#, status: 200 }
+    do:
+      - ada.guide: { key: v1.ada.g.wider2, for: listen, step: 1 }
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: { in: ["/#", "/verdure/#"] }, status: 200 }
     do:
       - noise.add: { points: 6, as: v1.soc.listen }
       - objective.complete: page

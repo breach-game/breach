@@ -11,7 +11,7 @@ t3.ada.diff: "Now to find what changed. `diff training/repo/install.sh training/
 t3.ada.diff.standard: "Now to find what changed between the repository's script and the distributed one."
 t3.ada.line: "A single added line, with a reassuring comment. Read it closely: it sends something to an address. Give me that address with `submit`."
 t3.ada.line.standard: "A single added line. Where does what it sends go? Give me the address with `submit`."
-t3.ada.mute: "10.13.0.99. If you played the campaign, that address rings a bell: it is the one from the 3:17 a.m. commit. Mute did not stop at NovaMind, they are after its customers."
+t3.ada.mute: "10.13.0.99. Write it down: that address has no business in an installer."
 t3.ada.what: "Tell me what this line takes away: my question is waiting, answer with a click or with `answer`."
 t3.ada.what.standard: "What exactly does this line take away? Answer my question."
 t3.ada.env: "Yes. `env` prints every environment variable, and on an integration server those are the keys to the kingdom: repository tokens, cloud keys, database passwords. Every customer who ran this script yesterday gave everything away."

@@ -166,6 +166,15 @@ rules:
     do:
       - ada.say: z1.ada.account
       - objective.complete: cut
+  # What the rest of the office keeps depends on what else was cut on the way.
+  - on: { event: Contained, containment: disable-account }
+    if: { not: { config: lr.archives_isolated, eq: true } }
+    do:
+      - ada.say: z1.ada.account.kept
+  - on: { event: Contained, containment: disable-account }
+    if: { config: lr.archives_isolated, eq: true }
+    do:
+      - ada.say: z1.ada.account.isolated
   - on: { event: AdversaryStep, stop: true }
     do:
       - ada.say: z1.ada.stopped
