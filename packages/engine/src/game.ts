@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.15.0';
+export const ENGINE_VERSION = '0.16.0';
 
 export interface GameOptions {
   world: Pack;
@@ -1070,7 +1070,7 @@ export class Game {
         ok = false;
         code = 49;
       }
-    } else if (!dir.anonymous) ok = false;
+    } else if (!(typeof dir.anonymous === 'boolean' ? dir.anonymous : this.holds(dir.anonymous))) ok = false;
     let entries: NonNullable<Host['directory']>['entries'] = [];
     if (ok) {
       const filter = parseFilter(query.filter);

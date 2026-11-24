@@ -113,7 +113,7 @@ function world() {
           services: [{ port: 389, name: 'ldap' }],
           directory: {
             base: 'dc=ops,dc=test',
-            anonymous: false,
+            anonymous: { config: 'anon.open', eq: true },
             binds: [{ dn: 'cn=reader,dc=ops,dc=test', password: 'r3ad' }],
             entries: [
               {
@@ -143,7 +143,7 @@ function world() {
         'k8s.ops.test': { A: ['10.18.0.10'] },
         'ldap.ops.test': { A: ['10.18.0.20'] },
       },
-      config: { miner: false, 'old.removed': false, 'checkout.v2': false },
+      config: { miner: false, 'old.removed': false, 'checkout.v2': false, 'anon.open': false },
     },
     i18n: { en: {} },
   });
@@ -304,6 +304,11 @@ describe('ldapsearch', () => {
         .err,
     ).toContain('Bad search filter');
     expect((await run(g, 'ldapsearch -x -H ldap://ldap.example.com')).status).toBe(9);
+    // Anonymous search can follow a setting.
+    g.emit({ type: 'ConfigPatched', key: 'anon.open', value: true, by: 'test' });
+    expect((await run(g, 'ldapsearch -LLL -x -H ldap://ldap.ops.test uid=ana uid')).out).toContain(
+      'uid: ana',
+    );
   });
 });
 
