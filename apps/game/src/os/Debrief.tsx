@@ -169,6 +169,16 @@ export function Debrief({
           </div>
         </>
       )}
+      {mission.debrief.home && (
+        <div className="home-card">
+          <h3>{t('debrief.home')}</h3>
+          <ul>
+            {mission.debrief.home.points.map((p) => (
+              <li key={p}>{game.t(p)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {mission.side === 'defense' && <AttackerPath />}
       {!defense && mission.side !== 'defense' && (
         <h3>

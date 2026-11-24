@@ -268,6 +268,8 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       m.debrief.lesson,
       ...m.debrief.points,
       ...(m.debrief.facts ? [m.debrief.facts.title, ...m.debrief.facts.points] : []),
+      ...(m.debrief.home?.points ?? []),
+      ...m.sms.map((x) => x.text),
       ...m.objectives.map((o) => o.text),
       ...Object.values(m.hints).flat(),
       ...Object.values(m.guide),
