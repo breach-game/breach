@@ -355,7 +355,8 @@ export type HostSystem = z.infer<typeof hostSystem>;
 const directory = z.strictObject({
   /** Base of the tree (`dc=annuaire,dc=test`). */
   base: z.string().min(3).max(120),
-  anonymous: z.boolean().default(false),
+  /** Anonymous search allowed: always, never, or while a condition holds (a fix closes it). */
+  anonymous: z.union([z.boolean(), z.lazy(() => condition)]).default(false),
   binds: z
     .array(z.strictObject({ dn: z.string().max(200), password: z.string().max(80), if: when }))
     .max(10)
