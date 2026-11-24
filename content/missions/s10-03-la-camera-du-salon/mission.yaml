@@ -47,7 +47,7 @@ containment:
     impact: 1
   - id: revoke-share
     action: revoke
-    target: partage-manon
+    target: partage-oublie
     text: h3.contain.share
     sets: { cam.share_revoked: true }
     impact: 0
@@ -90,6 +90,10 @@ rules:
   - on: { event: ObjectiveCompleted, objective: how }
     do:
       - ada.say: h3.ada.how
+  - on: { event: ObjectiveCompleted, objective: how }
+    if: { not: { objective: evict } }
+    do:
+      - ada.say: h3.ada.how.next
   - on: { event: Contained, containment: reset-password }
     if: { config: cam.session_revoked, eq: false }
     do:

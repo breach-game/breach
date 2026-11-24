@@ -104,6 +104,10 @@ rules:
   - on: { event: ObjectiveCompleted, objective: link }
     do:
       - ada.say: h5.ada.link
+  - on: { event: ObjectiveCompleted, objective: link }
+    if: { not: { objective: callback } }
+    do:
+      - ada.say: h5.ada.link.next
   - on: { event: ChatReply, npc: stranger }
     do:
       - ada.warn: h5.ada.stranger
@@ -115,6 +119,14 @@ rules:
   - on: { event: ObjectiveCompleted, objective: rule }
     do:
       - ada.say: h5.ada.rule
+  - on: { event: ObjectiveCompleted, objective: rule }
+    if: { not: { objective: sim } }
+    do:
+      - ada.say: h5.ada.rule.next
+  - on: { event: ChatReply, npc: lea, intent: fallback }
+    if: { not: { objective: callback } }
+    do:
+      - ada.say: h5.ada.lea.nudge
   - on: { event: ChatReply, npc: nordtel, intent: ask }
     do:
       - ada.guide: { key: h5.ada.g.cancel, for: sim, step: 2 }

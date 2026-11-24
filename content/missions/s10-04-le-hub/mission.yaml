@@ -77,8 +77,14 @@ rules:
     do:
       - ada.say: h4.ada.brief
   - on: { event: HttpRequest, host: hub, method: SUBSCRIBE, status: 200 }
+    if: { not: { objective: broker } }
     do:
       - ada.say: h4.ada.listen
+      - objective.complete: listen
+  - on: { event: HttpRequest, host: hub, method: SUBSCRIBE, status: 200 }
+    if: { all: [{ objective: broker }, { not: { objective: listen } }] }
+    do:
+      - ada.say: h4.ada.listen.audit
       - objective.complete: listen
   - on: { event: ObjectiveCompleted, objective: bulb }
     do:
@@ -121,6 +127,11 @@ rules:
     do:
       - ada.say: h4.ada.after
       - objective.complete: after
+  # Closing the broker before reading it: the audit account still reads the topics.
+  - on: { event: HttpRequest, host: hub, method: SUBSCRIBE, status: 401 }
+    if: { not: { all: [{ objective: listen }, { objective: bulb }] } }
+    do:
+      - ada.say: h4.ada.audit
   - on: { event: MissionCompleted }
     do:
       - ada.say: h4.ada.done

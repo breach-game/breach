@@ -102,6 +102,10 @@ hosts:
             if: { config: broker.auth, eq: true }
             status: 401
             body: ""
+          # The lamp keeps the state the last order gave it.
+          - id: lamp-on
+            if: { var: bench_on, eq: true }
+            body: { $file: files/topics-bench-on.txt }
       # The workshop's test bench: the only place where the mandate allows an order.
       "/verdure/serre/0/lampe/set":
         chat: bench
@@ -222,6 +226,7 @@ npcs:
       - id: "off"
         words: [off, "0"]
         reply: [npc.bench.off]
+        set: { bench_on: false }
     fallback: [npc.bench.unknown]
 
   # The growing rooms: the audit copy answers, and nothing is switched.

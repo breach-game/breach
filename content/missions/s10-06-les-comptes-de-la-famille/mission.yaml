@@ -13,6 +13,7 @@ reveal: [box]
 files:
   comptes/inventaire.csv: { $file: files/inventaire.csv }
   comptes/messagerie-securite.json: { $file: files/messagerie-securite.json }
+  comptes/messagerie-sessions.json: { $file: files/messagerie-sessions.json }
   comptes/plan.yml: { $file: files/plan.yml }
 
 objectives:
@@ -35,12 +36,43 @@ containment:
     text: h6.contain.forward
     sets: { mail.forward_removed: true }
     impact: 0
+    # The security page shows what was done.
+    writes:
+      - host: kestrel
+        path: /home/kestrel/comptes/messagerie-securite.json
+        content: |
+          {
+            "account": "elise@lemerle.test",
+            "second_factor": "none",
+            "recovery_phone": "+33 6 39 98 14 02 (number given up in 2026)",
+            "recovery_email": "k.lemerle@ancien-fai.example (mailbox closed)",
+            "backup_codes": "never generated",
+            "forwarding": [],
+            "forwarding_removed": [
+              {"to": "archive.elise@boite-rapide.example", "since": "2029-04-30T03:40", "removed": "2029-05-13T18:31"}
+            ],
+            "sessions": "see messagerie-sessions.json"
+          }
   - id: close-sessions
     action: revoke
     target: sessions
     text: h6.contain.sessions
     sets: { mail.sessions_closed: true }
     impact: 0
+    writes:
+      - host: kestrel
+        path: /home/kestrel/comptes/messagerie-sessions.json
+        content: |
+          {
+            "account": "elise@lemerle.test",
+            "sessions": [
+              {"device": "phone of Elise", "last": "2029-05-13T18:31", "note": "signed in again"}
+            ],
+            "closed": [
+              {"device": "laptop of Elise", "last": "2029-05-13T17:40"},
+              {"device": "web browser, Linux", "ip": "203.0.113.77", "last": "2029-05-12T02:10"}
+            ]
+          }
   - id: reset-mail
     action: reset
     target: mot-de-passe
@@ -101,6 +133,10 @@ rules:
   - on: { event: ObjectiveCompleted, objective: forward }
     do:
       - ada.say: h6.ada.forward
+  - on: { event: ObjectiveCompleted, objective: forward }
+    if: { config: mail.sessions_closed, eq: false }
+    do:
+      - ada.say: h6.ada.forward.next
   - on: { event: Contained, containment: reset-mail }
     if: { config: mail.forward_removed, eq: false }
     do:

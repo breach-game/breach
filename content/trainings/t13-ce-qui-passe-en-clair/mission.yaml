@@ -74,6 +74,7 @@ guide:
 hints:
   seen: [t13.hint.seen.1, t13.hint.seen.2]
   clear: [t13.hint.clear.1, t13.hint.clear.2]
+  fix: [t13.hint.fix.1]
 
 debrief:
   title: t13.debrief.title

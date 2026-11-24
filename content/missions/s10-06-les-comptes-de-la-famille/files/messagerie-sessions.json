@@ -1,0 +1,8 @@
+{
+  "account": "elise@lemerle.test",
+  "sessions": [
+    {"device": "phone of Elise", "last": "2029-05-13T18:02"},
+    {"device": "laptop of Elise", "last": "2029-05-13T17:40"},
+    {"device": "web browser, Linux", "ip": "203.0.113.77", "last": "2029-05-12T02:10"}
+  ]
+}

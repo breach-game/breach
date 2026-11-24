@@ -10,6 +10,9 @@ objectives:
 
 flags:
   - { id: sensor, value: "capteur-11", points: 100, objective: listen }
+  # The season 8 audit markers still sit on the broker: accepted, worth nothing here.
+  - { id: marker-listen, value: "FLAG{verdure-everyone-listens-7d21}", points: 0 }
+  - { id: marker-order, value: "FLAG{verdure-anyone-gives-orders-41b8}", points: 0 }
 
 questions:
   - id: fix
@@ -43,6 +46,10 @@ rules:
     do:
       - ada.say: t10.ada.ordered
       - ada.ask: fix
+  - on: { event: FlagSubmitted, flag: { in: [marker-listen, marker-order] } }
+    once: false
+    do:
+      - ada.say: t10.ada.marker
   - on: { event: MissionCompleted }
     do:
       - ada.say: t10.ada.done

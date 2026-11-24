@@ -221,11 +221,15 @@ hosts:
     web:
       "/":
         headers: { content-type: application/json }
-        body: "{\"service\":\"comptoir-auth\",\"authorize\":\"/authorize\",\"clients\":\"/clients\"}\n"
+        body: "{\"service\":\"comptoir-auth\",\"authorize\":\"POST /authorize (client_id, redirect_uri)\",\"clients\":\"/clients\"}\n"
       "/clients":
         headers: { content-type: application/json }
         body: { $file: files/clients.json }
+      # A plain GET says how to ask: the request is a form post (curl -d).
       "/authorize":
+        status: 400
+        headers: { content-type: application/json }
+        body: "{\"error\":\"invalid_request\",\"error_description\":\"POST client_id and redirect_uri as a form: curl -d \\\"client_id=...&redirect_uri=...\\\"\"}\n"
         chat: authz
 
   # The partners' corner: a page that sends a test notification to the address a partner gives.
@@ -318,6 +322,9 @@ npcs:
       - id: keys
         words: ["config int keys"]
         reply: [npc.hook.keys]
+      - id: switches
+        words: ["config int flags"]
+        reply: [npc.hook.switches]
       - id: index
         words: ["config int"]
         reply: [npc.hook.index]

@@ -35,12 +35,20 @@ rules:
       - ada.say: c4.ada.brief
   - on: { event: HttpRequest, host: hooks, path: / }
     do:
-      - ada.say: c4.ada.tester
       - objective.complete: tester
+  # Reading the page (not using the tester) is what this line comments.
+  - on: { event: HttpRequest, host: hooks, path: /, method: GET }
+    if: { not: { any: [{ objective: outside }, { objective: inside }] } }
+    do:
+      - ada.say: c4.ada.tester
   - on: { event: ChatReply, npc: hooktest, intent: { in: [lab, partner] } }
     do:
       - ada.say: c4.ada.outside
       - objective.complete: outside
+  - on: { event: ChatReply, npc: hooktest, intent: { in: [lab, partner] } }
+    if: { not: { objective: inside } }
+    do:
+      - ada.say: c4.ada.outside.next
   - on: { event: ChatReply, npc: hooktest, intent: inside }
     do:
       - ada.say: c4.ada.refused
@@ -48,6 +56,11 @@ rules:
     do:
       - noise.add: { points: 6, as: c4.soc.inside }
       - ada.say: c4.ada.inside
+      - objective.complete: inside
+  - on: { event: ChatReply, npc: hooktest, intent: switches }
+    do:
+      - noise.add: { points: 6, as: c4.soc.inside }
+      - ada.say: c4.ada.switches
       - objective.complete: inside
   - on: { event: ChatReply, npc: hooktest, intent: keys }
     do:
@@ -89,7 +102,7 @@ defense:
       title: c4.def.rule.internal.title
       why: c4.def.rule.internal.why
       source: chat
-      where: { npc: hooktest, intent: { in: [index, keys, inside] } }
+      where: { npc: hooktest, intent: { in: [index, switches, keys, inside] } }
       correct: true
     - id: every
       title: c4.def.rule.every.title

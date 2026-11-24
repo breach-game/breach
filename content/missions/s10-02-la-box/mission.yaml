@@ -31,7 +31,7 @@ checks:
     if:
       all:
         - { file: "~/box/reglages.conf", contains: "admin_password: " }
-        - { file: "~/box/reglages.conf", lacks: "admin_password: admin\n" }
+        - { file: "~/box/reglages.conf", lacks: "admin_password: admin" }
     objective: harden
   - id: wpa3
     text: h2.check.wpa3
