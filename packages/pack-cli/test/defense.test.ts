@@ -350,7 +350,7 @@ describe('season 4: decisions echo at the end of the season', () => {
     await run('contain restore ven-0910');
     // Restoring before the scheduled job is removed fails too.
     expect(game.state.detections).toBe(1);
-    await run('contain remove tache-verrou');
+    await run('contain remove cron-svc-sauvegarde');
     await run('contain restore hebdo-0912');
     expect(game.state.detections).toBe(2);
     expect(game.state.objectives.restore).toBe(false);

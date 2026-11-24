@@ -3,6 +3,7 @@
   "login": "client-fictif-1041",
   "name": "Camille D. (cliente fictive)",
   "address": "12 quai des Mouettes, 44000 Nantes",
+  "address_form": "/account/address",
   "orders": [
     { "ref": "PL-88213", "item": "Manteau Cormoran", "total": 165.0 }
   ],

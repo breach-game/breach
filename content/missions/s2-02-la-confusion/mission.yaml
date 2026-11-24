@@ -31,7 +31,7 @@ rules:
     do:
       - objective.complete: mirror
       - ada.say: h2.ada.mirror
-  - on: { event: ChatReply, npc: mirror, intent: { in: [fallback, other, lower] } }
+  - on: { event: ChatReply, npc: mirror, intent: { in: [fallback, other, lower, internalname] } }
     do:
       - ada.guide: { key: h2.ada.wrong, for: publish, step: 1 }
   - on: { event: ChatReply, npc: mirror, intent: confusion }

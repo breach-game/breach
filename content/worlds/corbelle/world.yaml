@@ -295,7 +295,7 @@ npcs:
       residents and the local newspaper. She wants options and their price, not jargon.
     intents:
       - id: ransom
-        words: [rancon, payer, paiement, argent, euros, bitcoin, demande, ransom, pay, payment, money, demand]
+        words: [rancon, payer, paiement, argent, euros, bitcoin, demande, reclame, exige, veut, note, ransom, pay, payment, money, demand, wants]
         reply: [npc.maire.ransom, npc.maire.ransom2]
       - id: services
         words: [service, services, etat civil, cantine, urbanisme, habitants, agents, residents, registry, canteen, planning, staff]

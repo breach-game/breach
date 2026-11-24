@@ -60,6 +60,12 @@ adversary:
       fields: { user: svc-sauvegarde, exe: /var/tmp/.cache/verrou, cmd: "verrou --base etat-civil" }
       blockedIf: *cut
 
+# Switched by the decoy measures only: nothing in the intruder's path reads them.
+config:
+  cb.backup_isolated: false
+  cb.ymorel_revoked: false
+  cb.backup_blocked: false
+
 containment:
   - id: isolate-accueil
     action: isolate
@@ -67,11 +73,24 @@ containment:
     text: c1.contain.accueil
     sets: { cb.accueil_isolated: true }
     impact: 2
+  # Decoys: plausible gestures that miss the intruder, so the list is not the answer sheet.
+  - id: isolate-sauvegarde
+    action: isolate
+    target: sauvegarde.corbelle.test
+    text: c1.contain.sauvegarde
+    sets: { cb.backup_isolated: true }
+    impact: 10
   - id: revoke-svc
     action: revoke
     target: svc-sauvegarde
     text: c1.contain.svc
     sets: { cb.svc_revoked: true }
+    impact: 5
+  - id: revoke-ymorel
+    action: revoke
+    target: y.morel
+    text: c1.contain.ymorel
+    sets: { cb.ymorel_revoked: true }
     impact: 5
   - id: block-relay
     action: block
@@ -79,6 +98,12 @@ containment:
     text: c1.contain.relay
     sets: { cb.relay_blocked: true }
     impact: 0
+  - id: block-backup
+    action: block
+    target: 10.16.0.40
+    text: c1.contain.backup
+    sets: { cb.backup_blocked: true }
+    impact: 10
   - id: isolate-fichiers
     action: isolate
     target: fichiers.corbelle.test
