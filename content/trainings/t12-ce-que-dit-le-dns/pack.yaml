@@ -1,0 +1,16 @@
+id: breach.training.t12
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [recon, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Ce que dit le DNS
+  en: What the DNS says
+summary:
+  fr: Les enregistrements TXT d'un domaine sont publics. Lis-les avec dig, trouve ce qui n'aurait pas dû y être, comprends SPF, et remarque ce qui manque pour protéger les mails.
+  en: A domain's TXT records are public. Read them with dig, find what should not be there, understand SPF, and notice what is missing to protect mail.
+authors: [BREACH]
+locales: [fr, en]

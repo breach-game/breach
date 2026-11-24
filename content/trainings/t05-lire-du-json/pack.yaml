@@ -1,0 +1,16 @@
+id: breach.training.t05
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [linux, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Lire du JSON
+  en: Reading JSON
+summary:
+  fr: Un export de comptes, tout sur une seule ligne. Avec jq, trouve l'administrateur sans double authentification et le jeton qui n'aurait jamais dû y être.
+  en: An export of accounts, all on one line. With jq, find the administrator without two-factor authentication and the token that should never have been there.
+authors: [BREACH]
+locales: [fr, en]

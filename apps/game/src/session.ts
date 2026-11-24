@@ -232,16 +232,24 @@ async function missionsFor(mode: StartMode, onProgress?: (p: PackProgress) => vo
     return loadLocalMission(mode.local, mode.bundle, onProgress);
   }
   if ('season' in mode) return loadSeason(mode.season, onProgress);
+  // A training: an official mission outside the campaign, played in whichever official world it names.
+  const catalog = await loadCatalog();
+  const training = catalog.training.includes(mode.replay)
+    ? catalog.packs.find((p) => p.id === mode.replay && p.kind === 'mission')
+    : undefined;
+  if (training) {
+    const world = catalog.packs.find((p) => p.id === training.requires[0] && p.kind === 'world');
+    if (!world) throw new Error(`${training.id}: its world ${training.requires[0]} is not in the catalogue`);
+    return {
+      catalog,
+      world: await loadPack(world, onProgress),
+      missions: [await loadPack(training, onProgress)],
+    };
+  }
   const c = await prepare(onProgress);
   const mission = c.missions.find((m) => m.id === mode.replay);
   if (mission) return { ...c, missions: [mission] };
-  // A training: an official mission outside the campaign, loaded when the player picks it.
-  const entry = c.catalog.training.includes(mode.replay)
-    ? c.catalog.packs.find((p) => p.id === mode.replay && p.kind === 'mission')
-    : undefined;
-  if (!entry || entry.requires[0] !== c.world.id)
-    throw new Error(`${mode.replay}: not a mission of this campaign`);
-  return { ...c, missions: [await loadPack(entry, onProgress)] };
+  throw new Error(`${mode.replay}: not a mission of this campaign`);
 }
 
 /** A save of the same single mission recorded on another version of it, which can no longer resume. */

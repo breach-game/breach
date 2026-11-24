@@ -1,0 +1,16 @@
+id: breach.training.t07
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 2
+skills: [web, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Relire un correctif
+  en: Reviewing a patch
+summary:
+  fr: Dix-sept lignes de Python avant leur mise en production. Trouve les deux qui ouvrent le serveur à tout le monde, puis choisis la vraie correction.
+  en: Seventeen lines of Python before they go live. Find the two that open the server to everyone, then pick the real fix.
+authors: [BREACH]
+locales: [fr, en]

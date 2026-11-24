@@ -1,0 +1,63 @@
+order: 10
+stage: iot
+briefing: t10.briefing
+reveal: [broker]
+
+objectives:
+  - { id: listen, text: t10.obj.listen }
+  - { id: order, text: t10.obj.order }
+  - { id: fix, text: t10.obj.fix }
+
+flags:
+  - { id: sensor, value: "capteur-11", points: 100, objective: listen }
+
+questions:
+  - id: fix
+    text: t10.q.fix
+    objective: fix
+    correct: accounts
+    options:
+      - { id: accounts, text: t10.q.fix.accounts }
+      - { id: port, text: t10.q.fix.port, why: t10.q.fix.port.why }
+      - { id: names, text: t10.q.fix.names, why: t10.q.fix.names.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t10.ada.brief
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE }
+    do:
+      - ada.guide: { key: t10.ada.read, for: listen, step: 1 }
+  - on: { event: ChatReply, npc: bench, intent: "on" }
+    do:
+      - objective.complete: order
+  - on: { event: ChatReply, npc: bench, intent: "off" }
+    do:
+      - objective.complete: order
+  - on: { event: ChatReply, npc: rooms }
+    once: false
+    do:
+      - noise.add: { points: 15, as: t10.noise.rooms }
+      - ada.warn: t10.ada.rooms
+  - on: { event: ObjectiveCompleted, objective: order }
+    do:
+      - ada.say: t10.ada.ordered
+      - ada.ask: fix
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t10.ada.done
+
+guide:
+  listen: t10.ada.listen
+  order: t10.ada.order
+  fix: t10.ada.answer
+
+hints:
+  listen: [t10.hint.listen.1, t10.hint.listen.2]
+  order: [t10.hint.order.1, t10.hint.order.2]
+
+debrief:
+  title: t10.debrief.title
+  lesson: t10.debrief.lesson
+  points: [t10.debrief.p1, t10.debrief.p2, t10.debrief.p3]
+  reference: "OWASP IoT Top 10 · I1 Weak Passwords · I9 Insecure Default Settings"

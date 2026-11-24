@@ -1,0 +1,6 @@
+# Training 6: a token can be read
+cat training/session.txt
+jwt decode eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJrZXN0cmVsLXRlc3QiLCJyb2xlIjoiY2xpZW50IiwiY2xpbmlxdWUiOiJ0ZXN0LTA0IiwiaWF0IjoxNzYzNDUyODAwLCJleHAiOjE3NjM1MzkyMDAsImRlYnVnIjoiRkxBR3tqd3Qtc2UtbGl0LXNhbnMtY2xlLTJjOWZ9In0.q3Vt0dX1b2Jr8fYkPq7c2mLw9sZ4hA6nEoRj1TgKxWu
+submit FLAG{jwt-se-lit-sans-cle-2c9f}
+answer signature
+answer nothing

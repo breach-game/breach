@@ -1,0 +1,55 @@
+order: 11
+stage: analysis
+briefing: t11.briefing
+reveal: [fichiers]
+
+objectives:
+  - { id: login, text: t11.obj.login }
+  - { id: job, text: t11.obj.job }
+  - { id: why, text: t11.obj.why }
+
+flags:
+  - { id: job, value: "/var/tmp/.cache/verrou", points: 100, objective: job }
+
+questions:
+  - id: why
+    text: t11.q.why
+    objective: why
+    correct: place
+    options:
+      - { id: hour, text: t11.q.why.hour, why: t11.q.why.hour.why }
+      - { id: place, text: t11.q.why.place }
+      - { id: account, text: t11.q.why.account, why: t11.q.why.account.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t11.ada.brief
+  - on: { event: SessionOpened, host: fichiers }
+    do:
+      - objective.complete: login
+  - on: { event: CommandRun, command: crontab }
+    do:
+      - ada.guide: { key: t11.ada.read, for: job, step: 1 }
+  - on: { event: ObjectiveCompleted, objective: job }
+    do:
+      - ada.say: t11.ada.found
+      - ada.ask: why
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t11.ada.done
+
+guide:
+  login: t11.ada.login
+  job: t11.ada.list
+  why: t11.ada.answer
+
+hints:
+  login: [t11.hint.login.1]
+  job: [t11.hint.job.1, t11.hint.job.2]
+
+debrief:
+  title: t11.debrief.title
+  lesson: t11.debrief.lesson
+  points: [t11.debrief.p1, t11.debrief.p2, t11.debrief.p3]
+  reference: "MITRE ATT&CK · T1053 Scheduled Task/Job"

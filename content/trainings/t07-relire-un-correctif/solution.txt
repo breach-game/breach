@@ -1,0 +1,5 @@
+# Training 7: reviewing a patch
+review training/rapports.py
+review training/rapports.py 13
+review training/rapports.py 17
+answer resolve

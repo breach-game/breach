@@ -1,0 +1,8 @@
+# Training 5: reading JSON
+cat training/comptes.json
+jq '.comptes | keys' training/comptes.json
+jq '.comptes.migration' training/comptes.json
+submit migration
+jq -r '.integrations[].jeton' training/comptes.json
+submit FLAG{jq-un-jeton-dans-l-export-5e1a}
+answer both

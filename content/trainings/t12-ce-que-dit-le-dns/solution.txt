@@ -1,0 +1,6 @@
+# Training 12: what the DNS says
+dig novamind.test TXT
+submit git.novamind.test
+answer mx
+dig _dmarc.novamind.test TXT
+answer policy

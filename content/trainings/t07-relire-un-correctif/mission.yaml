@@ -1,0 +1,57 @@
+order: 7
+stage: analysis
+briefing: t7.briefing
+
+files:
+  training/rapports.py: { $file: files/rapports.py }
+
+objectives:
+  - { id: review, text: t7.obj.review }
+  - { id: fix, text: t7.obj.fix }
+
+reviews:
+  - { id: patch, file: training/rapports.py, lines: [13, 17], objective: review }
+
+questions:
+  - id: fix
+    text: t7.q.fix
+    objective: fix
+    correct: resolve
+    options:
+      - { id: dots, text: t7.q.fix.dots, why: t7.q.fix.dots.why }
+      - { id: resolve, text: t7.q.fix.resolve }
+      - { id: ext, text: t7.q.fix.ext, why: t7.q.fix.ext.why }
+      - { id: hide, text: t7.q.fix.hide, why: t7.q.fix.hide.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t7.ada.brief
+  - on: { event: Reviewed, line: 13, correct: true }
+    do:
+      - ada.say: t7.ada.join
+  - on: { event: Reviewed, line: 17, correct: true }
+    do:
+      - ada.say: t7.ada.debug
+  - on: { event: Reviewed, line: 11 }
+    do:
+      - ada.say: t7.ada.ext
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.ask: fix
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t7.ada.done
+
+guide:
+  review: t7.ada.read
+  fix: t7.ada.answer
+
+hints:
+  review: [t7.hint.review.1, t7.hint.review.2, t7.hint.review.3]
+
+debrief:
+  title: t7.debrief.title
+  lesson: t7.debrief.lesson
+  points: [t7.debrief.p1, t7.debrief.p2, t7.debrief.p3]
+  reference: "OWASP Top 10 · A01 Broken Access Control · A05"

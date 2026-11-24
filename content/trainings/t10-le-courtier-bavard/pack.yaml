@@ -1,0 +1,16 @@
+id: breach.training.t10
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [iot, recon]
+requires: [breach.world.verdure]
+title:
+  fr: Le courtier bavard
+  en: The chatty broker
+summary:
+  fr: Les capteurs d'une ferme verticale parlent tous au même courtier de messages. Écoute-le avec mqtt, lis une mesure, puis donne un ordre, sur le banc d'essai seulement.
+  en: The sensors of a vertical farm all talk to the same message broker. Listen to it with mqtt, read a measure, then give an order, on the test bench only.
+authors: [BREACH]
+locales: [fr, en]

@@ -1,0 +1,16 @@
+id: breach.training.t09
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 2
+skills: [llm, defense]
+requires: [breach.world.novamind]
+title:
+  fr: Un garde-fou pour l'agent
+  en: A guardrail for the agent
+summary:
+  fr: Atlas, l'agent d'exploitation, peut créer des comptes. Écris le garde-fou qui l'empêche de créer un administrateur sans confirmation humaine, sans bloquer le travail de tous les jours.
+  en: Atlas, the operations agent, can create accounts. Write the guardrail that stops it from creating an administrator without a human's confirmation, without blocking everyday work.
+authors: [BREACH]
+locales: [fr, en]

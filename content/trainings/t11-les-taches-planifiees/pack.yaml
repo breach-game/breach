@@ -1,0 +1,16 @@
+id: breach.training.t11
+version: 0.1.0
+engine: ">=0.12 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [linux, defense]
+requires: [breach.world.corbelle]
+title:
+  fr: Les tâches planifiées
+  en: Scheduled jobs
+summary:
+  fr: Un intrus revient souvent par une tâche planifiée. Connecte-toi au serveur de fichiers d'une mairie, lis les tâches d'un compte avec crontab, et repère celle qui n'a rien à faire là.
+  en: An intruder often comes back through a scheduled job. Log in to a town hall's file server, read an account's jobs with crontab, and spot the one that does not belong.
+authors: [BREACH]
+locales: [fr, en]
