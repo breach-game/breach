@@ -43,6 +43,13 @@ rules:
     once: false
     do:
       - noise.add: { points: 8, as: m2.soc.cto }
+  # Posing as the police or a court: forbidden by the mandate, never rewarded.
+  - on: { event: ChatReply, npc: theo, intent: law }
+    once: false
+    do:
+      - noise.add: { points: 30, as: m2.soc.law }
+      - var.set: { name: pushed, value: true }
+      - ada.warn: m2.ada.law
   - on: { event: ChatReply, npc: theo, intent: threat }
     once: false
     do:
@@ -99,6 +106,9 @@ npcs:
       fast in a support chat: short sentences, a touch of self-deprecating humour, sometimes an
       ellipsis when he hesitates. Polite with strangers. Never rude, never technical.
     intents:
+      - id: law
+        words: [police, policier, gendarm, commissariat, garde a vue, prison, juge, procureur, tribunal, enquete judiciaire, cnil, anssi, officer, detective, fbi, court order, warrant, arrest, jail]
+        reply: [m2.theo.law]
       - id: threat
         words: [virer, licencie, renvoy, menace, plainte, avocat, idiot, imbecile, stupide, incapable, fired, fire you, lawyer, sue, stupid, useless, threat, debile, nul]
         reply: [m2.theo.threat, m2.theo.threat2]

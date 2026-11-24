@@ -155,6 +155,10 @@ hosts:
     services:
       - { port: 443, name: https, product: nimbus-iam 1.9 }
     web:
+      # The API's own index, so a player who opens the host learns its endpoints without guessing.
+      "/":
+        headers: { content-type: text/plain }
+        body: "Nimbus IAM - tenant alto-prod\n\nGET /whoami\nGET /roles\nGET /roles/<name>\nGET /grants\n\nEvery endpoint needs a token: Authorization: Bearer <token>\n"
       "/whoami":
         status: 401
         headers: { content-type: application/json }

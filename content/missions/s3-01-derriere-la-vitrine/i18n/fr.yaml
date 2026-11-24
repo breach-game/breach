@@ -26,7 +26,7 @@ p1.ada.home: "Tu as vu le commentaire ? Un développeur s'est laissé un pense-b
 p1.ada.headers: "`x-powered-by: Kiosk/2.3 (debug)`. Le serveur annonce son moteur, sa version, et un mode de débogage resté allumé. Aucune faille là-dedans, mais un attaquant sait maintenant quoi chercher."
 p1.ada.robots: "`robots.txt` est une politesse envers les moteurs de recherche, pas une serrure. Pour un humain, c'est une liste de ce que le site préférerait qu'on ne regarde pas."
 p1.ada.preview: "Le programme des soldes, trois jours avant tout le monde. La page n'est liée nulle part, et c'était sa seule protection. Une adresse que personne ne connaît reste une adresse ouverte."
-p1.ada.json: "C'est du JSON, sur une seule ligne ou presque. `jq` le rend lisible. La liste s'appelle `items` : essaie `jq '.items[].name'` pour voir les noms, puis regarde chaque article."
+p1.ada.json: "C'est du JSON. `jq` sait le lire et le filtrer. La liste s'appelle `items` : essaie `jq '.items[].name'` pour voir les noms, puis regarde chaque article."
 p1.ada.json.standard: "Ce format se lit mieux avec `jq`. Regarde chaque article de la liste."
 p1.ada.jq: "Quatre articles, alors que la boutique en montre trois. Regarde le dernier en entier : `curl https://shop.pelican.test/api/products.json | jq '.items[3]'`, puis envoie-moi son flag avec `submit`."
 p1.ada.jq.standard: "Compte les articles, et compare avec la boutique."

@@ -640,11 +640,11 @@ const sbom: Command = {
       findings: hits.map((h) => h.a.id),
     });
     if (!hits.length) {
-      yield out(`✔ Scanned ${list.length} packages\nNo vulnerabilities found`);
+      yield out(`✔ Scanned ${list.length} package${list.length === 1 ? '' : 's'}\nNo vulnerabilities found`);
       return 0;
     }
     yield out(
-      `✔ Scanned ${list.length} packages, ${hits.length} vulnerabilit${hits.length === 1 ? 'y' : 'ies'} found`,
+      `✔ Scanned ${list.length} package${list.length === 1 ? '' : 's'}, ${hits.length} vulnerabilit${hits.length === 1 ? 'y' : 'ies'} found`,
     );
     yield out(
       table(

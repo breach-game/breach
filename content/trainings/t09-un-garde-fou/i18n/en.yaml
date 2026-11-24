@@ -1,4 +1,4 @@
-t9.briefing: "Atlas, NovaMind's operations agent, can create accounts when an employee asks, or when a ticket suggests it. After mission 5, the IT department wants a guardrail: a rule placed between the agent and its tools, which the model cannot talk its way around."
+t9.briefing: "Atlas, NovaMind's operations agent, can create accounts when an employee asks, or when a ticket suggests it. After the spring incident, the IT department wants a guardrail: a rule placed between the agent and its tools, which the model cannot talk its way around."
 t9.obj.guard: "Write the guardrail that blocks an administrator created without confirmation"
 t9.obj.why: "Say why the guardrail lives outside the model"
 t9.ada.brief: "Ninth training. No attacker here: a guardrail file and five tool calls of Atlas, replayed at each try."

@@ -105,6 +105,7 @@ hosts:
                   - ["Malo", "4/5", web.jacket.r2]
                   - ["Chloé", "5/5", web.jacket.r3]
             - form: { to: reviews, label: web.jacket.label, button: web.jacket.button, name: review }
+            - p: web.jacket.plume
             - footer: web.footer
         chat: reviews
       "/account":
@@ -278,9 +279,16 @@ npcs:
       - id: sql-error
         input: [quote]
         reply: [npc.search.error]
+      # Ordinary searches: each answers with the published garment it names.
       - id: results
-        words: [veste, vestes, jacket, heron, pelican, manteau, coat, pull, sweater, ete, summer]
+        words: [veste, vestes, jacket, heron, pelican, ete, summer]
         reply: [npc.search.results]
+      - id: results-coat
+        words: [manteau, coat, cormoran]
+        reply: [npc.search.coat]
+      - id: results-sweater
+        words: [pull, sweater, marin]
+        reply: [npc.search.sweater]
     fallback: [npc.search.none]
 
   - id: reviews

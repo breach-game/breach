@@ -42,6 +42,7 @@ z3.hint.report.2: "Il est entré par un compte dormant, ce compte pouvait lire l
 z3.hint.report.3: "`entry: dormant-account`, `clients_exposed: 8`, `attribution: signature-only`, `evidence: preserved`, puis `verify`."
 z3.hint.technique.1: "Aucune faille, aucun essai raté : il avait un compte et son mot de passe."
 z3.hint.notify.1: "Aucun choix n'est faux. Chacun coûte quelque chose à Ligne Rouge : lis ce que tu es prêt à payer."
+z3.hint.last.0: "Les six cartes étaient toutes à la même adresse sur le site de chaque client. Regarde notre intranet."
 z3.hint.last.1: "Tape `curl https://intranet.lignerouge.test/m`."
 z3.debrief.title: "Silence"
 z3.debrief.lesson: "Mute n'a pas été arrêté. Il a perdu sa porte, sa méthode est écrite, et ceux qu'il visait sont prévenus. C'est à cela que ressemble le plus souvent une victoire en défense : pas un coupable menotté, mais un intrus dehors, des preuves gardées, et un rapport qui dit la vérité."

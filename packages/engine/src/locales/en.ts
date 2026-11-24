@@ -122,6 +122,9 @@ export const en: Record<string, string> = {
   'notes.empty': 'Notebook is empty. Add a note with: notes add <text>',
   'submit.usage': 'usage: submit FLAG{...}',
   'submit.wrong': 'That is not a flag of this mission.',
+  'submit.wrongValue': 'That is not a value this mission expects.',
+  'submit.answer':
+    'A question from Ada or an investigation question takes answer, not submit: type answer to see them.',
   'submit.already': 'Flag already validated.',
   'submit.unseen':
     'The target never showed you this flag. Get it to appear on your screen first, then submit it.',
@@ -139,6 +142,7 @@ export const en: Record<string, string> = {
     "contain applies a containment measure: block an address, revoke a key, isolate a machine, switch off an agent's tool. Each measure stops part of the attack but costs the business something: the impact gauge shows it. Type 'contain' alone to see the measures available.",
   'soc.unavailable': 'The SOC console is only open during a defence mission.',
   'soc.usage': 'usage: soc sources | soc logs [host] [source] | soc search <text> | soc alerts',
+  'contain.empty': 'No containment measure in this mission: the work is in the logs and the answers.',
   'contain.usage': 'usage: contain <action> <target>. Available measures:',
   'contain.unknown': 'no such measure is planned for this target',
   'contain.already': 'Measure already applied.',
@@ -173,6 +177,8 @@ export const en: Record<string, string> = {
   'cmd.tr': 'Replace or delete characters in a stream (-d)',
   'cmd.diff': 'Show the lines that differ between two files',
   'cmd.base64': 'Encode to Base64, or decode with -d',
+  'cmd.sha1sum': 'Print the SHA-1 fingerprint of a file (an old algorithm, kept for comparison)',
+  'cmd.sha512sum': 'Print the SHA-512 fingerprint of a file',
   'cmd.sha256sum': 'Print the SHA-256 fingerprint of a file',
   'cmd.sed': "Rewrite lines: `sed 's/old/new/' file`, -i changes the file",
   'cmd.verify': 'Check that what you fixed holds',

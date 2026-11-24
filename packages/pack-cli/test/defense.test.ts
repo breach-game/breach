@@ -350,7 +350,7 @@ describe('season 4: decisions echo at the end of the season', () => {
     await run('contain restore ven-0910');
     // Restoring before the scheduled job is removed fails too.
     expect(game.state.detections).toBe(1);
-    await run('contain remove tache-verrou');
+    await run('contain remove cron-svc-sauvegarde');
     await run('contain restore hebdo-0912');
     expect(game.state.detections).toBe(2);
     expect(game.state.objectives.restore).toBe(false);
@@ -412,7 +412,7 @@ describe('season 6: an authorised application keeps its own access', () => {
   }
 
   it('is not stopped by resetting the password of the employee who clicked', async () => {
-    const game = await play(['soc sources', 'contain reset m.durand', 'soc alerts', 'soc alerts']);
+    const game = await play(['soc sources', 'contain reset employee-112', 'soc alerts', 'soc alerts']);
     expect(game.state.objectives.contain).toBe(false);
     expect(game.state.config['oauth.durand_reset']).toBe(true);
   });

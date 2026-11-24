@@ -25,7 +25,7 @@ flags: []
 containment:
   - id: remove-job
     action: remove
-    target: tache-verrou
+    target: cron-svc-sauvegarde
     text: c3.contain.job
     sets: { cb.cron_removed: true }
     writes:

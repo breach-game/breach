@@ -3,7 +3,7 @@ t4.briefing: "Théo, NovaMind's intern, just forwarded an email to support: “i
 t4.obj.origin: "Find the domain that really sent the email"
 t4.obj.verdict: "Say what gives this email away"
 t4.obj.action: "Advise Théo"
-t4.ada.brief: "Fourth training. You played the attacker against Théo; this time you are on his side. The file is `~/training/mail.eml`: an email as the server received it, headers included."
+t4.ada.brief: "Fourth training. Here you are on Théo's side, the one who receives. The file is `~/training/mail.eml`: an email as the server received it, headers included."
 t4.ada.read: "Read all of it: `cat training/mail.eml`. What the mail client shows is `From` and `Subject`. Everything else is hidden from the user, and that is where things happen."
 t4.ada.read.standard: "Read `training/mail.eml`, headers included. What the user sees is only a small part of the email."
 t4.ada.headers: "`From` is written by the sender: they put whatever they want in it. Three lines are harder to fake: `Return-Path`, `Received` and `Authentication-Results`, added by the servers. Isolate them: `grep -i -E \"from|reply-to|spf|return-path\" training/mail.eml`. Then give me the real sending domain with `submit`."

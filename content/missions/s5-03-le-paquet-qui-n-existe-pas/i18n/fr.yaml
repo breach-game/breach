@@ -38,7 +38,7 @@ e3.ada.policy: "Voilà le vrai problème. Un nom absent de l'index interne est d
 e3.ada.answer: "Réponds dans la messagerie, ou avec `answer` et la lettre."
 e3.ada.answer.standard: "Réponds à ma question."
 e3.ada.risk: "Oui. Quelqu'un qui devine les noms que les modèles inventent n'a qu'à les réserver et attendre. Tu as vu la même porte chez Halcyon en saison 2, ouverte par un humain. Ici c'est l'agent qui l'ouvre, tout seul, chaque fois qu'il écrit une liste."
-e3.ada.fixed: "Liste propre : cinq paquets, tous publiés par Sélène. Le script, lui, importe encore les deux modules fantômes, et c'est Forge qui devra le réécrire. Mais plus rien d'inventé ne sera installé."
+e3.ada.fixed: "Liste propre : cinq paquets, tous présents dans l'index interne. Le script, lui, importe encore les deux modules fantômes, et c'est Forge qui devra le réécrire. Mais plus rien d'inventé ne sera installé."
 e3.ada.done: "Le rapport dira « dépendances inventées par l'agent, installées sans relecture ». Demain, le dernier agent : Cassio, celui qui a le droit de rembourser. Ouvre le débrief."
 e3.soc.missing: "Registry: a lookup for a package name that does not exist"
 e3.hint.read.1: "Tape `cat dossier/requirements.txt`."

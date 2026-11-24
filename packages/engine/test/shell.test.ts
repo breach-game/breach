@@ -12,6 +12,13 @@ describe('shell', () => {
     expect((await run(g, 'cat nope')).err).toBe('cat: nope: No such file or directory\n');
     expect((await run(g, 'cat /etc/shadow')).err).toBe('cat: /etc/shadow: Permission denied\n');
     expect((await run(g, 'cat docs')).err).toBe('cat: docs: Is a directory\n');
+    // -R walks the folders below, with a header per folder.
+    const tree = (await run(g, 'ls -R')).out;
+    expect(tree).toMatch(/^\.:\na\.txt {2}b\.txt {2}docs\n\n\.\/docs:\n/);
+    expect((await run(g, 'echo x > docs')).err).toBe('lrsh: docs: Is a directory\n');
+    // 2>/dev/null hides errors, 2>&1 sends them with the output.
+    expect((await run(g, 'cat nope 2>/dev/null')).err).toBe('');
+    expect((await run(g, 'cat nope 2>&1 | wc -l')).out).toBe('1\n');
   });
 
   it('changes directory, with ~, - and ..', async () => {
@@ -171,6 +178,8 @@ describe('text tools', () => {
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad  -\n',
     );
     expect((await run(g, 'sha256sum b.txt')).out).toMatch(/^[0-9a-f]{64} {2}b\.txt\n$/);
+    expect((await run(g, 'echo -n abc | sha1sum')).out).toBe('a9993e364706816aba3e25717850c26c9cd0d89d  -\n');
+    expect((await run(g, 'sha512sum b.txt')).out).toMatch(/^[0-9a-f]{128} {2}b\.txt\n$/);
   });
 
   it('compares files', async () => {

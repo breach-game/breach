@@ -11,7 +11,7 @@ t3.ada.diff: "Reste à savoir ce qui a changé. `diff training/repo/install.sh t
 t3.ada.diff.standard: "Reste à savoir ce qui a changé entre le script du dépôt et celui qui est distribué."
 t3.ada.line: "Une seule ligne ajoutée, avec un commentaire rassurant. Lis-la bien : elle envoie quelque chose vers une adresse. Donne-moi cette adresse avec `submit`."
 t3.ada.line.standard: "Une seule ligne ajoutée. Où part ce qu'elle envoie ? Donne-moi l'adresse avec `submit`."
-t3.ada.mute: "10.13.0.99. Si tu as fait la campagne, cette adresse te dit quelque chose : c'est celle du commit de 3 h 17. Mute ne s'est pas contenté de NovaMind, il vise ses clients."
+t3.ada.mute: "10.13.0.99. Note-la : cette adresse n'a rien à faire dans un installateur."
 t3.ada.what: "Dis-moi ce que cette ligne emporte : ma question t'attend, réponds en cliquant ou avec `answer`."
 t3.ada.what.standard: "Qu'est-ce que cette ligne emporte, au juste ? Réponds à ma question."
 t3.ada.env: "Oui. `env` affiche toutes les variables d'environnement, et sur un serveur d'intégration ce sont les clés du royaume : jetons de dépôt, clés cloud, mots de passe de base. Chaque client qui a lancé ce script hier a tout donné."

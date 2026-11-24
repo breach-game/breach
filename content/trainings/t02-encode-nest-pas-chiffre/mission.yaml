@@ -3,7 +3,7 @@ stage: analysis
 briefing: t2.briefing
 
 files:
-  training/config.env: "# nova-widget, staging deployment\nAPP_ENV=staging\nLOG_LEVEL=debug\n# Token protected before commit, see the wiki page \"Secrets\"\nAPI_TOKEN_B64=RkxBR3tiNjQtbmVzdC1wYXMtdW4tY29mZnJlfQ==\nCACHE_TTL=300\n"
+  training/config.env: "# nova-widget, staging deployment\nAPP_ENV=staging\nLOG_LEVEL=debug\n# Token protected before commit, see the wiki page \"Secrets\"\n# Wiki \"Secrets\": never a value here, only a vault reference, e.g. DB_PASSWORD=vault:nova-widget/db-password\nAPI_TOKEN_B64=RkxBR3tiNjQtbmVzdC1wYXMtdW4tY29mZnJlfQ==\nCACHE_TTL=300\n"
 
 objectives:
   - { id: decode, text: t2.obj.decode }

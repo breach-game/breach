@@ -322,6 +322,18 @@ describe('official content', () => {
     expect(full.game.state.host).toBe('db');
   });
 
+  it('defence 1: an investigation answer may end with a dot, a wrong value points to answer', async () => {
+    const b1 = missions.find((m) => m.pack.id === 'breach.official.b01')!;
+    const { game, transcript } = await replaySolution(
+      world,
+      b1.pack,
+      ['answer entry nm-deploy.', 'submit 10.13.0.99', 'contain'],
+      'en',
+    );
+    expect(game.state.answers.entry).toBeTruthy();
+    expect(transcript).toContain('takes answer, not submit');
+  });
+
   it('reports pages and characters that point nowhere', async () => {
     const broken = structuredClone(world);
     broken.world!.npcs = broken.world!.npcs.filter((n) => n.id !== 'theo');

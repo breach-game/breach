@@ -89,7 +89,7 @@ rules:
     if: { choice: notify, eq: wait }
     do:
       - ada.say: z3.ada.notify.wait
-  - on: { event: HttpRequest, host: intranet, path: /m, status: 200 }
+  - on: { event: HttpRequest, host: intranet, path: { in: [/m, /m.txt] }, status: 200 }
     do:
       - ada.say: z3.ada.last
       - objective.complete: last
@@ -110,7 +110,7 @@ hints:
   report: [z3.hint.report.1, z3.hint.report.2, z3.hint.report.3]
   technique: [z3.hint.technique.1]
   notify: [z3.hint.notify.1]
-  last: [z3.hint.last.1]
+  last: [z3.hint.last.0, z3.hint.last.1]
 
 debrief:
   title: z3.debrief.title

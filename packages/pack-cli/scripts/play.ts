@@ -73,10 +73,25 @@ for (const o of m.objectives)
   console.log(`  OBJECTIVE ${o.id}${o.optional ? ' (optional)' : ''}: ${game.t(o.text)}`);
 
 let seen = seenBefore;
+const asked = new Set<string>();
+const say = (msg: { key: string; tone?: string; vars?: unknown }) =>
+  console.log(`   ADA${msg.tone === 'warn' ? '!' : ''}: ${game.t(msg.key, msg.vars as never)}`);
 const flush = (show: boolean) => {
-  for (const msg of game.state.messages.slice(seen))
-    if (show) console.log(`   ADA${msg.tone === 'warn' ? '!' : ''}: ${game.t(msg.key, msg.vars as never)}`);
+  if (game.state.messages.length < seen) {
+    // A failure went back to the checkpoint: what Ada said after it is in the log, after `Restored`.
+    const at = game.log.findLastIndex((e) => e.type === 'Restored');
+    for (const e of game.log.slice(at + 1)) if (show && e.type === 'NpcMessage') say(e as never);
+  } else for (const msg of game.state.messages.slice(seen)) if (show) say(msg);
   seen = game.state.messages.length;
+  // Ada's multiple-choice questions show as buttons in the game: print them with their options.
+  for (const id of Object.keys(game.state.asked)) {
+    if (asked.has(id)) continue;
+    asked.add(id);
+    const q = m.questions.find((x) => x.id === id);
+    if (!q || !show) continue;
+    console.log(`   ADA ASKS (${id}): ${game.t(q.text)}`);
+    for (const o of game.optionsOf(q)) console.log(`     - answer ${o.id}: ${game.t(o.text)}`);
+  }
 };
 const status = () =>
   `   [${Object.entries(game.state.objectives)

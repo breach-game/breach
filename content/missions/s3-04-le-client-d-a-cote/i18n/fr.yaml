@@ -27,7 +27,7 @@ p4.ada.g.next.standard: "Le cookie contient un numéro. Fabrique celui du numér
 p4.ada.g.token: "Ton compte contenait un champ `api_token`. Lis-le : `jwt decode` suivi du jeton. Regarde bien l'en-tête."
 p4.ada.g.token.standard: "Ton compte contenait un jeton d'API. Lis ce qu'il y a dedans."
 p4.ada.g.form: "Dernier point : le formulaire d'adresse. Lis sa source : `curl https://shop.pelican.test/account/address`, commentaire compris."
-p4.ada.g.form.standard: "Va lire la source du formulaire qui change l'adresse de livraison."
+p4.ada.g.form.standard: "Ton compte indique où changer l'adresse de livraison. Va lire la source de ce formulaire."
 p4.ada.g.fix: "Corrige la configuration des sessions : `edit dossier/session.yml`. Identifiants en `random`, jeton en `hs256`, `csrf_token` en `on`, et le cookie en `lax` ou `strict`. Enregistre, puis `verify`."
 p4.ada.g.fix.standard: "Corrige `dossier/session.yml` pour fermer les trois faiblesses que tu viens de voir, puis `verify`."
 p4.ada.nocookie: "401 : sans cookie, la boutique ne sait pas qui tu es. Le cookie du compte de test est dans ton mandat."

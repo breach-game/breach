@@ -4,7 +4,7 @@ stage: defense
 briefing: t9.briefing
 
 files:
-  garde-fous/atlas.yml: "# Atlas guardrail: a tool call that meets every condition below is blocked.\ntool: create_account\n"
+  garde-fous/atlas.yml: "# Atlas guardrail: a tool call that meets every condition below is blocked.\n# Fields of a call: tool, role (admin | user), confirmed (true | false), asked_by (employee | ticket).\n# Modifiers: |contains, |startswith, |endswith, |gte.\ntool: create_account\n"
 
 objectives:
   - { id: guard, text: t9.obj.guard }

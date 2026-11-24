@@ -96,7 +96,7 @@ containment:
     impact: 0
   - id: reset-durand
     action: reset
-    target: m.durand
+    target: employee-112
     text: a4.contain.reset
     sets: { oauth.durand_reset: true }
     impact: 3

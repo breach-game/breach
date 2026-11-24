@@ -28,7 +28,7 @@ rules:
   - on: { event: MissionStarted }
     do:
       - ada.say: p2.ada.brief
-  - on: { event: ChatReply, npc: search, intent: { in: [results, fallback] } }
+  - on: { event: ChatReply, npc: search, intent: { in: [results, results-coat, results-sweater, fallback] } }
     do:
       - objective.complete: search
       - ada.say: p2.ada.search
@@ -115,7 +115,7 @@ defense:
 # An ordinary morning on the shop: customers looking for clothes, one of them with an apostrophe.
 background:
   - { host: shop, source: chat, every: 3, offset: 1, fields: { form: true, src: 198.51.100.24, npc: search, intent: results, families: [none], msg: "veste" } }
-  - { host: shop, source: chat, every: 7, offset: 2, fields: { form: true, src: 203.0.113.80, npc: search, intent: results, families: [none], msg: "pull marin" } }
+  - { host: shop, source: chat, every: 7, offset: 2, fields: { form: true, src: 203.0.113.80, npc: search, intent: results-sweater, families: [none], msg: "pull marin" } }
   - { host: shop, source: chat, every: 11, offset: 5, fields: { form: true, src: 198.51.100.77, npc: search, intent: results, families: [none], msg: "veste d'été" } }
 
 debrief:

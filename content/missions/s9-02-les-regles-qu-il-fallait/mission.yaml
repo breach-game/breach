@@ -94,9 +94,13 @@ rules:
   - on: { event: EvalRun, passed: false, wrongly: { gte: 1 } }
     do:
       - ada.guide: { key: z2.ada.g.guard2, for: guard, step: 1 }
-  - on: { event: EvalRun, passed: false, wrongly: 0 }
+  - on: { event: EvalRun, passed: false, wrongly: 0, missed: 1 }
     do:
       - ada.say: z2.ada.guard.missed
+  # Nothing blocked at all: most often a value that no call carries.
+  - on: { event: EvalRun, passed: false, wrongly: 0, missed: { gte: 2 } }
+    do:
+      - ada.say: z2.ada.guard.none
   - on: { event: ObjectiveCompleted, objective: guard }
     do:
       - ada.say: z2.ada.guard

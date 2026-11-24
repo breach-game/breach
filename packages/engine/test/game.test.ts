@@ -10,6 +10,13 @@ describe('missions and rules', () => {
     expect(r.out).toContain('submit <value>');
   });
 
+  it('says a plain value is not an expected value, rather than not a flag', async () => {
+    const g = await newGame();
+    const r = await run(g, 'submit 10.13.0.5');
+    expect(r.err).toContain('not a value this mission expects');
+    expect(r.status).toBe(1);
+  });
+
   it('fires rules, completes objectives and finishes the mission', async () => {
     const g = await newGame();
     expect(g.state.messages.map((m) => m.key)).toEqual(['hello']);

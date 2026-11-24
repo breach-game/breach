@@ -1,7 +1,7 @@
 t14.briefing: "Lou, your little sister, has just moved in somewhere new. She sent you the sunset from her new balcony, the one she is posting tonight on her public profile. It is in `photos/balcon.jpg`, with her message in `photos/message.txt`. Before she clicks, look at what the photo says besides the sunset."
 t14.file.message: "Lou, 19:58\nSo happy with the view!! Posting it tonight on my profile, everyone has to see this 🌅\nDoes it look good?\n"
 t14.obj.read: "Read what the phone wrote in the photo"
-t14.obj.clean: "Remove the position from the photo, and check"
+t14.obj.clean: "Remove the position from the photo, then read its metadata again"
 t14.obj.habit: "Pick the habit that avoids it next time"
 t14.ada.brief: "Training fourteen, on the personal side. A phone photo is not just a picture: the device writes metadata into it, called Exif. Nothing is hacked here, we just read a file Lou sent you."
 t14.ada.look: "Show the photo's metadata: `exiftool photos/balcon.jpg`."

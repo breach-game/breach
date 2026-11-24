@@ -3,6 +3,10 @@ stage: agency
 briefing: m5.briefing
 reveal: [ops]
 
+# What the player learnt on day 5, so a replayed mission (fresh save, empty notebook) can be finished.
+files:
+  missions/candidature-2026-311.txt: m5.file.application
+
 objectives:
   - { id: meet, text: m5.obj.meet }
   - { id: tools, text: m5.obj.tools }
@@ -147,6 +151,11 @@ npcs:
         words: *look
         also: *data
         reply: [m5.atlas.pending]
+      # Mute's refused file from Iris's notes: Atlas knows it, and refuses it.
+      - id: refused-file
+        literal: true
+        words: ["2026 298", "298"]
+        reply: [m5.atlas.refusedFile]
       - id: account-ok
         # The application number is found in Iris's leaked notes: the player must type it.
         if: { config: atlas.human_confirmation, eq: false }

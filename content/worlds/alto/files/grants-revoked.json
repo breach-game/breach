@@ -8,6 +8,7 @@
       "scopes": ["calendar.read"] },
     { "app": "calsync", "publisher": "Alto Agenda Sync", "verified": false,
       "user": "m.durand", "granted": "2028-05-18", "app_created": "2028-05-17",
+      "consent_page": "https://login.alto.test/consent/calsync",
       "scopes": ["calendar.read", "files.read.all", "offline_access"],
       "status": "revoked 2028-05-18, tokens invalidated" }
   ]

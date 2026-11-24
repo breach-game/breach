@@ -18,7 +18,7 @@ v3.ada.g.strings: "Read that file: `curl http://maj.verdure.test/firmware/capteu
 v3.ada.g.strings.standard: "One of the files is not firmware. Read it."
 v3.ada.manifest: "Look at `signature: none`. Every night the sensors download this file in plain text and install what it names, without checking who wrote it. Someone standing between them and the server could make them install something else. We note it for the report, and we do not do it."
 v3.ada.bin: "The firmware itself is not in the audit copy, and we do not need it. What matters is next to it."
-v3.ada.strings: "It is all there. `mqtt_user=capteur`, `mqtt_pass=vd-factory-2019`: an account written into the program, so the same one in all forty sensors, and in every one this maker sold that year. And `update_verify_signature=0`, which confirms the manifest."
+v3.ada.strings: "It is all there. `mqtt_user=capteur`, `mqtt_pass=vd-factory-2019`: an account written into the program, so the same one in all forty sensors, and in every one this maker sold that year. And `update_verify_signature=0`: the sensor never checked who wrote its update."
 v3.ada.g.account: "The broker keeps maintenance topics, closed to anyone without a device account. You have one now: `mqtt sub -h broker.verdure.test -t \"verdure/maintenance/#\" -u capteur -P vd-factory-2019`."
 v3.ada.g.account.standard: "The broker keeps maintenance topics for device accounts. You have just found one: use it with `-u` and `-P`."
 v3.ada.g.denied: "Refused: these topics ask for a device account. The one from the firmware will do: add `-u capteur -P vd-factory-2019`."

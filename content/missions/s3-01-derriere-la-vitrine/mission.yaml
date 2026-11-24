@@ -37,11 +37,11 @@ rules:
     do:
       - objective.complete: headers
       - ada.say: p1.ada.headers
-  - on: { event: HttpRequest, host: shop, path: /robots.txt }
+  - on: { event: HttpRequest, host: shop, path: /robots.txt, method: GET }
     do:
       - objective.complete: robots
       - ada.say: p1.ada.robots
-  - on: { event: HttpRequest, host: shop, path: /staff-preview }
+  - on: { event: HttpRequest, host: shop, path: /staff-preview, method: GET }
     do:
       - objective.complete: preview
       - ada.say: p1.ada.preview

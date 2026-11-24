@@ -8,7 +8,7 @@ objectives:
   - { id: share, text: t15.obj.share }
 
 flags:
-  - { id: key, value: "LR-BILL-5521-QX7", points: 100, objective: found }
+  - { id: key, value: "NM-BILL-5521-QX7", points: 100, objective: found }
 
 files:
   canal/equipe-data.txt: t15.file.channel

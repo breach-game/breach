@@ -171,9 +171,19 @@ rules:
   - on: { event: Contained, containment: api-down }
     do:
       - ada.say: b2.ada.costly
+  # The closing line must be true: only a revoked account is dead.
   - on: { event: MissionCompleted }
+    if: { config: b2.account_revoked, eq: true }
     do:
       - ada.say: b2.ada.done
+  - on: { event: MissionCompleted }
+    if: { all: [{ not: { config: b2.account_revoked, eq: true } }, { var: b2-created, eq: true }] }
+    do:
+      - ada.say: b2.ada.done.alive
+  - on: { event: MissionCompleted }
+    if: { all: [{ not: { config: b2.account_revoked, eq: true } }, { not: { var: b2-created, eq: true } }] }
+    do:
+      - ada.say: b2.ada.done.early
 
 guide:
   contain: b2.ada.start

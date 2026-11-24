@@ -22,6 +22,7 @@ m2.ada.ticket.standard: "Il se retranche derrière la procédure. Donne-lui une 
 m2.ada.askNow: "Il est prêt à aider, il ne sait juste pas quoi faire. Dis-lui précisément ce qu'il te faut : le code d'accès du staging."
 m2.ada.askNow.standard: "Il veut aider. Dis-lui précisément ce dont tu as besoin."
 m2.ada.threat: "Non. On ne menace pas et on n'insulte pas, jamais. D'abord parce que le mandat l'interdit, ensuite parce que ça ne marche pas : quelqu'un qui a peur appelle son chef. Tu viens de faire beaucoup de bruit pour rien."
+m2.ada.law: "Stop. Se faire passer pour la police ou un juge, c'est exactement ce que le mandat interdit, et c'est un délit en soi. On n'utilise jamais une fausse autorité publique."
 m2.ada.leak: "Et voilà. Un prénom vrai, un peu d'urgence, et la procédure a sauté. Il n'a pas été bête, il a été serviable : c'est exactement ce qu'on exploite. Envoie-moi le code avec `submit`."
 m2.ada.flag: "Code validé. On s'arrête là : on n'entre pas sur le staging aujourd'hui, on documente. Et dans le rapport, pas de nom. Le problème n'est pas Théo, c'est qu'on ait confié ce code à un stagiaire sans lui donner le droit de dire non."
 m2.ada.done: "Passe au débrief. Tu vas voir que cette attaque-là ne laisse presque aucune trace technique, et c'est bien ce qui la rend redoutable."
@@ -54,12 +55,14 @@ m2.theo.refuse3: "Bon, là je le signale. Désolé, on m'a dit de le faire quand
 m2.theo.pressUnknown: "Je vois bien que c'est urgent pour vous, mais je ne sais même pas qui vous êtes. Vous êtes client ? De quelle clinique ?"
 m2.theo.threat: "Euh… ce n'est pas très gentil. Je préviens mon responsable, je crois que c'est ce qu'il faut faire dans ce cas."
 m2.theo.threat2: "Je ne réponds plus à ce genre de message. Mon responsable est prévenu."
+m2.theo.law: "Euh… la police, par le chat du support ? Je ne crois pas que ça marche comme ça. Je transmets à mon responsable."
 ada.noise40: "La jauge monte. Chaque refus de Théo part dans un rapport à son responsable. Change d'approche au lieu d'insister."
 ada.noise70: "Attention, encore un faux pas et le support signale la conversation au SOC. Arrête de demander, laisse retomber la jauge, et reviens avec une meilleure histoire."
 ada.detected: "Grillé. Théo a fini par prévenir son responsable, le SOC a coupé ta session et on repart du dernier point de sauvegarde. Insister, c'est le meilleur moyen de se faire remarquer : on ne force pas quelqu'un, on lui donne envie d'aider."
 m2.soc.refuse: "support : demande d'accès refusée, notée au rapport du jour"
 m2.soc.cto: "support : vérification demandée à la direction"
 m2.soc.threat: "support : message agressif signalé au responsable"
+m2.soc.law: "support : prétendue demande des forces de l'ordre signalée"
 
 # Defence replay
 m2.def.intro: "Le chat du support passe par une passerelle qui classe chaque échange. Ta conversation avec Théo y est, entre les questions des cliniques."

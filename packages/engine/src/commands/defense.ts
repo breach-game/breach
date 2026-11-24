@@ -172,6 +172,10 @@ const contain: Command = {
     const [action, ...rest] = ctx.args;
     const target = rest.join(' ');
     if (!action || !target) {
+      if (!options.length) {
+        yield out(ctx.t('contain.empty'));
+        return action ? 2 : 0;
+      }
       yield out(ctx.t('contain.usage'));
       for (const c of options)
         yield out(
@@ -222,7 +226,11 @@ export async function* investigate(ctx: CommandCtx): Run {
     return 0;
   }
   // Judged like a flag: a hash comparison, never a model's opinion.
-  const correct = (await sha256(normalizeAnswer(rest.join(' ')))) === question.sha256;
+  // A sentence's closing dot (`answer who sync-bot.`) or a path's last slash is not part of the answer.
+  const typed = normalizeAnswer(rest.join(' '));
+  const correct =
+    (await sha256(typed)) === question.sha256 ||
+    (/[.!?/]$/.test(typed) && (await sha256(typed.replace(/[.!?/]+$/, ''))) === question.sha256);
   yield wait(350);
   ctx.emit({ type: 'AnswerSubmitted', question: correct ? question.id : null, correct });
   if (!correct) {
