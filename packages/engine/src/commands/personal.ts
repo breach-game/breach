@@ -350,20 +350,19 @@ const qr: Command = {
       yield err(`qr: ${file}: no QR code found in this file`);
       return 4;
     }
-    const { text, style } = r.qr;
+    const { text } = r.qr;
     if (verb === 'show') {
       const m = qrMatrix(text);
       if (!m) {
         yield err('qr: this code is too large to draw here');
         return 1;
       }
-      const lines = qrBlocks(m);
-      // A dressed-up code: the same modules, in colour. A logo would hide some of them.
-      yield out(
-        style === 'fancy' && ctx.tty
-          ? lines.map((l) => `\x1b[38;5;183m${l}\x1b[0m`).join('\n')
-          : lines.join('\n'),
-      );
+      // On screen the code opens in the image viewer, drawn module by module, so that a phone can
+      // read it: half blocks in a terminal leave gaps between rows. Piped, it is text.
+      if (ctx.tty) {
+        ctx.emit({ type: 'AppOpened', app: 'image', url: r.abs });
+        yield out(ctx.t('qr.viewer', { file }));
+      } else yield out(qrBlocks(m).join('\n'));
       yield out(ctx.t('qr.shown'));
       return 0;
     }

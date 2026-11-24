@@ -64,7 +64,7 @@ export type EventBody =
   | { type: 'ToolCall'; agent: string; tool: string; args: string; admin: boolean }
   /** A setting of the target changed: a defender's fix or a containment. */
   | { type: 'ConfigPatched'; key: string; value: string | number | boolean; by: string }
-  | { type: 'AppOpened'; app: 'browser' | 'editor'; url: string }
+  | { type: 'AppOpened'; app: 'browser' | 'editor' | 'image'; url: string }
   | {
       type: 'ChatSent';
       npc: string;

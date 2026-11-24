@@ -1,4 +1,5 @@
 export { GUIDANCE_LEVELS, type Guidance } from '@breach/pack-schema';
+export { readQr } from './artifact.ts';
 export {
   acceptWording,
   BrainError,
@@ -49,6 +50,7 @@ export {
   progressFile,
   type ResumePlan,
 } from './progress.ts';
+export { qrMatrix } from './qr.ts';
 export { pentestReport } from './report.ts';
 export { type SocEntry, socView } from './soc.ts';
 export {
