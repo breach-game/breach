@@ -226,11 +226,11 @@ export async function* investigate(ctx: CommandCtx): Run {
     return 0;
   }
   // Judged like a flag: a hash comparison, never a model's opinion.
-  // A sentence's closing dot (`answer who sync-bot.`) is not part of the answer.
+  // A sentence's closing dot (`answer who sync-bot.`) or a path's last slash is not part of the answer.
   const typed = normalizeAnswer(rest.join(' '));
   const correct =
     (await sha256(typed)) === question.sha256 ||
-    (/[.!?]$/.test(typed) && (await sha256(typed.replace(/[.!?]+$/, ''))) === question.sha256);
+    (/[.!?/]$/.test(typed) && (await sha256(typed.replace(/[.!?/]+$/, ''))) === question.sha256);
   yield wait(350);
   ctx.emit({ type: 'AnswerSubmitted', question: correct ? question.id : null, correct });
   if (!correct) {
