@@ -1100,7 +1100,9 @@ export class Game {
     if (!release) return 'unknown';
     const history = this.state.deployed[service] ?? [release.current];
     const from = history.at(-1) ?? release.current;
-    const to = version ?? history.at(-2);
+    // Rolling back with no history of our own goes to the version listed before the running one.
+    const listed = release.versions.findIndex((v) => v.version === from);
+    const to = version ?? history.at(-2) ?? (listed > 0 ? release.versions[listed - 1]?.version : undefined);
     if (!to) return 'nothing';
     const target = release.versions.find((v) => v.version === to);
     if (!target) return 'version';
