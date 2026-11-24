@@ -2,7 +2,7 @@ import type { Detection, LogSource, Where } from '@breach/pack-schema';
 import { LOG_SOURCES } from '@breach/pack-schema';
 import { pentestReport } from '../report.ts';
 import { LOG_FILES, runDetection } from '../telemetry.ts';
-import { sha256, style } from '../util.ts';
+import { gameDate, sha256, style } from '../util.ts';
 import { canRead, lookup } from '../vfs.ts';
 import { type Command, type CommandCtx, err, out, type Run, wait } from './types.ts';
 
@@ -93,6 +93,71 @@ const soc: Command = {
       return ['logs', 'search', 'sources', 'alerts'].filter((w) => w.startsWith(current));
     if (words[0] === 'logs') return LOG_SOURCES.filter((s) => s.startsWith(current));
     return [];
+  },
+};
+
+/**
+ * `flows`: the firewall's flow log, summed by conversation (source, destination, port, verdict).
+ * Built from the same lines as the SOC console: never a real packet.
+ */
+const flows: Command = {
+  name: 'flows',
+  summary: 'cmd.flows',
+  explain: 'explain.flows',
+  group: 'game',
+  async *run(ctx): Run {
+    if (!(yield* defending(ctx))) return 1;
+    const opts: Record<string, string> = {};
+    for (let i = 0; i < ctx.args.length; i++) {
+      const a = ctx.args[i]!;
+      const m = /^--(src|dst|port|action)(?:=(.*))?$/.exec(a);
+      if (!m) {
+        yield err('usage: flows [--src <ip>] [--dst <ip>] [--port <n>] [--action allow|deny]');
+        return 2;
+      }
+      opts[m[1]!] = m[2] ?? ctx.args[++i] ?? '';
+    }
+    const groups = new Map<
+      string,
+      { first: number; last: number; n: number; bytes: number; key: string[] }
+    >();
+    for (const l of ctx.game.socLines()) {
+      if (l.source !== 'flow') continue;
+      const f = l.fields;
+      const row = [
+        String(f.src ?? ''),
+        String(f.dst ?? ''),
+        String(f.dport ?? ''),
+        String(f.action ?? 'allow'),
+      ];
+      if (opts.src && !row[0]!.startsWith(opts.src)) continue;
+      if (opts.dst && !row[1]!.startsWith(opts.dst)) continue;
+      if (opts.port && row[2] !== opts.port) continue;
+      if (opts.action && row[3] !== opts.action) continue;
+      const key = row.join(' ');
+      const g = groups.get(key) ?? { first: l.t, last: l.t, n: 0, bytes: 0, key: row };
+      g.first = Math.min(g.first, l.t);
+      g.last = Math.max(g.last, l.t);
+      g.n++;
+      g.bytes += Number(f.bytes ?? 0) || 0;
+      groups.set(key, g);
+    }
+    if (!groups.size) {
+      yield err('flows: no matching flow');
+      return 1;
+    }
+    const hhmm = (t: number) => gameDate(ctx.world.startTime, t).time.slice(0, 5);
+    yield out(
+      `${'FIRST'.padEnd(6)} ${'LAST'.padEnd(6)} ${'SRC'.padEnd(16)} ${'DST'.padEnd(16)} ${'DPORT'.padEnd(6)} ${'ACTION'.padEnd(7)} ${'FLOWS'.padStart(5)} ${'BYTES'.padStart(12)}`,
+    );
+    for (const g of [...groups.values()].sort((a, b) => b.bytes - a.bytes || a.first - b.first)) {
+      const [src, dst, port, action] = g.key;
+      const verdict = action === 'deny' ? paint(ctx, style.yellow, action.padEnd(7)) : action!.padEnd(7);
+      yield out(
+        `${hhmm(g.first).padEnd(6)} ${hhmm(g.last).padEnd(6)} ${src!.padEnd(16)} ${dst!.padEnd(16)} ${port!.padEnd(6)} ${verdict} ${String(g.n).padStart(5)} ${String(g.bytes).padStart(12)}`,
+      );
+    }
+    return 0;
   },
 };
 
@@ -390,4 +455,4 @@ const report: Command = {
   },
 };
 
-export const defenseCommands: Command[] = [soc, contain, rule, evalCmd, report];
+export const defenseCommands: Command[] = [soc, flows, contain, rule, evalCmd, report];

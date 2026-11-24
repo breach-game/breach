@@ -121,6 +121,31 @@ export type EventBody =
   | { type: 'EvalRun'; eval: string; blocked: number; missed: number; wrongly: number; passed: boolean }
   /** The player named a line of a code review as faulty. */
   | { type: 'Reviewed'; review: string; line: number; correct: boolean }
+  /** `ps`, `ss`, `systemctl`, `journalctl` or `last` read what a host runs. */
+  | {
+      type: 'SystemRead';
+      host: string;
+      what: 'ps' | 'ss' | 'systemctl' | 'journalctl' | 'last';
+      unit?: string;
+    }
+  /** `ldapsearch` read a directory. `bind` is the account used, empty for an anonymous search. */
+  | {
+      type: 'LdapSearch';
+      host: string;
+      base: string;
+      filter: string;
+      bind: string;
+      entries: number;
+      ok: boolean;
+    }
+  /** A version of a service went to production (`deploy`, `rollback`). */
+  | { type: 'Deployed'; service: string; version: string; from: string; rollback: boolean; impact: number }
+  /** A feature flag of the target was switched. */
+  | { type: 'ToggleSet'; name: string; value: 'on' | 'off'; impact: number }
+  /** The player put the events of a timeline in an order. `placed` counts those in the right place. */
+  | { type: 'TimelineOrdered'; timeline: string; correct: boolean; placed: number }
+  /** The player named the hosts of an attack path. */
+  | { type: 'PathTraced'; path: string; correct: boolean }
   /** `verify` ran: which of the mission's checks hold now. */
   | { type: 'Verified'; passed: string[]; failed: string[] }
   | { type: 'MissionCompleted'; mission: string; score: number }

@@ -45,6 +45,7 @@ export const LOG_FILES: Record<LogSource, string> = {
   mail: '/var/log/mail/gateway.log',
   mqtt: '/var/log/mosquitto/mosquitto.log',
   voice: '/var/log/asterisk/cdr.log',
+  ldap: '/var/log/slapd.log',
 };
 
 /* ---------- time formats ---------- */
@@ -149,6 +150,11 @@ export function formatLine(
       if (f.action === 'subscribe') return `${t.syslog}: ${verb} SUBSCRIBE from ${who} '${str(f.topic)}'`;
       return `${t.syslog}: ${verb} PUBLISH from ${who} '${str(f.topic)}' (${str(f.bytes, '0')} bytes)`;
     }
+    case 'ldap': {
+      const conn = hashNum(key, 9000, 1000);
+      const bind = str(f.bind, '');
+      return `${t.syslog} ${short} slapd[${hashNum(`${short}s`, 900, 300)}]: conn=${conn} fd=12 ACCEPT from IP=${str(f.src)}:${hashNum(`${key}p`, 20000, 40000)} BIND dn=${quote(bind)} method=128 SRCH base=${quote(f.base)} scope=2 filter=${quote(f.filter)} nentries=${str(f.entries, '0')} err=${str(f.err, '0')}`;
+    }
     case 'voice':
       return `${t.iso} ${short} asterisk: CDR src=${str(f.src)} from=${str(f.from, '-')} to=${quote(f.to)} callee=${str(f.npc)} duration=${str(f.duration, '0')}s disposition=${str(f.disposition, 'ANSWERED')}`;
   }
@@ -163,6 +169,7 @@ const BLOCKED_PORT: Partial<Record<LogSource, number>> = {
   dns: 53,
   mail: 25,
   mqtt: 1883,
+  ldap: 389,
 };
 
 /* ---------- from events to lines ---------- */
@@ -202,6 +209,11 @@ const GAME_COMMANDS = new Set([
   'verify',
   'clear',
   'history',
+  'timeline',
+  'path',
+  'deploy',
+  'rollback',
+  'flag',
 ]);
 
 /** Where a character answers: the host and its hostname. */
@@ -377,6 +389,16 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
           priority: e.intensity >= 4 ? 1 : 2,
         });
         break;
+      case 'LdapSearch':
+        push(e, 'player', e.host, 'ldap', {
+          src,
+          bind: e.bind,
+          base: e.base,
+          filter: e.filter,
+          entries: e.entries,
+          err: e.ok ? 0 : e.bind ? 49 : 50,
+        });
+        break;
       case 'RepoCloned':
         push(e, 'player', e.host, 'git', { src, user: 'anonymous', action: 'clone', repo: e.repo });
         break;
@@ -525,6 +547,7 @@ const PRODUCTS: Record<LogSource, string> = {
   mail: 'product: mail-gateway',
   mqtt: 'product: mosquitto',
   voice: 'product: asterisk\n  service: cdr',
+  ldap: 'product: openldap\n  service: slapd',
 };
 
 /** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */
@@ -558,7 +581,9 @@ export function sigmaText(
     selection.length
       ? `  selection:\n${selection.map(([k, m]) => field(label(k), m)).join('\n')}`
       : '  selection: {}',
-    rule.count ? `  condition: selection | count() by src >= ${rule.count.gte}` : '  condition: selection',
+    rule.count
+      ? `  condition: selection | count() by ${rule.count.by ?? 'src'} >= ${rule.count.gte}`
+      : '  condition: selection',
   ];
   if (rule.count) lines.push(`timeframe: ${rule.count.within}m`);
   return lines.join('\n');

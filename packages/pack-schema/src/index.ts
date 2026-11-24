@@ -254,6 +254,124 @@ const sshLogin = z.lazy(() =>
   }),
 );
 
+/**
+ * What a host runs, as data: processes, sockets, services, the service journal and past logins, read
+ * by `ps`, `ss`, `systemctl`, `journalctl` and `last`. Each entry may carry a condition, so that an
+ * attacker's step (`sets`) makes a process appear and a containment makes it go away.
+ */
+const when = z.lazy(() => condition).optional();
+const hostSystem = z.strictObject({
+  processes: z
+    .array(
+      z.strictObject({
+        pid: z.number().int().min(1).max(4_194_304),
+        ppid: z.number().int().min(0).max(4_194_304).default(1),
+        user: z.string().regex(/^[a-z_][a-z0-9_-]{0,31}$/),
+        /** Start time as `ps` shows it (`08:12` or `Nov08`). */
+        start: z.string().max(10).default('08:00'),
+        cpu: z.number().min(0).max(100).default(0),
+        mem: z.number().min(0).max(100).default(0.1),
+        cmd: z.string().min(1).max(200),
+        if: when,
+      }),
+    )
+    .max(60)
+    .default([]),
+  sockets: z
+    .array(
+      z.strictObject({
+        proto: z.enum(['tcp', 'udp']).default('tcp'),
+        state: z.enum(['LISTEN', 'ESTAB', 'SYN-SENT', 'TIME-WAIT', 'CLOSE-WAIT', 'UNCONN']).default('LISTEN'),
+        /** `0.0.0.0:22`, `10.13.0.5:44322`. */
+        local: z.string().max(60),
+        peer: z.string().max(60).default('0.0.0.0:*'),
+        /** The process that owns it, by pid: `ss -p` shows its name. */
+        pid: z.number().int().min(1).max(4_194_304).optional(),
+        if: when,
+      }),
+    )
+    .max(60)
+    .default([]),
+  services: z
+    .array(
+      z.strictObject({
+        /** Unit name without `.service`. */
+        name: z.string().regex(/^[a-zA-Z0-9@._-]{1,60}$/),
+        description: z.string().max(120),
+        state: z.enum(['active', 'inactive', 'failed']).default('active'),
+        enabled: z.boolean().default(true),
+        /** Since when, as systemd prints it (`Mon 2027-11-08 08:00:12 CET`). */
+        since: z.string().max(40).optional(),
+        pid: z.number().int().min(1).max(4_194_304).optional(),
+        exec: z.string().max(200).optional(),
+        /** Path of the unit file. */
+        unit: z.string().max(200).optional(),
+        if: when,
+      }),
+    )
+    .max(40)
+    .default([]),
+  /** Lines of the systemd journal, oldest first. */
+  journal: z
+    .array(
+      z.strictObject({
+        /** `Nov 08 09:12:44`. A line without `pid` is systemd's own about the unit (`systemd[1]`). */
+        at: z.string().max(20),
+        unit: z.string().max(60),
+        pid: z.number().int().min(1).max(4_194_304).optional(),
+        text: z.string().min(1).max(400),
+        if: when,
+      }),
+    )
+    .max(120)
+    .default([]),
+  /** Past and current sessions, newest first, as `last` lists them. */
+  logins: z
+    .array(
+      z.strictObject({
+        user: z.string().max(32),
+        tty: z.string().max(12).default('pts/0'),
+        from: z.string().max(60),
+        /** `Mon Nov  8 09:12`. */
+        at: z.string().max(24),
+        /** `09:40  (00:28)`, or `still logged in`. */
+        until: z.string().max(30).default('still logged in'),
+        if: when,
+      }),
+    )
+    .max(40)
+    .default([]),
+});
+export type HostSystem = z.infer<typeof hostSystem>;
+
+/**
+ * A directory server's entries, read by `ldapsearch`. Nothing is cracked: a bind works with the
+ * listed password, and an anonymous search only when the directory allows it.
+ */
+const directory = z.strictObject({
+  /** Base of the tree (`dc=annuaire,dc=test`). */
+  base: z.string().min(3).max(120),
+  anonymous: z.boolean().default(false),
+  binds: z
+    .array(z.strictObject({ dn: z.string().max(200), password: z.string().max(80), if: when }))
+    .max(10)
+    .default([]),
+  entries: z
+    .array(
+      z.strictObject({
+        dn: z.string().min(3).max(200),
+        attrs: z.record(
+          z.string().regex(/^[a-zA-Z][a-zA-Z0-9-]{0,40}$/),
+          z.union([z.string().max(400), z.array(z.string().max(400)).max(30)]),
+        ),
+        if: when,
+      }),
+    )
+    .min(1)
+    .max(80),
+});
+export type Directory = z.infer<typeof directory>;
+
 const host = z.strictObject({
   id,
   hostname: z.string().max(120),
@@ -271,6 +389,8 @@ const host = z.strictObject({
   web: z.record(z.string().startsWith('/'), route).optional(),
   repos: z.record(z.string(), repo).optional(),
   ssh: z.array(sshLogin).max(16).default([]),
+  system: hostSystem.optional(),
+  directory: directory.optional(),
 });
 
 const noiseEntry = z.union([
@@ -504,6 +624,7 @@ export const LOG_SOURCES = [
   'mail', // inbound mail gateway
   'mqtt', // message broker of connected devices
   'voice', // telephone exchange call records
+  'ldap', // directory server (slapd)
 ] as const;
 export type LogSource = (typeof LOG_SOURCES)[number];
 
@@ -650,6 +771,8 @@ const adversaryStep = z.strictObject({
   blockedIf: condition.optional(),
   /** When blocked, the attacker carries on with the next step (another address, another way). */
   continueIfBlocked: z.boolean().default(false),
+  /** What the step changes on the target when it goes through: a process starts, a port opens. */
+  sets: z.record(id, scalar).optional(),
 });
 
 /** In a defence mission, the attacker plays a script, one step every `pace` actions of the player. */
@@ -917,6 +1040,79 @@ const mission = z.strictObject({
             (cases) => cases.some((c) => c.expect === 'block') && cases.some((c) => c.expect === 'allow'),
             'an eval needs at least one case to block and one to allow',
           ),
+        objective: id.optional(),
+      }),
+    )
+    .max(4)
+    .default([]),
+  /** What the mission's hosts run, added to the world's (`system` of a host), by host id. */
+  systems: z.record(id, hostSystem).default({}),
+  /**
+   * Services the player can deploy with `deploy <service> <version>` and roll back with `rollback`.
+   * Each version changes the target's settings, like a fix.
+   */
+  releases: z
+    .array(
+      z.strictObject({
+        service: id,
+        /** The version running when the mission starts. */
+        current: z.string().min(1).max(40),
+        versions: z
+          .array(
+            z.strictObject({
+              version: z.string().min(1).max(40),
+              sets: z.record(id, scalar).default({}),
+              /** What deploying it costs the organisation, out of 100 (a restart, a cut). */
+              impact: z.number().min(0).max(100).default(0),
+            }),
+          )
+          .min(2)
+          .max(8),
+      }),
+    )
+    .max(6)
+    .default([]),
+  /** Feature flags of the target, switched with `flag set <name> on|off`. */
+  toggles: z
+    .array(
+      z.strictObject({
+        name: z.string().regex(/^[a-z][a-z0-9_.-]{0,40}$/),
+        value: z.enum(['on', 'off']),
+        on: z.record(id, scalar).default({}),
+        off: z.record(id, scalar).default({}),
+        impact: z.number().min(0).max(100).default(0),
+      }),
+    )
+    .max(8)
+    .default([]),
+  /**
+   * Timelines: events to put back in order with `timeline <id> <event> <event>…`. Listed here in the
+   * right order; the engine shows them shuffled. A wrong order costs points like a wrong answer.
+   */
+  timelines: z
+    .array(
+      z.strictObject({
+        id,
+        text: i18nKey,
+        events: z
+          .array(z.strictObject({ id, text: i18nKey }))
+          .min(3)
+          .max(10),
+        objective: id.optional(),
+      }),
+    )
+    .max(4)
+    .default([]),
+  /**
+   * Paths across the network map: the hosts an attack went through, in order, named with
+   * `path <id> <host> <host>…`. Judged by host id, never by a model.
+   */
+  paths: z
+    .array(
+      z.strictObject({
+        id,
+        text: i18nKey,
+        hosts: z.array(id).min(2).max(8),
         objective: id.optional(),
       }),
     )
