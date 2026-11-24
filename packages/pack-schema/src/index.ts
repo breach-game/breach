@@ -35,6 +35,8 @@ const i18nText = z
  * - `$capture`: packets already captured on a network, read back by `tshark -r`. Encrypted payloads
  *   are never described: only what an onlooker sees (names asked, names in the TLS hello, plain HTTP).
  * - `$qr`: a picture of a QR code holding a text (an address, a Wi-Fi network), read by `zbarimg`.
+ * - `$image`: a photo and the metadata a camera or a phone writes in it, read by `exiftool`. No pixel
+ *   is described: only the tags (date, device, position) a person may not know they publish.
  */
 export interface BinarySource {
   format: 'elf' | 'pe' | 'macho' | 'firmware' | 'data';
@@ -82,7 +84,15 @@ export interface QrSource {
   /** A code dressed with colours and a logo: the same content, harder to tell apart. */
   style?: 'plain' | 'fancy';
 }
+export interface ImageSource {
+  format: 'jpeg' | 'png';
+  width: number;
+  height: number;
+  /** Tags as `exiftool` names them (`Make`, `Date/Time Original`, `GPS Position`), in order. */
+  exif?: Record<string, string>;
+}
 export type Artifact =
+  | { $image: ImageSource }
   | { $binary: BinarySource }
   | { $archive: ArchiveSource }
   | { $cert: CertSource }
@@ -198,8 +208,21 @@ const qrSource = z.strictObject({
   text: z.string().min(1).max(160),
   style: z.enum(['plain', 'fancy']).optional(),
 });
+const imageSource = z.strictObject({
+  format: z.enum(['jpeg', 'png']),
+  width: z.number().int().min(1).max(20000),
+  height: z.number().int().min(1).max(20000),
+  exif: z
+    .record(
+      z.string().regex(/^[A-Z][A-Za-z0-9 /-]{0,39}$/, 'tag name such as "Date/Time Original"'),
+      z.string().min(1).max(120),
+    )
+    .refine((r) => Object.keys(r).length <= 30, 'at most 30 tags')
+    .optional(),
+});
 /** A file that is not plain text: the engine builds its bytes (see `Artifact`). */
 export const artifact = z.union([
+  z.strictObject({ $image: imageSource, ...fsMeta }),
   z.strictObject({ $binary: binarySource, ...fsMeta }),
   z.strictObject({ $archive: archiveSource, ...fsMeta }),
   z.strictObject({ $cert: certSource, ...fsMeta }),
@@ -275,6 +298,14 @@ const block = z.union([
     }),
   }),
   z.strictObject({ footer: text }),
+  /**
+   * A button that puts a text on the workstation's clipboard, as a page script would. The player
+   * reads it back with `clip`, never by pasting it: the text must be a fictional tool of the world,
+   * never a real command (`breach-pack check` refuses shells, downloads and encodings here).
+   */
+  z.strictObject({
+    copy: z.strictObject({ button: text, text: z.string().min(1).max(400), note: text.optional() }),
+  }),
 ]);
 export type Block = z.infer<typeof block>;
 const page = z.strictObject({ title: text, blocks: z.array(block).min(1).max(60) });
@@ -311,6 +342,11 @@ const variant = z
 
 const route = z.strictObject({
   ...answer,
+  /**
+   * The application ignores anything after this path (`/account/x.css` answers as `/account`):
+   * the path confusion a cache in front of it can be fooled by. True, or while a condition holds.
+   */
+  loose: z.lazy(() => z.union([z.boolean(), condition])).optional(),
   /** A character answers what is posted here (`curl -d "message"`). */
   chat: id.optional(),
   variants: z.array(variant).max(8).default([]),
@@ -488,6 +524,19 @@ const host = z.strictObject({
   ssh: z.array(sshLogin).max(16).default([]),
   system: hostSystem.optional(),
   directory: directory.optional(),
+  /**
+   * A cache in front of the web server that keeps any answer whose path ends with one of these
+   * extensions, whoever asked, unless the answer says `Cache-Control: no-store` or `private`.
+   */
+  cdn: z
+    .strictObject({
+      ext: z
+        .array(z.string().regex(/^[a-z0-9]{1,5}$/))
+        .min(1)
+        .max(8),
+      if: z.lazy(() => condition).optional(),
+    })
+    .optional(),
 });
 
 const noiseEntry = z.union([
@@ -688,6 +737,11 @@ const npc = z.strictObject({
   intents: z.array(intent).max(80).default([]),
   /** Used in turn when nothing matches. */
   fallback: z.array(text).min(1).max(6),
+  /**
+   * While this holds, requests sent at the same time (`curl -Z`) are handled one after the other.
+   * Otherwise they are all decided on the same state: the race a lock or a unique key closes.
+   */
+  serial: condition.optional(),
   /** Character sheet for language-model brains. Never shown to the player. */
   sheet: z.string().max(6000).optional(),
   /**
@@ -764,6 +818,7 @@ export const LOG_SOURCES = [
   'voice', // telephone exchange call records
   'ldap', // directory server (slapd)
   'wlan', // wireless controller: access points heard and clients joined
+  'signin', // identity provider sign-ins: users, applications, the flow used
 ] as const;
 export type LogSource = (typeof LOG_SOURCES)[number];
 

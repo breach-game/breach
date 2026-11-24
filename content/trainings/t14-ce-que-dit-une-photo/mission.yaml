@@ -1,0 +1,86 @@
+order: 14
+stage: recon
+briefing: t14.briefing
+
+objectives:
+  - { id: read, text: t14.obj.read }
+  - { id: clean, text: t14.obj.clean }
+  - { id: habit, text: t14.obj.habit }
+
+flags: []
+
+files:
+  photos/message.txt: t14.file.message
+  photos/balcon.jpg:
+    $image:
+      format: jpeg
+      width: 4032
+      height: 3024
+      exif:
+        Make: Pomelo
+        Camera Model Name: Pomelo P12
+        Software: PomeloOS 9.2
+        Date/Time Original: "2027:06:12 19:42:07"
+        Exposure Time: "1/120"
+        GPS Latitude: "45 deg 45' 26.00\" N"
+        GPS Longitude: "4 deg 50' 30.00\" E"
+        GPS Altitude: "184 m Above Sea Level"
+        GPS Position: "45 deg 45' 26.00\" N, 4 deg 50' 30.00\" E"
+
+questions:
+  - id: reveal
+    text: t14.q.reveal
+    objective: read
+    correct: address
+    options:
+      - { id: address, text: t14.q.reveal.address }
+      - { id: nothing, text: t14.q.reveal.nothing, why: t14.q.reveal.nothing.why }
+      - { id: face, text: t14.q.reveal.face, why: t14.q.reveal.face.why }
+  - id: habit
+    text: t14.q.habit
+    objective: habit
+    correct: camera
+    options:
+      - { id: camera, text: t14.q.habit.camera }
+      - { id: rename, text: t14.q.habit.rename, why: t14.q.habit.rename.why }
+      - { id: private, text: t14.q.habit.private, why: t14.q.habit.private.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: t14.ada.brief
+  - on: { event: ExifRead, file: { glob: "*/balcon.jpg" }, gps: true }
+    do:
+      - ada.guide: { key: t14.ada.read, for: read, step: 1 }
+      - ada.ask: reveal
+  - on: { event: ObjectiveCompleted, objective: read }
+    do:
+      - ada.say: t14.ada.found
+  - on: { event: ExifRead, file: { glob: "*/balcon.jpg" }, gps: false }
+    if: { objective: read }
+    do:
+      - objective.complete: clean
+  - on: { event: ObjectiveCompleted, objective: clean }
+    do:
+      - ada.say: t14.ada.clean
+      - ada.ask: habit
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: t14.ada.done
+
+guide:
+  read: t14.ada.look
+  clean: t14.ada.strip
+  habit: t14.ada.answer
+
+hints:
+  read: [t14.hint.read.1, t14.hint.read.2]
+  clean: [t14.hint.clean.1, t14.hint.clean.2]
+
+debrief:
+  title: t14.debrief.title
+  lesson: t14.debrief.lesson
+  points: [t14.debrief.p1, t14.debrief.p2, t14.debrief.p3]
+  reference: "Exif 3.0 · CNIL : maîtriser ses traces en ligne"
+  home:
+    points: [t14.home.p1, t14.home.p2]

@@ -4,6 +4,7 @@ import type {
   BinarySource,
   CaptureSource,
   CertSource,
+  ImageSource,
   QrSource,
 } from '@breach/pack-schema';
 import { rng } from './util.ts';
@@ -69,6 +70,7 @@ export const MAGIC = {
   gzip: '\x1f\x8b\x08\x00',
   pcap: '\xd4\xc3\xb2\xa1\x02\x00\x04\x00',
   png: '\x89PNG\r\n\x1a\n',
+  jpeg: '\xff\xd8\xff\xe1',
 } as const;
 
 function binary(src: BinarySource): string {
@@ -243,11 +245,48 @@ export function readQr(raw: string): (QrSource & { side: number }) | null {
   }
 }
 
+/* ---------- photos ---------- */
+
+/** Tags a camera writes as plain ASCII, so that `strings` finds them as it would in a real photo. */
+const PLAIN_TAGS = ['Make', 'Camera Model Name', 'Model', 'Software'];
+
+/**
+ * A photo: the file's magic, the metadata as masked data (so `strings` does not spell the position),
+ * the plain tags a real file shows, then filler standing for the pixels.
+ */
+export function imageBytes(src: ImageSource): string {
+  const body = mask(utf8(JSON.stringify(src)));
+  const next = rng(seedOf(`${src.width}x${src.height}${JSON.stringify(src.exif ?? {})}`));
+  const plain = Object.entries(src.exif ?? {})
+    .filter(([k]) => PLAIN_TAGS.includes(k))
+    .map(([, v]) => `${utf8(v)}\x00`)
+    .join('');
+  const head =
+    src.format === 'jpeg'
+      ? `${MAGIC.jpeg}\x00\x10Exif\x00\x00II*\x00`
+      : `${MAGIC.png}\x00\x00\x00\x0dIHDR${u32be(src.width)}${u32be(src.height)}\x08\x02\x00\x00\x00`;
+  return `${head}IMGX${u32(body.length)}${body}${plain}${filler(next, 96)}`;
+}
+
+/** What a photo written by `imageBytes` holds, or null when the file is not one. */
+export function readImage(raw: string): ImageSource | null {
+  if (!raw.startsWith(MAGIC.jpeg) && !raw.startsWith(MAGIC.png)) return null;
+  const at = raw.indexOf('IMGX');
+  if (at < 0) return null;
+  const size = readU32(raw, at + 4);
+  try {
+    const src = JSON.parse(fromUtf8(mask(raw.slice(at + 8, at + 8 + size)))) as ImageSource;
+    return typeof src.width === 'number' ? src : null;
+  } catch {
+    return null;
+  }
+}
+
 export function isArtifact(v: unknown): v is Artifact {
   return (
     !!v &&
     typeof v === 'object' &&
-    ('$binary' in v || '$archive' in v || '$cert' in v || '$capture' in v || '$qr' in v)
+    ('$binary' in v || '$archive' in v || '$cert' in v || '$capture' in v || '$qr' in v || '$image' in v)
   );
 }
 
@@ -264,6 +303,7 @@ export function buildArtifact(a: Artifact, translate: (key: string) => string, s
   }
   if ('$capture' in a) return capture(a.$capture);
   if ('$qr' in a) return qrImage(a.$qr);
+  if ('$image' in a) return imageBytes(a.$image);
   return cert(a.$cert);
 }
 

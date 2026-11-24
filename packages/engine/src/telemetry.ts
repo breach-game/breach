@@ -47,6 +47,7 @@ export const LOG_FILES: Record<LogSource, string> = {
   voice: '/var/log/asterisk/cdr.log',
   ldap: '/var/log/slapd.log',
   wlan: '/var/log/wlc/wips.log',
+  signin: '/var/log/idp/signin.log',
 };
 
 /* ---------- time formats ---------- */
@@ -142,7 +143,7 @@ export function formatLine(
     case 'flow':
       return `${t.iso} fw01 flow: ${str(f.action, 'allow')} proto=tcp src=${str(f.src)} dst=${str(f.dst)} dport=${str(f.dport)} bytes=${str(f.bytes, '0')}`;
     case 'mail':
-      return `${t.syslog} ${short} mailgw[${hashNum(key, 8000, 1200)}]: from=<${str(f.from)}> to=<${str(f.to)}> subject=${quote(f.subject)} link=${str(f.link, '-')}${f.attach === undefined ? '' : ` attach=${str(f.attach)}`} verdict=${str(f.verdict, 'delivered')}`;
+      return `${t.syslog} ${short} mailgw[${hashNum(key, 8000, 1200)}]: from=<${str(f.from)}> to=<${str(f.to)}> subject=${quote(f.subject)}${f.bcc === undefined ? '' : ` bcc=<${str(f.bcc)}>`} link=${str(f.link, '-')}${f.attach === undefined ? '' : ` attach=${str(f.attach)}`} verdict=${str(f.verdict, 'delivered')}`;
     case 'mqtt': {
       const who = `${str(f.client)}@${str(f.src)}`;
       const verb = f.result === 'denied' ? 'Denied' : 'Received';
@@ -161,6 +162,9 @@ export function formatLine(
       if (f.event === 'assoc')
         return `${t.iso} ${short} wlc: event=assoc ssid=${quote(f.ssid)} bssid=${str(f.bssid)} sta=${str(f.sta)} src=${str(f.src, '-')}`;
       return `${t.iso} ${short} wlc: event=${str(f.event, 'beacon')} ssid=${quote(f.ssid)} bssid=${str(f.bssid)} channel=${str(f.channel, '6')} security=${str(f.security, 'open')} rssi=${str(f.rssi, '-60')} managed=${str(f.managed, 'yes')}`;
+    case 'signin':
+      // An identity provider's sign-in log: who, through which application, by which flow.
+      return `${t.iso} ${short} idp: signin user=${str(f.user, '-')} app=${quote(f.app)} app_id=${str(f.app_id, '-')} flow=${str(f.flow, 'password')} src=${str(f.src)} mfa=${str(f.mfa, 'none')} result=${str(f.result, 'success')}${f.tenant === undefined ? '' : ` tenant=${str(f.tenant)}`}${f.scope === undefined ? '' : ` scope=${quote(f.scope)}`}`;
     case 'voice':
       return `${t.iso} ${short} asterisk: CDR src=${str(f.src)} from=${str(f.from, '-')} to=${quote(f.to)} callee=${str(f.npc)} duration=${str(f.duration, '0')}s disposition=${str(f.disposition, 'ANSWERED')}`;
   }
@@ -555,6 +559,7 @@ const PRODUCTS: Record<LogSource, string> = {
   voice: 'product: asterisk\n  service: cdr',
   ldap: 'product: openldap\n  service: slapd',
   wlan: 'product: wireless-controller\n  service: wips',
+  signin: 'product: identity-provider\n  service: signin',
 };
 
 /** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */

@@ -318,10 +318,37 @@ const curl: Command = {
       values.request ??
       (data !== undefined ? 'POST' : flags.has('I') ? 'HEAD' : 'GET')
     ).toUpperCase();
-    const res = ctx.game.http(host, url, method, undefined, {
-      cookie: values.b ?? values.cookie,
-      header: values.H ?? values.header,
-    });
+    const extras = { cookie: values.b ?? values.cookie, header: values.H ?? values.header };
+    // `-Z`: the same request several times at once. A character decides them all on the same state
+    // unless it handles them one after the other (`serial`): the race a lock closes.
+    if ((flags.has('Z') || flags.has('parallel')) && rest.length > 1) {
+      if (rest.some((u) => u !== raw) || rest.length > 5) {
+        yield err('curl: parallel transfers here repeat one address, 2 to 5 times: curl -Z -d ... URL URL');
+        return 2;
+      }
+      const answers = rest.map(() => ctx.game.http(host, url, method, undefined, extras));
+      const chat = answers[0]?.route?.chat;
+      if (chat && method === 'POST') {
+        const message = chatMessage(data ?? '');
+        if (!message) {
+          yield err('curl: (22) The requested URL returned error: 400');
+          return 22;
+        }
+        yield wait(700);
+        const replies = ctx.game.chatBurst(
+          chat,
+          rest.map(() => message),
+        );
+        for (const r of replies) {
+          if (!r.ok) return 130;
+          yield out(`${JSON.stringify({ reply: r.reply })}`);
+        }
+        return 0;
+      }
+      for (const a of answers) if (a.body) yield out(a.body);
+      return 0;
+    }
+    const res = ctx.game.http(host, url, method, undefined, extras);
     // A chat endpoint: the character answers what was posted.
     if (res.route?.chat && method === 'POST') {
       const message = chatMessage(data ?? '');

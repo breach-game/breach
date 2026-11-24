@@ -1,5 +1,5 @@
 import type { Advisory } from '@breach/pack-schema';
-import { isBinary, MAGIC, readArchive, readCert, readQr } from '../artifact.ts';
+import { isBinary, MAGIC, readArchive, readCert, readImage, readQr } from '../artifact.ts';
 import { canWrite, lookup } from '../vfs.ts';
 import { inputs, readFile } from './files.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
@@ -58,7 +58,15 @@ export function describe(content: string): string {
     return content.charCodeAt(20) === 105
       ? 'pcap capture file, microsecond ts (little-endian) - version 2.4 (802.11, capture length 262144)'
       : 'pcap capture file, microsecond ts (little-endian) - version 2.4 (Ethernet, capture length 262144)';
+  if (content.startsWith(MAGIC.jpeg)) {
+    const img = readImage(content);
+    const exif =
+      img?.exif && Object.keys(img.exif).length ? ', Exif Standard: [TIFF image data, little-endian]' : '';
+    return `JPEG image data${exif}, baseline, precision 8, ${img?.width ?? 640}x${img?.height ?? 480}, components 3`;
+  }
   if (content.startsWith(MAGIC.png)) {
+    const img = readImage(content);
+    if (img) return `PNG image data, ${img.width} x ${img.height}, 8-bit/color RGB, non-interlaced`;
     const qr = readQr(content);
     const side = qr?.side ?? 290;
     return qr?.style === 'fancy'

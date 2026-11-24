@@ -41,6 +41,21 @@ export type EventBody =
   | { type: 'CaptureRead'; file: string; filter: string; frames: number }
   /** `zbarimg` or `qr decode` read what a QR code holds. */
   | { type: 'QrDecoded'; file: string; text: string }
+  /** `exiftool` read a file: the tags it found. */
+  | { type: 'ExifRead'; file: string; tags: string[]; gps: boolean }
+  /** A page's `copy` button put a text on the workstation's clipboard. */
+  | { type: 'ClipboardSet'; text: string; url: string }
+  /** The player read the clipboard with `clip` instead of pasting it. */
+  | { type: 'ClipboardRead'; text: string }
+  /** A cache in front of a web server kept an answer, for anyone who asks that address. */
+  | {
+      type: 'CacheStored';
+      host: string;
+      path: string;
+      status: number;
+      body: string;
+      headers: Record<string, string>;
+    }
   /** `nmcli connection show` listed the networks the workstation joins again by itself. */
   | { type: 'ConnectionsListed'; connections: number }
   | { type: 'DnsQuery'; name: string; rtype: string; found: boolean }

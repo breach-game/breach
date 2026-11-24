@@ -1,0 +1,16 @@
+id: breach.training.t14
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [privacy, linux]
+requires: [breach.world.novamind]
+title:
+  fr: Ce que dit une photo
+  en: What a photo says
+summary:
+  fr: Ta sœur va publier la photo de son nouveau balcon. Lis avec exiftool ce que son téléphone a écrit dedans, retire la position, et garde la bonne habitude.
+  en: Your sister is about to post a photo of her new balcony. Read with exiftool what her phone wrote inside it, remove the position, and keep the right habit.
+authors: [BREACH]
+locales: [fr, en]

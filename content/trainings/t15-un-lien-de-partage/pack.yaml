@@ -1,0 +1,16 @@
+id: breach.training.t15
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [privacy, llm]
+requires: [breach.world.novamind]
+title:
+  fr: Un lien de partage est public
+  en: A share link is public
+summary:
+  fr: Un collègue a partagé sa conversation avec un assistant IA dans le canal de l'équipe. Lis ce que le lien montre à n'importe qui, trouve ce qui a fuité, et choisis le premier geste.
+  en: A colleague shared his conversation with an AI assistant in the team channel. Read what the link shows anyone, find what leaked, and pick the first move.
+authors: [BREACH]
+locales: [fr, en]

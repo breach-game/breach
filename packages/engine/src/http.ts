@@ -72,6 +72,11 @@ function blockHtml(block: Block, host: Host, t: (key: string) => string): string
     const endpoint = Object.entries(host.web ?? {}).find(([, r]) => r.chat === block.chat)?.[0];
     return `<div id="chat" data-agent="${escapeHtml(block.chat)}"${endpoint ? ` data-endpoint="${escapeHtml(endpoint)}"` : ''}></div>`;
   }
+  if ('copy' in block) {
+    // What a page script would write to the clipboard sits in the source, for whoever reads it.
+    const note = block.copy.note ? `\n    <p>${inline(t(block.copy.note))}</p>` : '';
+    return `<div class="verify">${note}\n    <button type="button" data-clipboard="${escapeHtml(t(block.copy.text)).replace(/"/g, '&quot;')}">${inline(t(block.copy.button))}</button>\n  </div>`;
+  }
   return `<footer>${inline(t(block.footer))}</footer>`;
 }
 
