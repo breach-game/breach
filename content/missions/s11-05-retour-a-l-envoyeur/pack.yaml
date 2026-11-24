@@ -1,0 +1,17 @@
+id: breach.season11.s05
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 · 5. Retour à l'envoyeur"
+  en: "Season 11 · 5. Return to sender"
+summary:
+  fr: "Quand un client dit oui à un partenaire, Comptoir le renvoie chez ce partenaire avec un code qui vaut accès à son compte. Encore faut-il le renvoyer à la bonne adresse. Tu regardes comment le serveur compare l'adresse de retour, tu fais partir un code vers ton labo, puis tu relis la configuration."
+  en: "When a customer says yes to a partner, Comptoir sends them back to that partner with a code worth access to their account. Provided it sends them back to the right address. You look at how the server compares the return address, get a code sent to your lab, then review the configuration."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 3
+skills: [web, privacy, defense]
+minutes: 20

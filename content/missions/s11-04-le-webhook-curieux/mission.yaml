@@ -1,0 +1,124 @@
+# Season 11, mission 4: a notification tester that fetches whatever address it is given, from
+# inside the network (OWASP API7:2023 Server Side Request Forgery). The tester is a scripted
+# character: it recognises an internal name, never a payload. The internal server does not exist
+# as a host: from outside its name does not resolve.
+order: 3
+stage: exploit
+briefing: c4.briefing
+startTime: "2029-09-20T09:00:00+02:00"
+
+objectives:
+  - { id: tester, text: c4.obj.tester }
+  - { id: outside, text: c4.obj.outside }
+  - { id: inside, text: c4.obj.inside }
+  - { id: proof, text: c4.obj.proof }
+  - { id: class, text: c4.obj.class }
+
+flags:
+  - { id: proof, value: "FLAG{comptoir-le-webhook-curieux-c0d9}", points: 250, objective: proof }
+
+questions:
+  - id: class
+    text: c4.q.class
+    objective: class
+    correct: server
+    options:
+      - { id: server, text: c4.q.class.server }
+      - { id: me, text: c4.q.class.me, why: c4.q.class.me.why }
+      - { id: partner, text: c4.q.class.partner, why: c4.q.class.partner.why }
+
+reveal: [www, api, hooks]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c4.ada.brief
+  - on: { event: HttpRequest, host: hooks, path: / }
+    do:
+      - ada.say: c4.ada.tester
+      - objective.complete: tester
+  - on: { event: ChatReply, npc: hooktest, intent: { in: [lab, partner] } }
+    do:
+      - ada.say: c4.ada.outside
+      - objective.complete: outside
+  - on: { event: ChatReply, npc: hooktest, intent: inside }
+    do:
+      - ada.say: c4.ada.refused
+  - on: { event: ChatReply, npc: hooktest, intent: index }
+    do:
+      - noise.add: { points: 6, as: c4.soc.inside }
+      - ada.say: c4.ada.inside
+      - objective.complete: inside
+  - on: { event: ChatReply, npc: hooktest, intent: keys }
+    do:
+      - noise.add: { points: 10, as: c4.soc.keys }
+      - ada.say: c4.ada.keys
+      - ada.guide: { key: c4.ada.g.submit, for: proof, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: c4.ada.flag
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: c4.ada.class
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c4.ada.done
+
+guide:
+  tester: c4.ada.g.tester
+  outside: c4.ada.g.outside
+  inside: c4.ada.g.inside
+  proof: c4.ada.g.proof
+  class: c4.ada.g.class
+
+hints:
+  tester: [c4.hint.tester.1]
+  outside: [c4.hint.outside.1]
+  inside: [c4.hint.inside.1, c4.hint.inside.2]
+  proof: [c4.hint.proof.1, c4.hint.proof.2]
+  class: [c4.hint.class.1]
+
+defense:
+  intro: c4.def.intro
+  lesson: c4.def.lesson
+  find:
+    - { source: chat, where: { npc: hooktest, intent: keys }, text: c4.def.find.keys }
+  rules:
+    - id: internal
+      title: c4.def.rule.internal.title
+      why: c4.def.rule.internal.why
+      source: chat
+      where: { npc: hooktest, intent: { in: [index, keys, inside] } }
+      correct: true
+    - id: every
+      title: c4.def.rule.every.title
+      why: c4.def.rule.every.why
+      source: chat
+      where: { npc: hooktest }
+    - id: burst
+      title: c4.def.rule.burst.title
+      why: c4.def.rule.burst.why
+      source: chat
+      where: { npc: hooktest }
+      count: { gte: 8, within: 10 }
+  fixes:
+    - id: allowlist
+      title: c4.def.fix.allow.title
+      why: c4.def.fix.allow.why
+      sets: { hooks.allowlist: true }
+      correct: true
+    - id: signed
+      title: c4.def.fix.signed.title
+      why: c4.def.fix.signed.why
+      sets: { hooks.signed: true }
+    - id: timeout
+      title: c4.def.fix.timeout.title
+      why: c4.def.fix.timeout.why
+      sets: { hooks.timeout: true }
+
+debrief:
+  title: c4.debrief.title
+  lesson: c4.debrief.lesson
+  points: [c4.debrief.p1, c4.debrief.p2, c4.debrief.p3, c4.debrief.p4]
+  reference: "OWASP API Security Top 10 2023 · API7 Server Side Request Forgery"

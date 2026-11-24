@@ -1,0 +1,17 @@
+id: breach.season11.s04
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 · 4. Le webhook curieux"
+  en: "Season 11 · 4. The curious webhook"
+summary:
+  fr: "Comptoir offre à ses partenaires une page pratique : on lui donne une adresse, elle l'appelle et montre la réponse. Le serveur qui appelle est à l'intérieur du réseau de la banque. Tu lui demandes d'aller voir là où toi, tu ne peux pas entrer."
+  en: "Comptoir offers its partners a handy page: give it an address, it calls it and shows the answer. The server that makes the call sits inside the bank's network. You ask it to go and look where you cannot get in yourself."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, recon, defense]
+minutes: 15

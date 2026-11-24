@@ -1,0 +1,12 @@
+{
+  "version": "v2",
+  "auth": "Authorization: Bearer <token>",
+  "endpoints": [
+    "GET  /v2/accounts/me",
+    "GET  /v2/accounts/{id}",
+    "POST /v2/transfers",
+    "POST /v2/otp/{customer}",
+    "POST /v2/signup",
+    "POST /v2/referrals/{code}/claim"
+  ]
+}

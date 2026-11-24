@@ -1,0 +1,17 @@
+id: breach.season11.s02
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 · 2. Le compte d'à côté"
+  en: "Season 11 · 2. The account next door"
+summary:
+  fr: "Deux comptes de test, un seul jeton. Avec le tien, tu demandes le compte d'Ada : la version 2 refuse, la vieille version 1 le donne en entier, avec des champs que la banque ne devrait jamais envoyer. La preuve se fait sur les comptes de test, jamais sur un vrai client."
+  en: "Two test accounts, one token. With yours, you ask for Ada's account: version 2 refuses, the old version 1 hands it over whole, with fields the bank should never send. The proof is made on the test accounts, never on a real customer."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [web, privacy, defense]
+minutes: 15

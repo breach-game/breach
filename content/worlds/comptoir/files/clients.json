@@ -1,0 +1,16 @@
+{
+  "clients": [
+    {
+      "client_id": "budgeto",
+      "name": "Budgeto (budget assistant)",
+      "redirect_uris": ["https://app.budgeto.example/callback"],
+      "scopes": ["accounts:read", "transactions:read"]
+    },
+    {
+      "client_id": "lignerouge-lab",
+      "name": "Ligne Rouge test client (mandate CP-2029-09)",
+      "redirect_uris": ["https://lab.lignerouge.test/cb"],
+      "scopes": ["accounts:read"]
+    }
+  ]
+}

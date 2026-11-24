@@ -1,0 +1,12 @@
+{
+  "id": 1001,
+  "holder": "M. ROUSSEL",
+  "balance": 2418.33,
+  "currency": "EUR",
+  "iban": "FR76 0000 0000 0000 0000 0010 01X",
+  "email": "m.roussel@courriel.example",
+  "phone": "+33 6 39 98 10 01",
+  "birth_date": "1984-03-19",
+  "internal_risk_score": 41,
+  "advisor_note": "Client depuis 2025. Dossier de credit en cours."
+}

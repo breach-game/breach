@@ -1,0 +1,17 @@
+id: breach.season11.s06
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 · 6. Mille filleuls"
+  en: "Season 11 · 6. A thousand referrals"
+summary:
+  fr: "Côté défense, pour finir. Dix euros au parrain, dix euros au filleul : cette nuit, un seul code de parrainage reçoit un filleul par minute. Chaque requête est parfaitement valide, c'est l'ensemble qui ne l'est pas. Tu trouves le code, tu arrêtes la série sans éteindre le programme, tu reconstitues l'histoire et tu décides du sort de l'argent."
+  en: "Defence side, to finish. Ten euros for the sponsor, ten for the friend: tonight a single referral code gets one new friend a minute. Every request is perfectly valid; the whole is not. You find the code, stop the run without switching the programme off, piece the story together and decide what happens to the money."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [logs, defense, crisis]
+minutes: 20

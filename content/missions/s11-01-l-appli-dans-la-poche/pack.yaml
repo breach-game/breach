@@ -1,0 +1,17 @@
+id: breach.season11.s01
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.comptoir]
+title:
+  fr: "Saison 11 · 1. L'appli dans la poche"
+  en: "Season 11 · 1. The app in your pocket"
+summary:
+  fr: "Comptoir est une banque sans guichet : une appli, et une API derrière. Le site dit que la version 1 de l'API est retirée depuis 2027. Tu ouvres l'appli comme une archive, tu lis les adresses qu'elle connaît, et tu vérifies si le site dit vrai."
+  en: "Comptoir is a bank with no counter: an app, and an API behind it. The website says version 1 of the API was retired in 2027. You open the app like an archive, read the addresses it knows, and check whether the website is telling the truth."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [recon, mobile, web, defense]
+minutes: 15

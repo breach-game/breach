@@ -1,0 +1,385 @@
+# Season 11. Everything here is fictional: a neobank that does not exist, a reserved .test domain,
+# private addresses, made-up tokens and account numbers that are no real IBAN. The API is a set of
+# scripted web routes. What is shown is the class of mistake of the OWASP API Security Top 10 (an
+# old version left running, an object served without checking its owner, a tester that fetches any
+# address, a redirect address compared too loosely), never a request that would work elsewhere.
+startTime: "2029-09-17T09:00:00+02:00"
+mandate: CP-2029-09
+scope:
+  domains: ["*.comptoir.test"]
+  networks: ["10.26.0.0/24"]
+player:
+  host: kestrel
+  user: kestrel
+resolver: 10.26.0.2
+
+hosts:
+  - id: kestrel
+    hostname: lignerouge.test
+    ip: 10.26.0.66
+    kind: player
+    os: LR-OS 4.2
+    map: { x: -320, z: 40, h: 70 }
+    links: [www]
+    users:
+      - { name: kestrel, home: /home/kestrel }
+    fs:
+      home:
+        kestrel:
+          README.txt: { $t: file.readme }
+          mandate:
+            CP-2029-09.txt: { $t: file.mandate }
+            comptes-de-test.txt: { $t: file.accounts }
+      etc:
+        hostname: "lignerouge\n"
+
+  - id: www
+    hostname: www.comptoir.test
+    ip: 10.26.0.10
+    os: Linux 6.6 (Debian 13)
+    map: { x: -80, z: -150, h: 110 }
+    links: [api, hooks]
+    services:
+      - { port: 443, name: https, product: nginx 1.26 }
+    web:
+      "/":
+        page:
+          title: web.home.title
+          blocks:
+            - nav: &nav
+                - { href: "/", label: web.nav.home }
+                - { href: "/developpeurs", label: web.nav.devs }
+                - { href: "/appli", label: web.nav.mobile }
+            - h1: web.home.h1
+            - p: web.home.p1
+            - p: web.home.p2
+            - footer: web.footer
+      "/developpeurs":
+        page:
+          title: web.devs.title
+          blocks:
+            - nav: *nav
+            - h1: web.devs.h1
+            - p: web.devs.p1
+            - table:
+                head: [web.devs.th.service, web.devs.th.address, web.devs.th.role]
+                rows:
+                  - [web.devs.api, "`https://api.comptoir.test/`", web.devs.api.role]
+                  - [web.devs.auth, "`https://auth.comptoir.test/`", web.devs.auth.role]
+                  - [web.devs.hooks, "`https://hooks.comptoir.test/`", web.devs.hooks.role]
+            - p: web.devs.p2
+            - footer: web.footer
+      "/appli":
+        page:
+          title: web.mobile.title
+          blocks:
+            - nav: *nav
+            - h1: web.mobile.h1
+            - p: web.mobile.p1
+            - nav:
+                - { href: /comptoir-3.2.0.apk, label: web.mobile.download }
+            - footer: web.footer
+      "/comptoir-3.2.0.apk":
+        headers: { content-type: application/vnd.android.package-archive }
+        artifact:
+          $archive:
+            format: zip
+            files:
+              AndroidManifest.xml: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!-- decoded from the binary manifest -->\n<manifest package=\"test.comptoir.banque\" versionName=\"3.2.0\">\n  <uses-permission name=\"android.permission.INTERNET\"/>\n  <uses-permission name=\"android.permission.USE_BIOMETRIC\"/>\n  <application label=\"Comptoir\" allowBackup=\"false\" debuggable=\"false\">\n    <activity name=\"MainActivity\" exported=\"true\"/>\n  </application>\n</manifest>\n"
+              assets/config.json: "{\n  \"api_base\": \"https://api.comptoir.test/v2\",\n  \"auth_base\": \"https://auth.comptoir.test\",\n  \"region\": \"eu-west\",\n  \"min_supported_app\": \"2.0.0\"\n}\n"
+              classes.dex:
+                $binary:
+                  format: data
+                  strings:
+                    - "Ltest/comptoir/banque/MainActivity;"
+                    - "Ltest/comptoir/banque/api/Client;"
+                    - "Ltest/comptoir/banque/api/LegacyClient;"
+                    - "https://api.comptoir.test/v2/"
+                    - "https://api.comptoir.test/v1/"
+                    - "/accounts/me"
+                    - "/accounts/%d"
+                    - "/health"
+                    - "/transfers"
+                    - "/referrals/%s/claim"
+                    - "Authorization: Bearer %s"
+                    - "TODO remove LegacyClient once app 1.x is gone"
+                    - "okhttp/4.12 comptoir-android/3.2.0"
+
+  # The API. Each account is a route, and what it answers depends on the token sent with the request.
+  - id: api
+    hostname: api.comptoir.test
+    ip: 10.26.0.20
+    os: Linux 6.6 (containers)
+    map: { x: 170, z: -200, h: 150 }
+    links: [auth]
+    services:
+      - { port: 443, name: https, product: comptoir-gateway 2.14 }
+    web:
+      "/":
+        headers: { content-type: application/json }
+        body: "{\"service\":\"comptoir-api\",\"current\":\"v2\",\"docs\":\"/v2/docs\"}\n"
+      "/v2/docs":
+        headers: { content-type: application/json }
+        body: { $file: files/docs-v2.json }
+      "/v2/accounts/me":
+        status: 401
+        headers: { content-type: application/json }
+        body: &unsigned "{\"error\":\"unauthenticated\",\"detail\":\"send a token: Authorization: Bearer <token>\"}\n"
+        variants:
+          - &v2-own
+            id: as-test
+            header: "Authorization: Bearer cpt_test_4f1a9c"
+            headers: { content-type: application/json }
+            body: { $file: files/v2-1042.json }
+      "/v2/accounts/1042":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - *v2-own
+      "/v2/accounts/1043":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - &v2-other
+            id: as-test
+            header: "Authorization: Bearer cpt_test_4f1a9c"
+            status: 403
+            headers: { content-type: application/json }
+            body: "{\"error\":\"forbidden\",\"detail\":\"this account is not yours\"}\n"
+      "/v2/accounts/1001":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - *v2-other
+      # The first version of the API. Announced as retired in 2027, never switched off.
+      "/v1/":
+        headers: { content-type: application/json }
+        body: "{\"version\":\"v1\",\"status\":\"deprecated\",\"sunset\":\"2027-06-30\",\"note\":\"kept for app 1.x\"}\n"
+        variants:
+          - &v1-off
+            id: gone
+            if: { config: api.v1_off, eq: true }
+            status: 410
+            headers: { content-type: application/json }
+            body: "{\"error\":\"gone\",\"detail\":\"v1 was retired, use /v2\"}\n"
+      "/v1/health":
+        headers: { content-type: application/json }
+        body: "{\"status\":\"ok\",\"version\":\"1.9.4\",\"built\":\"2026-11-03\",\"last_security_review\":\"2026-10-12\",\"canary\":\"FLAG{comptoir-v1-encore-debout-3e71}\"}\n"
+        variants:
+          - *v1-off
+      "/v1/accounts/1042":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - *v1-off
+          - id: as-test
+            header: "Authorization: Bearer cpt_test_4f1a9c"
+            headers: { content-type: application/json }
+            body: { $file: files/v1-1042.json }
+      "/v1/accounts/1043":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - *v1-off
+          - &v1-owner
+            id: owner-check
+            header: "Authorization: Bearer cpt_test_4f1a9c"
+            if: { config: api.v1_owner_check, eq: true }
+            status: 403
+            headers: { content-type: application/json }
+            body: "{\"error\":\"forbidden\",\"detail\":\"this account is not yours\"}\n"
+          - id: as-test
+            header: "Authorization: Bearer cpt_test_4f1a9c"
+            headers: { content-type: application/json }
+            body: { $file: files/v1-1043.json }
+      # A real customer. The mandate says: prove it on the two test accounts, never on this one.
+      "/v1/accounts/1001":
+        status: 401
+        headers: { content-type: application/json }
+        body: *unsigned
+        variants:
+          - *v1-off
+          - *v1-owner
+          - id: as-test
+            header: "Authorization: Bearer cpt_test_4f1a9c"
+            headers: { content-type: application/json }
+            body: { $file: files/v1-1001.json }
+
+  # Sign-in and consent. Partners send their users here, and get them back with a one-time code.
+  - id: auth
+    hostname: auth.comptoir.test
+    ip: 10.26.0.30
+    os: Linux 6.6 (containers)
+    map: { x: 330, z: -40, h: 130 }
+    services:
+      - { port: 443, name: https, product: comptoir-auth 1.7 }
+    web:
+      "/":
+        headers: { content-type: application/json }
+        body: "{\"service\":\"comptoir-auth\",\"authorize\":\"/authorize\",\"clients\":\"/clients\"}\n"
+      "/clients":
+        headers: { content-type: application/json }
+        body: { $file: files/clients.json }
+      "/authorize":
+        chat: authz
+
+  # The partners' corner: a page that sends a test notification to the address a partner gives.
+  - id: hooks
+    hostname: hooks.comptoir.test
+    ip: 10.26.0.40
+    os: Linux 6.6 (containers)
+    map: { x: 60, z: 160, h: 110 }
+    services:
+      - { port: 443, name: https, product: comptoir-hooks 0.8 }
+    web:
+      "/":
+        page:
+          title: web.hooks.title
+          blocks:
+            - h1: web.hooks.h1
+            - p: web.hooks.p1
+            - p: web.hooks.p2
+            - form: { to: hooktest, label: web.hooks.label, button: web.hooks.button, name: url }
+            - comment: web.hooks.todo
+            - footer: web.footer
+        chat: hooktest
+
+  # Where the night's requests come from. Outside Comptoir: seen through Comptoir's logs only.
+  - id: outsider
+    hostname: inconnu.comptoir.test
+    ip: 10.26.0.200
+    kind: unknown
+    hidden: true
+    os: unknown
+    map: { x: 430, z: 280, h: 50 }
+
+dns:
+  comptoir.test: { A: ["10.26.0.10"] }
+  www.comptoir.test: { A: ["10.26.0.10"] }
+  api.comptoir.test: { A: ["10.26.0.20"] }
+  auth.comptoir.test: { A: ["10.26.0.30"] }
+  hooks.comptoir.test: { A: ["10.26.0.40"] }
+
+whois:
+  comptoir.test: |
+    Domain Name: COMPTOIR.TEST
+    Creation Date: 2025-02-03T08:00:00Z
+    Registrant Organization: Comptoir SA
+    Registrant Country: FR
+
+noise:
+  nmap:
+    base: 18
+    flags: { "-sn": -10, "-sV": 10, "-A": 30, "-T4": 18, "-T5": 36, "-p-": 16 }
+  dig: 0
+  whois: 0
+  curl: 2
+  browse: 2
+  chat: 2
+  ssh: 6
+
+npcs:
+  # The consent server answering an authorization request. It compares the return address with the
+  # one the partner registered: how strictly is the whole question.
+  - id: authz
+    name: comptoir-auth
+    role: npc.authz.role
+    intents:
+      - id: exact
+        words: [lignerouge]
+        if: { config: auth.exact_redirect, eq: true }
+        reply: [npc.authz.mismatch]
+      - id: loose
+        words: [lignerouge]
+        also: ["budgeto example"]
+        reply: [npc.authz.loose]
+      - id: foreign
+        words: [lignerouge]
+        reply: [npc.authz.mismatch]
+      - id: registered
+        words: ["budgeto example callback"]
+        reply: [npc.authz.ok]
+    fallback: [npc.authz.invalid]
+
+  # The notification tester. It fetches the address it is given and shows what came back.
+  - id: hooktest
+    name: comptoir-hooks
+    role: npc.hook.role
+    intents:
+      - id: refused
+        words: [int, internal, localhost, "127 0 0 1", "10 26"]
+        if: { config: hooks.allowlist, eq: true }
+        reply: [npc.hook.refused]
+      - id: keys
+        words: ["config int keys"]
+        reply: [npc.hook.keys]
+      - id: index
+        words: ["config int"]
+        reply: [npc.hook.index]
+      - id: inside
+        words: [int, internal, localhost, "127 0 0 1", "10 26"]
+        reply: [npc.hook.inside]
+      - id: lab
+        words: [lignerouge]
+        reply: [npc.hook.lab]
+      - id: partner
+        words: [example]
+        reply: [npc.hook.partner]
+    fallback: [npc.hook.none]
+
+rules:
+  - id: out-of-scope
+    on: { event: OutOfScope }
+    once: false
+    do:
+      - ada.warn: ada.outOfScope
+  - id: noise-70
+    on: { event: NoiseChanged }
+    if: { noise: { gte: 70 } }
+    do:
+      - ada.warn: ada.noise70
+  - id: detected
+    on: { event: Restored }
+    once: false
+    do:
+      - ada.warn: ada.detected
+
+# Settings of Comptoir's platform that decide whether a weakness is there. A fix changes them.
+config:
+  api.v1_off: false
+  api.v1_owner_check: false
+  api.v1_docs_hidden: false
+  api.fields_trimmed: false
+  api.rate_limit: false
+  hooks.allowlist: false
+  hooks.signed: false
+  hooks.timeout: false
+  auth.exact_redirect: false
+  auth.state_required: false
+  auth.short_codes: false
+  otp.limit: false
+  otp.frozen: false
+  otp.ip_blocked: false
+  api.isolated: false
+  ref.cap: false
+  ref.off: false
+  ref.captcha: false
+
+# An ordinary day on the API.
+telemetry:
+  background:
+    - { host: api, source: access, every: 3, offset: 0, fields: { src: 198.51.100.44, method: GET, path: /v2/accounts/me, status: 200, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    - { host: api, source: access, every: 5, offset: 1, fields: { src: 203.0.113.61, method: GET, path: /v2/accounts/me, status: 200, ua: "comptoir-ios/3.2.0" } }
+    - { host: api, source: access, every: 7, offset: 2, fields: { src: 198.51.100.90, method: POST, path: /v2/transfers, status: 201, ua: "okhttp/4.12 comptoir-android/3.2.0" } }
+    # A handful of phones never updated since 2026 still speak v1, each to its own account.
+    - { host: api, source: access, every: 11, offset: 4, fields: { src: 203.0.113.140, method: GET, path: /v1/accounts/me, status: 200, ua: "okhttp/3.14 comptoir-android/1.8.2" } }
+    - { host: auth, source: access, every: 9, offset: 3, fields: { src: 198.51.100.44, method: POST, path: /authorize, status: 302, ua: "Mozilla/5.0 (Android 15) Chrome/151.0" } }
+    - { host: hooks, source: access, every: 13, offset: 6, fields: { src: 198.51.100.77, method: POST, path: /, status: 200, ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/151.0" } }
+    # Partners trying their own address, and customers agreeing to Budgeto.
+    - { host: hooks, source: chat, every: 13, offset: 6, fields: { form: true, src: 198.51.100.77, npc: hooktest, intent: partner, families: [none], msg: "url=https://hooks.budgeto.example/comptoir" } }
+    - { host: auth, source: chat, every: 9, offset: 3, fields: { form: true, src: 198.51.100.44, npc: authz, intent: registered, families: [none], msg: "client_id=budgeto&redirect_uri=https://app.budgeto.example/callback" } }

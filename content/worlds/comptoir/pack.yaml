@@ -1,0 +1,12 @@
+id: breach.world.comptoir
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: world
+title:
+  fr: Comptoir
+  en: Comptoir
+summary:
+  fr: Comptoir, néobanque fictive qui n'existe que dans une appli mobile et l'API qui la sert.
+  en: Comptoir, a fictional neobank that only exists as a mobile app and the API behind it.
+authors: [BREACH]
+locales: [fr, en]

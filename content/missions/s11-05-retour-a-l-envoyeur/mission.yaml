@@ -1,0 +1,117 @@
+# Season 11, mission 5: the consent server compares the return address loosely: it accepts any
+# address that contains a registered one, so a code can be sent somewhere else (OWASP API8:2023
+# Security Misconfiguration, API2:2023). The server is a scripted character: it recognises the
+# shape of the request, and the only "attacker" address is the lab's test client.
+order: 4
+stage: exploit
+briefing: c5.briefing
+startTime: "2029-09-21T09:00:00+02:00"
+
+files:
+  dossier/auth-config.yml: { $file: files/auth-config.yml }
+
+objectives:
+  - { id: clients, text: c5.obj.clients }
+  - { id: normal, text: c5.obj.normal }
+  - { id: foreign, text: c5.obj.foreign }
+  - { id: proof, text: c5.obj.proof }
+  - { id: review, text: c5.obj.review }
+
+flags:
+  - { id: proof, value: "FLAG{comptoir-retour-a-l-envoyeur-51c4}", points: 300, objective: proof }
+
+# Line 6 compares the return address by "contains" instead of exactly; line 7 does not ask for the
+# value that ties an answer to the partner's own request.
+reviews:
+  - { id: config, file: dossier/auth-config.yml, lines: [6, 7], objective: review }
+
+reveal: [www, api, auth]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: c5.ada.brief
+  - on: { event: HttpRequest, host: auth, path: /clients }
+    do:
+      - ada.say: c5.ada.clients
+      - objective.complete: clients
+  - on: { event: ChatReply, npc: authz, intent: registered }
+    do:
+      - ada.say: c5.ada.normal
+      - objective.complete: normal
+  - on: { event: ChatReply, npc: authz, intent: foreign }
+    do:
+      - ada.say: c5.ada.foreign
+      - objective.complete: foreign
+  - on: { event: ChatReply, npc: authz, intent: loose }
+    do:
+      - noise.add: { points: 8, as: c5.soc.loose }
+      - ada.say: c5.ada.loose
+      - ada.guide: { key: c5.ada.g.submit, for: proof, step: 1 }
+  - on: { event: FlagSubmitted, correct: true }
+    do:
+      - ada.say: c5.ada.flag
+  - on: { event: ObjectiveCompleted, objective: review }
+    do:
+      - ada.say: c5.ada.review
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: c5.ada.done
+
+guide:
+  clients: c5.ada.g.clients
+  normal: c5.ada.g.normal
+  foreign: c5.ada.g.foreign
+  proof: c5.ada.g.proof
+  review: c5.ada.g.review
+
+hints:
+  clients: [c5.hint.clients.1]
+  normal: [c5.hint.normal.1]
+  foreign: [c5.hint.foreign.1]
+  proof: [c5.hint.proof.1, c5.hint.proof.2, c5.hint.proof.3]
+  review: [c5.hint.review.1, c5.hint.review.2, c5.hint.review.3]
+
+defense:
+  intro: c5.def.intro
+  lesson: c5.def.lesson
+  find:
+    - { source: chat, where: { npc: authz, intent: loose }, text: c5.def.find.loose }
+  rules:
+    - id: unlisted
+      title: c5.def.rule.unlisted.title
+      why: c5.def.rule.unlisted.why
+      source: chat
+      where: { npc: authz, intent: { in: [loose, foreign] } }
+      correct: true
+    - id: every
+      title: c5.def.rule.every.title
+      why: c5.def.rule.every.why
+      source: chat
+      where: { npc: authz }
+    - id: burst
+      title: c5.def.rule.burst.title
+      why: c5.def.rule.burst.why
+      source: chat
+      where: { npc: authz }
+      count: { gte: 8, within: 10 }
+  fixes:
+    - id: exact
+      title: c5.def.fix.exact.title
+      why: c5.def.fix.exact.why
+      sets: { auth.exact_redirect: true }
+      correct: true
+    - id: state
+      title: c5.def.fix.state.title
+      why: c5.def.fix.state.why
+      sets: { auth.state_required: true }
+    - id: short
+      title: c5.def.fix.short.title
+      why: c5.def.fix.short.why
+      sets: { auth.short_codes: true }
+
+debrief:
+  title: c5.debrief.title
+  lesson: c5.debrief.lesson
+  points: [c5.debrief.p1, c5.debrief.p2, c5.debrief.p3, c5.debrief.p4]
+  reference: "RFC 9700 OAuth 2.0 Security BCP · exact redirect URI matching · OWASP API8"
