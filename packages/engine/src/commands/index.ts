@@ -3,6 +3,7 @@ import { defenseCommands } from './defense.ts';
 import { fileCommands } from './files.ts';
 import { gameCommands } from './gamecmds.ts';
 import { gitCommands } from './git.ts';
+import { inspectCommands } from './inspect.ts';
 import { networkCommands } from './network.ts';
 import { systemCommands } from './system.ts';
 import { textCommands } from './text.ts';
@@ -14,6 +15,7 @@ for (const c of [
   ...fileCommands,
   ...textCommands,
   ...dataCommands,
+  ...inspectCommands,
   ...networkCommands,
   ...gitCommands,
   ...systemCommands,

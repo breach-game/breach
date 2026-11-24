@@ -21,8 +21,18 @@ export type EventBody =
   | { type: 'ClockAdvanced'; ms: number }
   | { type: 'CwdChanged'; path: string }
   | { type: 'FileRead'; host: string; path: string }
-  | { type: 'FileWritten'; host: string; path: string; content: string; append: boolean }
+  | {
+      type: 'FileWritten';
+      host: string;
+      path: string;
+      content: string;
+      append: boolean;
+      /** Create the missing folders first (an archive extracted in place). */
+      dirs?: boolean;
+    }
   | { type: 'FileRemoved'; host: string; path: string }
+  /** `sbom --vuln` matched a project's components against the published advisories. */
+  | { type: 'SbomScanned'; target: string; components: number; findings: string[] }
   | { type: 'DnsQuery'; name: string; rtype: string; found: boolean }
   | { type: 'WhoisQuery'; domain: string }
   | { type: 'Scan'; target: string; intensity: number }
@@ -49,7 +59,9 @@ export type EventBody =
       type: 'ChatSent';
       npc: string;
       text: string;
-      via: 'browser' | 'api';
+      via: 'browser' | 'api' | 'call';
+      /** The number dialled, for a telephone call. */
+      to?: string;
       /** What a language model understood in the message, already checked, when it interpreted it. */
       heard?: { words: string[]; families: string[] };
     }

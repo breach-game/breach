@@ -44,6 +44,7 @@ export const LOG_FILES: Record<LogSource, string> = {
   flow: '/var/log/firewall/flows.log',
   mail: '/var/log/mail/gateway.log',
   mqtt: '/var/log/mosquitto/mosquitto.log',
+  voice: '/var/log/asterisk/cdr.log',
 };
 
 /* ---------- time formats ---------- */
@@ -148,6 +149,8 @@ export function formatLine(
       if (f.action === 'subscribe') return `${t.syslog}: ${verb} SUBSCRIBE from ${who} '${str(f.topic)}'`;
       return `${t.syslog}: ${verb} PUBLISH from ${who} '${str(f.topic)}' (${str(f.bytes, '0')} bytes)`;
     }
+    case 'voice':
+      return `${t.iso} ${short} asterisk: CDR src=${str(f.src)} from=${str(f.from, '-')} to=${quote(f.to)} callee=${str(f.npc)} duration=${str(f.duration, '0')}s disposition=${str(f.disposition, 'ANSWERED')}`;
   }
 }
 
@@ -214,6 +217,7 @@ function nameOf(world: World, id: string): string {
   const host = world.hosts.find((h) => h.id === id);
   if (host) return host.hostname;
   if (id === 'fw') return `fw01.${world.scope.domains[0]?.replace(/^\*\./, '') ?? 'test'}`;
+  if (id === 'pbx') return `pbx01.${world.scope.domains[0]?.replace(/^\*\./, '') ?? 'test'}`;
   if (id === 'dns') return `ns1.${world.scope.domains[0]?.replace(/^\*\./, '') ?? 'test'}`;
   return id;
 }
@@ -262,6 +266,8 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
     });
   };
   const lastSent: Record<string, string> = {};
+  const lastVia: Record<string, string> = {};
+  const lastTo: Record<string, string> = {};
   let viaBroker = false;
   const end = options.to ?? Number.POSITIVE_INFINITY;
   let firstT = Number.POSITIVE_INFINITY;
@@ -310,13 +316,28 @@ export function telemetry(game: TelemetrySource, options: TelemetryOptions): Log
         break;
       case 'ChatSent':
         lastSent[e.npc] = e.text;
+        lastVia[e.npc] = e.via;
+        if (e.to) lastTo[e.npc] = e.to;
         break;
       case 'ChatReply': {
         const at = chatHost(world, e.npc);
         // A device answering a published message is not a conversation: the broker's line says it all.
         const device = viaBroker;
         viaBroker = false;
-        if (!at || device) break;
+        if (device) break;
+        // A telephone call leaves a call record on the exchange, not a conversation log.
+        if (lastVia[e.npc] === 'call') {
+          const said = (lastSent[e.npc] ?? '').length;
+          push(e, 'player', 'pbx', 'voice', {
+            src,
+            to: lastTo[e.npc] ?? '-',
+            npc: e.npc,
+            intent: e.intent,
+            duration: 20 + Math.min(240, Math.round(said / 2)),
+          });
+          break;
+        }
+        if (!at) break;
         push(e, 'player', at.id, 'chat', {
           src,
           npc: e.npc,
@@ -456,7 +477,8 @@ export interface DetectionResult {
 
 /**
  * Run a detection rule over log lines, deterministically. With a threshold, a line raises an
- * alert when `gte` matching lines from the same source address fall within `within` minutes.
+ * alert when `gte` matching lines with the same `by` field (the source address by default) fall
+ * within `within` minutes.
  */
 export function runDetection(
   rule: Pick<Detection, 'source' | 'where' | 'count'>,
@@ -466,11 +488,12 @@ export function runDetection(
   let alerts = matching;
   if (rule.count) {
     const { gte, within } = rule.count;
+    const by = rule.count.by ?? 'src';
     const window = within * 60_000;
     const hit = new Set<LogLine>();
     const bySrc = new Map<string, LogLine[]>();
     for (const l of matching) {
-      const key = String(l.fields.src ?? '');
+      const key = String(l.fields[by] ?? '');
       bySrc.set(key, [...(bySrc.get(key) ?? []), l]);
     }
     for (const group of bySrc.values()) {
@@ -501,6 +524,7 @@ const PRODUCTS: Record<LogSource, string> = {
   flow: 'product: firewall',
   mail: 'product: mail-gateway',
   mqtt: 'product: mosquitto',
+  voice: 'product: asterisk\n  service: cdr',
 };
 
 /** A detection rule written the way Sigma writes it, simplified. Shown to the player as is. */

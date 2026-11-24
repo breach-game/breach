@@ -14,6 +14,8 @@ Please use GitHub's private vulnerability reporting: **Security > Report a vulne
 
 - every domain must be reserved (`.test`, `.example`, `.invalid`, `.localhost`, `example.com`…), every address private or reserved for documentation, and a scope network may not be wider than its reserved block;
 - script-like text and control characters, terminal escape sequences included, are refused;
+- a binary, an archive or a certificate is described as data (strings, member texts, certificate fields) and the engine writes its bytes itself, so a pack never ships raw bytes, a real executable or a real key; extraction refuses members whose path leaves the destination folder;
+- a telephone number must be an internal extension or come from a range set aside for fiction;
 - size is capped before and after decompression.
 
 **Official packs are pinned.** The build compiles the SHA-256 of each official pack into the game's code. The game refuses an official pack whose bytes differ, and refuses a campaign that lists a pack this build does not know, even if the catalogue next to it was changed.

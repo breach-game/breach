@@ -186,6 +186,34 @@ export const en: Record<string, string> = {
   'answer.none': 'Ada has no open question.',
   'answer.usage': 'Answer with its letter, for example: answer a',
   'answer.decided': 'Decision made.',
+  'cmd.strings': 'Print the readable text hidden in a binary file: strings <file>',
+  'explain.strings':
+    'strings prints every run of at least four readable characters in a file. In a program or a firmware image, it shows the addresses, keys and messages the code carries, without running anything.',
+  'cmd.file': 'Tell what kind of file this is, from its content: file <file>',
+  'explain.file':
+    'file reads the first bytes of a file and says what it is, whatever its name says. A ".pdf" that is really a program is the first thing an analyst wants to know.',
+  'cmd.unzip': 'List or extract a zip archive: unzip -l <file>, unzip <file> -d <folder>',
+  'explain.unzip':
+    'unzip -l lists an archive without opening it, unzip -p prints one member, unzip extracts it. Look at the list first: a member whose path climbs out of the folder (../) is a classic trap.',
+  'cmd.tar': 'List or extract a tar archive: tar -tvf <file>, tar -xzf <file>',
+  'explain.tar':
+    'tar -t lists the members of an archive, tar -x extracts them, z for a .tar.gz, v for details. A release archive can hold files that are not in the repository it claims to come from.',
+  'cmd.openssl':
+    'Read a certificate or a fingerprint: openssl x509 -in <cert> -noout -text, openssl dgst -sha256 <file>',
+  'explain.openssl':
+    'openssl x509 reads a certificate: who it names (subject), who signed it (issuer), its dates and its other names. openssl dgst computes the fingerprint of a file, to compare it with the published one.',
+  'cmd.hashid': 'Guess which algorithm made a hash, from its shape: hashid <hash>',
+  'explain.hashid':
+    'hashid only looks at the shape of a hash (length, prefix) and lists the algorithms that could have produced it. It cracks nothing: knowing the algorithm tells a defender whether stored passwords hold out.',
+  'cmd.sbom': 'List the components of a project, and their known weaknesses: sbom <folder> [--vuln]',
+  'explain.sbom':
+    'sbom reads the lock files of a project and lists every component it really installs, with its exact version (a software bill of materials). With --vuln, it matches them against published advisories.',
+  'cmd.mailhdr': 'Read the headers of a message: sender, route, SPF, DKIM, DMARC: mailhdr <file.eml>',
+  'explain.mailhdr':
+    'mailhdr lays out what a mail client hides: the real return address, the servers the message went through (oldest first), and what SPF, DKIM and DMARC concluded about the sender.',
+  'cmd.call': 'Telephone someone: call <number> "<what you say>"',
+  'explain.call':
+    'call dials a number and says one sentence. Calling back a number you already know, never the one in the message, is how a fake request is checked. The exchange keeps a record of every call.',
   'cmd.crontab': "List an account's scheduled jobs: crontab -l",
   'explain.crontab':
     'crontab -l shows the jobs the system runs at fixed times for this account. It is a classic place where an intruder leaves a way back in.',
