@@ -237,9 +237,10 @@ const base64: Command = {
   },
 };
 
-const sha256sum: Command = {
-  name: 'sha256sum',
-  summary: 'cmd.sha256sum',
+/** `sha256sum`, `sha1sum` and `sha512sum`: one fingerprint per file, in the real tools' format. */
+const shaSum = (name: string, algo: 'SHA-256' | 'SHA-1' | 'SHA-512'): Command => ({
+  name,
+  summary: `cmd.${name}`,
   explain: 'explain.sha256sum',
   group: 'files',
   async *run(ctx) {
@@ -247,11 +248,14 @@ const sha256sum: Command = {
       ctx,
       ctx.args.filter((a) => !a.startsWith('-')),
     );
-    for (const { name, text } of sources)
-      yield out(`${await digest('SHA-256', text)}  ${name === '(standard input)' ? '-' : name}`);
+    for (const { name: file, text } of sources)
+      yield out(`${await digest(algo, text)}  ${file === '(standard input)' ? '-' : file}`);
     return sources.length ? 0 : 1;
   },
-};
+});
+const sha256sum = shaSum('sha256sum', 'SHA-256');
+const sha1sum = shaSum('sha1sum', 'SHA-1');
+const sha512sum = shaSum('sha512sum', 'SHA-512');
 
 /** One sed command: `s/a/b/flags` or `/re/d`. Returns the edit and where the command ends. */
 function sedCommand(
@@ -368,4 +372,15 @@ const sed: Command = {
   },
 };
 
-export const textCommands: Command[] = [sort, uniq, cut, tr, diff, base64, sha256sum, sed];
+export const textCommands: Command[] = [
+  sort,
+  uniq,
+  cut,
+  tr,
+  diff,
+  base64,
+  sha256sum,
+  sha1sum,
+  sha512sum,
+  sed,
+];

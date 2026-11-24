@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.19.1';
+export const ENGINE_VERSION = '0.19.2';
 
 export interface GameOptions {
   world: Pack;
@@ -1143,7 +1143,8 @@ export class Game {
     if (this.state.toggles[name] === value) return true;
     for (const [key, v] of Object.entries(toggle[value]))
       this.emit({ type: 'ConfigPatched', key, value: v, by: `flag.${name}` });
-    this.emit({ type: 'ToggleSet', name, value, impact: toggle.impact });
+    // The impact is the cost of leaving the starting value: switching back costs nothing.
+    this.emit({ type: 'ToggleSet', name, value, impact: value === toggle.value ? 0 : toggle.impact });
     return true;
   }
 
@@ -2144,7 +2145,15 @@ export class Game {
         if (stage.redirect) {
           const path = this.resolvePath(this.expand([stage.redirect.path])[0]!);
           const ok = lookup(this.state.fs, path.slice(0, path.lastIndexOf('/')) || '/')?.t === 'd';
-          if (ok)
+          const node = lookup(this.state.fs, path);
+          // A redirection obeys the same permissions as `sed -i` or the editor.
+          if (node?.t === 'd') {
+            yield { k: 'err', text: `lrsh: ${stage.redirect.path.text}: Is a directory\n` };
+            status = 1;
+          } else if (node && !canWrite(node, this.currentUser)) {
+            yield { k: 'err', text: `lrsh: ${stage.redirect.path.text}: Permission denied\n` };
+            status = 1;
+          } else if (ok)
             this.emit({
               type: 'FileWritten',
               host: this.state.host,

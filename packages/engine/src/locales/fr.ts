@@ -122,6 +122,9 @@ export const fr: Record<string, string> = {
   'notes.empty': 'Carnet vide. Ajoute une note avec : notes add <texte>',
   'submit.usage': 'usage : submit FLAG{...}',
   'submit.wrong': "Ce n'est pas un flag de cette mission.",
+  'submit.wrongValue': "Ce n'est pas une valeur attendue par cette mission.",
+  'submit.answer':
+    "Une question d'Ada ou une question d'enquête se règle avec answer, pas submit : tape answer pour les voir.",
   'submit.already': 'Flag déjà validé.',
   'submit.unseen':
     "La cible ne t'a jamais montré ce flag. Fais-le d'abord apparaître à l'écran, puis valide-le.",
@@ -139,6 +142,8 @@ export const fr: Record<string, string> = {
     "contain applique une mesure de confinement : bloquer une adresse, révoquer une clé, isoler une machine, couper un outil d'agent. Chaque mesure arrête une partie de l'attaque, mais a un coût pour l'entreprise : la jauge d'impact le montre. Tape « contain » seul pour voir les mesures possibles.",
   'soc.unavailable': "La console du SOC n'est ouverte que pendant une mission de défense.",
   'soc.usage': 'usage : soc sources | soc logs [hôte] [source] | soc search <texte> | soc alerts',
+  'contain.empty':
+    'Aucune mesure de confinement dans cette mission : le travail est dans les journaux et les réponses.',
   'contain.usage': 'usage : contain <action> <cible>. Mesures possibles :',
   'contain.unknown': "aucune mesure de ce type n'est prévue pour cette cible",
   'contain.already': 'Mesure déjà appliquée.',
@@ -173,6 +178,8 @@ export const fr: Record<string, string> = {
   'cmd.tr': 'Remplacer ou supprimer des caractères dans un flux (-d)',
   'cmd.diff': 'Montrer les lignes qui diffèrent entre deux fichiers',
   'cmd.base64': 'Encoder en Base64, ou décoder avec -d',
+  'cmd.sha1sum': "Afficher l'empreinte SHA-1 d'un fichier (un algorithme ancien, gardé pour comparer)",
+  'cmd.sha512sum': "Afficher l'empreinte SHA-512 d'un fichier",
   'cmd.sha256sum': "Afficher l'empreinte SHA-256 d'un fichier",
   'cmd.sed': "Réécrire des lignes : `sed 's/ancien/nouveau/' fichier`, -i modifie le fichier",
   'cmd.verify': 'Vérifier que ta correction tient',

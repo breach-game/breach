@@ -119,6 +119,11 @@ describe('SSH sessions', () => {
     expect((await run(game, 'hostname')).out).toBe('git\n');
     expect((await run(game, 'cat README.txt')).out).toBe('Read only.\n');
     expect((await run(game, 'cat /root/secret.txt')).err).toContain('Permission denied');
+    // A redirection obeys the same permissions as `sed -i`.
+    const denied = await run(game, 'echo gone > /root/secret.txt');
+    expect(denied.err).toContain('lrsh: /root/secret.txt: Permission denied');
+    expect(denied.status).toBe(1);
+    expect(game.log.some((e) => e.type === 'FileWritten' && e.path === '/root/secret.txt')).toBe(false);
     expect((await run(game, 'grep Accepted /var/log/auth.log')).out).toContain('10.13.0.99');
     expect(game.log.some((e) => e.type === 'FileRead' && e.host === 'forge')).toBe(true);
     // The host shows up on the map once the player is on it.
