@@ -839,3 +839,4 @@ code.typing > .typed { background: rgba(215, 224, 245, 0.08); padding: 1px 0 1px
 .seg button:disabled { opacity: 0.35; cursor: not-allowed; }
 .debrief .home-card { border: 1px solid rgba(45, 226, 255, 0.35); border-radius: 10px; padding: 4px 16px 10px; background: rgba(45, 226, 255, 0.05); }
 .debrief .home-card h3::before { content: '⌂ '; color: var(--defense); }
+.debrief .home-card[data-kind='travel'] h3::before { content: '⇢ '; }

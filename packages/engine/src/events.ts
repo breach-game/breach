@@ -37,6 +37,12 @@ export type EventBody =
   | { type: 'WifiScanned'; networks: number }
   /** `sms` read the inbox (`*`) or one message. */
   | { type: 'SmsRead'; sms: string }
+  /** `tshark -r` read a capture file, through a display filter or not. */
+  | { type: 'CaptureRead'; file: string; filter: string; frames: number }
+  /** `zbarimg` or `qr decode` read what a QR code holds. */
+  | { type: 'QrDecoded'; file: string; text: string }
+  /** `nmcli connection show` listed the networks the workstation joins again by itself. */
+  | { type: 'ConnectionsListed'; connections: number }
   | { type: 'DnsQuery'; name: string; rtype: string; found: boolean }
   | { type: 'WhoisQuery'; domain: string }
   | { type: 'Scan'; target: string; intensity: number }

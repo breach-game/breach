@@ -142,7 +142,7 @@ describe('nmcli', () => {
     const bad = await run(g, 'nmcli device wifi connect Neighbour');
     expect(bad.status).toBe(2);
     expect(bad.err).toContain('usage: nmcli');
-    expect((await run(g, 'nmcli connection show')).status).toBe(2);
+    expect((await run(g, 'nmcli connection up Home-5G')).status).toBe(2);
     expect((await run(g, 'nmcli -f SSID,KEY device wifi list')).err).toContain("invalid field 'KEY'");
     await run(g, 'ssh admin@box.home.test');
     expect(g.state.host).toBe('box');

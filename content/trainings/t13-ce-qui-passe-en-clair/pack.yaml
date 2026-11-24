@@ -1,0 +1,16 @@
+id: breach.training.t13
+version: 0.1.0
+engine: ">=0.18 <1"
+kind: mission
+track: training
+difficulty: 1
+skills: [recon, privacy]
+requires: [breach.world.novamind]
+title:
+  fr: Ce qui passe en clair
+  en: What travels in clear
+summary:
+  fr: Une capture du Wi-Fi invité, prise avec l'accord de tous. Lis-la avec tshark, vois ce qu'un voisin de table voit vraiment, et trouve la seule appli qui parle encore en clair.
+  en: A capture of the guest Wi-Fi, taken with everyone's consent. Read it with tshark, see what someone at the next table really sees, and find the one app still talking in clear.
+authors: [BREACH]
+locales: [fr, en]

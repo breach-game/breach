@@ -213,10 +213,26 @@ export const fr: Record<string, string> = {
     "Lire les en-têtes d'un message : expéditeur, trajet, SPF, DKIM, DMARC : mailhdr <fichier.eml>",
   'explain.mailhdr':
     "mailhdr étale ce que la messagerie cache : la vraie adresse de retour, les serveurs traversés (du plus ancien au plus récent), et ce que SPF, DKIM et DMARC ont conclu de l'expéditeur.",
-  'cmd.nmcli': 'Lister les réseaux Wi-Fi à portée : nmcli device wifi list',
+  'cmd.nmcli':
+    'Réseaux Wi-Fi à portée, et ceux que ce poste a mémorisés : nmcli device wifi list, nmcli connection show',
   'explain.nmcli':
     "nmcli device wifi list montre ce que chaque borne annonce à qui passe : son nom, son canal, son signal et la protection demandée. C'est la liste de ton téléphone, rien n'est capturé. Un réseau qui n'est pas le tien reste hors périmètre, même ouvert.",
-  'nmcli.usage': 'usage : nmcli [-f CHAMPS] device wifi list',
+  'nmcli.usage':
+    'usage : nmcli [-f CHAMPS] device wifi list | nmcli [-f CHAMPS] connection show | nmcli connection delete <nom> | nmcli connection modify <nom> connection.autoconnect yes|no',
+  'cmd.tshark': 'Lire une capture réseau : tshark -r <fichier.pcap> [-Y filtre] [-V] [-q -z conv,ip]',
+  'explain.tshark':
+    "tshark -r liste les paquets d'une capture déjà prise : qui parle à qui, les noms demandés au DNS, le nom de chaque poignée de main TLS, et tout ce qui passe en HTTP simple. Un enregistrement chiffré ne montre que sa taille. -Y filtre (dns, tls, http, ip.addr==…), -V déplie chaque paquet, -q -z conv,ip additionne les conversations. Le jeu ne capture jamais rien en direct.",
+  'tshark.live':
+    'tshark : la capture en direct ne fait pas partie du jeu. Lis plutôt un fichier de capture : tshark -r <fichier.pcap>',
+  'tshark.usage': 'usage : tshark -r <fichier.pcap> [-Y <filtre>] [-V] [-q -z conv,ip|conv,tcp]',
+  'cmd.zbarimg': "Lire le QR code d'une image : zbarimg <image>",
+  'explain.zbarimg':
+    "zbarimg affiche ce que contient un QR code, sans l'ouvrir. Un QR code n'est qu'un texte : une adresse, un réseau Wi-Fi, un numéro. Lis-le avant qu'un téléphone n'agisse.",
+  'cmd.qr': "Examiner un QR code : qr decode <image> (ce qu'il contient, où il mène), qr show <image>",
+  'explain.qr':
+    "qr decode lit un QR code et dit ce qu'un téléphone en ferait : ouvrir quel site, rejoindre quel réseau Wi-Fi. qr show dessine le code. Ses adresses sont des noms réservés qui ne mènent nulle part.",
+  'qr.usage': 'usage : qr decode <image> | qr show <image>',
+  'qr.shown': '(dessiné par le jeu ; son adresse est un nom réservé qui ne mène nulle part)',
   'cmd.sms': 'Lire les SMS du téléphone examiné : sms, puis sms <numéro>',
   'explain.sms':
     "sms liste la boîte de réception, et sms <numéro> montre un message avec ce que le téléphone cache : le type d'expéditeur (un nom est un texte libre que n'importe qui choisit) et le site que chaque lien ouvre vraiment.",

@@ -1,4 +1,11 @@
-import type { ArchiveSource, Artifact, BinarySource, CertSource } from '@breach/pack-schema';
+import type {
+  ArchiveSource,
+  Artifact,
+  BinarySource,
+  CaptureSource,
+  CertSource,
+  QrSource,
+} from '@breach/pack-schema';
 import { rng } from './util.ts';
 
 /**
@@ -60,6 +67,8 @@ export const MAGIC = {
   zipEnd: 'PK\x05\x06',
   tar: 'ustar\x00',
   gzip: '\x1f\x8b\x08\x00',
+  pcap: '\xd4\xc3\xb2\xa1\x02\x00\x04\x00',
+  png: '\x89PNG\r\n\x1a\n',
 } as const;
 
 function binary(src: BinarySource): string {
@@ -163,8 +172,83 @@ function cert(src: CertSource): string {
   return `-----BEGIN CERTIFICATE-----\n${lines.join('\n')}\n-----END CERTIFICATE-----\n`;
 }
 
+/*
+ * A capture: a pcap header, then for each packet what `strings` would find in a real one (names asked
+ * to the DNS, the name in a TLS hello, plain HTTP), and the packets themselves as masked data that
+ * `tshark` reads back. Encrypted payloads exist only as a size: there is nothing to decrypt.
+ */
+function capture(src: CaptureSource): string {
+  const next = rng(seedOf(JSON.stringify(src.packets.slice(0, 4))));
+  let visible = '';
+  for (const p of src.packets) {
+    const seen =
+      p.proto === 'dns'
+        ? p.query
+        : p.proto === 'tls' || p.proto === 'quic'
+          ? (p.sni ?? '')
+          : p.proto === 'http'
+            ? `${p.method ?? 'GET'} ${p.path} HTTP/1.1\nHost: ${p.host}${p.body ? `\n\n${p.body}` : ''}`
+            : '';
+    visible += filler(next, 12 + Math.floor(next() * 24)) + (seen ? `${utf8(seen)}\x00` : '');
+  }
+  const body = mask(utf8(JSON.stringify(src)));
+  return `${MAGIC.pcap}${u32(0)}${u32(0)}${u32(262_144)}${u32(src.iface?.startsWith('wl') ? 105 : 1)}${visible}${filler(next, 8)}CAPX${u32(body.length)}${body}`;
+}
+
+/** The packets of a capture written by `capture`, or null when the file is not one. */
+export function readCapture(raw: string): CaptureSource | null {
+  if (!raw.startsWith(MAGIC.pcap)) return null;
+  const at = raw.indexOf('CAPX');
+  if (at < 0) return null;
+  const size = readU32(raw, at + 4);
+  try {
+    const src = JSON.parse(fromUtf8(mask(raw.slice(at + 8, at + 8 + size)))) as CaptureSource;
+    return Array.isArray(src.packets) ? src : null;
+  } catch {
+    return null;
+  }
+}
+
+const u32be = (n: number) =>
+  String.fromCharCode((n >>> 24) & 0xff, (n >>> 16) & 0xff, (n >>> 8) & 0xff, n & 0xff);
+
+/** A picture of a QR code: a PNG header, then the content as masked data (no pixels are drawn). */
+function qrImage(src: QrSource): string {
+  const side = src.style === 'fancy' ? 512 : 290;
+  const depth = src.style === 'fancy' ? '\x08\x06' : '\x01\x00';
+  const body = mask(utf8(JSON.stringify(src)));
+  const next = rng(seedOf(src.text));
+  return `${MAGIC.png}\x00\x00\x00\x0dIHDR${u32be(side)}${u32be(side)}${depth}\x00\x00\x00${filler(next, 4)}QRCX${u32(body.length)}${body}${filler(next, 16)}`;
+}
+
+/** What a QR picture written by `qrImage` holds, or null when the file is not one. */
+export function readQr(raw: string): (QrSource & { side: number }) | null {
+  if (!raw.startsWith(MAGIC.png)) return null;
+  const at = raw.indexOf('QRCX');
+  if (at < 0) return null;
+  const size = readU32(raw, at + 4);
+  try {
+    const src = JSON.parse(fromUtf8(mask(raw.slice(at + 8, at + 8 + size)))) as QrSource;
+    if (typeof src.text !== 'string') return null;
+    const i = MAGIC.png.length + 8;
+    const side =
+      ((raw.charCodeAt(i) << 24) |
+        (raw.charCodeAt(i + 1) << 16) |
+        (raw.charCodeAt(i + 2) << 8) |
+        raw.charCodeAt(i + 3)) >>>
+      0;
+    return { ...src, side };
+  } catch {
+    return null;
+  }
+}
+
 export function isArtifact(v: unknown): v is Artifact {
-  return !!v && typeof v === 'object' && ('$binary' in v || '$archive' in v || '$cert' in v);
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    ('$binary' in v || '$archive' in v || '$cert' in v || '$capture' in v || '$qr' in v)
+  );
 }
 
 /** The bytes of an artifact, as a string of code points 0 to 255 (a certificate is plain text). */
@@ -178,6 +262,8 @@ export function buildArtifact(a: Artifact, translate: (key: string) => string, s
       Number.isNaN(t) ? 1_800_000_000 : Math.floor(t / 1000) - 86_400 * 3,
     );
   }
+  if ('$capture' in a) return capture(a.$capture);
+  if ('$qr' in a) return qrImage(a.$qr);
   return cert(a.$cert);
 }
 
