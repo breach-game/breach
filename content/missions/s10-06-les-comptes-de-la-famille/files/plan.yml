@@ -1,0 +1,7 @@
+# The family's account plan. Edit each line, then `verify`.
+mailbox_second_factor: none          # none | sms | app | passkey
+recovery_phone: old-number           # old-number | current-number
+backup_codes: none                   # none | printed
+password_manager: none               # none | family-vault
+reused_password: kept                # kept | replaced
+lea_account: uses-mums-password      # uses-mums-password | own-account

@@ -1,0 +1,17 @@
+id: breach.season10.s04
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 4. Le hub"
+  en: "Season 10 · 4. The hub"
+summary:
+  fr: "Les ampoules, les capteurs et la serrure ne passent pas par le Wi-Fi : ils parlent Zigbee et Z-Wave à un hub. Tu écoutes ce qu'il raconte, tu trouves l'appairage resté ouvert depuis l'installation, l'ampoule qui n'est pas à eux et la serrure mal incluse, puis tu fermes le courtier de messages."
+  en: "The bulbs, the sensors and the lock do not use the Wi-Fi: they talk Zigbee and Z-Wave to a hub. You listen to what it says, find the pairing left open since the installation, the bulb that is not theirs and the badly included lock, then close the message broker."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, recon, defense]
+minutes: 20

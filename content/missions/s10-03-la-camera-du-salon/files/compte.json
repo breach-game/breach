@@ -1,0 +1,8 @@
+{
+  "account": "elise@lemerle.test",
+  "created": "2027-12-25",
+  "password_last_changed": "2027-12-25",
+  "second_factor": "none",
+  "recovery_email": "elise@lemerle.test",
+  "sessions_expire": "never"
+}

@@ -1,0 +1,17 @@
+id: breach.season10.s05
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 5. Le colis et la voix"
+  en: "Season 10 · 5. The parcel and the voice"
+summary:
+  fr: "Odile, la mère d'Élise, a reçu cinq SMS en trois jours : un colis en attente, sa petite-fille qui a « changé de numéro », et un message de son opérateur qu'elle n'a pas compris. Tu lis ce que le téléphone cache, tu rappelles les bons numéros, et tu arrêtes à temps le détournement de sa ligne."
+  en: "Odile, Élise's mother, got five text messages in three days: a parcel on hold, her granddaughter who \"changed number\", and a message from her operator she did not understand. You read what the phone hides, call back the right numbers, and stop the takeover of her line in time."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [social, privacy, defense]
+minutes: 20

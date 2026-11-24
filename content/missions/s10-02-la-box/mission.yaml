@@ -1,0 +1,134 @@
+# Season 10, mission 2: the home router. The class of mistake is the default: an administrator
+# password never changed, WPS and UPnP left on, no guest network, no updates. The player signs in
+# with the password printed in the manual, reads the port mappings, then corrects an export of the
+# settings that `verify` judges. Nothing is cracked: the password is the one on the label.
+side: defense
+order: 1
+stage: hardening
+briefing: h2.briefing
+startTime: "2029-05-12T11:00:00+02:00"
+reveal: [box, cam]
+
+files:
+  box/reglages.conf: { $file: files/reglages.conf }
+
+objectives:
+  - { id: login, text: h2.obj.login }
+  - { id: port, text: h2.obj.port }
+  - { id: harden, text: h2.obj.harden }
+  - { id: password, text: h2.obj.password }
+  - { id: console, text: h2.obj.console }
+  - { id: after, text: h2.obj.after }
+
+flags: []
+
+investigation:
+  - { id: port, text: h2.q.port, value: "554", points: 100, objective: port }
+
+checks:
+  - id: admin
+    text: h2.check.admin
+    if:
+      all:
+        - { file: "~/box/reglages.conf", contains: "admin_password: " }
+        - { file: "~/box/reglages.conf", lacks: "admin_password: admin\n" }
+    objective: harden
+  - id: wpa3
+    text: h2.check.wpa3
+    if:
+      any:
+        - { file: "~/box/reglages.conf", contains: "wifi_security: WPA3" }
+        - { file: "~/box/reglages.conf", contains: "wifi_security: WPA2+WPA3" }
+    objective: harden
+  - id: wps
+    text: h2.check.wps
+    if: { file: "~/box/reglages.conf", contains: "wps: off" }
+    objective: harden
+  - id: upnp
+    text: h2.check.upnp
+    if: { file: "~/box/reglages.conf", contains: "upnp: off" }
+    objective: harden
+  - id: guest
+    text: h2.check.guest
+    if: { file: "~/box/reglages.conf", contains: "guest_network: on" }
+    objective: harden
+  - id: update
+    text: h2.check.update
+    if: { file: "~/box/reglages.conf", contains: "auto_update: on" }
+    objective: harden
+
+questions:
+  - id: adminpw
+    text: h2.q.adminpw
+    objective: password
+    correct: phrase
+    options:
+      - { id: phrase, text: h2.q.adminpw.phrase }
+      - { id: same, text: h2.q.adminpw.same, why: h2.q.adminpw.same.why }
+      - { id: sticker, text: h2.q.adminpw.sticker, why: h2.q.adminpw.sticker.why }
+  # A decision: no option is wrong, each has a price.
+  - id: gaming
+    text: h2.q.gaming
+    objective: console
+    options:
+      - { id: manual, text: h2.q.gaming.manual, why: h2.q.gaming.manual.why, impact: 1 }
+      - { id: nothing, text: h2.q.gaming.nothing, why: h2.q.gaming.nothing.why, impact: 4 }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h2.ada.brief
+  - on: { event: ChatReply, npc: boxlogin, intent: default }
+    do:
+      - ada.say: h2.ada.login
+      - objective.complete: login
+  - on: { event: HttpRequest, host: box, path: /upnp }
+    do:
+      - ada.say: h2.ada.upnp
+  - on: { event: ObjectiveCompleted, objective: port }
+    do:
+      - ada.say: h2.ada.port
+  - on: { event: ObjectiveCompleted, objective: harden }
+    do:
+      - ada.say: h2.ada.harden
+      - ada.ask: adminpw
+  - on: { event: ObjectiveCompleted, objective: password }
+    do:
+      - ada.say: h2.ada.password
+      - ada.ask: gaming
+  - on: { event: ObjectiveCompleted, objective: console }
+    do:
+      - ada.say: h2.ada.console
+  - on: { event: WifiScanned }
+    once: false
+    if: { all: [{ objective: harden }, { not: { objective: after } }] }
+    do:
+      - ada.say: h2.ada.after
+      - objective.complete: after
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h2.ada.done
+
+guide:
+  login: h2.ada.g.login
+  port: h2.ada.g.port
+  harden: h2.ada.g.harden
+  password: h2.ada.g.password
+  console: h2.ada.g.console
+  after: h2.ada.g.after
+
+hints:
+  login: [h2.hint.login.1, h2.hint.login.2]
+  port: [h2.hint.port.1, h2.hint.port.2]
+  harden: [h2.hint.harden.1, h2.hint.harden.2, h2.hint.harden.3]
+  password: [h2.hint.password.1]
+  console: [h2.hint.console.1]
+  after: [h2.hint.after.1]
+
+debrief:
+  title: h2.debrief.title
+  lesson: h2.debrief.lesson
+  points: [h2.debrief.p1, h2.debrief.p2, h2.debrief.p3, h2.debrief.p4]
+  reference: "OWASP IoT Top 10 · I1 Weak Passwords · I9 Insecure Default Settings"
+  home:
+    points: [h2.home.p1, h2.home.p2, h2.home.p3, h2.home.p4]

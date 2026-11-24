@@ -1,0 +1,83 @@
+# Season 10, mission 1: the inventory. No attacker and nothing to break: the player lists what the
+# house really holds (Wi-Fi in range, devices on the router) and finds the device that is not on the
+# family's own list. The neighbours' open network is seen and left alone.
+side: defense
+order: 0
+stage: recon
+briefing: h1.briefing
+reveal: [box]
+
+objectives:
+  - { id: wifi, text: h1.obj.wifi }
+  - { id: neighbour, text: h1.obj.neighbour }
+  - { id: scan, text: h1.obj.scan }
+  - { id: list, text: h1.obj.list }
+  - { id: count, text: h1.obj.count }
+  - { id: extra, text: h1.obj.extra }
+
+flags: []
+
+investigation:
+  - { id: count, text: h1.q.count, value: "13", points: 100, objective: count }
+  - { id: extra, text: h1.q.extra, value: esp-7c41, points: 150, objective: extra }
+
+questions:
+  - id: dupre
+    text: h1.q.dupre
+    objective: neighbour
+    correct: leave
+    options:
+      - { id: leave, text: h1.q.dupre.leave }
+      - { id: peek, text: h1.q.dupre.peek, why: h1.q.dupre.peek.why }
+      - { id: public, text: h1.q.dupre.public, why: h1.q.dupre.public.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h1.ada.brief
+  - on: { event: WifiScanned }
+    do:
+      - ada.say: h1.ada.wifi
+      - objective.complete: wifi
+      - ada.ask: dupre
+  - on: { event: ObjectiveCompleted, objective: neighbour }
+    do:
+      - ada.say: h1.ada.neighbour
+  - on: { event: Scan }
+    do:
+      - ada.say: h1.ada.scan
+      - objective.complete: scan
+  - on: { event: HttpRequest, host: box, path: /appareils }
+    do:
+      - ada.say: h1.ada.list
+      - objective.complete: list
+  - on: { event: ObjectiveCompleted, objective: extra }
+    do:
+      - ada.say: h1.ada.extra
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h1.ada.done
+
+guide:
+  wifi: h1.ada.g.wifi
+  neighbour: h1.ada.g.neighbour
+  scan: h1.ada.g.scan
+  list: h1.ada.g.list
+  count: h1.ada.g.count
+  extra: h1.ada.g.extra
+
+hints:
+  wifi: [h1.hint.wifi.1]
+  neighbour: [h1.hint.neighbour.1]
+  scan: [h1.hint.scan.1]
+  list: [h1.hint.list.1, h1.hint.list.2]
+  count: [h1.hint.count.1, h1.hint.count.2]
+  extra: [h1.hint.extra.1, h1.hint.extra.2]
+
+debrief:
+  title: h1.debrief.title
+  lesson: h1.debrief.lesson
+  points: [h1.debrief.p1, h1.debrief.p2, h1.debrief.p3]
+  reference: "OWASP IoT Top 10 · I8 Lack of Device Management"
+  home:
+    points: [h1.home.p1, h1.home.p2, h1.home.p3]

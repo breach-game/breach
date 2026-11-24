@@ -1,0 +1,13 @@
+[
+  {"session": "s-71a", "when": "2029-04-28T07:41", "ip": "192.0.2.44", "place": "home", "device": "Vigicam app, phone of Elise", "result": "ok", "active": true},
+  {"session": "s-71b", "when": "2029-04-28T18:05", "ip": "192.0.2.44", "place": "home", "device": "Vigicam app, phone of Karim", "result": "ok", "active": true},
+  {"session": "s-80c", "when": "2029-04-29T12:30", "ip": "198.51.100.130", "place": "mobile network, France", "device": "Vigicam app, phone of Elise", "result": "ok", "active": false},
+  {"session": "s-9c2", "when": "2029-04-30T03:12", "ip": "203.0.113.77", "place": "anonymising relay", "device": "web browser, Linux", "result": "ok, password right at first try", "active": true},
+  {"session": "s-9c2", "when": "2029-05-01T02:58", "ip": "203.0.113.77", "place": "anonymising relay", "device": "web browser, Linux", "result": "live view, 14 min", "active": true},
+  {"session": "s-9c2", "when": "2029-05-03T03:20", "ip": "203.0.113.77", "place": "anonymising relay", "device": "web browser, Linux", "result": "live view, 6 min", "active": true},
+  {"session": "s-a10", "when": "2029-05-04T19:12", "ip": "192.0.2.44", "place": "home", "device": "Vigicam app, phone of Lea", "result": "ok", "active": true},
+  {"session": "s-9c2", "when": "2029-05-06T02:41", "ip": "203.0.113.77", "place": "anonymising relay", "device": "web browser, Linux", "result": "recordings listed", "active": true},
+  {"session": "s-9c2", "when": "2029-05-09T03:02", "ip": "203.0.113.77", "place": "anonymising relay", "device": "web browser, Linux", "result": "live view, 22 min", "active": true},
+  {"session": "s-b3e", "when": "2029-05-10T08:15", "ip": "198.51.100.130", "place": "mobile network, France", "device": "Vigicam app, phone of Elise", "result": "ok", "active": false},
+  {"session": "s-9c2", "when": "2029-05-11T02:49", "ip": "203.0.113.77", "place": "anonymising relay", "device": "web browser, Linux", "result": "live view, 9 min", "active": true}
+]

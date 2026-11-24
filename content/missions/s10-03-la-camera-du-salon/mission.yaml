@@ -1,0 +1,154 @@
+# Season 10, mission 3: the camera's cloud account. No attacker script: the intruder is a history of
+# sign-ins that Élise exported from her own account. The class of mistake is a reused password that
+# came out of an old leak (the season 3 shop), on an account with no second factor and sessions that
+# never expire. The measures are the account owner's own buttons.
+side: defense
+order: 2
+stage: response
+briefing: h3.briefing
+startTime: "2029-05-12T14:00:00+02:00"
+reveal: [box, cam]
+
+files:
+  vigicam/courriel.txt: h3.file.mail
+  vigicam/connexions.json: { $file: files/connexions.json }
+  vigicam/partages.json: { $file: files/partages.json }
+  vigicam/compte.json: { $file: files/compte.json }
+  fuites/avis-pelican.txt: h3.file.leak
+
+objectives:
+  - { id: ip, text: h3.obj.ip }
+  - { id: since, text: h3.obj.since }
+  - { id: how, text: h3.obj.how }
+  - { id: evict, text: h3.obj.evict }
+  - { id: who, text: h3.obj.who }
+  - { id: share, text: h3.obj.share }
+  - { id: factor, text: h3.obj.factor }
+
+flags: []
+
+investigation:
+  - { id: ip, text: h3.q.ip, value: 203.0.113.77, points: 100, objective: ip }
+  - { id: since, text: h3.q.since, value: "2029-04-30", points: 100, objective: since }
+  - { id: who, text: h3.q.who, value: manon.b@courriel.example, points: 100, objective: who }
+
+containment:
+  - id: revoke-session
+    action: revoke
+    target: session-9c2
+    text: h3.contain.session
+    sets: { cam.session_revoked: true }
+    impact: 0
+  - id: reset-password
+    action: reset
+    target: mot-de-passe
+    text: h3.contain.password
+    sets: { cam.password_reset: true }
+    impact: 1
+  - id: revoke-share
+    action: revoke
+    target: partage-manon
+    text: h3.contain.share
+    sets: { cam.share_revoked: true }
+    impact: 0
+  - id: disable-camera
+    action: disable
+    target: camera
+    text: h3.contain.camera
+    sets: { cam.unplugged: true }
+    impact: 6
+
+questions:
+  - id: entry
+    text: h3.q.entry
+    objective: how
+    correct: reuse
+    options:
+      - { id: reuse, text: h3.q.entry.reuse }
+      - { id: hack, text: h3.q.entry.hack, why: h3.q.entry.hack.why }
+      - { id: wifi, text: h3.q.entry.wifi, why: h3.q.entry.wifi.why }
+  # A decision: no option is wrong, each has a price.
+  - id: second
+    text: h3.q.second
+    objective: factor
+    options:
+      - { id: code, text: h3.q.second.code, why: h3.q.second.code.why, impact: 1 }
+      - { id: text, text: h3.q.second.text, why: h3.q.second.text.why, impact: 3 }
+      - { id: none, text: h3.q.second.none, why: h3.q.second.none.why, impact: 12 }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h3.ada.brief
+  - on: { event: ObjectiveCompleted, objective: ip }
+    do:
+      - ada.say: h3.ada.ip
+  - on: { event: ObjectiveCompleted, objective: since }
+    do:
+      - ada.say: h3.ada.since
+      - ada.ask: entry
+  - on: { event: ObjectiveCompleted, objective: how }
+    do:
+      - ada.say: h3.ada.how
+  - on: { event: Contained, containment: reset-password }
+    if: { config: cam.session_revoked, eq: false }
+    do:
+      - ada.say: h3.ada.reset.first
+  - on: { event: Contained, containment: reset-password }
+    if: { config: cam.session_revoked, eq: true }
+    do:
+      - objective.complete: evict
+  - on: { event: Contained, containment: revoke-session }
+    if: { config: cam.password_reset, eq: false }
+    do:
+      - ada.say: h3.ada.session.first
+  - on: { event: Contained, containment: revoke-session }
+    if: { config: cam.password_reset, eq: true }
+    do:
+      - objective.complete: evict
+  - on: { event: Contained, containment: disable-camera }
+    do:
+      - ada.say: h3.ada.unplug
+  - on: { event: ObjectiveCompleted, objective: evict }
+    do:
+      - ada.say: h3.ada.evict
+      - ada.ask: second
+  - on: { event: ObjectiveCompleted, objective: who }
+    do:
+      - ada.say: h3.ada.who
+  - on: { event: Contained, containment: revoke-share }
+    do:
+      - ada.say: h3.ada.share
+      - objective.complete: share
+  - on: { event: ObjectiveCompleted, objective: factor }
+    do:
+      - ada.say: h3.ada.factor
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h3.ada.done
+
+guide:
+  ip: h3.ada.g.ip
+  since: h3.ada.g.since
+  how: h3.ada.g.how
+  evict: h3.ada.g.evict
+  who: h3.ada.g.who
+  share: h3.ada.g.share
+  factor: h3.ada.g.factor
+
+hints:
+  ip: [h3.hint.ip.1, h3.hint.ip.2]
+  since: [h3.hint.since.1, h3.hint.since.2]
+  how: [h3.hint.how.1, h3.hint.how.2]
+  evict: [h3.hint.evict.1, h3.hint.evict.2]
+  who: [h3.hint.who.1, h3.hint.who.2]
+  share: [h3.hint.share.1]
+  factor: [h3.hint.factor.1]
+
+debrief:
+  title: h3.debrief.title
+  lesson: h3.debrief.lesson
+  points: [h3.debrief.p1, h3.debrief.p2, h3.debrief.p3, h3.debrief.p4]
+  reference: "OWASP Top 10 · A07 Identification and Authentication Failures"
+  home:
+    points: [h3.home.p1, h3.home.p2, h3.home.p3, h3.home.p4]

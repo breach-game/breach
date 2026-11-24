@@ -1,0 +1,17 @@
+id: breach.season10.s07
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 7. La nuit du 14"
+  en: "Season 10 · 7. The night of the 14th"
+summary:
+  fr: "3 h 02, tout le monde dort. La prise connectée que personne n'avait reconnue se réveille et commence à parler aux autres appareils de la maison. Tu lis le journal de la box, tu coupes au plus près sans éteindre la maison, tu écris la règle qui aurait sonné, puis la famille décide du sort de la prise."
+  en: "3.02 am, everyone is asleep. The smart plug nobody recognised wakes up and starts talking to the other devices in the house. You read the router's log, cut as close as possible without switching the house off, write the rule that would have rung, then the family decides what happens to the plug."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, logs, defense]
+minutes: 20

@@ -1,0 +1,19 @@
+# Season 10, mission 6: the family's accounts
+cat comptes/inventaire.csv
+grep -c ",A," comptes/inventaire.csv
+answer reuse 6
+answer mailbox
+jq ".forwarding" comptes/messagerie-securite.json
+answer forward archive.elise@boite-rapide.example
+contain
+contain remove transfert
+contain revoke sessions
+contain reset mot-de-passe
+cat comptes/plan.yml
+sed -i "s/mailbox_second_factor: none/mailbox_second_factor: passkey/" comptes/plan.yml
+sed -i "s/recovery_phone: old-number /recovery_phone: current-number/" comptes/plan.yml
+sed -i "s/backup_codes: none/backup_codes: printed/" comptes/plan.yml
+sed -i "s/password_manager: none/password_manager: family-vault/" comptes/plan.yml
+sed -i "s/reused_password: kept/reused_password: replaced/" comptes/plan.yml
+sed -i "s/lea_account: uses-mums-password/lea_account: own-account/" comptes/plan.yml
+verify

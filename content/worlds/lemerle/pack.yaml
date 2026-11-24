@@ -1,0 +1,12 @@
+id: breach.world.lemerle
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: world
+title:
+  fr: La maison Lemerle
+  en: The Lemerle house
+summary:
+  fr: "Une maison fictive et sa famille : une box, une caméra, un hub domotique, une serrure connectée, des téléphones, et tout ce qu'on branche sans y penser."
+  en: "A fictional house and its family: a home router, a camera, a smart-home hub, a connected lock, phones, and everything one plugs in without a second thought."
+authors: [BREACH]
+locales: [fr, en]

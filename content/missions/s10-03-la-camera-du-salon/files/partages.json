@@ -1,0 +1,5 @@
+[
+  {"with": "karim@lemerle.test", "role": "admin", "since": "2027-12-25", "last_view": "2029-05-11"},
+  {"with": "lea@lemerle.test", "role": "viewer", "since": "2028-02-10", "last_view": "2029-05-04"},
+  {"with": "manon.b@courriel.example", "role": "viewer", "since": "2027-12-27", "last_view": "2028-06-30"}
+]

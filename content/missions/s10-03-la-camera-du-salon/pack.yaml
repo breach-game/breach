@@ -1,0 +1,17 @@
+id: breach.season10.s03
+version: 0.1.0
+engine: ">=0.17 <1"
+kind: mission
+track: season
+requires: [breach.world.lemerle]
+title:
+  fr: "Saison 10 · 3. La caméra du salon"
+  en: "Season 10 · 3. The living-room camera"
+summary:
+  fr: "Le fabricant de la caméra signale une connexion inhabituelle au compte d'Élise. Tu lis l'historique des connexions, tu trouves l'adresse qui n'est pas de la famille et comment elle est entrée, puis tu la sors : session, mot de passe, et un partage que tout le monde avait oublié."
+  en: "The camera's maker reports an unusual sign-in to Élise's account. You read the sign-in history, find the address that is not the family's and how it got in, then get it out: session, password, and a share everybody had forgotten."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 2
+skills: [iot, logs, privacy, defense]
+minutes: 20

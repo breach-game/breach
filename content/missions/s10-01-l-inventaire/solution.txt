@@ -1,0 +1,7 @@
+# Season 10, mission 1: the inventory
+nmcli device wifi list
+answer leave
+nmap -sn 10.24.0.0/24
+curl http://box.lemerle.test/appareils
+answer count 13
+answer extra ESP-7C41

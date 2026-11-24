@@ -1,0 +1,155 @@
+# Season 10, mission 5: scams aimed at a person. A parcel text with a look-alike link, a "new
+# number" message followed by a voicemail in a cloned voice, and a SIM replacement someone else
+# asked for. The player only reads the phone (`sms`) and calls numbers the family already knows
+# (`call`). Only the defence is shown: nothing here explains how to run such a scam.
+side: defense
+order: 4
+stage: social
+briefing: h5.briefing
+startTime: "2029-05-13T15:00:00+02:00"
+reveal: [box]
+
+files:
+  odile/contacts.txt: h5.file.contacts
+  odile/facture-nordtel.txt: h5.file.bill
+  odile/messagerie-vocale.txt: h5.file.voicemail
+
+sms:
+  - { id: bank, from: "38070", at: "2029-05-11 18:02", text: h5.sms.bank }
+  - { id: parcel, from: ColisPlus, at: "2029-05-12 09:14", text: h5.sms.parcel }
+  - { id: sim, from: Nordtel, at: "2029-05-12 17:30", text: h5.sms.sim }
+  - { id: kid, from: "+33 6 39 98 41 07", at: "2029-05-13 11:02", text: h5.sms.kid }
+  - { id: kid2, from: "+33 6 39 98 41 07", at: "2029-05-13 11:20", text: h5.sms.kid2 }
+
+npcs:
+  - id: lea
+    name: Léa
+    role: h5.npc.lea.role
+    phone: "+33 6 39 98 20 16"
+    greeting: h5.npc.lea.hello
+    intents:
+      - id: asked
+        words: [mamie, odile, grand, message, sms, ecrit, numero, telephone, argent, facture, toi, granny, wrote, text, number, phone, money, bill, you]
+        reply: [h5.npc.lea.denies]
+    fallback: [h5.npc.lea.hello]
+  - id: stranger
+    name: "+33 6 39 98 41 07"
+    role: h5.npc.stranger.role
+    phone: "+33 6 39 98 41 07"
+    greeting: h5.npc.stranger.any
+    intents: []
+    fallback: [h5.npc.stranger.any]
+  - id: nordtel
+    name: Nordtel
+    role: h5.npc.nordtel.role
+    phone: "+33 1 99 00 10 23"
+    greeting: h5.npc.nordtel.hello
+    intents:
+      - id: cancel
+        words: [annul, bloqu, refus, fraude, "pas moi", "pas elle", arret, cancel, block, stop, fraud, "not me", "not her", refuse]
+        reply: [h5.npc.nordtel.cancel]
+      - id: ask
+        words: [sim, carte, demande, ligne, card, request, line]
+        reply: [h5.npc.nordtel.ask]
+    fallback: [h5.npc.nordtel.hello]
+
+objectives:
+  - { id: read, text: h5.obj.read }
+  - { id: link, text: h5.obj.link }
+  - { id: callback, text: h5.obj.callback }
+  - { id: rule, text: h5.obj.rule }
+  - { id: sim, text: h5.obj.sim }
+  - { id: report, text: h5.obj.report }
+
+flags: []
+
+investigation:
+  - { id: link, text: h5.q.link, value: colisplus-suivi.example, points: 100, objective: link }
+
+containment:
+  - id: block-number
+    action: block
+    target: numero-inconnu
+    text: h5.contain.block
+    sets: { sms.blocked: true }
+    impact: 0
+
+questions:
+  - id: habit
+    text: h5.q.habit
+    objective: rule
+    correct: known
+    options:
+      - { id: known, text: h5.q.habit.known }
+      - { id: voice, text: h5.q.habit.voice, why: h5.q.habit.voice.why }
+      - { id: never, text: h5.q.habit.never, why: h5.q.habit.never.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h5.ada.brief
+  - on: { event: SmsRead, sms: "*" }
+    do:
+      - ada.say: h5.ada.read
+      - objective.complete: read
+  - on: { event: SmsRead, sms: parcel }
+    do:
+      - ada.say: h5.ada.parcel
+  - on: { event: SmsRead, sms: { in: [kid, kid2] } }
+    do:
+      - ada.say: h5.ada.kid
+  - on: { event: SmsRead, sms: sim }
+    do:
+      - ada.say: h5.ada.simread
+  - on: { event: ObjectiveCompleted, objective: link }
+    do:
+      - ada.say: h5.ada.link
+  - on: { event: ChatReply, npc: stranger }
+    do:
+      - ada.warn: h5.ada.stranger
+  - on: { event: ChatReply, npc: lea, intent: asked }
+    do:
+      - ada.say: h5.ada.callback
+      - objective.complete: callback
+      - ada.ask: habit
+  - on: { event: ObjectiveCompleted, objective: rule }
+    do:
+      - ada.say: h5.ada.rule
+  - on: { event: ChatReply, npc: nordtel, intent: ask }
+    do:
+      - ada.guide: { key: h5.ada.g.cancel, for: sim, step: 2 }
+  - on: { event: ChatReply, npc: nordtel, intent: cancel }
+    do:
+      - ada.say: h5.ada.sim
+      - objective.complete: sim
+  - on: { event: Contained, containment: block-number }
+    do:
+      - ada.say: h5.ada.report
+      - objective.complete: report
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h5.ada.done
+
+guide:
+  read: h5.ada.g.read
+  link: h5.ada.g.link
+  callback: h5.ada.g.callback
+  sim: h5.ada.g.sim
+  rule: h5.ada.g.rule
+  report: h5.ada.g.report
+
+hints:
+  read: [h5.hint.read.1]
+  link: [h5.hint.link.1, h5.hint.link.2]
+  callback: [h5.hint.callback.1, h5.hint.callback.2]
+  sim: [h5.hint.sim.1, h5.hint.sim.2, h5.hint.sim.3]
+  rule: [h5.hint.rule.1]
+  report: [h5.hint.report.1]
+
+debrief:
+  title: h5.debrief.title
+  lesson: h5.debrief.lesson
+  points: [h5.debrief.p1, h5.debrief.p2, h5.debrief.p3, h5.debrief.p4]
+  reference: "MITRE ATT&CK · T1566 Phishing · T1451 SIM Card Swap"
+  home:
+    points: [h5.home.p1, h5.home.p2, h5.home.p3, h5.home.p4]

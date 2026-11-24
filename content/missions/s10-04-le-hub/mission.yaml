@@ -1,0 +1,152 @@
+# Season 10, mission 4: the smart-home hub and its two radios. What is shown is a set of settings:
+# a Zigbee pairing window never closed (a stranger's bulb joined by accident), a Z-Wave lock included
+# with the old security class, and a message broker that asks for no account. Nothing is listened to
+# on the air: the player reads what the hub itself publishes, as in season 8, and no key is shown.
+side: defense
+order: 3
+stage: iot
+briefing: h4.briefing
+startTime: "2029-05-13T10:30:00+02:00"
+reveal: [box, hub]
+
+files:
+  hub/mosquitto.conf: { $file: files/mosquitto.conf }
+
+objectives:
+  - { id: listen, text: h4.obj.listen }
+  - { id: bulb, text: h4.obj.bulb }
+  - { id: zigbee, text: h4.obj.zigbee }
+  - { id: lockq, text: h4.obj.lockq }
+  - { id: lock, text: h4.obj.lock }
+  - { id: broker, text: h4.obj.broker }
+  - { id: after, text: h4.obj.after }
+
+flags: []
+
+investigation:
+  - { id: bulb, text: h4.q.bulb, value: ampoule-9f2c, points: 150, objective: bulb }
+
+containment:
+  - id: close-join
+    action: disable
+    target: appairage
+    text: h4.contain.join
+    sets: { hub.join_closed: true }
+    impact: 0
+  - id: remove-bulb
+    action: remove
+    target: ampoule-9f2c
+    text: h4.contain.bulb
+    sets: { hub.bulb_removed: true }
+    impact: 0
+  - id: reinclude-lock
+    action: reset
+    target: serrure-entree
+    text: h4.contain.lock
+    sets: { lock.s2: true }
+    impact: 1
+  - id: disable-hub
+    action: disable
+    target: hub
+    text: h4.contain.hub
+    sets: { hub.off: true }
+    impact: 15
+
+checks:
+  - id: anonymous
+    text: h4.check.anonymous
+    if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
+    objective: broker
+  - id: passwords
+    text: h4.check.passwords
+    if: { file: "~/hub/mosquitto.conf", contains: "\npassword_file /etc/mosquitto/passwd" }
+    objective: broker
+
+questions:
+  - id: class
+    text: h4.q.class
+    objective: lockq
+    correct: s2
+    options:
+      - { id: s2, text: h4.q.class.s2 }
+      - { id: fine, text: h4.q.class.fine, why: h4.q.class.fine.why }
+      - { id: wifi, text: h4.q.class.wifi, why: h4.q.class.wifi.why }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: h4.ada.brief
+  - on: { event: HttpRequest, host: hub, method: SUBSCRIBE, status: 200 }
+    do:
+      - ada.say: h4.ada.listen
+      - objective.complete: listen
+  - on: { event: ObjectiveCompleted, objective: bulb }
+    do:
+      - ada.say: h4.ada.bulb
+  - on: { event: Contained, containment: remove-bulb }
+    if: { config: hub.join_closed, eq: false }
+    do:
+      - ada.say: h4.ada.bulb.first
+  - on: { event: Contained, containment: remove-bulb }
+    if: { config: hub.join_closed, eq: true }
+    do:
+      - objective.complete: zigbee
+  - on: { event: Contained, containment: close-join }
+    if: { config: hub.bulb_removed, eq: false }
+    do:
+      - ada.say: h4.ada.join.first
+  - on: { event: Contained, containment: close-join }
+    if: { config: hub.bulb_removed, eq: true }
+    do:
+      - objective.complete: zigbee
+  - on: { event: ObjectiveCompleted, objective: zigbee }
+    do:
+      - ada.say: h4.ada.zigbee
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: lockq }
+    do:
+      - ada.say: h4.ada.lockq
+  - on: { event: Contained, containment: reinclude-lock }
+    do:
+      - ada.say: h4.ada.lock
+      - objective.complete: lock
+  - on: { event: Contained, containment: disable-hub }
+    do:
+      - ada.say: h4.ada.off
+  - on: { event: ObjectiveCompleted, objective: broker }
+    do:
+      - ada.say: h4.ada.broker
+  - on: { event: HttpRequest, host: hub, method: SUBSCRIBE, status: 401 }
+    if: { objective: broker }
+    do:
+      - ada.say: h4.ada.after
+      - objective.complete: after
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: h4.ada.done
+
+guide:
+  listen: h4.ada.g.listen
+  bulb: h4.ada.g.bulb
+  zigbee: h4.ada.g.zigbee
+  lockq: h4.ada.g.lockq
+  lock: h4.ada.g.lock
+  broker: h4.ada.g.broker
+  after: h4.ada.g.after
+
+hints:
+  listen: [h4.hint.listen.1, h4.hint.listen.2]
+  bulb: [h4.hint.bulb.1, h4.hint.bulb.2]
+  zigbee: [h4.hint.zigbee.1, h4.hint.zigbee.2]
+  lockq: [h4.hint.lockq.1]
+  lock: [h4.hint.lock.1]
+  broker: [h4.hint.broker.1, h4.hint.broker.2]
+  after: [h4.hint.after.1]
+
+debrief:
+  title: h4.debrief.title
+  lesson: h4.debrief.lesson
+  points: [h4.debrief.p1, h4.debrief.p2, h4.debrief.p3, h4.debrief.p4]
+  reference: "OWASP IoT Top 10 · I2 Insecure Network Services · I9 Insecure Default Settings"
+  home:
+    points: [h4.home.p1, h4.home.p2, h4.home.p3, h4.home.p4]
