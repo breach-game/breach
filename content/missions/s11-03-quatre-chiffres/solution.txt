@@ -4,9 +4,10 @@ soc alerts
 soc logs api access
 answer customer 1017
 contain
+contain disable connexion-1017
+soc logs api access
 flag list
 flag set otp.essais-max on
-soc logs api access
 cat regles/otp.yml
 rule test regles/otp.yml
 echo "count|gte: 3" >> regles/otp.yml
