@@ -314,8 +314,11 @@ export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}):
       problems.push(`${pack.id}: a defence mission needs an adversary, containment orders or questions`);
     for (const npc of m.npcs) problems.push(...npcProblems(npc).map((p) => `${pack.id}: ${p}`));
     const objectiveIds = new Set(m.objectives.map((o) => o.id));
+    // A challenge played at Expert only never shows a guide line, so it needs none.
+    const guided = !pack.levels || pack.levels.some((l) => l !== 'expert');
     for (const o of m.objectives)
-      if (!o.optional && !m.guide[o.id]) problems.push(`${pack.id}: objective ${o.id} has no entry in guide`);
+      if (guided && !o.optional && !m.guide[o.id])
+        problems.push(`${pack.id}: objective ${o.id} has no entry in guide`);
     for (const key of Object.keys(m.guide))
       if (!objectiveIds.has(key)) problems.push(`${pack.id}: guide names unknown objective ${key}`);
     for (const rule of [...m.rules, ...world.world.rules])

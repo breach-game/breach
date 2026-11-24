@@ -246,4 +246,23 @@ describe('paths and challenges', () => {
     const { catalog } = buildAll([challenge], new Date(0), { community: true });
     expect(catalog.packs[0]?.levels).toEqual(['expert']);
   });
+
+  it('a challenge played at Expert only needs no guide, other missions do', async () => {
+    const mission = community.find((p) => p.pack.kind === 'mission' && p.pack.mission)!;
+    const bare = (levels?: ('guided' | 'standard' | 'expert')[]) => {
+      const v = variant(mission, { id: 'example.bare', ...(levels ? { levels } : {}) });
+      if (v.pack.mission) v.pack.mission.guide = {};
+      return v;
+    };
+    const deps = [...official, ...community];
+    expect(
+      (await checkAll([bare(['expert'])], { community: true, dependencies: deps })).join('\n'),
+    ).not.toMatch(/has no entry in guide/);
+    expect((await checkAll([bare()], { community: true, dependencies: deps })).join('\n')).toMatch(
+      /has no entry in guide/,
+    );
+    expect(
+      (await checkAll([bare(['standard', 'expert'])], { community: true, dependencies: deps })).join('\n'),
+    ).toMatch(/has no entry in guide/);
+  });
 });
