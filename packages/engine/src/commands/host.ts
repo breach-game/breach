@@ -1,4 +1,5 @@
 import type { SystemView } from '../game.ts';
+import { gameDate } from '../util.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
 
 /**
@@ -24,17 +25,18 @@ function read(ctx: CommandCtx, what: 'ps' | 'ss' | 'systemctl' | 'journalctl' | 
 /** The shell the player types in, so that `ps` on a bare host still shows something true. */
 function withShell(ctx: CommandCtx, sys: SystemView): SystemView['processes'] {
   const user = ctx.game.currentUser;
+  const now = gameDate(ctx.world.startTime, ctx.state.clock).time.slice(0, 5);
   // Pids the pack does not use, so that the player's shell never hides a declared process.
   const used = new Set(sys.processes.map((p) => p.pid));
   let shell = 4242;
   while (used.has(shell) || used.has(shell + 77)) shell += 1000;
   const own = [
-    { pid: shell, ppid: shell - 1, user, start: '09:00', cpu: 0, mem: 0.1, cmd: '-bash' },
+    { pid: shell, ppid: shell - 1, user, start: now, cpu: 0, mem: 0.1, cmd: '-bash' },
     {
       pid: shell + 77,
       ppid: shell,
       user,
-      start: '09:00',
+      start: now,
       cpu: 0,
       mem: 0.1,
       cmd: `ps ${ctx.args.join(' ')}`.trim(),
@@ -212,12 +214,16 @@ const systemctl: Command = {
     const journal = sys.journal.filter((j) => j.unit === u.name).slice(-10);
     if (journal.length) {
       lines.push('');
-      for (const j of journal) lines.push(`${j.at} ${host} ${j.unit}[${j.pid ?? u.pid ?? 1}]: ${j.text}`);
+      for (const j of journal) lines.push(journalLine(host, j));
     }
     yield out(lines.join('\n'));
     return u.state === 'active' ? 0 : 3;
   },
 };
+
+/** A journal line: a program's own line carries its pid, the others are systemd's about the unit. */
+const journalLine = (host: string, j: SystemView['journal'][number]) =>
+  `${j.at} ${host} ${j.pid ? `${j.unit}[${j.pid}]` : 'systemd[1]'}: ${j.text}`;
 
 const journalctl: Command = {
   name: 'journalctl',
@@ -240,8 +246,7 @@ const journalctl: Command = {
       yield out('-- No entries --');
       return 0;
     }
-    const pid = (name: string) => sys.services.find((s) => s.name === name)?.pid;
-    for (const j of rows) yield out(`${j.at} ${host} ${j.unit}[${j.pid ?? pid(j.unit) ?? 1}]: ${j.text}`);
+    for (const j of rows) yield out(journalLine(host, j));
     return 0;
   },
 };

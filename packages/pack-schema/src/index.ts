@@ -315,7 +315,7 @@ const hostSystem = z.strictObject({
   journal: z
     .array(
       z.strictObject({
-        /** `Nov 08 09:12:44`. */
+        /** `Nov 08 09:12:44`. A line without `pid` is systemd's own about the unit (`systemd[1]`). */
         at: z.string().max(20),
         unit: z.string().max(60),
         pid: z.number().int().min(1).max(4_194_304).optional(),
