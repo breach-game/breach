@@ -16,6 +16,7 @@ Please use GitHub's private vulnerability reporting: **Security > Report a vulne
 - script-like text and control characters, terminal escape sequences included, are refused;
 - a binary, an archive or a certificate is described as data (strings, member texts, certificate fields) and the engine writes its bytes itself, so a pack never ships raw bytes, a real executable or a real key; extraction refuses members whose path leaves the destination folder;
 - a telephone number must be an internal extension or come from a range set aside for fiction;
+- what a host runs (processes, sockets, services, journal, logins), a directory server's entries, a cluster's API answers and a deployment's effect are data the commands read; `ldapsearch` only accepts a listed account with its listed password, and nothing stops, starts or deploys a real service;
 - size is capped before and after decompression.
 
 **Official packs are pinned.** The build compiles the SHA-256 of each official pack into the game's code. The game refuses an official pack whose bytes differ, and refuses a campaign that lists a pack this build does not know, even if the catalogue next to it was changed.
