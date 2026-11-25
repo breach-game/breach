@@ -57,7 +57,15 @@ rules:
     do:
       - ada.say: t14.ada.found
   - on: { event: ExifRead, file: { glob: "*/balcon.jpg" }, gps: false }
+    do:
+      - var.set: { name: stripped, value: true }
+  - on: { event: ExifRead, file: { glob: "*/balcon.jpg" }, gps: false }
     if: { objective: read }
+    do:
+      - objective.complete: clean
+  # The position was already removed before the first question was answered: that counts too.
+  - on: { event: ObjectiveCompleted, objective: read }
+    if: { var: stripped, eq: true }
     do:
       - objective.complete: clean
   - on: { event: ObjectiveCompleted, objective: clean }

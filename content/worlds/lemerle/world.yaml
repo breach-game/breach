@@ -83,7 +83,8 @@ hosts:
         body: "Vigicam V2 - firmware 1.0.8 (2023-03). Sign in with the Vigicam app.\n"
 
   # The smart-home hub: a radio bridge (Zigbee, Z-Wave) in front of a message broker. Its routes
-  # are topics, as in season 8.
+  # are topics, as in season 8. The `audit` account (season 10, mission 4) still reads them once the
+  # broker asks for an account, so closing the broker first does not lock the player out.
   - id: hub
     hostname: hub.lemerle.test
     ip: 10.24.0.30
@@ -95,6 +96,17 @@ hosts:
       "/#": &all
         body: { $file: files/topics-all.txt }
         variants:
+          - id: audit-clean
+            header: "Authorization: audit:lampe-volet-marmotte"
+            if:
+              all:
+                - { config: hub.join_closed, eq: true }
+                - { config: hub.bulb_removed, eq: true }
+                - { config: lock.s2, eq: true }
+            body: { $file: files/topics-clean.txt }
+          - id: audit
+            header: "Authorization: audit:lampe-volet-marmotte"
+            body: { $file: files/topics-all.txt }
           - id: closed
             if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
             status: 401
@@ -110,6 +122,16 @@ hosts:
       "/maison/zigbee/#": &zigbee
         body: { $file: files/topics-zigbee.txt }
         variants:
+          - id: audit-clean
+            header: "Authorization: audit:lampe-volet-marmotte"
+            if:
+              all:
+                - { config: hub.join_closed, eq: true }
+                - { config: hub.bulb_removed, eq: true }
+            body: { $file: files/topics-zigbee-clean.txt }
+          - id: audit
+            header: "Authorization: audit:lampe-volet-marmotte"
+            body: { $file: files/topics-zigbee.txt }
           - id: closed
             if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
             status: 401
@@ -124,6 +146,14 @@ hosts:
       "/maison/zwave/#":
         body: { $file: files/topics-zwave.txt }
         variants:
+          - id: audit-clean
+            header: "Authorization: audit:lampe-volet-marmotte"
+            if:
+              { config: lock.s2, eq: true }
+            body: { $file: files/topics-zwave-clean.txt }
+          - id: audit
+            header: "Authorization: audit:lampe-volet-marmotte"
+            body: { $file: files/topics-zwave.txt }
           - id: closed
             if: { file: "~/hub/mosquitto.conf", contains: "allow_anonymous false" }
             status: 401

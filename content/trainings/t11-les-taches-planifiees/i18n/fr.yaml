@@ -1,6 +1,6 @@
 t11.briefing: "La mairie de Corbelle t'a ouvert un accès en lecture seule à son serveur de fichiers, le temps d'une vérification. Une question simple : est-ce qu'un des comptes a une tâche planifiée qu'il ne devrait pas avoir ? C'est la première chose qu'on regarde après une intrusion, parce que c'est souvent par là que l'intrus revient."
 t11.obj.login: "Se connecter au serveur de fichiers"
-t11.obj.job: "Trouver la tâche planifiée qui n'a rien à faire là"
+t11.obj.job: "Trouver la tâche planifiée qui n'a rien à faire là (son programme, chemin complet, avec `submit`)"
 t11.obj.why: "Dire ce qui la trahit"
 t11.ada.brief: "Onzième entraînement. Tu as un compte `ir` en lecture seule sur `fichiers.corbelle.test`. Les tâches de chaque compte sont dans sa crontab."
 t11.ada.login: "Connecte-toi : `ssh ir@fichiers.corbelle.test`."

@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
-import { acceptHearing, decide, vocabulary } from '@breach/engine';
+import { acceptHearing, decide, Game, vocabulary } from '@breach/engine';
 import {
   catalogSchema,
   checkPackSafety,
@@ -84,11 +84,24 @@ describe('official content', () => {
   });
 
   it('every required objective opens with guidance in guided mode', async () => {
+    // Guidance for the next step comes at the end of a command: an objective opened and finished by the
+    // same command needs none.
     for (const m of missions) {
-      const { game } = await replaySolution(worldFor(m), m.pack, m.solution!, 'fr');
+      const required = m.pack.mission!.objectives.filter((o) => !o.optional);
+      const game = new Game({ world: worldFor(m), missions: [m.pack], locale: 'fr' });
+      game.startMission(m.pack.id);
+      const inOneCommand = new Set<string>();
+      for (const line of m.solution!) {
+        const open = required.find((o) => !game.state.objectives[o.id])?.id;
+        const before = new Set(required.filter((o) => game.state.objectives[o.id]).map((o) => o.id));
+        for await (const _ of game.exec(line, 20_000));
+        for (const o of required)
+          if (!before.has(o.id) && game.state.objectives[o.id] && o.id !== open) inOneCommand.add(o.id);
+      }
       const said = new Set(game.state.messages.map((x) => x.key));
-      for (const o of m.pack.mission!.objectives)
-        if (!o.optional) expect(said.has(m.pack.mission!.guide[o.id]!), `${m.pack.id} ${o.id}`).toBe(true);
+      for (const o of required)
+        if (!inOneCommand.has(o.id))
+          expect(said.has(m.pack.mission!.guide[o.id]!), `${m.pack.id} ${o.id}`).toBe(true);
     }
   });
 
@@ -309,6 +322,18 @@ describe('official content', () => {
     expect(full.game.state.host).toBe('db');
   });
 
+  it('defence 1: an investigation answer may end with a dot, a wrong value points to answer', async () => {
+    const b1 = missions.find((m) => m.pack.id === 'breach.official.b01')!;
+    const { game, transcript } = await replaySolution(
+      world,
+      b1.pack,
+      ['answer entry nm-deploy.', 'submit 10.13.0.99', 'contain'],
+      'en',
+    );
+    expect(game.state.answers.entry).toBeTruthy();
+    expect(transcript).toContain('takes answer, not submit');
+  });
+
   it('reports pages and characters that point nowhere', async () => {
     const broken = structuredClone(world);
     broken.world!.npcs = broken.world!.npcs.filter((n) => n.id !== 'theo');
@@ -347,6 +372,7 @@ describe('official content', () => {
       'breach.season9',
       'breach.season10',
       'breach.season11',
+      'breach.season12',
     ]);
     expect(catalog.packs.find((p) => p.id === 'breach.season3')?.missions).toEqual(
       [1, 2, 3, 4, 5].map((n) => `breach.season3.s0${n}`),

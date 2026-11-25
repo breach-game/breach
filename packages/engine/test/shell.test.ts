@@ -12,6 +12,13 @@ describe('shell', () => {
     expect((await run(g, 'cat nope')).err).toBe('cat: nope: No such file or directory\n');
     expect((await run(g, 'cat /etc/shadow')).err).toBe('cat: /etc/shadow: Permission denied\n');
     expect((await run(g, 'cat docs')).err).toBe('cat: docs: Is a directory\n');
+    // -R walks the folders below, with a header per folder.
+    const tree = (await run(g, 'ls -R')).out;
+    expect(tree).toMatch(/^\.:\na\.txt {2}b\.txt {2}docs\n\n\.\/docs:\n/);
+    expect((await run(g, 'echo x > docs')).err).toBe('lrsh: docs: Is a directory\n');
+    // 2>/dev/null hides errors, 2>&1 sends them with the output.
+    expect((await run(g, 'cat nope 2>/dev/null')).err).toBe('');
+    expect((await run(g, 'cat nope 2>&1 | wc -l')).out).toBe('1\n');
   });
 
   it('changes directory, with ~, - and ..', async () => {
@@ -121,6 +128,10 @@ describe('network commands', () => {
   it('answers dig and curl in the real formats', async () => {
     const g = await newGame();
     expect((await run(g, 'dig corp.test +short')).out).toBe('10.13.0.10\n');
+    expect((await run(g, 'dig shop.corp.test +short')).out).toBe('www.corp.test.\n10.13.0.10\n');
+    expect((await run(g, 'dig shop.corp.test')).out).toMatch(
+      /shop\.corp\.test\.\t\t300\tIN\tCNAME\twww\.corp\.test\.\nwww\.corp\.test\.\t\t300\tIN\tA\t10\.13\.0\.10/,
+    );
     expect((await run(g, 'dig corp.test MX')).out).toContain('corp.test.\t\t300\tIN\tMX\t10 mail.corp.test.');
     expect((await run(g, 'dig nope.corp.test')).out).toContain('status: NXDOMAIN');
     expect((await run(g, 'curl http://www.corp.test/')).out).toBe('<h1>hello</h1>\n');
@@ -167,6 +178,8 @@ describe('text tools', () => {
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad  -\n',
     );
     expect((await run(g, 'sha256sum b.txt')).out).toMatch(/^[0-9a-f]{64} {2}b\.txt\n$/);
+    expect((await run(g, 'echo -n abc | sha1sum')).out).toBe('a9993e364706816aba3e25717850c26c9cd0d89d  -\n');
+    expect((await run(g, 'sha512sum b.txt')).out).toMatch(/^[0-9a-f]{128} {2}b\.txt\n$/);
   });
 
   it('compares files', async () => {
@@ -186,5 +199,18 @@ describe('text tools', () => {
     expect((await run(g, 'cat a.txt')).out).toBe('alpha\nx/y\n');
     expect((await run(g, 'sed -i s/a/b/ /etc/shadow')).status).toBe(1);
     expect((await run(g, 'sed nope a.txt')).status).toBe(1);
+  });
+
+  it('reads basic regular expressions as grep and sed do, and extended ones with -E', async () => {
+    const g = await newGame();
+    expect((await run(g, 'grep "alpha\\|gamma" a.txt')).out).toBe('alpha\ngamma\n');
+    expect((await run(g, 'grep -E "alpha|gamma" a.txt')).out).toBe('alpha\ngamma\n');
+    expect((await run(g, 'grep "alpha|gamma" a.txt')).status).toBe(1);
+    await run(g, 'echo "user|contains: root" > r.yml');
+    await run(g, 'sed -i "s/user|contains/cmd|contains/" r.yml');
+    expect((await run(g, 'cat r.yml')).out).toBe('cmd|contains: root\n');
+    expect((await run(g, 'sed "s/\\(al\\)pha/\\1/; s/beta/B/" a.txt')).out).toBe('al\nB\ngamma\n');
+    expect((await run(g, 'sed "s/alpha/A/; s/beta/B/" a.txt')).out).toBe('A\nB\ngamma\n');
+    expect((await run(g, 'sed -E "s/(al)pha/X/" a.txt')).out).toBe('X\nbeta\ngamma\n');
   });
 });

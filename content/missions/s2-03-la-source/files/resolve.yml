@@ -3,7 +3,8 @@
 # on_tie: which wins when the same name is in several sources
 source_order: [public-mirror, internal]
 on_tie: highest-version
-# internal packages: names Halcyon owns. For now, nothing is reserved.
+# internal packages: names Halcyon owns, as listed on the internal registry https://paquets.halcyon.test/ .
+# For now, nothing is reserved.
 internal_names: []
 # allow an internal name to also be taken from a public source?
 allow_public_for_internal: true

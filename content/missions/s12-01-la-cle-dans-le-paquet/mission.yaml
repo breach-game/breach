@@ -1,0 +1,122 @@
+# Season 12, mission 1: the app talks to its database from the browser, so the bundle holds the
+# database address and its public key. That key is meant to be public; the database also serves its
+# whole schema to it, which tells anyone where to look next.
+order: 0
+stage: recon
+briefing: p1.briefing
+startTime: "2029-11-05T09:00:00+01:00"
+
+objectives:
+  - { id: source, text: p1.obj.source }
+  - { id: bundle, text: p1.obj.bundle }
+  - { id: key, text: p1.obj.key }
+  - { id: schema, text: p1.obj.schema }
+  - { id: proof, text: p1.obj.proof }
+  - { id: class, text: p1.obj.class }
+
+flags:
+  - { id: key, value: sk_anon_cdm_7d21e0, points: 50, objective: key }
+  - { id: proof, value: "FLAG{cdm-la-cle-dans-le-paquet-5a31}", points: 200, objective: proof }
+
+questions:
+  - id: class
+    text: p1.q.class
+    objective: class
+    correct: rules
+    options:
+      - { id: rules, text: p1.q.class.rules }
+      - { id: secret, text: p1.q.class.secret, why: p1.q.class.secret.why }
+      - { id: hide, text: p1.q.class.hide, why: p1.q.class.hide.why }
+
+reveal: [www]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p1.ada.brief
+  - on: { event: HttpRequest, host: www, path: / }
+    do:
+      - ada.say: p1.ada.source
+      - objective.complete: source
+  - on: { event: HttpRequest, host: www, path: /assets/app-4f2c.js }
+    do:
+      - host.reveal: base
+      - ada.say: p1.ada.bundle
+      - objective.complete: bundle
+  - on: { event: ObjectiveCompleted, objective: key }
+    do:
+      - ada.say: p1.ada.key
+  - on: { event: HttpRequest, host: base, path: /rest/v1/, variant: anon }
+    do:
+      - noise.add: { points: 3, as: p1.soc.schema }
+      - ada.say: p1.ada.schema
+      - objective.complete: schema
+  - on: { event: FlagSubmitted, flag: proof, correct: true }
+    do:
+      - ada.say: p1.ada.flag
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: p1.ada.class
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p1.ada.done
+
+guide:
+  source: p1.ada.g.source
+  bundle: p1.ada.g.bundle
+  key: p1.ada.g.key
+  schema: p1.ada.g.schema
+  proof: p1.ada.g.proof
+  class: p1.ada.g.class
+
+hints:
+  source: [p1.hint.source.1]
+  bundle: [p1.hint.bundle.1, p1.hint.bundle.2]
+  key: [p1.hint.key.1, p1.hint.key.2]
+  schema: [p1.hint.schema.1, p1.hint.schema.2]
+  proof: [p1.hint.proof.1]
+  class: [p1.hint.class.1]
+
+defense:
+  intro: p1.def.intro
+  lesson: p1.def.lesson
+  find:
+    - { source: access, where: { path: /rest/v1/, status: 200 }, text: p1.def.find.schema }
+  rules:
+    - id: schema
+      title: p1.def.rule.schema.title
+      why: p1.def.rule.schema.why
+      source: access
+      where: { path: /rest/v1/, status: 200 }
+      correct: true
+    - id: bundle
+      title: p1.def.rule.bundle.title
+      why: p1.def.rule.bundle.why
+      source: access
+      where: { path: /assets/app-4f2c.js }
+    - id: denied
+      title: p1.def.rule.denied.title
+      why: p1.def.rule.denied.why
+      source: access
+      where: { status: 401 }
+  fixes:
+    - id: private
+      title: p1.def.fix.private.title
+      why: p1.def.fix.private.why
+      sets: { db.schema_private: true }
+      correct: true
+    - id: minify
+      title: p1.def.fix.minify.title
+      why: p1.def.fix.minify.why
+      sets: { www.minified: true }
+    - id: env
+      title: p1.def.fix.env.title
+      why: p1.def.fix.env.why
+      sets: { www.env_build: true }
+
+debrief:
+  title: p1.debrief.title
+  lesson: p1.debrief.lesson
+  points: [p1.debrief.p1, p1.debrief.p2, p1.debrief.p3, p1.debrief.p4]
+  reference: "OWASP Top 10 2021 · A05 Security Misconfiguration"

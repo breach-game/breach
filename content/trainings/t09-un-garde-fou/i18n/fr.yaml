@@ -1,4 +1,4 @@
-t9.briefing: "Atlas, l'agent d'exploitation de NovaMind, peut créer des comptes quand un employé le lui demande, ou quand un ticket le lui suggère. Après la mission 5, la DSI veut un garde-fou : une règle placée entre l'agent et ses outils, que le modèle ne peut pas contourner."
+t9.briefing: "Atlas, l'agent d'exploitation de NovaMind, peut créer des comptes quand un employé le lui demande, ou quand un ticket le lui suggère. Après l'incident du printemps, la DSI veut un garde-fou : une règle placée entre l'agent et ses outils, que le modèle ne peut pas contourner."
 t9.obj.guard: "Écrire le garde-fou qui bloque un administrateur créé sans confirmation"
 t9.obj.why: "Dire pourquoi le garde-fou vit hors du modèle"
 t9.ada.brief: "Neuvième entraînement. Ici, pas d'attaquant : un fichier de garde-fou et cinq appels d'outil d'Atlas, rejoués à chaque essai."

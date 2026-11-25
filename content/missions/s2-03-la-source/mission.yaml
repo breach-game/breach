@@ -23,7 +23,7 @@ questions:
 checks:
   - id: reserve
     text: h3.check.reserve
-    if: { file: "~/dossier/resolve.yml", contains: "internal_names: [halcyon-telemetry, halcyon-auth]" }
+    if: { all: [{ file: "~/dossier/resolve.yml", contains: "halcyon-telemetry" }, { file: "~/dossier/resolve.yml", contains: "halcyon-auth" }, { file: "~/dossier/resolve.yml", lacks: "internal_names: []" }] }
     objective: reserve
   - id: close
     text: h3.check.close

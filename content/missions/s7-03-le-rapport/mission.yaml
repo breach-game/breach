@@ -18,22 +18,23 @@ objectives:
 
 flags: []
 
+# Each check matches a whole line: a value with another one appended is not the fix.
 checks:
   - id: severity
     text: n3.check.severity
-    if: { file: "~/rapports/LN-2028-014.yml", contains: "severity: high" }
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "\nseverity: high\n" }
     objective: report
   - id: steps
     text: n3.check.steps
-    if: { file: "~/rapports/LN-2028-014.yml", contains: "steps: commands" }
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "\nsteps: commands\n" }
     objective: report
   - id: proof
     text: n3.check.proof
-    if: { file: "~/rapports/LN-2028-014.yml", contains: "proof: test-marker" }
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "\nproof: test-marker\n" }
     objective: report
   - id: data
     text: n3.check.data
-    if: { file: "~/rapports/LN-2028-014.yml", contains: "real_data: none" }
+    if: { file: "~/rapports/LN-2028-014.yml", contains: "\nreal_data: none\n" }
     objective: report
   - id: kept
     text: n3.check.kept
@@ -69,7 +70,8 @@ rules:
   - on: { event: HttpRequest, host: api, path: / }
     do:
       - ada.guide: { key: n3.ada.g.read, for: export, step: 1 }
-  - on: { event: HttpRequest, host: api, path: /v1/export/benevoles.csv }
+  # Only a GET shows the content Ada describes; a HEAD request shows headers only.
+  - on: { event: HttpRequest, host: api, path: /v1/export/benevoles.csv, method: GET }
     do:
       - noise.add: { points: 4, as: n3.soc.export }
       - ada.say: n3.ada.export

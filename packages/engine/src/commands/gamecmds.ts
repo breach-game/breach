@@ -67,7 +67,13 @@ const mission: Command = {
     }
     const title = pack.title[ctx.state.locale] ?? pack.title.fr ?? pack.title.en ?? pack.id;
     const lines = [
-      paint(ctx, style.bold, `${ctx.t('mission.label')} ${String(m.order).padStart(2, '0')} / ${title}`),
+      paint(
+        ctx,
+        style.bold,
+        pack.track === 'campaign'
+          ? `${ctx.t('mission.label')} ${String(m.order).padStart(2, '0')} / ${title}`
+          : title,
+      ),
       '',
       ctx.t(m.briefing),
       '',
@@ -146,7 +152,11 @@ const submit: Command = {
     const flag = m.flags.find((f) => f.sha256 === digest);
     if (!flag) {
       ctx.emit({ type: 'FlagSubmitted', flag: null, correct: false });
-      yield err(ctx.t('submit.wrong'));
+      const isFlag = value.startsWith('FLAG{');
+      yield err(ctx.t(isFlag ? 'submit.wrong' : 'submit.wrongValue'));
+      // A plain value may be meant for one of Ada's questions or an investigation question.
+      if (!isFlag && (ctx.game.openQuestions().length || m.investigation.length))
+        yield out(paint(ctx, style.dim, ctx.t('submit.answer')));
       return 1;
     }
     if (!evaluate(flag.if, ctx.state)) {
@@ -204,7 +214,9 @@ const answer: Command = {
     const question = open[0];
     if (!question) {
       yield out(ctx.t('answer.none'));
-      return 0;
+      // An objective answered by a value (an address, a name, a path) takes `submit`, not `answer`.
+      if (ctx.game.mission?.flags.length) yield out(paint(ctx, style.dim, ctx.t('answer.submit')));
+      return ctx.args.length ? 1 : 0;
     }
     const letter = (i: number) => String.fromCharCode(97 + i);
     const pick = (ctx.args[0] ?? '').toLowerCase();

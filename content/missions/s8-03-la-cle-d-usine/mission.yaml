@@ -68,7 +68,7 @@ rules:
   - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, path: "/verdure/maintenance/#", status: 401 }
     do:
       - ada.guide: { key: v3.ada.g.denied, for: account, step: 1 }
-  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, variant: factory }
+  - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, variant: { in: [factory, factory-all, factory-all-on] } }
     do:
       - noise.add: { points: 8, as: v3.soc.account }
       - ada.say: v3.ada.account

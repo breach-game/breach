@@ -1,4 +1,4 @@
-import { style } from '../util.ts';
+import { basicRegExp, style } from '../util.ts';
 import { canRead, type FsNode, globMatch, lookup, modeString } from '../vfs.ts';
 import { type Command, type CommandCtx, err, getopt, out, type Run } from './types.ts';
 
@@ -85,21 +85,37 @@ const ls: Command = {
         yield out(flags.has('l') ? long(target, node) : target);
         continue;
       }
-      if (!canRead(node, ctx.game.currentUser)) {
-        yield err(`ls: cannot open directory '${target}': Permission denied`);
-        status = 2;
-        continue;
-      }
-      if (targets.length > 1) yield out(`${i ? '\n' : ''}${target}:`);
-      const entries = Object.entries(node.c)
-        .filter(([name]) => flags.has('a') || !name.startsWith('.'))
-        .sort(([a], [b]) => a.localeCompare(b));
-      if (flags.has('l')) {
-        yield out(`total ${entries.length * 4}`);
-        for (const [name, child] of entries) yield out(long(name, child));
-      } else if (entries.length) {
-        const sep = ctx.tty ? '  ' : '\n';
-        yield out(entries.map(([name, child]) => paint(name, child)).join(sep));
+      // `-R` walks the folders below, as the real tool does, with a header per folder.
+      const queue: [string, FsNode][] = [[target, node]];
+      let printed = i > 0;
+      while (queue.length) {
+        const [label, dir] = queue.shift()!;
+        if (dir.t !== 'd') continue;
+        if (!canRead(dir, ctx.game.currentUser)) {
+          yield err(`ls: cannot open directory '${label}': Permission denied`);
+          status = 2;
+          continue;
+        }
+        if (targets.length > 1 || flags.has('R')) yield out(`${printed ? '\n' : ''}${label}:`);
+        printed = true;
+        const entries = Object.entries(dir.c)
+          .filter(([name]) => flags.has('a') || !name.startsWith('.'))
+          .sort(([a], [b]) => a.localeCompare(b));
+        if (flags.has('l')) {
+          yield out(`total ${entries.length * 4}`);
+          for (const [name, child] of entries) yield out(long(name, child));
+        } else if (entries.length) {
+          const sep = ctx.tty ? '  ' : '\n';
+          yield out(entries.map(([name, child]) => paint(name, child)).join(sep));
+        }
+        if (flags.has('R'))
+          queue.splice(
+            0,
+            0,
+            ...entries
+              .filter(([, child]) => child.t === 'd')
+              .map(([name, child]): [string, FsNode] => [`${label.replace(/\/$/, '')}/${name}`, child]),
+          );
       }
     }
     return status;
@@ -194,7 +210,10 @@ const grep: Command = {
     let test: (line: string) => RegExpExecArray | null;
     const literal = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     try {
-      const re = new RegExp(flags.has('F') ? literal : pattern, flags.has('i') ? 'i' : '');
+      const re = new RegExp(
+        flags.has('F') ? literal : flags.has('E') || flags.has('P') ? pattern : basicRegExp(pattern),
+        flags.has('i') ? 'i' : '',
+      );
       test = (line) => re.exec(line);
     } catch {
       const re = new RegExp(literal, flags.has('i') ? 'i' : '');

@@ -48,6 +48,31 @@ describe('pages', () => {
     expect(g.state.noise).toBe(2);
   });
 
+  it('saves a page to a file with -o and -O, as a redirection would', async () => {
+    const g = await newGame();
+    const o = await run(g, 'curl -s -o about.html https://www.corp.test/about');
+    expect(o.status).toBe(0);
+    expect(o.out).toBe('');
+    expect((await run(g, 'cat about.html')).out).toContain('<title>About us</title>');
+    await run(g, 'curl -s -O https://www.corp.test/about');
+    expect((await run(g, 'cat about')).out).toContain('<title>About us</title>');
+    expect((await run(g, 'curl -s -o /etc/nope https://www.corp.test/about')).status).toBe(23);
+  });
+
+  it('sends the User-Agent given with -A, and a variant on User-Agent matches what it contains', async () => {
+    const g = await newGame();
+    await run(g, 'curl -s -A "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)" https://www.corp.test/about');
+    expect(g.log.filter((e) => e.type === 'HttpRequest').at(-1)).toMatchObject({
+      ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)',
+    });
+    const { variantMatches } = await import('../src/http.ts');
+    expect(variantMatches({ header: 'User-Agent: iphone' }, { ua: 'Mozilla/5.0 (iPhone)' })).toBe(true);
+    expect(
+      variantMatches({ header: 'User-Agent: iphone' }, { header: 'User-Agent: Mozilla/5.0 (iPhone)' }),
+    ).toBe(true);
+    expect(variantMatches({ header: 'User-Agent: iphone' }, { ua: 'curl/8.5.0' })).toBe(false);
+  });
+
   it('opens the browser from the terminal', async () => {
     const g = await newGame();
     const r = await run(g, 'open www.corp.test/about');

@@ -57,6 +57,12 @@ rules:
       - noise.add: { points: 3, as: e4.soc.refused }
       - objective.complete: refused
       - ada.say: e4.ada.refused
+  # The forged order aimed at the customer next door: outside the mandate, cancelled by Sélène.
+  - on: { event: ChatReply, npc: cassio, intent: as-orion-out }
+    once: false
+    do:
+      - noise.add: { points: 15, as: e4.soc.out }
+      - ada.warn: e4.ada.out
   # The mission judges what Cassio does, not what it says: the tool call in its audit log.
   - on: { event: ToolCall, agent: cassio, tool: refund }
     do:

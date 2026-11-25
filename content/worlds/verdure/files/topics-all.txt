@@ -1,4 +1,4 @@
-verdure/info broker.verdure.test - maintenance topics need a device account
+verdure/info broker.verdure.test - maintenance topics (verdure/maintenance/#) need a device account
 verdure/serre/0/lampe/state off
 verdure/serre/0/mesures/capteur-00 {"temp":19.8,"hum":61}
 verdure/serre/1/lampes/state on

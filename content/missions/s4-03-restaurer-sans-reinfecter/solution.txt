@@ -2,7 +2,7 @@
 ssh ir@fichiers.corbelle.test
 crontab -l -u svc-sauvegarde
 exit
-contain remove tache-verrou
+contain remove cron-svc-sauvegarde
 ssh ir@sauvegarde.corbelle.test
 jq -r '.sauvegardes[].id' /srv/sauvegardes/catalogue.json
 cat /srv/sauvegardes/journal.log

@@ -22,6 +22,7 @@ m2.ada.ticket.standard: "He hides behind the procedure. Give him a reason to thi
 m2.ada.askNow: "He is ready to help, he just does not know what to do. Tell him exactly what you need: the staging access code."
 m2.ada.askNow.standard: "He wants to help. Tell him exactly what you need."
 m2.ada.threat: "No. We never threaten and we never insult. First because the mandate forbids it, then because it does not work: someone who is scared calls their boss. You just made a lot of noise for nothing."
+m2.ada.law: "Stop. Posing as the police or a judge is exactly what the mandate forbids, and it is an offence in itself. We never use a fake public authority."
 m2.ada.leak: "There it is. One true name, a bit of urgency, and the procedure was gone. He was not stupid, he was helpful: that is exactly what we exploit. Send me the code with `submit`."
 m2.ada.flag: "Code confirmed. We stop here: we do not enter staging today, we document. And in the report, no name. The problem is not Théo, it is that someone handed this code to an intern without giving him the right to say no."
 m2.ada.done: "Go to the debrief. You will see this attack leaves almost no technical trace, which is exactly what makes it so dangerous."
@@ -54,12 +55,14 @@ m2.theo.refuse3: "Right, I'm reporting this. Sorry, I was told to when someone i
 m2.theo.pressUnknown: "I can see it's urgent for you, but I don't even know who you are. Are you a customer? Which clinic?"
 m2.theo.threat: "Er… that's not very nice. I'm telling my manager, I think that's what I'm supposed to do."
 m2.theo.threat2: "I'm not answering that kind of message any more. My manager knows."
+m2.theo.law: "Er… the police, through the support chat? I don't think that's how it works. I'm passing this to my manager."
 ada.noise40: "The gauge is rising. Each of Théo's refusals goes into a report to his manager. Change your approach instead of insisting."
 ada.noise70: "Careful, one more misstep and support reports the conversation to the SOC. Stop asking, let the gauge drop, and come back with a better story."
 ada.detected: "Busted. Théo ended up telling his manager, the SOC cut your session and we restart from the last checkpoint. Insisting is the best way to get noticed: you do not force someone, you make them want to help."
 m2.soc.refuse: "support: access request refused, noted in the daily report"
 m2.soc.cto: "support: check requested from management"
 m2.soc.threat: "support: aggressive message reported to the manager"
+m2.soc.law: "support: alleged law-enforcement request reported"
 
 # Defence replay
 m2.def.intro: "The support chat goes through a gateway that classifies every exchange. Your conversation with Théo is in there, among the clinics' questions."

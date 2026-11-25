@@ -14,12 +14,12 @@ files:
     # Plan de sauvegarde - Ville de Corbelle (Y. Morel, 2019)
     sauvegarde_nuit: "02:00"
     copie_hors_ligne: hebdomadaire
-    test_restauration: jamais
+    test_restauration: jamais          # jamais | mensuel
     compte_service:
-      connexion: mot-de-passe
-      origine: partout
+      connexion: mot-de-passe          # mot-de-passe | cle
+      origine: partout                 # partout | <nom d'un serveur>, ex. sauvegarde.corbelle.test
     messagerie:
-      second_facteur: non
+      second_facteur: non              # non | oui
 
 objectives:
   - { id: detect, text: c4.obj.detect }
@@ -53,11 +53,11 @@ hunts:
 checks:
   - id: key
     text: c4.check.key
-    if: { file: "~/dossier/plan-sauvegarde.yml", contains: "connexion: cle", lacks: "mot-de-passe" }
+    if: { any: [{ file: "~/dossier/plan-sauvegarde.yml", contains: "connexion: cle", lacks: "connexion: mot-de-passe" }, { file: "~/dossier/plan-sauvegarde.yml", contains: "connexion: clé", lacks: "connexion: mot-de-passe" }] }
     objective: harden
   - id: origin
     text: c4.check.origin
-    if: { file: "~/dossier/plan-sauvegarde.yml", contains: "origine: sauvegarde.corbelle.test", lacks: "partout" }
+    if: { any: [{ file: "~/dossier/plan-sauvegarde.yml", contains: "origine: sauvegarde.corbelle.test", lacks: "origine: partout" }, { file: "~/dossier/plan-sauvegarde.yml", contains: "origine: 10.16.0.40", lacks: "origine: partout" }] }
     objective: harden
   - id: drill
     text: c4.check.drill

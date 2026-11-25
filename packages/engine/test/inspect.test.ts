@@ -292,8 +292,10 @@ describe('call', () => {
     expect(g.state.objectives.verify).toBe(true);
     expect((await run(g, 'call +33199004217')).out).toContain('Claire: …');
     expect((await run(g, 'call 0612345678 hello')).err).toContain('not in service');
+    // Typed as a contact list prints it, with spaces and no quotes.
+    expect((await run(g, 'call +33 1 99 00 42 17 "Did you ask for a virement?"')).out).toContain('Claire:');
     const voice = telemetry(g, { from: 0 }).filter((l) => l.source === 'voice');
-    expect(voice).toHaveLength(1);
+    expect(voice).toHaveLength(2);
     expect(voice[0]!.text).toMatch(
       /asterisk: CDR src=10\.17\.0\.66 from=- to="\+33 1 99 00 42 17" callee=claire/,
     );

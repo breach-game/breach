@@ -18,10 +18,10 @@ objectives:
 flags:
   - { id: order, value: "FLAG{verdure-anyone-gives-orders-41b8}", points: 250, objective: flag }
 
-# Line 11 gives every client the right to read and write every topic. The careful lines above it
-# no longer limit anything.
+# Line 3 sits before the first `user` line, so in Mosquitto it applies to every client, anonymous
+# ones included: read and write on every topic. The careful lines below it no longer limit anything.
 reviews:
-  - { id: acl, file: dossier/acl.conf, lines: [11], objective: review }
+  - { id: acl, file: dossier/acl.conf, lines: [3], objective: review }
 
 questions:
   - id: fix
@@ -39,7 +39,9 @@ rules:
   - on: { event: MissionStarted }
     do:
       - ada.say: v2.ada.brief
+  # Said only while the lamp is still off: once the player has switched it on, the line would be false.
   - on: { event: HttpRequest, host: broker, method: SUBSCRIBE, status: 200 }
+    if: { not: { objective: order } }
     do:
       - ada.say: v2.ada.bench
       - objective.complete: bench

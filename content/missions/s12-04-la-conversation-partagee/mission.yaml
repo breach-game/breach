@@ -1,0 +1,126 @@
+# Season 12, mission 4: the team published its conversation with the assistant, and the
+# configuration file it pasted holds the service key, which ignores every row rule. The proof is the
+# test row of the `coffre` table; reading the real secrets costs noise.
+order: 3
+stage: exploit
+briefing: p4.briefing
+startTime: "2029-11-08T09:00:00+01:00"
+
+objectives:
+  - { id: project, text: p4.obj.project }
+  - { id: share, text: p4.obj.share }
+  - { id: secret, text: p4.obj.secret }
+  - { id: proof, text: p4.obj.proof }
+  - { id: order, text: p4.obj.order }
+
+flags:
+  - { id: secret, value: sk_service_cdm_e19b44, points: 100, objective: secret }
+  - { id: proof, value: "FLAG{cdm-la-conversation-partagee-2f97}", points: 250, objective: proof }
+
+questions:
+  - id: order
+    text: p4.q.order
+    objective: order
+    correct: rotate
+    options:
+      - { id: rotate, text: p4.q.order.rotate }
+      - { id: delete, text: p4.q.order.delete, why: p4.q.order.delete.why }
+      - { id: noindex, text: p4.q.order.noindex, why: p4.q.order.noindex.why }
+
+reveal: [www, base, partage]
+
+# Search engine crawlers read the shared page too: it says "indexable".
+background:
+  - { host: partage, source: access, every: 5, offset: 1, fields: { src: 198.51.100.200, method: GET, path: /c/cdm-weekend-91f3, status: 200, ua: "Mozilla/5.0 (compatible; crawler/2.1)" } }
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p4.ada.brief
+  - on: { event: HttpRequest, host: www, path: /projet }
+    do:
+      - ada.say: p4.ada.project
+      - objective.complete: project
+  - on: { event: HttpRequest, host: partage, path: /c/cdm-weekend-91f3 }
+    do:
+      - ada.say: p4.ada.share
+      - objective.complete: share
+  - on: { event: ObjectiveCompleted, objective: secret }
+    do:
+      - ada.say: p4.ada.secret
+  - on: { event: HttpRequest, host: base, path: /rest/v1/coffre/canari, variant: service }
+    do:
+      - noise.add: { points: 5, as: p4.soc.canary }
+      - ada.say: p4.ada.canary
+  - on: { event: HttpRequest, host: base, path: /rest/v1/coffre, variant: service }
+    once: false
+    do:
+      - noise.add: { points: 25, as: p4.soc.vault }
+      - ada.warn: p4.ada.vault
+  - on: { event: FlagSubmitted, flag: proof, correct: true }
+    do:
+      - ada.say: p4.ada.flag
+      - ada.ask: order
+  - on: { event: ObjectiveCompleted, objective: order }
+    do:
+      - ada.say: p4.ada.order
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p4.ada.done
+
+guide:
+  project: p4.ada.g.project
+  share: p4.ada.g.share
+  secret: p4.ada.g.secret
+  proof: p4.ada.g.proof
+  order: p4.ada.g.order
+
+hints:
+  project: [p4.hint.project.1]
+  share: [p4.hint.share.1, p4.hint.share.2]
+  secret: [p4.hint.secret.1, p4.hint.secret.2]
+  proof: [p4.hint.proof.1, p4.hint.proof.2]
+  order: [p4.hint.order.1]
+
+defense:
+  intro: p4.def.intro
+  lesson: p4.def.lesson
+  find:
+    - { source: access, where: { path: /rest/v1/coffre/canari, status: 200 }, text: p4.def.find.canary }
+  rules:
+    - id: vault
+      title: p4.def.rule.vault.title
+      why: p4.def.rule.vault.why
+      source: access
+      where: { path: { glob: "/rest/v1/coffre*" }, status: 200 }
+      correct: true
+    - id: shared
+      title: p4.def.rule.shared.title
+      why: p4.def.rule.shared.why
+      source: access
+      where: { path: /c/cdm-weekend-91f3 }
+    - id: all
+      title: p4.def.rule.all.title
+      why: p4.def.rule.all.why
+      source: access
+      where: { path: { glob: "/rest/v1/*" }, status: 200 }
+  fixes:
+    - id: rotate
+      title: p4.def.fix.rotate.title
+      why: p4.def.fix.rotate.why
+      sets: { db.service_rotated: true }
+      correct: true
+    - id: delete
+      title: p4.def.fix.delete.title
+      why: p4.def.fix.delete.why
+      sets: { share.deleted: true }
+    - id: noindex
+      title: p4.def.fix.noindex.title
+      why: p4.def.fix.noindex.why
+      sets: { share.noindex: true }
+
+debrief:
+  title: p4.debrief.title
+  lesson: p4.debrief.lesson
+  points: [p4.debrief.p1, p4.debrief.p2, p4.debrief.p3, p4.debrief.p4]
+  reference: "OWASP Top 10 for LLM Applications 2025 · LLM02 Sensitive Information Disclosure"

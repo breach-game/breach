@@ -79,8 +79,9 @@ hosts:
                   - ["VD-2029-02", "Verdure", "2029"]
             - p: web.mandates.p2
             - footer: web.footer
-      # The last card. It only exists once the account is closed (mission 3 reads it).
-      "/m":
+      # The last card. It only exists once the account is closed (mission 3 reads it). Also served at
+      # /m.txt, the address of the six earlier cards.
+      "/m": &lastcard
         status: 404
         headers: { content-type: text/plain }
         body: "404 Not Found\n"
@@ -95,6 +96,7 @@ hosts:
                 - p: web.last.p2
                 - p: web.last.p3
                 - p: web.last.p4
+      "/m.txt": *lastcard
 
   # Where every report of every mandate is kept. The crown jewels of a pentest firm.
   - id: archives

@@ -122,6 +122,9 @@ export const fr: Record<string, string> = {
   'notes.empty': 'Carnet vide. Ajoute une note avec : notes add <texte>',
   'submit.usage': 'usage : submit FLAG{...}',
   'submit.wrong': "Ce n'est pas un flag de cette mission.",
+  'submit.wrongValue': "Ce n'est pas une valeur attendue par cette mission.",
+  'submit.answer':
+    "Une question d'Ada ou une question d'enquête se règle avec answer, pas submit : tape answer pour les voir.",
   'submit.already': 'Flag déjà validé.',
   'submit.unseen':
     "La cible ne t'a jamais montré ce flag. Fais-le d'abord apparaître à l'écran, puis valide-le.",
@@ -139,6 +142,8 @@ export const fr: Record<string, string> = {
     "contain applique une mesure de confinement : bloquer une adresse, révoquer une clé, isoler une machine, couper un outil d'agent. Chaque mesure arrête une partie de l'attaque, mais a un coût pour l'entreprise : la jauge d'impact le montre. Tape « contain » seul pour voir les mesures possibles.",
   'soc.unavailable': "La console du SOC n'est ouverte que pendant une mission de défense.",
   'soc.usage': 'usage : soc sources | soc logs [hôte] [source] | soc search <texte> | soc alerts',
+  'contain.empty':
+    'Aucune mesure de confinement dans cette mission : le travail est dans les journaux et les réponses.',
   'contain.usage': 'usage : contain <action> <cible>. Mesures possibles :',
   'contain.unknown': "aucune mesure de ce type n'est prévue pour cette cible",
   'contain.already': 'Mesure déjà appliquée.',
@@ -173,6 +178,8 @@ export const fr: Record<string, string> = {
   'cmd.tr': 'Remplacer ou supprimer des caractères dans un flux (-d)',
   'cmd.diff': 'Montrer les lignes qui diffèrent entre deux fichiers',
   'cmd.base64': 'Encoder en Base64, ou décoder avec -d',
+  'cmd.sha1sum': "Afficher l'empreinte SHA-1 d'un fichier (un algorithme ancien, gardé pour comparer)",
+  'cmd.sha512sum': "Afficher l'empreinte SHA-512 d'un fichier",
   'cmd.sha256sum': "Afficher l'empreinte SHA-256 d'un fichier",
   'cmd.sed': "Réécrire des lignes : `sed 's/ancien/nouveau/' fichier`, -i modifie le fichier",
   'cmd.verify': 'Vérifier que ta correction tient',
@@ -185,6 +192,8 @@ export const fr: Record<string, string> = {
   'verify.ok': 'Tous les contrôles passent.',
   'verify.failed': '{n} contrôle(s) en échec. Corrige le fichier, puis relance verify.',
   'answer.none': "Ada n'a pas de question en attente.",
+  'answer.submit':
+    "Une valeur que demande la mission (une adresse, un nom, un chemin…) s'envoie avec submit <valeur>.",
   'answer.usage': 'Réponds avec sa lettre, par exemple : answer a',
   'answer.decided': 'Décision prise.',
   'cmd.strings': 'Afficher le texte lisible caché dans un fichier binaire : strings <fichier>',
@@ -259,6 +268,8 @@ export const fr: Record<string, string> = {
   'rule.usage':
     'usage : rule test <fichier>\nUne règle : une ligne « source: auth », puis un champ par ligne (user: nom, src|startswith: 10.16.0.1, cmd|contains: mot).',
   'rule.syntax': 'rule : ligne illisible : {line}',
+  'eval.field': "Aucun appel d'outil n'a de champ {name}. Leurs champs : {fields}.",
+  'rule.field': "Aucune ligne de cette source n'a de champ {name}. Ses champs : {fields}.",
   'rule.nohunt': "Cette règle n'est pas attendue par la mission : résultat donné pour information.",
   'rule.pass': "Règle validée : {n} ligne(s) de l'attaque détectée(s), aucune fausse alerte.",
   'rule.false':
@@ -355,10 +366,11 @@ export const fr: Record<string, string> = {
   'timeline.done': 'Cette chronologie est déjà dans le bon ordre.',
   'timeline.right': 'Chronologie dans le bon ordre.',
   'timeline.wrong': 'Pas encore : {placed} événements sur {total} à la bonne place. 10 points perdus.',
-  'cmd.path': 'Nomme les machines par où une attaque est passée : path <id> <hôte> <hôte>…',
+  'cmd.path':
+    "Nomme les machines d'un chemin, dans l'ordre (une attaque, une reprise…) : path <id> <hôte> <hôte>…",
   'path.none': "Il n'y a pas de chemin d'attaque à retracer dans cette mission.",
   'path.usage':
-    "usage : path <id> <hôte> <hôte>… dans l'ordre où l'attaque est passée (noms, noms courts ou adresses)",
+    "usage : path <id> <hôte> <hôte>… dans l'ordre que demande la question (noms, noms courts ou adresses)",
   'path.unknown': 'path : machines inconnues : {hosts}',
   'path.done': 'Ce chemin est déjà retracé.',
   'path.right': 'Chemin retracé.',

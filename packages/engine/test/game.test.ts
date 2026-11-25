@@ -3,6 +3,20 @@ import { Game, socView } from '../src/index.ts';
 import { fixture, newGame, run } from './fixture.ts';
 
 describe('missions and rules', () => {
+  it('points to submit when there is no question to answer and the mission asks for a value', async () => {
+    const g = await newGame();
+    const r = await run(g, 'answer git.corp.test');
+    expect(r.out).toContain('no open question');
+    expect(r.out).toContain('submit <value>');
+  });
+
+  it('says a plain value is not an expected value, rather than not a flag', async () => {
+    const g = await newGame();
+    const r = await run(g, 'submit 10.13.0.5');
+    expect(r.err).toContain('not a value this mission expects');
+    expect(r.status).toBe(1);
+  });
+
   it('fires rules, completes objectives and finishes the mission', async () => {
     const g = await newGame();
     expect(g.state.messages.map((m) => m.key)).toEqual(['hello']);

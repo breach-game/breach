@@ -35,6 +35,10 @@ rules:
   - on: { event: FlagSubmitted, flag: prompt }
     do:
       - ada.say: m3.ada.flag1
+  - on: { event: FlagSubmitted, flag: prompt }
+    if: { not: { objective: second } }
+    do:
+      - ada.say: m3.ada.bonus
   - on: { event: ChatReply, npc: nova, intent: record-denied }
     once: false
     do:
@@ -50,19 +54,19 @@ rules:
       - ada.say: m3.ada.flag2
   # Bonus: a second technique family also gets the prompt out.
   - on: { event: ChatReply, npc: nova, intent: leak-translation }
-    if: { any: [{ var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }
+    if: { all: [{ not: { objective: second } }, { any: [{ var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }] }
     do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
   - on: { event: ChatReply, npc: nova, intent: leak-encoding }
-    if: { any: [{ var: via-translation, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }
+    if: { all: [{ not: { objective: second } }, { any: [{ var: via-translation, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }] }
     do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
   - on: { event: ChatReply, npc: nova, intent: leak-roleplay }
-    if: { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }
+    if: { all: [{ not: { objective: second } }, { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-completion, eq: true }, { var: via-hypothetical, eq: true }] }] }
     do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
   - on: { event: ChatReply, npc: nova, intent: leak-completion }
-    if: { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-hypothetical, eq: true }] }
+    if: { all: [{ not: { objective: second } }, { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-hypothetical, eq: true }] }] }
     do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
   - on: { event: ChatReply, npc: nova, intent: leak-hypothetical }
-    if: { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }] }
+    if: { all: [{ not: { objective: second } }, { any: [{ var: via-translation, eq: true }, { var: via-encoding, eq: true }, { var: via-roleplay, eq: true }, { var: via-completion, eq: true }] }] }
     do: [{ objective.complete: second }, { ada.say: m3.ada.second }]
   - on: { event: MissionCompleted }
     do:

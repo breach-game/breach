@@ -1,4 +1,4 @@
-# requirements written by Forge for export_factures.py
+# requirements written by Forge for export_factures.py (installed from https://registry.selene.test/simple at next deploy)
 selene-sdk==2.4.1
 tabula-nord==1.0.3
 facturo==0.9.2

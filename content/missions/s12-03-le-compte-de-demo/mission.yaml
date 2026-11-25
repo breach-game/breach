@@ -1,0 +1,119 @@
+# Season 12, mission 3: the assistant created an administrator demo account for the launch
+# presentation, wrote its password in the bundle, and nobody removed it. The proof is the audit
+# marker on the dashboard; the export of every profile costs noise.
+order: 2
+stage: exploit
+briefing: p3.briefing
+startTime: "2029-11-07T09:00:00+01:00"
+
+objectives:
+  - { id: door, text: p3.obj.door }
+  - { id: creds, text: p3.obj.creds }
+  - { id: login, text: p3.obj.login }
+  - { id: proof, text: p3.obj.proof }
+  - { id: class, text: p3.obj.class }
+
+flags:
+  - { id: creds, value: demo1234, points: 50, objective: creds }
+  - { id: proof, value: "FLAG{cdm-le-compte-de-demo-9e02}", points: 200, objective: proof }
+
+questions:
+  - id: class
+    text: p3.q.class
+    objective: class
+    correct: remove
+    options:
+      - { id: remove, text: p3.q.class.remove }
+      - { id: password, text: p3.q.class.password, why: p3.q.class.password.why }
+      - { id: hide, text: p3.q.class.hide, why: p3.q.class.hide.why }
+
+reveal: [www, base]
+
+rules:
+  - on: { event: MissionStarted }
+    do:
+      - ada.say: p3.ada.brief
+  - on: { event: HttpRequest, host: www, path: /equipe, method: GET }
+    do:
+      - ada.say: p3.ada.door
+      - objective.complete: door
+  - on: { event: ObjectiveCompleted, objective: creds }
+    do:
+      - ada.say: p3.ada.creds
+  - on: { event: ChatReply, npc: admin, intent: demo }
+    do:
+      - noise.add: { points: 4, as: p3.soc.login }
+      - ada.say: p3.ada.login
+      - objective.complete: login
+  - on: { event: HttpRequest, host: www, path: /equipe/export, variant: demo }
+    once: false
+    do:
+      - noise.add: { points: 25, as: p3.soc.export }
+      - ada.warn: p3.ada.export
+  - on: { event: FlagSubmitted, flag: proof, correct: true }
+    do:
+      - ada.say: p3.ada.flag
+      - ada.ask: class
+  - on: { event: ObjectiveCompleted, objective: class }
+    do:
+      - ada.say: p3.ada.class
+  - on: { event: MissionCompleted }
+    do:
+      - ada.say: p3.ada.done
+
+guide:
+  door: p3.ada.g.door
+  creds: p3.ada.g.creds
+  login: p3.ada.g.login
+  proof: p3.ada.g.proof
+  class: p3.ada.g.class
+
+hints:
+  door: [p3.hint.door.1]
+  creds: [p3.hint.creds.1, p3.hint.creds.2]
+  login: [p3.hint.login.1, p3.hint.login.2]
+  proof: [p3.hint.proof.1, p3.hint.proof.2]
+  class: [p3.hint.class.1]
+
+defense:
+  intro: p3.def.intro
+  lesson: p3.def.lesson
+  find:
+    - { source: chat, where: { npc: admin, intent: demo }, text: p3.def.find.login }
+  rules:
+    - id: demo
+      title: p3.def.rule.demo.title
+      why: p3.def.rule.demo.why
+      source: chat
+      where: { npc: admin, intent: demo }
+      correct: true
+    - id: any-login
+      title: p3.def.rule.any.title
+      why: p3.def.rule.any.why
+      source: chat
+      where: { npc: admin }
+    - id: refused
+      title: p3.def.rule.refused.title
+      why: p3.def.rule.refused.why
+      source: access
+      where: { path: /equipe/tableau, status: 401 }
+  fixes:
+    - id: remove
+      title: p3.def.fix.remove.title
+      why: p3.def.fix.remove.why
+      sets: { admin.demo_off: true }
+      correct: true
+    - id: rename
+      title: p3.def.fix.rename.title
+      why: p3.def.fix.rename.why
+      sets: { admin.path_renamed: true }
+    - id: captcha
+      title: p3.def.fix.captcha.title
+      why: p3.def.fix.captcha.why
+      sets: { admin.captcha: true }
+
+debrief:
+  title: p3.debrief.title
+  lesson: p3.debrief.lesson
+  points: [p3.debrief.p1, p3.debrief.p2, p3.debrief.p3, p3.debrief.p4]
+  reference: "OWASP Top 10 2021 · A07 Identification and Authentication Failures"

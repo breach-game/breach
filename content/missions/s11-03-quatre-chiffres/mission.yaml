@@ -151,8 +151,13 @@ rules:
     do:
       - ada.say: c3.ada.why
   - on: { event: MissionCompleted }
+    if: { config: otp.frozen, eq: false }
     do:
       - ada.say: c3.ada.done
+  - on: { event: MissionCompleted }
+    if: { config: otp.frozen, eq: true }
+    do:
+      - ada.say: c3.ada.done.frozen
 
 guide:
   target: c3.ada.g.target

@@ -1,4 +1,4 @@
-import { sha256 } from '../util.ts';
+import { basicRegExp, digest } from '../util.ts';
 import { canWrite, lookup } from '../vfs.ts';
 import { inputs, lines, readFile } from './files.ts';
 import { type Command, err, getopt, out } from './types.ts';
@@ -237,9 +237,10 @@ const base64: Command = {
   },
 };
 
-const sha256sum: Command = {
-  name: 'sha256sum',
-  summary: 'cmd.sha256sum',
+/** `sha256sum`, `sha1sum` and `sha512sum`: one fingerprint per file, in the real tools' format. */
+const shaSum = (name: string, algo: 'SHA-256' | 'SHA-1' | 'SHA-512'): Command => ({
+  name,
+  summary: `cmd.${name}`,
   explain: 'explain.sha256sum',
   group: 'files',
   async *run(ctx) {
@@ -247,24 +248,35 @@ const sha256sum: Command = {
       ctx,
       ctx.args.filter((a) => !a.startsWith('-')),
     );
-    for (const { name, text } of sources)
-      yield out(`${await sha256(text)}  ${name === '(standard input)' ? '-' : name}`);
+    for (const { name: file, text } of sources)
+      yield out(`${await digest(algo, text)}  ${file === '(standard input)' ? '-' : file}`);
     return sources.length ? 0 : 1;
   },
-};
+});
+const sha256sum = shaSum('sha256sum', 'SHA-256');
+const sha1sum = shaSum('sha1sum', 'SHA-1');
+const sha512sum = shaSum('sha512sum', 'SHA-512');
 
-/** One `sed` instruction: `s/old/new/[g]` with any delimiter, or `/pattern/d`. */
-function sedScript(script: string): ((line: string) => string | null) | null {
-  const del = /^\/(.+)\/d$/.exec(script);
-  if (del) {
-    const re = playerRegExp(del[1]!, '');
-    return (line) => (re.test(line) ? null : line);
+/** One sed command: `s/a/b/flags` or `/re/d`. Returns the edit and where the command ends. */
+function sedCommand(
+  script: string,
+  start: number,
+  extended: boolean,
+): { edit: (line: string) => string | null; end: number } | null {
+  const regex = (source: string, flags: string) =>
+    playerRegExp(extended ? source : basicRegExp(source), flags);
+  if (script[start] === '/') {
+    const close = script.indexOf('/', start + 1);
+    if (close < 0 || script[close + 1] !== 'd') return null;
+    const re = regex(script.slice(start + 1, close), '');
+    return { edit: (line) => (re.test(line) ? null : line), end: close + 2 };
   }
-  if (script[0] !== 's' || script.length < 4) return null;
-  const sep = script[1]!;
+  if (script[start] !== 's' || script.length < start + 4) return null;
+  const sep = script[start + 1]!;
   const parts: string[] = [];
   let part = '';
-  for (let i = 2; i < script.length; i++) {
+  let i = start + 2;
+  for (; i < script.length && parts.length < 2; i++) {
     const c = script[i]!;
     if (c === '\\' && script[i + 1] === sep) part += script[++i];
     else if (c === sep) {
@@ -272,15 +284,37 @@ function sedScript(script: string): ((line: string) => string | null) | null {
       part = '';
     } else part += c;
   }
-  parts.push(part);
-  if (parts.length !== 3 || !parts[0] || !/^[gi]*$/.test(parts[2]!)) return null;
-  const re = playerRegExp(parts[0], parts[2]!);
+  if (parts.length !== 2 || !parts[0]) return null;
+  const flagsMatch = /^[gi]*/.exec(script.slice(i))!;
+  const re = regex(parts[0], flagsMatch[0]);
   // `&` is the whole match in sed, `$&` in JavaScript; a literal `$` must not start a JS pattern.
   const replacement = parts[1]!
     .replace(/\$/g, '$$$$')
     .replace(/(^|[^\\])&/g, '$1$$&')
-    .replace(/\\&/g, '&');
-  return (line) => line.replace(re, replacement);
+    .replace(/\\&/g, '&')
+    .replace(/\\([1-9])/g, '$$$1');
+  return { edit: (line) => line.replace(re, replacement), end: i + flagsMatch[0].length };
+}
+
+/** A sed script: one or more commands separated by `;`. */
+function sedScript(script: string, extended = false): ((line: string) => string | null) | null {
+  const edits: ((line: string) => string | null)[] = [];
+  let at = 0;
+  while (at < script.length) {
+    while (script[at] === ' ') at++;
+    const command = sedCommand(script, at, extended);
+    if (!command) return null;
+    edits.push(command.edit);
+    at = command.end;
+    while (script[at] === ' ') at++;
+    if (at < script.length && script[at++] !== ';') return null;
+  }
+  if (!edits.length) return null;
+  return (line) => {
+    let current: string | null = line;
+    for (const edit of edits) if (current !== null) current = edit(current);
+    return current;
+  };
 }
 
 const sed: Command = {
@@ -291,7 +325,7 @@ const sed: Command = {
   async *run(ctx) {
     const { flags, values, rest } = getopt(ctx.args, ['e']);
     const script = values.e ?? rest.shift();
-    const edit = script === undefined ? null : sedScript(script);
+    const edit = script === undefined ? null : sedScript(script, flags.has('E') || flags.has('r'));
     if (!edit) {
       yield err(
         script === undefined
@@ -338,4 +372,15 @@ const sed: Command = {
   },
 };
 
-export const textCommands: Command[] = [sort, uniq, cut, tr, diff, base64, sha256sum, sed];
+export const textCommands: Command[] = [
+  sort,
+  uniq,
+  cut,
+  tr,
+  diff,
+  base64,
+  sha256sum,
+  sha1sum,
+  sha512sum,
+  sed,
+];

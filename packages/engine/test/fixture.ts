@@ -91,6 +91,7 @@ export async function fixture(): Promise<{ world: Pack; mission: Pack }> {
       dns: {
         'corp.test': { A: ['10.13.0.10'], MX: ['mail.corp.test'] },
         'www.corp.test': { A: ['10.13.0.10'] },
+        'shop.corp.test': { CNAME: ['www.corp.test.'] },
       },
       noise: {
         nmap: { base: 30, flags: { '-sn': -20, '-T5': 40 } },

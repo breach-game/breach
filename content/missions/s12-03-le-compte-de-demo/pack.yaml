@@ -1,0 +1,17 @@
+id: breach.season12.s03
+version: 0.1.0
+engine: ">=0.19 <1"
+kind: mission
+track: season
+requires: [breach.world.coupdemain]
+title:
+  fr: "Saison 12 · 3. Le compte de démo"
+  en: "Season 12 · 3. The demo account"
+summary:
+  fr: "L'assistant a créé un compte de démo pour la présentation du lancement, avec les droits d'administrateur, et son mot de passe est resté dans le paquet. Tu l'essaies sur l'espace bénévoles, tu prouves l'accès sur le marqueur d'audit, et tu ne touches pas à l'export."
+  en: "The assistant created a demo account for the launch presentation, with administrator rights, and its password stayed in the bundle. You try it on the volunteers' space, prove the access on the audit marker, and leave the export alone."
+authors: [BREACH]
+locales: [fr, en]
+difficulty: 1
+skills: [web, defense]
+minutes: 15

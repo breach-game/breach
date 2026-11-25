@@ -42,6 +42,7 @@ z3.hint.report.2: "He came in through a dormant account, that account could read
 z3.hint.report.3: "`entry: dormant-account`, `clients_exposed: 8`, `attribution: signature-only`, `evidence: preserved`, then `verify`."
 z3.hint.technique.1: "No flaw, no failed attempt: he had an account and its password."
 z3.hint.notify.1: "No choice is wrong. Each costs Ligne Rouge something: read what you are ready to pay."
+z3.hint.last.0: "The six cards were all at the same address on each client's site. Look at our intranet."
 z3.hint.last.1: "Type `curl https://intranet.lignerouge.test/m`."
 z3.debrief.title: "Silence"
 z3.debrief.lesson: "Mute was not arrested. He lost his door, his method is written down, and those he targeted have been told. That is what a win in defence most often looks like: not a culprit in handcuffs, but an intruder outside, evidence kept, and a report that tells the truth."

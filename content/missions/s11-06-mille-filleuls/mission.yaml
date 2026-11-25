@@ -136,8 +136,27 @@ rules:
     do:
       - ada.say: c6.ada.cap
   - on: { event: AdversaryStep, stop: true }
+    if: { config: ref.off, eq: false }
     do:
       - ada.say: c6.ada.stopped
+      - objective.complete: cut
+      - ada.ask: class
+  # Switching the whole programme off stops the run too, but the objective is to keep it open.
+  - on: { event: AdversaryStep, stop: true }
+    if: { config: ref.off, eq: true }
+    do:
+      - var.set: { name: stopped_by_off, value: true }
+      - ada.say: c6.ada.stopped.off
+  - on: { event: ToggleSet, name: parrainage.actif, value: "on" }
+    if: { all: [{ var: stopped_by_off, eq: true }, { config: ref.cap, eq: true }, { not: { objective: cut } }] }
+    do:
+      - ada.say: c6.ada.reopened
+      - objective.complete: cut
+      - ada.ask: class
+  - on: { event: ToggleSet, name: parrainage.plafond-jour, value: "on" }
+    if: { all: [{ var: stopped_by_off, eq: true }, { config: ref.off, eq: false }, { not: { objective: cut } }] }
+    do:
+      - ada.say: c6.ada.reopened
       - objective.complete: cut
       - ada.ask: class
   - on: { event: ObjectiveCompleted, objective: class }

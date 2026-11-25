@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.19.0';
+export const ENGINE_VERSION = '0.19.2';
 
 export interface GameOptions {
   world: Pack;
@@ -860,7 +860,9 @@ export class Game {
     } finally {
       this.ruleDepth--;
     }
-    if (this.ruleDepth === 0) this.nextStep();
+    // During a command, the next guidance waits for the command's end: what the command caused is
+    // told first, then what to do next.
+    if (this.ruleDepth === 0 && !this.busy) this.nextStep();
   }
 
   /** Say a piece of guidance, in the form the player's level calls for. */
@@ -892,7 +894,12 @@ export class Game {
 
   /** Whether a condition of a pack holds now. */
   holds(cond: Condition | undefined): boolean {
-    return evaluate(cond, this.state, { playerHost: this.world.player.host, home: this.playerHome });
+    return evaluate(cond, this.state, this.places);
+  }
+
+  /** Where `~` and the player's machine are, for the file conditions of a pack. */
+  private get places() {
+    return { playerHost: this.world.player.host, home: this.playerHome };
   }
 
   private get playerHome(): string {
@@ -1136,7 +1143,8 @@ export class Game {
     if (this.state.toggles[name] === value) return true;
     for (const [key, v] of Object.entries(toggle[value]))
       this.emit({ type: 'ConfigPatched', key, value: v, by: `flag.${name}` });
-    this.emit({ type: 'ToggleSet', name, value, impact: toggle.impact });
+    // The impact is the cost of leaving the starting value: switching back costs nothing.
+    this.emit({ type: 'ToggleSet', name, value, impact: value === toggle.value ? 0 : toggle.impact });
     return true;
   }
 
@@ -1696,7 +1704,7 @@ export class Game {
         ...(heard ? { heard } : {}),
       });
       const seq = this.log[this.log.length - 1]!.seq;
-      const decision = decide(npc, text, this.state, heard);
+      const decision = decide(npc, text, this.state, heard, this.places);
       return { npc, text, seq, mission: this.state.mission, decision };
     });
   }
@@ -1981,7 +1989,7 @@ export class Game {
   }
 
   private stepOutcome(step: NonNullable<Mission['adversary']>['steps'][number]) {
-    const blocked = step.blockedIf ? evaluate(step.blockedIf, this.state) : false;
+    const blocked = step.blockedIf ? evaluate(step.blockedIf, this.state, this.places) : false;
     return { blocked, stop: blocked && !step.continueIfBlocked };
   }
 
@@ -2007,7 +2015,7 @@ export class Game {
       !s.missionDone &&
       !this.replaying
     )
-      if (evaluate(step.blockedIf, s)) this.takeStep(adv.id, step);
+      if (evaluate(step.blockedIf, s, this.places)) this.takeStep(adv.id, step);
   }
 
   /* ---------- missions ---------- */
@@ -2083,11 +2091,16 @@ export class Game {
       return step.value;
     } finally {
       this.busy = false;
+      this.nextStep();
     }
   }
 
   private async *run(line: string, dt: number): AsyncGenerator<Chunk, number> {
     const env = { HOME: this.home, USER: this.state.user, PWD: this.state.cwd };
+    // Error redirections apply to the whole line: `2>/dev/null` hides errors, `2>&1` sends them with
+    // the output (into a pipe or a file).
+    const quiet = /\s2>\s*\/dev\/null/.test(line);
+    const merged = /\s2>\s*&1/.test(line);
     const cleaned = line.replace(/\s2>\s*(&1|\/dev\/null)/g, '');
     let pipelines: ReturnType<typeof parse>;
     try {
@@ -2122,7 +2135,12 @@ export class Game {
         first = false;
         let step = await run.next();
         while (!step.done) {
-          const chunk = step.value;
+          let chunk = step.value;
+          if (chunk.k === 'err' && quiet) {
+            step = await run.next();
+            continue;
+          }
+          if (chunk.k === 'err' && merged) chunk = { k: 'out', text: chunk.text };
           if (chunk.k === 'wait') waited += chunk.ms;
           if (chunk.k === 'out' && capture) captured += chunk.text;
           else yield chunk;
@@ -2136,7 +2154,15 @@ export class Game {
         if (stage.redirect) {
           const path = this.resolvePath(this.expand([stage.redirect.path])[0]!);
           const ok = lookup(this.state.fs, path.slice(0, path.lastIndexOf('/')) || '/')?.t === 'd';
-          if (ok)
+          const node = lookup(this.state.fs, path);
+          // A redirection obeys the same permissions as `sed -i` or the editor.
+          if (node?.t === 'd') {
+            yield { k: 'err', text: `lrsh: ${stage.redirect.path.text}: Is a directory\n` };
+            status = 1;
+          } else if (node && !canWrite(node, this.currentUser)) {
+            yield { k: 'err', text: `lrsh: ${stage.redirect.path.text}: Permission denied\n` };
+            status = 1;
+          } else if (ok)
             this.emit({
               type: 'FileWritten',
               host: this.state.host,

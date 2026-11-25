@@ -1,5 +1,5 @@
 t8.briefing: "NovaMind's SOC receives the login logs of its code forge, but no rule reads them. Tonight, somebody tried passwords. Your job: write the first detection rule, one that catches them and nobody else."
-t8.obj.read: "Find the address that tries passwords"
+t8.obj.read: "Find the address that tries passwords (`answer source`)"
 t8.obj.rule: "Write a rule that catches it, with no false alert"
 t8.obj.next: "Say what to do next"
 t8.ada.brief: "Eighth training. You are on the defence side: nothing can break, but everything you type moves time on."

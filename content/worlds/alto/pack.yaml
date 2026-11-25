@@ -1,5 +1,5 @@
 id: breach.world.alto
-version: 0.1.0
+version: 0.1.1
 engine: ">=0.9 <1"
 kind: world
 title:

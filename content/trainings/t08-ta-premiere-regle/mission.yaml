@@ -5,7 +5,7 @@ briefing: t8.briefing
 reveal: [git]
 
 files:
-  regles/essais.yml: "title: Password guessing on the forge\nsource: auth\n"
+  regles/essais.yml: "# Detection rule, try it with: rule test regles/essais.yml\n# One line per condition. Fields of the auth log: user, result, method, src.\n# Modifiers: |contains, |startswith, |endswith.\ntitle: Password guessing on the forge\nsource: auth\n"
 
 objectives:
   - { id: read, text: t8.obj.read }

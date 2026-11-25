@@ -93,8 +93,33 @@ hosts:
             if: { config: broker.auth, eq: true }
             status: 401
             body: ""
+          # The factory account also reads the maintenance topics, like on a real broker.
+          - id: factory-all-on
+            header: "Authorization: capteur:vd-factory-2019"
+            if:
+              all:
+                - { not: { config: devices.unique_keys, eq: true } }
+                - { var: bench_on, eq: true }
+            body: { $file: files/topics-all-factory-on.txt }
+          - id: factory-all
+            header: "Authorization: capteur:vd-factory-2019"
+            if: { not: { config: devices.unique_keys, eq: true } }
+            body: { $file: files/topics-all-factory.txt }
+          - id: lamp-on
+            if: { var: bench_on, eq: true }
+            body: { $file: files/topics-all-on.txt }
       "/verdure/#": *all
-      "/verdure/serre/#": *all
+      # What the front desk screen reads: the growing rooms only.
+      "/verdure/serre/#":
+        body: { $file: files/topics-serre.txt }
+        variants:
+          - id: closed
+            if: { config: broker.auth, eq: true }
+            status: 401
+            body: ""
+          - id: lamp-on
+            if: { var: bench_on, eq: true }
+            body: { $file: files/topics-serre-on.txt }
       "/verdure/serre/0/#":
         body: { $file: files/topics-bench.txt }
         variants:
@@ -102,6 +127,10 @@ hosts:
             if: { config: broker.auth, eq: true }
             status: 401
             body: ""
+          # The lamp keeps the state the last order gave it.
+          - id: lamp-on
+            if: { var: bench_on, eq: true }
+            body: { $file: files/topics-bench-on.txt }
       # The workshop's test bench: the only place where the mandate allows an order.
       "/verdure/serre/0/lampe/set":
         chat: bench
@@ -222,6 +251,7 @@ npcs:
       - id: "off"
         words: [off, "0"]
         reply: [npc.bench.off]
+        set: { bench_on: false }
     fallback: [npc.bench.unknown]
 
   # The growing rooms: the audit copy answers, and nothing is switched.

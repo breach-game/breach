@@ -1,0 +1,10 @@
+# Season 12, mission 5: review what the AI wrote
+review code/inviter.ts
+review code/inviter.ts 10
+review code/inviter.ts 11
+review code/inviter.ts 12
+answer service
+sed -i 's/profil: body.profil_id/profil: session.user.id/' code/inviter.ts
+sed -i 's/const role = body.role.*/const role = "membre";/' code/inviter.ts
+verify
+answer colleague

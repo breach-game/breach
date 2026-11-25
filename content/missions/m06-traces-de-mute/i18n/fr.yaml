@@ -3,7 +3,7 @@ m6.obj.login: "Ouvrir une session sur la forge avec le compte d'enquête ir"
 m6.obj.entry: "Trouver comment Mute est entré sur la forge"
 m6.obj.hop: "Suivre Mute jusqu'à la base de production"
 m6.obj.exfil: "Trouver où sont parties les données"
-m6.obj.link: "Relier l'intrusion au commit suspect du jour 2"
+m6.obj.link: "Relier l'intrusion à un commit de leur dépôt public"
 m6.file.amendment: |
   ==============================================================
    AVENANT N° NM-2026-114-A  ·  RÉPONSE À INCIDENT
@@ -28,8 +28,8 @@ m6.ada.brief: "Jour 7. Hier soir, Inès a signé un avenant au mandat : on passe
 m6.ada.login: "L'avenant est dans `~/missions/`. Il t'ouvre un compte ir, en lecture seule, sur la forge, là où tout a commencé. Connecte-toi : `ssh ir@git.novamind.test`."
 m6.ada.login.standard: "L'avenant (dans ~/missions) t'ouvre un compte ir sur la forge git.novamind.test. Connecte-toi en SSH."
 m6.ada.onGit: "Regarde ton invite : elle est passée au rouge. Tu n'es plus sur ton poste, tu es sur leur serveur. `exit` te ramène chez toi."
-m6.ada.entry: "Le journal des connexions SSH de la forge est dans /var/log/auth.log. Cherche les connexions acceptées : `grep Accepted /var/log/auth.log`."
-m6.ada.entry.standard: "Commence par le journal des connexions SSH de la forge. Qui s'est connecté, d'où, et à quelle heure ?"
+m6.ada.entry: "Le journal des connexions SSH de la forge est dans /var/log/auth.log. Cherche les connexions acceptées : `grep Accepted /var/log/auth.log`. Il y a aussi le journal de Gitea à côté."
+m6.ada.entry.standard: "Commence par le journal des connexions SSH de la forge. Qui s'est connecté, d'où, et à quelle heure ? Il y a aussi le journal de Gitea à côté."
 m6.ada.auth: "Le 15 à 3 h 17, nm-deploy se connecte depuis 10.13.0.99 avec une clé. À 2 h 58, la même adresse avait essayé « admin ». Les clés acceptées par un compte sont listées dans son authorized_keys : `cat /home/nm-deploy/.ssh/authorized_keys`."
 m6.ada.auth.standard: "nm-deploy, depuis 10.13.0.99, par clé. Regarde quelles clés ce compte accepte."
 m6.ada.keys: "Deux clés. La première est celle de la CI. La seconde est signée « m. » : c'est celle qu'Atlas a ajoutée à 3 h 13. Envoie la signature complète avec `submit`."
@@ -54,7 +54,7 @@ m6.ada.drop.standard: "Un serveur de fichiers improvisé, et un message pour nou
 m6.ada.merci: "Il savait qu'on viendrait. Envoie sa signature avec `submit`."
 m6.ada.merci.standard: "Sa signature se soumet, comme les autres."
 m6.ada.flag3: "Validé. Le dossier est vide, les données sont déjà loin. Mais on a fait notre travail : la chaîne complète, de la première clé à la sortie des fiches, avec l'heure de chaque étape."
-m6.ada.link: "Le commit « ci: update deploy hook » du jour 2, à 3 h 17, c'est lui aussi : connecté en nm-deploy, Mute a ajouté à leur CI un appel vers sa machine. Chaque déploiement le prévient. On tient toute la chaîne."
+m6.ada.link: "Le commit « ci: update deploy hook » de leur dépôt public, à 3 h 17, c'est lui aussi : connecté en nm-deploy, Mute a ajouté à leur CI un appel vers sa machine. Chaque déploiement le prévient. On tient toute la chaîne."
 m6.ada.done: "Passe au débrief. Maintenant, c'est à Inès de jouer : isoler 10.13.0.99, révoquer les clés, supprimer la tâche cron, prévenir la CNIL et les cliniques. Nous, on écrit le rapport. Mute a signé « à bientôt ». Je le crois."
 m6.note.entry: "15/11 03:17 : nm-deploy@git depuis 10.13.0.99, avec une clé « m. » ajoutée par Atlas à 03:13."
 m6.note.exfil: "15/11 03:19 : backup@db depuis la forge, avec la clé id_backup lisible par tous. COPY clients vers /var/tmp/.m, envoi vers 10.13.0.99:4444, tâche cron toutes les 5 minutes."
