@@ -1,7 +1,15 @@
 import { resolve } from 'node:path';
 import { catalogSchema, checkPackSafety, packSchema, verifySignature } from '@breach/pack-schema';
 import { describe, expect, it } from 'vitest';
-import { buildAll, checkAll, generateKeys, type LoadedPack, loadAll, signBytes } from '../src/index.ts';
+import {
+  buildAll,
+  checkAll,
+  checkWarnings,
+  generateKeys,
+  type LoadedPack,
+  loadAll,
+  signBytes,
+} from '../src/index.ts';
 
 const official = loadAll(resolve(import.meta.dirname, '../../../content'));
 const community = loadAll(resolve(import.meta.dirname, 'fixtures/community'));
@@ -15,6 +23,18 @@ const variant = (p: LoadedPack, change: Partial<LoadedPack['pack']>): LoadedPack
 describe('community packs', () => {
   it('the sample packs pass the community checks', async () => {
     expect(await checkAll(community, { community: true, dependencies: official })).toEqual([]);
+  });
+
+  it('warns, without failing, when a mission makes the player write a file and never names the editor', () => {
+    expect(checkWarnings(official)).toEqual([]);
+    const repair = official.find((p) => p.pack.id === 'breach.training.t03')!;
+    const strip = (texts: Record<string, string>) =>
+      Object.fromEntries(Object.entries(texts).map(([k, v]) => [k, v.replace(/`(edit|nano) /g, '`')]));
+    const silent = variant(repair, {
+      i18n: Object.fromEntries(Object.entries(repair.pack.i18n).map(([l, t]) => [l, strip(t)])),
+    });
+    expect(checkWarnings([silent]).join('\n')).toMatch(/no fr text names the editor/);
+    expect(checkWarnings([variant(silent, { levels: ['expert'] })])).toEqual([]);
   });
 
   it('refuses the official prefix, odd ids and ids taken by a dependency', async () => {

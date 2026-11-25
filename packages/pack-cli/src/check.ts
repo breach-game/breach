@@ -232,6 +232,36 @@ function communityProblems(packs: LoadedPack[], dependencies: LoadedPack[]): str
   return problems;
 }
 
+/** Whether a condition reads a file of the player's workstation (no `host`). */
+function readsPlayerFile(cond: unknown): boolean {
+  if (!cond || typeof cond !== 'object') return false;
+  if (Array.isArray(cond)) return cond.some(readsPlayerFile);
+  const c = cond as Record<string, unknown>;
+  if (typeof c.file === 'string' && c.host === undefined) return true;
+  return Object.values(c).some(readsPlayerFile);
+}
+
+/**
+ * Advice that does not fail a check: a mission where the player writes or repairs a file, and whose
+ * texts never name the workstation editor (`edit <file>`), leaves players with `sed` alone.
+ */
+export function checkWarnings(packs: LoadedPack[]): string[] {
+  const warnings: string[] = [];
+  for (const { pack } of packs) {
+    const m = pack.mission;
+    if (pack.kind !== 'mission' || !m) continue;
+    const writes = m.checks.some((c) => readsPlayerFile(c.if)) || m.hunts.length > 0 || m.evals.length > 0;
+    // A challenge played in Expert only gives no help: the workstation's own reminders are enough.
+    if (!writes || (pack.levels && pack.levels.every((l) => l === 'expert'))) continue;
+    for (const locale of pack.locales)
+      if (!Object.values(pack.i18n[locale] ?? {}).some((text) => /`(edit|nano) /.test(String(text))))
+        warnings.push(
+          `${pack.id}: the player writes a file, but no ${locale} text names the editor (\`edit <file>\`)`,
+        );
+  }
+  return warnings;
+}
+
 /** Every problem found in a set of packs: schema, dependencies, translations, solutions. */
 export async function checkAll(packs: LoadedPack[], options: CheckOptions = {}): Promise<string[]> {
   const dependencies = options.dependencies ?? [];

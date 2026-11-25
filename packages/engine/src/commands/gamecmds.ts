@@ -18,7 +18,7 @@ const help: Command = {
     for (const group of groups) {
       lines.push(paint(ctx, style.bold, ctx.t(`help.group.${group}`)));
       for (const c of [...commands.values()]
-        .filter((c) => c.group === group)
+        .filter((c) => c.group === group && !c.hidden)
         .sort((a, b) => a.name.localeCompare(b.name)))
         lines.push(`  ${paint(ctx, style.cyan, c.name.padEnd(9))} ${ctx.t(c.summary)}`);
       lines.push('');
@@ -85,6 +85,9 @@ const mission: Command = {
         `  ${mark} ${ctx.t(o.text)}${o.optional ? ` ${paint(ctx, style.dim, ctx.t('mission.optional'))}` : ''}`,
       );
     }
+    const files = ctx.game.filesToEdit();
+    if (files.length && !ctx.state.missionDone)
+      lines.push('', paint(ctx, style.dim, ctx.t('mission.files', { files: files.join(', ') })));
     yield out(lines.join('\n'));
     return 0;
   },
@@ -197,6 +200,10 @@ const verify: Command = {
       );
     const failed = results.filter((r) => !r.ok).length;
     yield out(failed ? ctx.t('verify.failed', { n: failed }) : paint(ctx, style.green, ctx.t('verify.ok')));
+    // Point to the editor for the files the failed checks read: the tool, never the answer.
+    if (failed)
+      for (const file of ctx.game.filesToEdit(results.filter((r) => !r.ok).map((r) => r.id)))
+        yield out(paint(ctx, style.dim, ctx.t('verify.edit', { file })));
     return failed ? 1 : 0;
   },
 };
@@ -323,7 +330,7 @@ const edit: Command = {
   async *run(ctx): Run {
     const arg = ctx.args[0];
     if (!arg) {
-      yield err('usage: edit <file>');
+      yield err(`usage: ${ctx.name} <file>`);
       return 1;
     }
     const abs = ctx.path(arg);
@@ -340,6 +347,8 @@ const edit: Command = {
       yield err(`edit: ${arg}: No such file or directory`);
       return 1;
     }
+    // LR-OS has no vi or emacs: those names open the same editor, and say so.
+    if (ctx.name !== 'edit' && ctx.name !== 'nano') yield out(ctx.t('engine.editAlias', { name: ctx.name }));
     // The editor window reads and saves the file itself, through `game.writeFile`.
     ctx.emit({ type: 'AppOpened', app: 'editor', url: abs });
     yield out(ctx.t('engine.edit', { path: abs }));
@@ -353,6 +362,7 @@ export const gameCommands: Command[] = [
   answer,
   edit,
   { ...edit, name: 'nano', summary: 'cmd.nano' },
+  ...['vi', 'vim', 'emacs'].map((name) => ({ ...edit, name, summary: 'cmd.nano', hidden: true })),
   help,
   explain,
   { ...explain, name: 'man', summary: 'cmd.man' },

@@ -359,6 +359,11 @@ export function Desktop({ onQuit }: { onQuit(to?: Go): void }) {
             path={editor.path}
             nonce={editor.nonce}
             active={active === 'editor' && editor.open && !card}
+            onVerify={() => {
+              focus('terminal');
+              terminalBridge.focus?.();
+              terminalBridge.run?.('verify');
+            }}
           />
         </Window>
       )}
@@ -411,6 +416,23 @@ export function Desktop({ onQuit }: { onQuit(to?: Go): void }) {
             {t(`win.${id}`)}
           </button>
         ))}
+        {editor && (
+          // Once a file was opened, the editor stays one click away, on the last file.
+          <button
+            type="button"
+            aria-pressed={!mapView && active === 'editor' && editor.open}
+            data-open={editor.open}
+            title={editor.path}
+            onClick={() => {
+              setMapView(false);
+              setEditor((ed) => (ed ? { ...ed, open: true } : ed));
+              focus('editor');
+            }}
+          >
+            <i aria-hidden="true">✎</i>
+            {t('win.editor')}
+          </button>
+        )}
         <button
           type="button"
           aria-pressed={mapView}

@@ -28,7 +28,7 @@ v3.ada.g.flag: "Send the marker from the maintenance topics: `submit` followed b
 v3.ada.g.flag.standard: "Send the flag."
 v3.ada.flag: "Proof made. A secret that is identical in every device is not a secret: opening one is enough, or here, reading a forgotten file. What is left is to write what Verdure must require from its installer."
 v3.ada.g.policy: "Open the update policy: `edit dossier/maj.yml`. Transport `https`, signature `required`, key `per-device`, debug files `removed`. Save, then `verify`."
-v3.ada.g.policy.standard: "Fix `dossier/maj.yml`: an encrypted channel, signed updates, one key per sensor, nothing talkative on the server. Then `verify`."
+v3.ada.g.policy.standard: "Fix `dossier/maj.yml`: an encrypted channel, signed updates, one key per sensor, nothing talkative on the server. Then `verify`. To open the file: `edit dossier/maj.yml`."
 v3.ada.almost: "Not yet. `verify` tells you which lines are still to fix."
 v3.ada.policy: "That is a policy that holds. Encryption protects the journey, the signature proves who wrote the update, and one key per sensor means a stolen sensor gives away only itself. And updates still run every night: a device that is no longer updated is worse than a device updated badly."
 v3.ada.done: "Three days, three findings, all ten years old in principle. Open the debrief. Nour installs the fixes next week. Until then, keep your phone on at night."

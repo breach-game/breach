@@ -29,7 +29,7 @@ n3.ada.g.export.standard: "Look at what the festival's API announces at its root
 n3.ada.g.read: "Two addresses that are public by nature, and an export. Read it: `curl https://api.lumierenoire.test/v1/export/benevoles.csv`."
 n3.ada.g.read.standard: "One of the announced addresses should not be public. Read it."
 n3.ada.g.report: "Open the report: `edit rapports/LN-2028-014.yml`. Severity `high`, steps as `commands`, proof `test-marker`, and `real_data: none`. Save, then `verify`."
-n3.ada.g.report.standard: "Complete `rapports/LN-2028-014.yml`: what Malia needs to reproduce, and nothing that belongs to a real person. Then `verify`."
+n3.ada.g.report.standard: "Complete `rapports/LN-2028-014.yml`: what Malia needs to reproduce, and nothing that belongs to a real person. Then `verify`. To open the file: `edit rapports/LN-2028-014.yml`."
 n3.ada.g.send: "The report is ready. Send it to Malia: `open https://www.lumierenoire.test/securite/triage`, or `curl -d \"Bonjour, voici mon rapport LN-2028-014\" https://www.lumierenoire.test/securite/triage`."
 n3.ada.g.send.standard: "Send your report to the person the rules name."
 n3.ada.g.publish: "This is a decision, not a trick question. Answer in the messaging window, or with `answer` and the letter."

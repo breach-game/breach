@@ -37,6 +37,8 @@ export interface Command {
   /** Key of the `explain` text: what the tool does and how defenders spot it. */
   explain?: string;
   group: 'system' | 'files' | 'network' | 'game';
+  /** Left out of `help`: another name a player may try for a listed command. */
+  hidden?: boolean;
   run(ctx: CommandCtx): Run;
   complete?(words: string[], current: string): string[];
 }

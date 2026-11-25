@@ -116,6 +116,7 @@ export const fr: Record<string, string> = {
   'mission.none': 'Aucune mission en cours.',
   'mission.label': 'Mission',
   'mission.optional': '(bonus)',
+  'mission.files': 'Fichiers à écrire ou corriger : {files}. Ouvre-les avec edit <fichier>.',
   'hint.none': "Pas d'indice disponible pour l'instant.",
   'notes.usage': 'usage : notes add <texte>',
   'notes.added': 'Noté.',
@@ -188,8 +189,11 @@ export const fr: Record<string, string> = {
   'cmd.edit': "Ouvrir un fichier dans l'éditeur",
   'cmd.nano': "Ouvrir un fichier dans l'éditeur (comme edit)",
   'engine.edit': "Ouverture de {path} dans l'éditeur…",
+  'engine.editAlias':
+    "{name} n'est pas installé sur LR-OS : le fichier s'ouvre dans l'éditeur du poste (Ctrl+S enregistre).",
   'verify.none': "Rien à vérifier pour l'instant.",
   'verify.ok': 'Tous les contrôles passent.',
+  'verify.edit': 'Pour corriger : edit {file} (Ctrl+S enregistre), puis verify.',
   'verify.failed': '{n} contrôle(s) en échec. Corrige le fichier, puis relance verify.',
   'answer.none': "Ada n'a pas de question en attente.",
   'answer.submit':
