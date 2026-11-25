@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Career } from '../career.ts';
 import {
   bareTitle,
   findNews,
@@ -11,8 +12,9 @@ import {
   seasonState,
   upNext,
 } from '../journey.ts';
-import { loadJourney, markSeen, readSeen } from '../session.ts';
+import { loadJourney, markSeen, readSeen, settleCareer } from '../session.ts';
 import { useT } from '../ui.ts';
+import { CareerCard } from './Career.tsx';
 import {
   type Go,
   playSeason,
@@ -38,6 +40,7 @@ export function Seasons({ open, go }: { open?: string; go: (to: Go) => void }) {
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState<string | null>(open ?? null);
+  const [career, setCareer] = useState<Career | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -47,6 +50,7 @@ export function Seasons({ open, go }: { open?: string; go: (to: Go) => void }) {
         setJourney(j);
         // Seasons the title screen announces as new, marked the same way here.
         setFresh(new Set(seen ? findNews(j, seen).map((n) => n.key) : []));
+        void settleCareer(j.seasons).then((c) => live && setCareer(c));
       },
       (e: Error) => live && setError(e.message),
     );
@@ -69,6 +73,7 @@ export function Seasons({ open, go }: { open?: string; go: (to: Go) => void }) {
       <div className="title-inner">
         <h1 className="levels-title">{t('season.title')}</h1>
         <p className="community-intro">{t('season.intro')}</p>
+        {career && <CareerCard career={career} />}
         {error ? (
           <div className="community-state title-error">
             {t('title.error')} {error}

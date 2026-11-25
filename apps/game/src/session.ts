@@ -19,6 +19,7 @@ import {
 import { type Catalog, type CatalogEntry, isOfficialId, type Pack } from '@breach/pack-schema';
 import { del, get, keys, set } from 'idb-keyval';
 import { useSyncExternalStore } from 'react';
+import { type Career, career, everFinished, type Grade } from './career.ts';
 import { CAMPAIGN, type Journey, type Season } from './journey.ts';
 import { localSaveKey } from './local.ts';
 import {
@@ -210,6 +211,46 @@ export async function markSeen(keys: readonly string[]): Promise<void> {
 /** Overwrite what was announced (first look, or a season started by the player). */
 export async function writeSeen(keys: readonly string[]): Promise<void> {
   await set(SEEN_KEY, [...keys]).catch(() => {});
+}
+
+const CAREER_KEY = 'career:done';
+
+/** Seasons ever finished on this computer, or null before the career was first settled. */
+export async function readCareer(): Promise<string[] | null> {
+  const done = await get<unknown>(CAREER_KEY).catch(() => undefined);
+  return Array.isArray(done) ? done.filter((k): k is string => typeof k === 'string') : null;
+}
+
+let gradeNow: Grade = 'junior';
+const gradeListeners = new Set<() => void>();
+
+/** The grade last read from the saves, for the workstation's looks and the status bar. */
+export const currentGrade = (): Grade => gradeNow;
+
+export function useGrade(): Grade {
+  return useSyncExternalStore(
+    (l) => {
+      gradeListeners.add(l);
+      return () => gradeListeners.delete(l);
+    },
+    () => gradeNow,
+  );
+}
+
+/**
+ * Remember the seasons finished today, and return the career they make. Kept on this computer
+ * only, like the saves; nothing is sent anywhere.
+ */
+export async function settleCareer(seasons: readonly Season[]): Promise<Career> {
+  const stored = (await readCareer()) ?? [];
+  const done = everFinished(seasons, stored);
+  if (done.length !== stored.length) await set(CAREER_KEY, done).catch(() => {});
+  const c = career(done.length);
+  if (c.grade !== gradeNow) {
+    gradeNow = c.grade;
+    for (const l of gradeListeners) l();
+  }
+  return c;
 }
 
 /** Best known result of each mission played on its own (trainings, replays), by id: its last score. */

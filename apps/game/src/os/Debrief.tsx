@@ -1,6 +1,8 @@
 import { LEVEL_BONUS, pentestReport, socView } from '@breach/engine';
 import { useEffect, useRef, useState } from 'react';
+import { everFinished, type Grade, promotion } from '../career.ts';
 import { finishing, nextStep, type Season } from '../journey.ts';
+import { Promotion } from '../screens/Career.tsx';
 import {
   type Go,
   playSeason,
@@ -12,7 +14,15 @@ import {
   seasonTitle,
   useText,
 } from '../screens/Journey.tsx';
-import { flushSave, loadJourney, playedSeason, playKind, useGame } from '../session.ts';
+import {
+  flushSave,
+  loadJourney,
+  playedSeason,
+  playKind,
+  readCareer,
+  settleCareer,
+  useGame,
+} from '../session.ts';
 import { useSettings } from '../settings.ts';
 import { type UiKey, useT } from '../ui.ts';
 import { Defense } from './Defense.tsx';
@@ -50,7 +60,7 @@ export function Debrief({
   const defended = !defense || done?.defense !== undefined;
   // The last debrief of a season says what comes next: the next season, or what else there is.
   const seasonEnd = defended && !game.nextMission() && playedSeason() !== null;
-  const seasons = useJourneyAfter(seasonEnd);
+  const { seasons, promoted } = useJourneyAfter(seasonEnd);
   const thisSeason = seasons?.find((s) => s.id === playedSeason());
   const leave = (to: Go) => void flushSave().then(() => onLeave(to));
   // Ready for Enter, without scrolling past the lesson.
@@ -262,6 +272,7 @@ export function Debrief({
           <p className="fine">{t('debrief.end.reportHint')}</p>
         </>
       )}
+      {seasonEnd && promoted && <Promotion grade={promoted.grade} finished={promoted.finished} />}
       {seasonEnd && seasons && seasons.length > 0 && (
         <WhatNext seasons={seasons} go={leave} primary={nextButton} />
       )}
@@ -280,14 +291,21 @@ export function Debrief({
   );
 }
 
+interface After {
+  seasons: Season[] | null;
+  /** The grade this season earns, when it is a promotion. */
+  promoted: { grade: Grade; finished: number } | null;
+}
+
 /**
  * Every season, read from the saves once the running one is written, with the season being played
  * counted as finished (its save may still be a few hundred milliseconds behind). Null while loading,
- * empty if the catalogue cannot be read.
+ * empty if the catalogue cannot be read. The career is settled at the same time: a promotion is
+ * told once, by the debrief that earns it.
  */
-function useJourneyAfter(enabled: boolean): Season[] | null {
+function useJourneyAfter(enabled: boolean): After {
   const game = useGame();
-  const [seasons, setSeasons] = useState<Season[] | null>(null);
+  const [after, setAfter] = useState<After>({ seasons: null, promoted: null });
   useEffect(() => {
     if (!enabled) return;
     let live = true;
@@ -296,16 +314,22 @@ function useJourneyAfter(enabled: boolean): Season[] | null {
       Object.entries(game.state.completed).map(([m, c]) => [m, c.score + (c.defense ?? 0)]),
     );
     flushSave()
-      .then(loadJourney)
+      .then(() => Promise.all([loadJourney(), readCareer()]))
       .then(
-        (j) => live && setSeasons(id ? finishing(j.seasons, id, completed) : j.seasons),
-        () => live && setSeasons([]),
+        async ([j, before]) => {
+          const seasons = id ? finishing(j.seasons, id, completed) : j.seasons;
+          const grade = id ? promotion(seasons, before, id) : null;
+          await settleCareer(seasons);
+          const finished = everFinished(seasons, before ?? []).length;
+          if (live) setAfter({ seasons, promoted: grade ? { grade, finished } : null });
+        },
+        () => live && setAfter({ seasons: [], promoted: null }),
       );
     return () => {
       live = false;
     };
   }, [enabled, game]);
-  return enabled ? seasons : null;
+  return enabled ? after : { seasons: null, promoted: null };
 }
 
 /**

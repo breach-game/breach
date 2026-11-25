@@ -8,8 +8,9 @@ const highlightFlags = (text: string) =>
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { useEffect, useRef } from 'react';
-import { currentGame, elapsed, resumeSeq, terminalBridge, touch } from '../session.ts';
-import { getSettings } from '../settings.ts';
+import { allowedTerm, type TermStyle } from '../career.ts';
+import { currentGame, elapsed, resumeSeq, terminalBridge, touch, useGrade } from '../session.ts';
+import { getSettings, useSettings } from '../settings.ts';
 import { translate } from '../ui.ts';
 
 const THEME = {
@@ -292,9 +293,27 @@ class Shell {
   }
 }
 
+/**
+ * Looks a career grade unlocks. They change the type, the cursor and the glass behind the text,
+ * never the colours that carry meaning (red attack, cyan defence, violet AI, green success).
+ */
+const LOOKS: Record<
+  TermStyle,
+  { fontSize: number; lineHeight: number; cursorStyle: 'block' | 'bar' | 'underline'; foreground: string }
+> = {
+  lros: { fontSize: 13.5, lineHeight: 1.3, cursorStyle: 'block', foreground: THEME.foreground },
+  slate: { fontSize: 13.5, lineHeight: 1.3, cursorStyle: 'bar', foreground: THEME.foreground },
+  frost: { fontSize: 13.5, lineHeight: 1.35, cursorStyle: 'underline', foreground: '#EEF2FF' },
+  focus: { fontSize: 15, lineHeight: 1.4, cursorStyle: 'block', foreground: THEME.foreground },
+};
+
 export function Terminal({ active }: { active: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const termRef = useRef<XTerm | null>(null);
+  const fitRef = useRef<FitAddon | null>(null);
+  const look = allowedTerm(useSettings().termStyle, useGrade());
+  const lookRef = useRef(look);
+  lookRef.current = look;
 
   useEffect(() => {
     const el = host.current!;
@@ -303,15 +322,16 @@ export function Terminal({ active }: { active: boolean }) {
     (async () => {
       await document.fonts.load('13.5px "JetBrains Mono"').catch(() => {});
       if (disposed) return;
+      const l = LOOKS[lookRef.current];
       const term = new XTerm({
         fontFamily: '"JetBrains Mono", ui-monospace, Menlo, monospace',
-        fontSize: 13.5,
-        lineHeight: 1.3,
+        fontSize: l.fontSize,
+        lineHeight: l.lineHeight,
         cursorBlink: true,
-        cursorStyle: 'block',
+        cursorStyle: l.cursorStyle,
         allowTransparency: true,
         scrollback: 2000,
-        theme: THEME,
+        theme: { ...THEME, foreground: l.foreground },
         screenReaderMode: true,
         // Never open a real page from the terminal, whatever a text tries to turn into a link.
         linkHandler: { activate: () => {}, allowNonHttpProtocols: false },
@@ -321,6 +341,7 @@ export function Terminal({ active }: { active: boolean }) {
       term.open(el);
       fit.fit();
       termRef.current = term;
+      fitRef.current = fit;
       const shell = new Shell(term);
       const game = currentGame();
       const locale = getSettings().locale;
@@ -359,5 +380,21 @@ export function Terminal({ active }: { active: boolean }) {
     if (active) termRef.current?.focus();
   }, [active]);
 
-  return <div className="term" ref={host} />;
+  // A look chosen in the settings applies at once, without restarting the terminal.
+  useEffect(() => {
+    const term = termRef.current;
+    if (!term) return;
+    const l = LOOKS[look];
+    term.options.fontSize = l.fontSize;
+    term.options.lineHeight = l.lineHeight;
+    term.options.cursorStyle = l.cursorStyle;
+    term.options.theme = { ...THEME, foreground: l.foreground };
+    try {
+      fitRef.current?.fit();
+    } catch {
+      // The window is being resized to nothing.
+    }
+  }, [look]);
+
+  return <div className="term" data-look={look} ref={host} />;
 }

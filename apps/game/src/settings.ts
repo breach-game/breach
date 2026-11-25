@@ -1,5 +1,6 @@
 import type { Guidance, Locale } from '@breach/pack-schema';
 import { useSyncExternalStore } from 'react';
+import type { MapStyle, TermStyle } from './career.ts';
 
 export interface Settings {
   locale: Locale;
@@ -12,6 +13,9 @@ export interface Settings {
   /** Volumes, 0 to 1. */
   music: number;
   sfx: number;
+  /** Looks unlocked by career grades. A look the grade does not reach shows the default one. */
+  termStyle: TermStyle;
+  mapStyle: MapStyle;
 }
 
 const KEY = 'breach.settings';
@@ -25,6 +29,8 @@ function initial(): Settings {
     sound: true,
     music: 0.6,
     sfx: 0.7,
+    termStyle: 'lros',
+    mapStyle: 'grid',
   };
   try {
     return { ...fallback, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
