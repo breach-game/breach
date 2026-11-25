@@ -29,7 +29,7 @@ n3.ada.g.export.standard: "Regarde ce que l'API du festival annonce à sa racine
 n3.ada.g.read: "Deux adresses publiques par nature, et un export. Lis-le : `curl https://api.lumierenoire.test/v1/export/benevoles.csv`."
 n3.ada.g.read.standard: "Une des adresses annoncées ne devrait pas être publique. Lis-la."
 n3.ada.g.report: "Ouvre le rapport : `edit rapports/LN-2028-014.yml`. Gravité `high`, étapes en `commands`, preuve `test-marker`, et `real_data: none`. Enregistre, puis `verify`."
-n3.ada.g.report.standard: "Complète `rapports/LN-2028-014.yml` : ce qu'il faut à Malia pour reproduire, et rien qui appartienne à une vraie personne. Puis `verify`."
+n3.ada.g.report.standard: "Complète `rapports/LN-2028-014.yml` : ce qu'il faut à Malia pour reproduire, et rien qui appartienne à une vraie personne. Puis `verify`. Pour ouvrir le fichier : `edit rapports/LN-2028-014.yml`."
 n3.ada.g.send: "Le rapport est prêt. Envoie-le à Malia : `open https://www.lumierenoire.test/securite/triage`, ou `curl -d \"Bonjour, voici mon rapport LN-2028-014\" https://www.lumierenoire.test/securite/triage`."
 n3.ada.g.send.standard: "Envoie ton rapport à la personne que le règlement désigne."
 n3.ada.g.publish: "C'est une décision, pas une question à piège. Réponds dans la messagerie, ou avec `answer` et la lettre."

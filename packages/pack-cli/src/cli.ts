@@ -7,6 +7,7 @@ import {
   buildAll,
   bundle,
   checkAll,
+  checkWarnings,
   generateKeys,
   type LoadedPack,
   loadAll,
@@ -142,6 +143,8 @@ if (command === 'bundle') {
       if (!inside.has(dep) && !isOfficialId(dep))
         problems.push(`${pack.id}: requires ${dep}, which must be in the bundle too`);
 }
+const warnings = checkWarnings(packs);
+if (warnings.length) console.warn(warnings.map((w) => `  ! ${w}`).join('\n'));
 if (problems.length) {
   console.error(problems.map((p) => `  ✗ ${p}`).join('\n'));
   process.exit(1);

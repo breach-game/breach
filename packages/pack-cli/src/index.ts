@@ -188,6 +188,7 @@ export function bundle(packs: LoadedPack[]): Uint8Array {
 export {
   type CheckOptions,
   checkAll,
+  checkWarnings,
   defenseProblems,
   type LoadedPack,
   type ReplayResult,

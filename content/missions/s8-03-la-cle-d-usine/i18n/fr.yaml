@@ -28,7 +28,7 @@ v3.ada.g.flag: "Envoie le témoin des sujets de maintenance : `submit` suivi du 
 v3.ada.g.flag.standard: "Envoie le flag."
 v3.ada.flag: "Preuve faite. Un secret identique dans chaque objet n'est pas un secret : il suffit d'en ouvrir un seul, ou ici, de lire un fichier oublié. Reste à écrire ce que Verdure doit exiger de son installateur."
 v3.ada.g.policy: "Ouvre la politique de mise à jour : `edit dossier/maj.yml`. Transport `https`, signature `required`, clé `per-device`, fichiers de débogage `removed`. Enregistre, puis `verify`."
-v3.ada.g.policy.standard: "Corrige `dossier/maj.yml` : un canal chiffré, des mises à jour signées, une clé par capteur, rien de bavard sur le serveur. Puis `verify`."
+v3.ada.g.policy.standard: "Corrige `dossier/maj.yml` : un canal chiffré, des mises à jour signées, une clé par capteur, rien de bavard sur le serveur. Puis `verify`. Pour ouvrir le fichier : `edit dossier/maj.yml`."
 v3.ada.almost: "Pas encore. `verify` te dit quelles lignes restent à corriger."
 v3.ada.policy: "Voilà une politique qui tient. Le chiffrement protège le trajet, la signature prouve qui a écrit la mise à jour, et une clé par capteur fait qu'un capteur volé ne livre que lui-même. Et les mises à jour continuent chaque nuit : un objet qu'on ne met plus à jour est pire qu'un objet mal mis à jour."
 v3.ada.done: "Trois jours, trois trouvailles, toutes vieilles de dix ans dans leur principe. Ouvre le débrief. Nour installe les corrections la semaine prochaine. D'ici là, garde ton téléphone allumé la nuit."

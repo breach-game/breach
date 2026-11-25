@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.19.2';
+export const ENGINE_VERSION = '0.19.3';
 
 export interface GameOptions {
   world: Pack;
@@ -1215,6 +1215,43 @@ export class Game {
   }
 
   /**
+   * Files of the player's workstation that the mission wants written or repaired, as the player
+   * types them (`~/dossier/assistant.yml`), for the reminders that point to the editor. With
+   * `checkIds`, only the files those checks read; without, the files of every check, hunt and eval.
+   * A file the player may not write is left out: the editor could not save it.
+   */
+  filesToEdit(checkIds?: string[]): string[] {
+    const m = this.mission;
+    if (!m) return [];
+    const home = this.playerHome;
+    const found: string[] = [];
+    const walk = (cond: unknown) => {
+      if (!cond || typeof cond !== 'object') return;
+      if (Array.isArray(cond)) return cond.forEach(walk);
+      const c = cond as Record<string, unknown>;
+      if (typeof c.file === 'string' && (c.host === undefined || c.host === this.world.player.host))
+        found.push(c.file);
+      for (const v of Object.values(c)) if (v && typeof v === 'object') walk(v);
+    };
+    for (const c of m.checks) if (!checkIds || checkIds.includes(c.id)) walk(c.if);
+    if (!checkIds) for (const x of [...m.hunts, ...m.evals]) found.push(`~/${x.file}`);
+    const fs = this.state.filesystems[this.world.player.host];
+    const files: string[] = [];
+    for (const f of found) {
+      const abs = f.startsWith('~') ? home + f.slice(1) : f.startsWith('/') ? f : `${home}/${f}`;
+      const shown = abs.startsWith(`${home}/`) ? `~${abs.slice(home.length)}` : abs;
+      if (files.includes(shown) || !fs) continue;
+      const node = lookup(fs, abs);
+      const parent = lookup(fs, abs.slice(0, abs.lastIndexOf('/')) || '/');
+      const writable = node
+        ? node.t === 'f' && canWrite(node, this.world.player.user)
+        : parent?.t === 'd' && canWrite(parent, this.world.player.user);
+      if (writable) files.push(shown);
+    }
+    return files;
+  }
+
+  /**
    * Remember the flag-shaped values in a text the target just showed the player. `typed` is the
    * player's own line: a value they typed themselves was not shown to them.
    */
@@ -2281,9 +2318,6 @@ const RESTRICTED = [
   'touch',
   'chmod',
   'chown',
-  'vi',
-  'vim',
-  'emacs',
   'python',
   'python3',
   'perl',

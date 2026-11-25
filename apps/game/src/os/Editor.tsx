@@ -6,7 +6,18 @@ import { useT } from '../ui.ts';
  * The workstation's text editor, opened by `edit <file>`. It reads and saves through the engine, so a
  * saved file is an event like any other and a mission's checks see it.
  */
-export function Editor({ path, nonce, active }: { path: string; nonce: number; active: boolean }) {
+export function Editor({
+  path,
+  nonce,
+  active,
+  onVerify,
+}: {
+  path: string;
+  nonce: number;
+  active: boolean;
+  /** Bring the terminal forward and run `verify` there, as if the player typed it. */
+  onVerify: () => void;
+}) {
   const game = useGame();
   const t = useT();
   const [text, setText] = useState<string | null>('');
@@ -24,8 +35,13 @@ export function Editor({ path, nonce, active }: { path: string; nonce: number; a
   }, [active]);
 
   if (text === null) return <p className="editor-msg">{t('editor.unreadable')}</p>;
-  const save = () =>
-    setStatus(game.writeFile(path, text.endsWith('\n') || !text ? text : `${text}\n`) ? 'saved' : 'denied');
+  const save = () => {
+    const ok = game.writeFile(path, text.endsWith('\n') || !text ? text : `${text}\n`);
+    setStatus(ok ? 'saved' : 'denied');
+    return ok;
+  };
+  // Only a mission judged by `verify` gets the shortcut; elsewhere the button would say nothing.
+  const checks = !!game.mission?.checks.length && !game.state.missionDone;
   const lines = text.split('\n').length;
   return (
     <div className="editor">
@@ -55,7 +71,7 @@ export function Editor({ path, nonce, active }: { path: string; nonce: number; a
         />
       </div>
       <div className="editor-bar">
-        <span className="editor-hint">{t('editor.hint')}</span>
+        <span className="editor-hint">{t(checks ? 'editor.hintVerify' : 'editor.hint')}</span>
         <span className="editor-status" data-status={status} role="status">
           {status === 'modified' && `● ${t('editor.modified')}`}
           {status === 'saved' && `✓ ${t('editor.saved')}`}
@@ -64,6 +80,17 @@ export function Editor({ path, nonce, active }: { path: string; nonce: number; a
         <button type="button" className="btn defense" onClick={save} disabled={status !== 'modified'}>
           {t('editor.save')}
         </button>
+        {checks && (
+          <button
+            type="button"
+            className="btn defense"
+            onClick={() => {
+              if (status !== 'modified' || save()) onVerify();
+            }}
+          >
+            {t(status === 'modified' ? 'editor.saveVerify' : 'editor.verify')}
+          </button>
+        )}
       </div>
     </div>
   );

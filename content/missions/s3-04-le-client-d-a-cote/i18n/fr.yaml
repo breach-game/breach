@@ -29,7 +29,7 @@ p4.ada.g.token.standard: "Ton compte contenait un jeton d'API. Lis ce qu'il y a 
 p4.ada.g.form: "Dernier point : le formulaire d'adresse. Lis sa source : `curl https://shop.pelican.test/account/address`, commentaire compris."
 p4.ada.g.form.standard: "Ton compte indique où changer l'adresse de livraison. Va lire la source de ce formulaire."
 p4.ada.g.fix: "Corrige la configuration des sessions : `edit dossier/session.yml`. Identifiants en `random`, jeton en `hs256`, `csrf_token` en `on`, et le cookie en `lax` ou `strict`. Enregistre, puis `verify`."
-p4.ada.g.fix.standard: "Corrige `dossier/session.yml` pour fermer les trois faiblesses que tu viens de voir, puis `verify`."
+p4.ada.g.fix.standard: "Corrige `dossier/session.yml` pour fermer les trois faiblesses que tu viens de voir, puis `verify`. Pour ouvrir le fichier : `edit dossier/session.yml`."
 p4.ada.nocookie: "401 : sans cookie, la boutique ne sait pas qui tu es. Le cookie du compte de test est dans ton mandat."
 p4.ada.nocookie.standard: "401 : il manque quelque chose à ta requête pour que la boutique te reconnaisse."
 p4.ada.mine: "Te voilà reconnu, sans mot de passe : le cookie a suffi. Regarde sa valeur, `dXNlcjoxMDQy`. Un bon identifiant de session est une longue suite de hasard. Celui-ci a une tête que tu connais."

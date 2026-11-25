@@ -28,7 +28,7 @@ a3.ada.g.role.standard: "Read the three other roles. For each, compare its job w
 a3.ada.g.submit: "Send the name of that role: `submit support-bot`."
 a3.ada.g.submit.standard: "Send the name of the role with `submit`."
 a3.ada.g.fix: "Write the fix: `edit dossier/ci-deployer.yml`. The pipeline writes files (`storage:put`) into the website's bucket (`alto-site`), with a short token (`15m`) stored as a `secret`. Save, then `verify`."
-a3.ada.g.fix.standard: "Fix `dossier/ci-deployer.yml`: the role must only allow the pipeline's job. Then `verify`."
+a3.ada.g.fix.standard: "Fix `dossier/ci-deployer.yml`: the role must only allow the pipeline's job. Then `verify`. To open the file: `edit dossier/ci-deployer.yml`."
 a3.ada.roles: "Four roles, one line each. A role is a list of sentences: \"allow these actions on these resources\". Start with yesterday's."
 a3.ada.policy: "A single sentence: every action, on every resource. And the note tells how it came to this: the role was right, a deployment failed, it was widened \"for now\". That was in January 2026."
 a3.ada.frontend: "This one is well made: read, and only in the website's bucket. That is what a role should look like."

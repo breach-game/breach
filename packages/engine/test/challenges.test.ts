@@ -106,6 +106,28 @@ describe('repairs and questions', () => {
     expect((await run(g, 'edit /etc/shadow')).status).toBe(1);
   });
 
+  it('points to the editor: verify, mission and the vi family', async () => {
+    const g = await repairGame();
+    expect(g.filesToEdit()).toEqual(['~/missions/app.conf']);
+    // Only the files of the checks that fail, and only after a failure.
+    const failed = await run(g, 'verify');
+    expect(failed.out).toContain('edit ~/missions/app.conf');
+    expect((await run(g, 'mission')).out).toContain('Files to write or fix: ~/missions/app.conf');
+    for (const name of ['vi', 'vim', 'emacs']) {
+      const opened = await run(g, `${name} missions/app.conf`);
+      expect(opened.status).toBe(0);
+      expect(opened.out).toContain(`${name} is not installed on LR-OS`);
+      expect(g.log.at(-1)).toMatchObject({ type: 'AppOpened', app: 'editor' });
+    }
+    // `help` lists edit and nano, not the other names.
+    const help = (await run(g, 'help')).out;
+    expect(help).toContain('nano');
+    expect(help).not.toMatch(/\bvim\b/);
+    g.writeFile('missions/app.conf', 'listen = 443\n');
+    const passed = await run(g, 'verify');
+    expect(passed.out).not.toContain('edit ~/');
+  });
+
   it('a question is asked, a wrong answer costs points, the right one completes', async () => {
     const g = await repairGame();
     expect((await run(g, 'answer')).out).toContain('no open question');
