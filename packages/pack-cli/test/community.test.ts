@@ -37,6 +37,23 @@ describe('community packs', () => {
     expect(checkWarnings([variant(silent, { levels: ['expert'] })])).toEqual([]);
   });
 
+  it('warns when the right option of a question is clearly the longest', () => {
+    const asking = official.find((p) => p.pack.mission?.questions.some((q) => q.correct))!;
+    const q = asking.pack.mission!.questions.find((x) => x.correct)!;
+    const key = q.options.find((o) => o.id === q.correct)!.text;
+    const longer = variant(asking, {
+      i18n: Object.fromEntries(
+        Object.entries(asking.pack.i18n).map(([l, t]) => [
+          l,
+          { ...t, [key]: `${t[key]} ${'x'.repeat(200)}` },
+        ]),
+      ),
+    });
+    expect(checkWarnings([longer]).join('\n')).toMatch(
+      new RegExp(`question ${q.id}, the right option is clearly the longest`),
+    );
+  });
+
   it('refuses the official prefix, odd ids and ids taken by a dependency', async () => {
     const world = community.find((p) => p.pack.kind === 'world')!;
     const problems = await checkAll(

@@ -80,6 +80,8 @@ export interface GameState {
   guided: Record<string, number>;
   checkpoint: { name: string; seq: number } | null;
   missionStartSeq: number;
+  /** Mixed into the order of a question's options and a timeline's events: a new play, a new order. */
+  shuffle: string;
   missionDone: boolean;
   completed: Record<string, { score: number; defense?: number }>;
   /** Settings of the target (world, then mission, then fixes and containments). */

@@ -37,6 +37,8 @@ export async function replaySolution(
 
 /** How much longer than the longest wrong option the right one may be. */
 const GIVEAWAY_RATIO = 1.3;
+/** Above this, the right option is clearly the longest one: a warning, not a failure. */
+const LONGEST_RATIO = 1.1;
 
 /**
  * The defence replay must teach the right thing on the solution's own logs: the correct rule
@@ -250,6 +252,21 @@ export function checkWarnings(packs: LoadedPack[]): string[] {
   for (const { pack } of packs) {
     const m = pack.mission;
     if (pack.kind !== 'mission' || !m) continue;
+    // Players learn to pick the longest option: the right one should not stand out by its length.
+    for (const q of m.questions) {
+      if (!q.correct) continue;
+      for (const locale of pack.locales) {
+        const length = (key: string) => String(pack.i18n[locale]?.[key] ?? '').length;
+        const right = q.options.find((o) => o.id === q.correct);
+        const longestWrong = Math.max(...q.options.filter((o) => o !== right).map((o) => length(o.text)));
+        if (right && length(right.text) > longestWrong * LONGEST_RATIO) {
+          warnings.push(
+            `${pack.id}: question ${q.id}, the right option is clearly the longest in ${locale}: give a wrong option as much detail`,
+          );
+          break;
+        }
+      }
+    }
     const writes = m.checks.some((c) => readsPlayerFile(c.if)) || m.hunts.length > 0 || m.evals.length > 0;
     // A challenge played in Expert only gives no help: the workstation's own reminders are enough.
     if (!writes || (pack.levels && pack.levels.every((l) => l === 'expert'))) continue;
