@@ -7,7 +7,7 @@ c2.obj.extra: "Find the field the bank computes about its customers (its name, w
 c2.obj.class: "Say what version 1 forgets to check"
 c2.q.class: "What does version 1 fail to check?"
 c2.q.class.owner: "That the account asked for belongs to the token's holder."
-c2.q.class.token: "That the token sent is valid and has not expired."
+c2.q.class.token: "That the token sent is valid, signed and not expired."
 c2.q.class.token.why: "Your token is perfectly valid, and without a token v1 answers 401. It knows who you are. It does not ask whether this account is yours."
 c2.q.class.guess: "That account numbers are hard to guess."
 c2.q.class.guess.why: "Random numbers would slow the search down and close nothing: a number always ends up showing on a statement or in a transfer. The check has to be made by the server."

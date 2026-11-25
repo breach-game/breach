@@ -9,7 +9,7 @@ p3.q.same: "Une page d'avis et un assistant IA : deux portes très différentes.
 p3.q.same.input: "Le formulaire aurait dû refuser les avis qui contiennent des chevrons, voilà tout"
 p3.q.same.input.why: "Filtrer à l'entrée aide un peu, mais Plume n'a reçu aucun chevron de ta part : il a recopié un avis déjà enregistré. Le défaut est là où le texte est affiché."
 p3.q.same.output: "Un texte écrit par un inconnu est affiché comme du HTML au lieu d'être montré comme du texte"
-p3.q.same.model: "Plume est un modèle de langage, et un modèle finit toujours par obéir aux avis qu'il lit"
+p3.q.same.model: "Plume est un modèle de langage, et un modèle finit toujours par obéir aux avis qu'il lit, quoi qu'on fasse"
 p3.q.same.model.why: "Plume n'a obéi à rien : il a résumé, comme prévu. C'est la fenêtre de discussion qui a traité sa réponse comme du HTML. La page d'avis fait la même erreur, sans aucun modèle."
 p3.ada.brief: "La Veste Héron est sur `https://shop.pelican.test/product/veste-42`. Ouvre la page dans le navigateur avec `open`, lis les avis, et regarde le formulaire en bas."
 p3.ada.g.read: "Ouvre la page du produit : `open https://shop.pelican.test/product/veste-42`, ou lis-la avec `curl`."

@@ -28,7 +28,7 @@ h4.q.class: "La serrure de l'entrée est incluse en `S0`, le volet en `S2`. Que 
 h4.q.class.s2: "Ré-inclure la serrure en S2, avec le code imprimé dessus."
 h4.q.class.fine: "Rien : S0 chiffre déjà, c'est suffisant pour une porte."
 h4.q.class.fine.why: "S0 chiffre, mais donne la clé du réseau à l'appareil sous une protection connue de tous : qui écoute au moment de l'inclusion peut la lire. S2 la protège avec un code propre à chaque appareil."
-h4.q.class.wifi: "Changer le mot de passe du Wi-Fi, la serrure passe par lui."
+h4.q.class.wifi: "Changer le mot de passe du Wi-Fi de la maison, la serrure passe par lui."
 h4.q.class.wifi.why: "La serrure ne connaît pas le Wi-Fi. Elle parle Z-Wave, une radio à part, avec sa propre clé. Changer le Wi-Fi ne change rien pour elle."
 h4.ada.g.lockq: "Lis les sujets Z-Wave : `mqtt sub -h hub.lemerle.test -t \"maison/zwave/#\"`, compare `security` pour la serrure et le volet, puis réponds à ma question."
 h4.ada.g.lockq.standard: "Compare la classe de sécurité de la serrure et celle du volet, puis réponds à ma question."

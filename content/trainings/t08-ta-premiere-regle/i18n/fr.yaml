@@ -18,7 +18,7 @@ t8.ada.done: "Oui. Bloquer une adresse ne dure que jusqu'à la suivante ; ce qui
 t8.q.source: "Quelle adresse essaie des mots de passe sur la forge ?"
 t8.q.next: "La règle tient. Que fait NovaMind de son côté ?"
 t8.q.next.lock: "Ferme la connexion par mot de passe sur la forge et passe tous les comptes à la clé."
-t8.q.next.block: "Bloque l'adresse 203.0.113.66 au pare-feu, et garde le reste en l'état."
+t8.q.next.block: "Bloque l'adresse 203.0.113.66 au pare-feu, et garde tout le reste exactement en l'état."
 t8.q.next.block.why: "Utile pour cette nuit, mais l'attaquant changera d'adresse demain. La forge accepte toujours des mots de passe devinables."
 t8.q.next.rename: "Demande aux quatre personnes visées de changer de nom d'utilisateur."
 t8.q.next.rename.why: "Les noms d'utilisateur ne sont pas des secrets. C'est le mot de passe deviné qui pose problème, pas le nom qu'on essaie."

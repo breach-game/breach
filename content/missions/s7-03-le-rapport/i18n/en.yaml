@@ -21,7 +21,7 @@ n3.q.breach: "The volunteer export stayed readable without an account for weeks:
 n3.q.breach.nothing: "Nothing: you found it, within the rules, so nobody was harmed"
 n3.q.breach.nothing.why: "You are the first to have reported it, not necessarily the first to have read it. What counts is that the data was exposed. The festival must look at its logs to know who else came by."
 n3.q.breach.notify: "Document the leak, and notify the data protection authority within 72 hours if there is a risk"
-n3.q.breach.silence: "Have you sign a non-disclosure agreement, so that the volunteers never hear of it"
+n3.q.breach.silence: "Have you sign a non-disclosure agreement, so that the volunteers whose data leaked never hear of it"
 n3.q.breach.silence.why: "The festival's duty is to the people and to the authority, not to you. Your silence does not erase it, and hiding it makes the fault worse."
 n3.ada.brief: "An API often starts by saying what it can do. Ask its root: `curl https://api.lumierenoire.test/`."
 n3.ada.g.export: "Ask the API for the list of its addresses: `curl https://api.lumierenoire.test/`."

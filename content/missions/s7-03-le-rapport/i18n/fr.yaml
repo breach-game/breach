@@ -21,7 +21,7 @@ n3.q.breach: "L'export des bénévoles est resté lisible sans compte pendant de
 n3.q.breach.nothing: "Rien : c'est toi qui l'as trouvé, dans les règles, donc personne n'a été lésé"
 n3.q.breach.nothing.why: "Tu es le premier à l'avoir signalé, pas forcément le premier à l'avoir lu. Ce qui compte, c'est que les données ont été exposées. Le festival doit regarder ses journaux pour savoir qui d'autre est passé."
 n3.q.breach.notify: "Documenter la fuite, et prévenir la CNIL sous 72 heures s'il y a un risque"
-n3.q.breach.silence: "Te faire signer un accord de silence, pour que les bénévoles ne l'apprennent pas"
+n3.q.breach.silence: "Te faire signer un accord de silence, pour que les bénévoles concernés ne l'apprennent jamais"
 n3.q.breach.silence.why: "L'obligation du festival est envers les personnes et envers l'autorité, pas envers toi. Ton silence ne l'efface pas, et le cacher aggrave la faute."
 n3.ada.brief: "Une API commence souvent par dire ce qu'elle sait faire. Demande à la racine : `curl https://api.lumierenoire.test/`."
 n3.ada.g.export: "Demande à l'API la liste de ses adresses : `curl https://api.lumierenoire.test/`."

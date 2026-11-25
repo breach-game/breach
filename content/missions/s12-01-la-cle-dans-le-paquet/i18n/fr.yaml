@@ -9,7 +9,7 @@ p1.q.class: "La clé de la base est écrite en clair dans le paquet. Où est le 
 p1.q.class.rules: "Elle est faite pour être vue. Tout dépend des règles de la base."
 p1.q.class.secret: "La clé aurait dû rester secrète, gardée côté serveur."
 p1.q.class.secret.why: "Cette appli n'a pas de serveur : le navigateur parle directement à la base, donc il lui faut une clé, et tout ce qu'un navigateur a, un visiteur l'a. La clé publique est prévue pour ça. Ce sont les règles derrière qui décident de ce qu'elle ouvre."
-p1.q.class.hide: "Le domaine de la base n'aurait jamais dû apparaître dans la page."
+p1.q.class.hide: "Le domaine de la base n'aurait pas dû apparaître dans la page."
 p1.q.class.hide.why: "Le navigateur doit bien savoir où envoyer ses requêtes : l'adresse de la base se lit dans n'importe quel outil de développement. Cacher une adresse ne protège rien."
 p1.ada.brief: "Regarde la page comme le ferait un curieux : sa source, pas seulement ce qu'elle affiche."
 p1.ada.g.source: "Lis la source : `curl -s https://app.coupdemain.test/`. Un commentaire dit où est le code de l'appli."

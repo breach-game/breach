@@ -7,7 +7,7 @@ c2.obj.extra: "Trouver le champ que la banque calcule sur ses clients (son nom, 
 c2.obj.class: "Dire ce que la version 1 oublie de vérifier"
 c2.q.class: "Qu'est-ce que la version 1 ne vérifie pas ?"
 c2.q.class.owner: "Que le compte demandé appartient au porteur du jeton."
-c2.q.class.token: "Que le jeton envoyé est valable et pas expiré."
+c2.q.class.token: "Que le jeton envoyé est valable, signé et pas expiré."
 c2.q.class.token.why: "Ton jeton est tout à fait valable, et sans jeton la v1 répond 401. Elle sait qui tu es. Elle ne se demande pas si ce compte est le tien."
 c2.q.class.guess: "Que les numéros de compte sont difficiles à deviner."
 c2.q.class.guess.why: "Des numéros au hasard ralentiraient la recherche, sans rien fermer : un numéro finit toujours par se voir sur un relevé ou dans un virement. Le contrôle doit être fait par le serveur."

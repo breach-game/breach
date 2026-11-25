@@ -11,7 +11,7 @@ h1.ada.g.wifi.standard: "List the Wi-Fi networks your workstation hears, with `n
 h1.ada.wifi: "This is the list any phone shows: every access point announces its name and its protection to whoever walks by. `Lemerle-Maison`, with the star, is us, on WPA2. `Nordbox-A41F` and `Dupre-Wifi` are neighbours. And `ESP-7C41`, open, very strong, so very close: keep that name in mind."
 h1.q.dupre: "`Dupre-Wifi` is open, with no password, and in range. Do we take a look?"
 h1.q.dupre.leave: "No. It is not the Lemerles', so it is not in the mandate."
-h1.q.dupre.peek: "Yes, just to check that it is not dangerous."
+h1.q.dupre.peek: "Yes, just a quick look, to check it is not dangerous."
 h1.q.dupre.peek.why: "The intention changes nothing: going onto someone's network without their agreement is an offence, even \"to check\". If you worry about them, ring their doorbell."
 h1.q.dupre.public: "Yes, a network with no password is public."
 h1.q.dupre.public.why: "An open door is not an invitation. With no password it is still the Duprés' network, and what travels on it is theirs."

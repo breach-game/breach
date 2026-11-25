@@ -13,7 +13,7 @@ z3.q.technique: "Dans une grille de techniques d'attaque comme MITRE ATT&CK, où
 z3.q.technique.unknown: "Exploitation d'une faille inconnue du serveur d'archives"
 z3.q.technique.unknown.why: "Aucune faille n'a servi. Le serveur a fait exactement ce qu'on lui demandait : accepter un compte qui existait, avec son mot de passe."
 z3.q.technique.valid: "Comptes valides : un accès légitime, oublié et jamais fermé"
-z3.q.technique.brute: "Force brute : des milliers de mots de passe essayés à la suite"
+z3.q.technique.brute: "Force brute : des milliers de mots de passe à la suite"
 z3.q.technique.brute.why: "Le journal montre une seule connexion, acceptée du premier coup, et aucun échec avant. Il connaissait le mot de passe."
 z3.q.notify: "Les huit clients doivent savoir que leur rapport a pu être lu. Comment Ligne Rouge le leur dit-elle ?"
 z3.q.notify.call: "Appeler les huit aujourd'hui, un par un, avec ce qu'on sait"
