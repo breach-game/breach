@@ -189,7 +189,7 @@ file.ir.readme: |
   Lecture seule. Ne modifiez rien : on garde les preuves en l'état.
   Les journaux sont dans /var/log. Le compte de déploiement s'appelle nm-deploy.
 file.mute.db: |
-  Si tu lis ça, tu as huit jours de retard.
+  Si tu lis ça, tu as deux semaines de retard.
   La sauvegarde de 2 h ne surveille rien. Celle de 3 h non plus.
   — m.
 

@@ -22,6 +22,8 @@ m6.file.amendment: |
                Download no stolen data.
                Isolation and clean-up: NovaMind team only.
 
+  4. TERM      1 to 18 December 2026, at any hour.
+
   Signed: Inès Carron (CTO, NovaMind) · Ada (Ligne Rouge)
 m6.ada.brief: "Day 7. Last night Inès signed an amendment to the mandate: we switch to incident response. We are not attacking anyone any more, we are following someone. Mute got in on November 15, and we will retrace their path in their own footprints. Golden rule of an investigation: read, take notes, touch nothing. Traces are evidence."
 m6.ada.login: "The amendment is in `~/missions/`. It gives you an ir account, read only, on the forge, where it all started. Log in: `ssh ir@git.novamind.test`."

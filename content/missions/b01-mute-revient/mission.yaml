@@ -1,6 +1,7 @@
 # First defence mission: the player is the SOC, Mute plays a script.
 side: defense
 order: 7
+startTime: "2026-12-03T09:00:00+01:00"
 stage: response
 briefing: b1.briefing
 reveal: [git, db]

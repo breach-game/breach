@@ -23,6 +23,8 @@ m6.file.amendment: |
                preuves. Ne télécharger aucune donnée volée.
                Isolation et nettoyage : équipe NovaMind uniquement.
 
+  4. DURÉE     Du 1er au 18 décembre 2026, à toute heure.
+
   Signé : Inès Carron (CTO, NovaMind) · Ada (Ligne Rouge)
 m6.ada.brief: "Jour 7. Hier soir, Inès a signé un avenant au mandat : on passe en réponse à incident. On n'attaque plus personne, on suit quelqu'un. Mute est entré le 15 novembre, et on va refaire son chemin dans ses propres traces. Règle d'or de l'enquête : on lit, on note, on ne touche à rien. Les traces sont des preuves."
 m6.ada.login: "L'avenant est dans `~/missions/`. Il t'ouvre un compte ir, en lecture seule, sur la forge, là où tout a commencé. Connecte-toi : `ssh ir@git.novamind.test`."
