@@ -4,7 +4,7 @@ import { Game } from '../src/index.ts';
 import { fixture, run } from './fixture.ts';
 
 /** A mission with a file to repair and a question to answer. */
-async function repairGame() {
+async function repairGame(shuffle?: () => string) {
   const { world } = await fixture();
   const mission: Pack = parsePack({
     format: 0,
@@ -65,7 +65,7 @@ async function repairGame() {
       },
     },
   });
-  const game = new Game({ world, missions: [mission], locale: 'en' });
+  const game = new Game({ world, missions: [mission], locale: 'en', shuffle });
   game.startMission(mission.id);
   return game;
 }
@@ -126,6 +126,36 @@ describe('repairs and questions', () => {
     g.writeFile('missions/app.conf', 'listen = 443\n');
     const passed = await run(g, 'verify');
     expect(passed.out).not.toContain('edit ~/');
+  });
+
+  it('a new play of a mission may show the options in another order, kept by the save', async () => {
+    const orders = new Set<string>();
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+      const g = await repairGame(() => seed);
+      const order = g
+        .optionsOf(g.mission!.questions[0]!)
+        .map((o) => o.id)
+        .join(',');
+      orders.add(order);
+      // Resuming from the save gives the same order.
+      const resumed = new Game({
+        world: g.worldPack,
+        missions: [...g.missions.values()],
+        locale: 'en',
+        log: g.log,
+      });
+      expect(
+        resumed
+          .optionsOf(resumed.mission!.questions[0]!)
+          .map((o) => o.id)
+          .join(','),
+      ).toBe(order);
+    }
+    expect(orders.size).toBe(2);
+    // Without a source, the order only depends on the pack.
+    const a = await repairGame();
+    const b = await repairGame();
+    expect(a.optionsOf(a.mission!.questions[0]!)).toEqual(b.optionsOf(b.mission!.questions[0]!));
   });
 
   it('a question is asked, a wrong answer costs points, the right one completes', async () => {

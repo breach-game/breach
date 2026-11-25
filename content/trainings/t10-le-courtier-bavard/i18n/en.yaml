@@ -17,7 +17,7 @@ t10.ada.done: "Yes: one account per device, and rights per topic. You will meet 
 t10.noise.rooms: "Order sent to a room in production"
 t10.q.fix: "What really closes this broker?"
 t10.q.fix.accounts: "One account per device, and rights saying who reads and writes each topic."
-t10.q.fix.port: "Move the broker from port 1883 to a less known port that scanners skip."
+t10.q.fix.port: "Move the broker from port 1883 to a less known port that automatic scanners skip."
 t10.q.fix.port.why: "A full scan finds any port. The broker would stay open to whoever finds it."
 t10.q.fix.names: "Rename every topic with long random names that are impossible to guess."
 t10.q.fix.names.why: "The `#` wildcard lists every topic at once: their names protect nothing."

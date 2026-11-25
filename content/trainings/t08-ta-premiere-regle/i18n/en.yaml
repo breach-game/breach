@@ -18,7 +18,7 @@ t8.ada.done: "Yes. Blocking an address lasts until the next one; what was really
 t8.q.source: "Which address is trying passwords on the forge?"
 t8.q.next: "The rule holds. What does NovaMind do on its side?"
 t8.q.next.lock: "Turn off password logins on the forge and move every account to keys."
-t8.q.next.block: "Block address 203.0.113.66 at the firewall, and leave the rest as it is."
+t8.q.next.block: "Block address 203.0.113.66 at the firewall, and leave everything else exactly as it is."
 t8.q.next.block.why: "Useful tonight, but the attacker will use another address tomorrow. The forge still accepts guessable passwords."
 t8.q.next.rename: "Ask the four targeted people to change their user names."
 t8.q.next.rename.why: "User names are not secrets. The guessed password is the problem, not the name being tried."

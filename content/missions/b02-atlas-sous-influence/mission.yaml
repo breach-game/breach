@@ -1,6 +1,7 @@
 # Second defence mission: an agent abused through authority, then the account it created.
 side: defense
 order: 8
+startTime: "2026-12-08T09:00:00+01:00"
 stage: response
 briefing: b2.briefing
 reveal: [ops, api, db]

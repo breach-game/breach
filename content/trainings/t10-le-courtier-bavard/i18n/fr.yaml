@@ -17,7 +17,7 @@ t10.ada.done: "Oui : un compte par appareil, et des droits par sujet. Tu retrouv
 t10.noise.rooms: "Ordre envoyé à une serre en production"
 t10.q.fix: "Qu'est-ce qui ferme vraiment ce courtier ?"
 t10.q.fix.accounts: "Un compte par appareil, et une liste de droits qui dit qui lit et qui écrit chaque sujet."
-t10.q.fix.port: "Changer le port 1883 pour un port moins connu, que les scanners ne testent pas."
+t10.q.fix.port: "Changer le port 1883 pour un port moins connu, que les scanners automatiques ne testent pas."
 t10.q.fix.port.why: "Un scan complet trouve n'importe quel port. Le courtier resterait ouvert à qui le trouve."
 t10.q.fix.names: "Renommer chaque sujet avec un long nom aléatoire, impossible à deviner."
 t10.q.fix.names.why: "Le joker `#` liste tous les sujets d'un coup : leur nom ne protège rien."

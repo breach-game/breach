@@ -22,10 +22,10 @@ files:
         Software: PomeloOS 9.2
         Date/Time Original: "2027:06:12 19:42:07"
         Exposure Time: "1/120"
-        GPS Latitude: "45 deg 45' 26.00\" N"
-        GPS Longitude: "4 deg 50' 30.00\" E"
-        GPS Altitude: "184 m Above Sea Level"
-        GPS Position: "45 deg 45' 26.00\" N, 4 deg 50' 30.00\" E"
+        GPS Latitude: "45 deg 45' 28.00\" N"
+        GPS Longitude: "4 deg 49' 55.00\" E"
+        GPS Altitude: "170 m Above Sea Level"
+        GPS Position: "45 deg 45' 28.00\" N, 4 deg 49' 55.00\" E"
 
 questions:
   - id: reveal

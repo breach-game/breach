@@ -358,6 +358,8 @@ export async function start(mode: StartMode, onProgress?: (p: PackProgress) => v
     missions: c.missions,
     locale: getSettings().locale,
     guidance: getSettings().guidance,
+    // A new order for Ada's options and timelines each time a mission starts, kept in the save.
+    shuffle: () => crypto.randomUUID().slice(0, 8),
   };
   let plan: ResumePlan = { kind: 'fresh' };
   let notice: string | null = null;

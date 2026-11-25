@@ -4,7 +4,7 @@ h2.obj.publish: "Publier un paquet témoin au nom du paquet interne, en version 
 h2.obj.proof: "Envoyer le marqueur apparu dans le journal de construction (`submit`)"
 h2.obj.who: "Dire ce qui a été trompé"
 h2.q.who: "Ton paquet a été pris par la construction de cette nuit. Qu'as-tu trompé ?"
-h2.q.who.break: "La machine de construction : tu es entré dessus cette nuit et tu y as déposé ton paquet toi-même"
+h2.q.who.break: "La machine de construction : tu es entré dessus cette nuit par SSH et tu y as déposé ton paquet toi-même, à la main"
 h2.q.who.break.why: "Tu n'es entré sur aucune machine. Tu as déposé un paquet sur un miroir ouvert, et c'est la construction qui est venue le chercher, en suivant sa propre règle."
 h2.q.who.trust: "La règle de résolution : elle se fie au nom et au numéro de version, et prend le plus haut d'où qu'il vienne"
 h2.q.who.steal: "Un employé de Halcyon : tu as utilisé son compte pour publier le paquet à sa place"

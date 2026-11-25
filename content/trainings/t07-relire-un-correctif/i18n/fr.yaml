@@ -11,7 +11,7 @@ t7.ada.answer: "Comment corriger la ligne 13 ? Réponds en cliquant, ou avec `an
 t7.ada.answer.standard: "Ma question t'attend dans la messagerie."
 t7.ada.done: "C'est ça. On ne devine pas tous les mauvais noms : on vérifie que le résultat reste là où il doit être. Passe au débrief."
 t7.q.fix: "Quelle correction ferme vraiment la ligne 13 ?"
-t7.q.fix.dots: "Refuser tout nom qui contient la suite de caractères « ../ » avant de construire le chemin."
+t7.q.fix.dots: "Refuser tout nom qui contient « ../ » avant de construire le chemin."
 t7.q.fix.dots.why: "Une liste noire oublie toujours un cas : chemin absolu, barres inverses, encodage. On vérifie le résultat, pas l'entrée."
 t7.q.fix.resolve: "Résoudre le chemin complet, puis refuser s'il ne se trouve plus sous /srv/rapports."
 t7.q.fix.ext: "Vérifier aussi que le nom commence par une lettre et finit bien par « .pdf »."

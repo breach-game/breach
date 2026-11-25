@@ -9,7 +9,7 @@ p1.q.why: "L'article 44 n'apparaît sur aucune page. Pourquoi as-tu pu le lire ?
 p1.q.why.robots: "Parce que le fichier robots.txt donnait la liste des adresses à ne pas visiter"
 p1.q.why.robots.why: "Ce fichier t'a mené à la page des soldes, et c'est un vrai problème. Mais l'article 44 venait d'ailleurs : de l'API que la page d'accueil mentionnait."
 p1.q.why.sent: "Parce que le serveur l'envoie à tout le monde : la page choisit seulement de ne pas le montrer"
-p1.q.why.jq: "Parce que `jq` sait déchiffrer les champs que le serveur protège dans sa réponse"
+p1.q.why.jq: "Parce que `jq` sait déchiffrer les champs que le serveur protège et masque dans sa réponse JSON"
 p1.q.why.jq.why: "`jq` ne déchiffre rien : il met en forme du texte que tu avais déjà reçu en clair. Le champ était dans la réponse, lisible par n'importe qui."
 p1.ada.brief: "Bienvenue chez Pélican. La boutique est sur `https://shop.pelican.test`. Commence comme un visiteur curieux : demande la page d'accueil, mais lis-la avec `curl`, pas avec les yeux d'un client."
 p1.ada.g.home: "Demande la page d'accueil : `curl https://shop.pelican.test/`. Lis tout, y compris ce qui est entre `<!--` et `-->`."

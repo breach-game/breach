@@ -23,7 +23,7 @@ t14.q.reveal.face: "Seulement le visage de Lou, qui apparaît dans le reflet de 
 t14.q.reveal.face.why: "exiftool ne montre aucune image : il lit le texte caché dans le fichier, et ce texte contient une position."
 t14.q.habit: "Quelle habitude évite que ça se reproduise ?"
 t14.q.habit.camera: "Couper la position pour l'appareil photo dans les réglages."
-t14.q.habit.rename: "Renommer chaque photo avant de la publier."
+t14.q.habit.rename: "Renommer chaque photo avant de la publier, pour effacer son nom d'origine."
 t14.q.habit.rename.why: "Le nom du fichier ne change rien aux métadonnées écrites à l'intérieur."
 t14.q.habit.private: "Ne publier que des captures d'écran prises le soir."
 t14.q.habit.private.why: "L'heure ne protège de rien, et une capture d'écran peut aussi garder des métadonnées selon les téléphones."

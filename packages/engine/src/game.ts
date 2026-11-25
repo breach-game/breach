@@ -63,7 +63,7 @@ import {
   writeFile,
 } from './vfs.ts';
 
-export const ENGINE_VERSION = '0.19.3';
+export const ENGINE_VERSION = '0.19.4';
 
 export interface GameOptions {
   world: Pack;
@@ -75,6 +75,11 @@ export interface GameOptions {
   log?: GameEvent[];
   /** A copy the defence replay plays an attack in: the SOC never catches it. */
   sandbox?: boolean;
+  /**
+   * A fresh value for each mission started, so that options and timelines come in another order when
+   * the player plays a mission again. Without it, the order only depends on the pack (tests, checks).
+   */
+  shuffle?: () => string;
 }
 
 /** One action of the player, played again in the defence replay. */
@@ -239,6 +244,8 @@ export class Game {
   private failPending: string | null = null;
   readonly sandbox: boolean;
 
+  private readonly shuffleSource: (() => string) | undefined;
+
   constructor(options: GameOptions) {
     if (!options.world.world) throw new Error(`${options.world.id} is not a world pack`);
     this.worldPack = options.world;
@@ -247,6 +254,7 @@ export class Game {
     this.guidance = options.guidance ?? 'guided';
     this.wanted = this.guidance;
     this.sandbox = options.sandbox ?? false;
+    this.shuffleSource = options.shuffle;
     this.state = this.initialState(options.locale);
     if (options.log?.length) {
       this.replay(options.log);
@@ -477,6 +485,7 @@ export class Game {
       guided: {},
       checkpoint: null,
       missionStartSeq: 0,
+      shuffle: '',
       missionDone: false,
       completed: {},
       history: [],
@@ -564,6 +573,7 @@ export class Game {
         s.vars = {};
         s.checkpoint = null;
         s.missionStartSeq = e.seq;
+        s.shuffle = e.shuffle ?? '';
         // The clock only ever goes forward: a mission may start later than the previous one ended.
         if (mission?.startTime)
           s.clock = Math.max(s.clock, Date.parse(mission.startTime) - Date.parse(this.world.startTime));
@@ -1016,7 +1026,7 @@ export class Game {
    * question, so that a letter typed in a saved game or a solution keeps its meaning.
    */
   optionsOf<Q extends { id: string; options: { id: string }[] }>(question: Q): Q['options'] {
-    return shuffled(question.options, `${this.state.mission ?? ''}/${question.id}`);
+    return shuffled(question.options, `${this.state.mission ?? ''}/${question.id}${this.state.shuffle}`);
   }
 
   /** The code review of the current mission that reads this file, if any. */
@@ -1152,7 +1162,7 @@ export class Game {
   timelineEvents(id: string) {
     const tl = this.mission?.timelines.find((t) => t.id === id);
     if (!tl) return null;
-    let list = shuffled(tl.events, `${this.state.mission ?? ''}/${tl.id}`);
+    let list = shuffled(tl.events, `${this.state.mission ?? ''}/${tl.id}${this.state.shuffle}`);
     if (list.every((e, i) => e.id === tl.events[i]?.id)) list = [...list.slice(1), list[0]!];
     return list;
   }
@@ -2062,7 +2072,8 @@ export class Game {
     if (!pack) throw new Error(`Unknown mission ${id}`);
     // Before the event: its rules and Ada's first guidance already follow the mission's levels.
     this.guidance = allowedLevel(this.wanted, pack.levels);
-    this.emit({ type: 'MissionStarted', mission: id });
+    const shuffle = this.shuffleSource?.();
+    this.emit({ type: 'MissionStarted', mission: id, ...(shuffle ? { shuffle } : {}) });
     this.syncLevel();
   }
 

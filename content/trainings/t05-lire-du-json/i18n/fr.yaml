@@ -18,7 +18,7 @@ t5.ada.next: "Réponds à ma question : en cliquant, ou avec `answer` dans le te
 t5.ada.next.standard: "Ma question t'attend dans la messagerie."
 t5.ada.done: "C'est ça. Un accès oublié se ferme entièrement : le compte et tout ce qui a été créé avec lui. Passe au débrief."
 t5.q.next: "Que doit faire NovaMind du compte « migration » et du jeton « agenda-sync » ?"
-t5.q.next.mfa: "Activer la double authentification sur le compte « migration », pour qu'il soit protégé comme les autres."
+t5.q.next.mfa: "Activer la double authentification sur le compte « migration », pour le protéger comme les autres."
 t5.q.next.mfa.why: "Le compte reste ouvert alors que personne n'en a besoin, et le jeton, lui, ne passe jamais par la double authentification. Un accès inutile se ferme."
 t5.q.next.both: "Désactiver le compte et révoquer le jeton, puis vérifier dans les journaux s'ils ont servi depuis 2024."
 t5.q.next.rename: "Renommer le compte en un nom moins évident, et garder le jeton qui sert peut-être encore."

@@ -4,7 +4,7 @@ h2.obj.publish: "Publish a canary package under the internal package's name, at 
 h2.obj.proof: "Send the marker that appeared in the build log (`submit`)"
 h2.obj.who: "Say what was fooled"
 h2.q.who: "Your package was taken by tonight's build. What did you fool?"
-h2.q.who.break: "The build machine: you got into it last night and dropped your package there yourself"
+h2.q.who.break: "The build machine: you got into it last night over SSH and dropped your package there yourself, by hand"
 h2.q.who.break.why: "You broke into no machine. You dropped a package on an open mirror, and the build came to fetch it, following its own rule."
 h2.q.who.trust: "The resolution rule: it trusts the name and the version number, and takes the highest from anywhere"
 h2.q.who.steal: "A Halcyon employee: you used their account to publish the package in their place"

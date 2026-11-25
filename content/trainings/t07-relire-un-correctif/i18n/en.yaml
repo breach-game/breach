@@ -11,7 +11,7 @@ t7.ada.answer: "How do we fix line 13? Answer by clicking, or with `answer` in t
 t7.ada.answer.standard: "My question is waiting in the messenger."
 t7.ada.done: "That's it. You cannot guess every bad name: you check that the result stays where it belongs. On to the debrief."
 t7.q.fix: "Which fix really closes line 13?"
-t7.q.fix.dots: "Refuse any name that contains the characters \"../\" before building the path."
+t7.q.fix.dots: "Refuse any name that contains \"../\" before building the path."
 t7.q.fix.dots.why: "A deny list always misses a case: absolute path, backslashes, encoding. Check the result, not the input."
 t7.q.fix.resolve: "Resolve the full path, then refuse it if it is no longer under /srv/rapports."
 t7.q.fix.ext: "Also check that the name starts with a letter and really ends with \".pdf\"."

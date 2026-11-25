@@ -5,7 +5,8 @@ import type { Guidance } from '@breach/pack-schema';
  * player, and the material for the Blue Team debrief.
  */
 export type EventBody =
-  | { type: 'MissionStarted'; mission: string }
+  /** `shuffle` varies the order of Ada's options from one play to the next; the log keeps it. */
+  | { type: 'MissionStarted'; mission: string; shuffle?: string }
   /** The most helpful guidance level used so far in the mission: it sets the score bonus. */
   | { type: 'GuidanceChanged'; level: Guidance }
   | {

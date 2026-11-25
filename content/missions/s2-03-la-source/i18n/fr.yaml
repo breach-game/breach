@@ -6,7 +6,7 @@ h3.q.idea: "L'équipe propose : « On inverse l'ordre : d'abord l'interne, ensui
 h3.q.idea.trust: "Oui : si la source interne est interrogée en premier, son paquet gagnera toujours contre le public"
 h3.q.idea.trust.why: "Non : la règle reste « la version la plus haute gagne ». Un paquet public en version 9.9.9 repasse devant l'interne, quel que soit l'ordre des sources. Il faut nommer ce qui est à nous."
 h3.q.idea.own: "Non : il faut dire à la chaîne quels noms sont à Halcyon, et lui interdire de les chercher dehors"
-h3.q.idea.scan: "Non : il faut surtout analyser le contenu de chaque paquet avant de l'installer, quel que soit son nom"
+h3.q.idea.scan: "Non : il faut surtout analyser le contenu de chaque paquet avant de l'installer, quels que soient son nom et sa source"
 h3.q.idea.scan.why: "Analyser aide, mais le paquet malveillant porte le nom d'un paquet de confiance : il passe les contrôles qui regardent le nom. Le problème est la provenance, pas le contenu."
 h3.check.reserve: "Les deux paquets maison sont déclarés comme internes"
 h3.check.close: "Un nom interne ne peut plus venir d'une source publique"

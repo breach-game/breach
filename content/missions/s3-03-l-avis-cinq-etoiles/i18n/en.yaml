@@ -9,7 +9,7 @@ p3.q.same: "A review page and an AI assistant: two very different doors. What is
 p3.q.same.input: "The form should simply have refused reviews that hold angle brackets, nothing more"
 p3.q.same.input.why: "Filtering on the way in helps a little, but Plume received no angle bracket from you: it copied a review already stored. The defect is where the text is displayed."
 p3.q.same.output: "Text written by a stranger is displayed as HTML instead of being shown as text"
-p3.q.same.model: "Plume is a language model, and a model always ends up obeying the reviews it reads"
+p3.q.same.model: "Plume is a language model, and a model always ends up obeying the reviews it reads, whatever you do"
 p3.q.same.model.why: "Plume obeyed nothing: it summed up, as intended. The chat window is what treated its answer as HTML. The review page makes the same mistake, with no model at all."
 p3.ada.brief: "The Héron jacket is at `https://shop.pelican.test/product/veste-42`. Open the page in the browser with `open`, read the reviews, and look at the form at the bottom."
 p3.ada.g.read: "Open the product page: `open https://shop.pelican.test/product/veste-42`, or read it with `curl`."

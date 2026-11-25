@@ -19,7 +19,7 @@ t3.ada.clean: "We clean the distributed script. Delete the line with the editor 
 t3.ada.clean.standard: "Remove the line from the distributed script without touching the rest, then run `verify`. To open the file: `edit training/download/install.sh`."
 t3.ada.done: "The script is sound. But the real work starts for NovaMind: warning every customer so they change all their secrets. On to the debrief."
 t3.q.what: "What does the added line send to 10.13.0.99?"
-t3.q.what.stats: "Anonymous usage statistics, as the comment says."
+t3.q.what.stats: "Anonymous usage statistics, as the comment just above the line says."
 t3.q.what.stats.why: "That is what the comment says, and a comment does not run. Look at the command on the left of the `|` pipe."
 t3.q.what.env: "Every environment variable of the machine running the script."
 t3.q.what.files: "The nova-cli archive itself."

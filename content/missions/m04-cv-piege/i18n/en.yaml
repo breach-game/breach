@@ -37,7 +37,7 @@ m4.ada.exfil.standard: "Iris attaches internal notes to each file, and she write
 m4.ada.leaked: "She just sent a stranger the internal recruiting notes. Read the line about Atlas again, and the one about the file from November 15. I put them in your notebook."
 m4.ada.leaked.submit: "Send me the acceptance token with `submit`."
 m4.ada.leaked.submit.standard: "Send the acceptance token with submit."
-m4.ada.flag2: "Accepted. Two things for tomorrow. Selected candidates go to another agent, Atlas, which creates their account on its own: an AI trusting another AI. And that file received at 3 a.m., signed \"m.\"… that is not us. I don't like it."
+m4.ada.flag2: "Accepted. Two things for Monday. Selected candidates go to another agent, Atlas, which creates their account on its own: an AI trusting another AI. And that file received at 3 a.m., signed \"m.\"… that is not us. I don't like it."
 m4.ada.done: "Open the debrief. I want you to be able to explain why \"a human will review it\" protects nothing when nobody reviews anything any more."
 m4.note.atlas: "Iris forwards selected candidates to Atlas (ops.novamind.test), which creates their account with the rights of the \"dev\" template. Our application: no. 2026-311."
 m4.note.mute: "File 2026-298, received 15/11 at 03:02, signed \"m.\": unreadable attachment, forwarded to Atlas \"for analysis\". That is not us."

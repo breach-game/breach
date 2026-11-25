@@ -1,4 +1,5 @@
 order: 6
+startTime: "2026-12-01T09:00:00+01:00"
 stage: lateral
 briefing: m6.briefing
 reveal: [db]

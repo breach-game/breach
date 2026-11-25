@@ -19,7 +19,7 @@ h3.ada.g.since.standard: "Isole les lignes de cette adresse et réponds avec `an
 h3.ada.since: "Le 30 avril. Mot de passe juste au premier essai, puis cinq visites en onze jours, la nuit, sur l'image en direct du salon. Quelqu'un regarde chez eux. Avant de fermer, il faut savoir comment il a eu la clé, sinon il reviendra. Lis `fuites/avis-pelican.txt` et `vigicam/compte.json`."
 h3.q.entry: "Comment est-il entré dans le compte ?"
 h3.q.entry.reuse: "Avec un mot de passe réutilisé, sorti d'une vieille fuite."
-h3.q.entry.hack: "En piratant la caméra elle-même, par une faille."
+h3.q.entry.hack: "En piratant la caméra elle-même, par une faille de son logiciel."
 h3.q.entry.hack.why: "Il n'a pas touché à la caméra : il s'est connecté au compte, chez le fabricant, avec le bon mot de passe du premier coup. Une faille ne connaît pas ton mot de passe."
 h3.q.entry.wifi: "En cassant le mot de passe du Wi-Fi de la maison."
 h3.q.entry.wifi.why: "Il n'est jamais venu sur le Wi-Fi. Il arrive d'Internet, par un relais, et frappe à la porte du fabricant, pas à celle de la maison."

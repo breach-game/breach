@@ -2,6 +2,7 @@
 # changes address when blocked. Only the credential is constant.
 side: defense
 order: 9
+startTime: "2026-12-11T09:00:00+01:00"
 stage: response
 briefing: b3.briefing
 reveal: [api]

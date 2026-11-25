@@ -190,7 +190,7 @@ file.ir.readme: |
   Read only. Do not change anything: evidence stays as it is.
   Logs are in /var/log. The deploy account is called nm-deploy.
 file.mute.db: |
-  If you are reading this, you are eight days late.
+  If you are reading this, you are two weeks late.
   The 2 a.m. backup watches nothing. Neither does the 3 a.m. one.
   — m.
 

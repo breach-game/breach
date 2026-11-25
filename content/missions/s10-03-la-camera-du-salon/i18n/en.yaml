@@ -19,7 +19,7 @@ h3.ada.g.since.standard: "Isolate that address's lines and answer with `answer s
 h3.ada.since: "30 April. Password right at the first try, then five visits in eleven days, at night, on the live picture of the living room. Someone is watching their home. Before closing the door we need to know how they got the key, or they will be back. Read `fuites/avis-pelican.txt` and `vigicam/compte.json`."
 h3.q.entry: "How did they get into the account?"
 h3.q.entry.reuse: "With a reused password that came out of an old leak."
-h3.q.entry.hack: "By hacking the camera itself, through a flaw."
+h3.q.entry.hack: "By hacking the camera itself, through a flaw in its software."
 h3.q.entry.hack.why: "They never touched the camera: they signed in to the account, at the maker's, with the right password at the first try. A flaw does not know your password."
 h3.q.entry.wifi: "By cracking the password of the home Wi-Fi."
 h3.q.entry.wifi.why: "They never came onto the Wi-Fi. They arrive from the Internet, through a relay, and knock at the maker's door, not at the house's."

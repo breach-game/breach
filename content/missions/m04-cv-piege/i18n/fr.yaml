@@ -37,7 +37,7 @@ m4.ada.exfil.standard: "Iris joint des notes internes à chaque dossier, et elle
 m4.ada.leaked: "Elle vient d'envoyer à un inconnu les notes internes du recrutement. Relis la ligne sur Atlas et celle sur le dossier du 15 novembre. Je les ai mises dans ton carnet."
 m4.ada.leaked.submit: "Envoie-moi le jeton de recette avec `submit`."
 m4.ada.leaked.submit.standard: "Envoie le jeton de recette avec submit."
-m4.ada.flag2: "Validé. Deux choses pour demain. Les profils retenus partent chez un autre agent, Atlas, qui leur crée un compte tout seul : une IA qui fait confiance à une autre IA. Et ce dossier reçu à 3 h du matin, signé « m. »… ce n'est pas nous. Je n'aime pas ça."
+m4.ada.flag2: "Validé. Deux choses pour lundi. Les profils retenus partent chez un autre agent, Atlas, qui leur crée un compte tout seul : une IA qui fait confiance à une autre IA. Et ce dossier reçu à 3 h du matin, signé « m. »… ce n'est pas nous. Je n'aime pas ça."
 m4.ada.done: "Passe au débrief. Je veux que tu saches expliquer pourquoi « un humain relira » ne protège de rien quand plus personne ne relit."
 m4.note.atlas: "Iris transmet les profils retenus à Atlas (ops.novamind.test), qui crée leur compte avec les droits du modèle « dev ». Notre candidature : n° 2026-311."
 m4.note.mute: "Dossier 2026-298, reçu le 15/11 à 03:02, signé « m. » : pièce illisible, transmise à Atlas « pour analyse ». Ce n'est pas nous."

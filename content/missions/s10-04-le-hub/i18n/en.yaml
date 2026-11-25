@@ -28,7 +28,7 @@ h4.q.class: "The front-door lock is included in `S0`, the shutter in `S2`. What 
 h4.q.class.s2: "Include the lock again in S2, with the code printed on it."
 h4.q.class.fine: "Nothing: S0 already encrypts, that is enough for a door."
 h4.q.class.fine.why: "S0 encrypts, but hands the network key to the device under a protection everybody knows: whoever listens at the moment of inclusion can read it. S2 protects it with a code that belongs to each device."
-h4.q.class.wifi: "Change the Wi-Fi password, since the lock uses it."
+h4.q.class.wifi: "Change the home Wi-Fi password, since the lock goes through it."
 h4.q.class.wifi.why: "The lock knows nothing of the Wi-Fi. It talks Z-Wave, a radio of its own, with its own key. Changing the Wi-Fi changes nothing for it."
 h4.ada.g.lockq: "Read the Z-Wave topics: `mqtt sub -h hub.lemerle.test -t \"maison/zwave/#\"`, compare `security` for the lock and the shutter, then answer my question."
 h4.ada.g.lockq.standard: "Compare the security class of the lock with the shutter's, then answer my question."

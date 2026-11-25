@@ -9,7 +9,7 @@ p1.q.class: "The database key is written in clear in the bundle. Where is the pr
 p1.q.class.rules: "It is meant to be seen. It all depends on the database rules."
 p1.q.class.secret: "The key should have stayed secret, kept on the server side."
 p1.q.class.secret.why: "This app has no server: the browser talks straight to the database, so it needs a key, and whatever a browser has, a visitor has. The public key is made for this. The rules behind it decide what it opens."
-p1.q.class.hide: "The database domain should never have shown in the page."
+p1.q.class.hide: "The database domain should not have shown in the page."
 p1.q.class.hide.why: "The browser has to know where to send its requests: the database address shows in any developer tool. Hiding an address protects nothing."
 p1.ada.brief: "Look at the page the way a curious visitor would: its source, not only what it displays."
 p1.ada.g.source: "Read the source: `curl -s https://app.coupdemain.test/`. A comment says where the app's code is."
